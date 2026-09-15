@@ -43,7 +43,7 @@
         ? `<span class="lb-trend ${cls}">${arrow} ${t.delta > 0 ? "+" + t.delta : t.delta}</span>`
         : '<span class="badge" style="font-size:.68rem"><i class="ph ph-crown"></i> руководитель</span>';
       return `
-        <a class="lb-row" href="team/${e.slug}/index.html" data-reveal>
+        <a class="lb-row" href="../team/${e.slug}/index.html" data-reveal>
           <span class="lb-rank ${rankCls}">${medal}</span>
           <span class="lb-name">${e.fullName} ${leftBadge} ${stars}<small>${e.role}</small></span>
           ${trendCell}
@@ -67,7 +67,7 @@
       const awardTop = (e.awards && e.awards[0]) ? `<span class="badge" style="font-size:.66rem;color:${e.awards[0].color};border-color:${otp.hexA(e.awards[0].color,0.3)}"><i class="${e.awards[0].icon}"></i> ${e.awards[0].title}</span>` : "";
       const stars = hasKpi && e.stars > 0 ? `<span style="color:var(--warn);font-size:.8rem;letter-spacing:2px">${"★".repeat(Math.min(e.stars, 5))}</span>` : "";
       return `
-        <a class="card emp-card" href="team/${e.slug}/index.html" data-reveal>
+        <a class="card emp-card" href="../team/${e.slug}/index.html" data-reveal>
           <div class="top">
             <div style="display:flex;gap:12px;align-items:center">
               <span class="avatar">${initials(e.fullName)}</span>
