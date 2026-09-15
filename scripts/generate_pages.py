@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Генерирует персональные страницы team/<id>/index.html из data.js."""
+"""Генерирует персональные страницы team/<slug>/index.html.
+Каждая страница САМОДОСТАТОЧНА: содержит только данные своего сотрудника
+(window.OTP_EMP), без ссылок на общий дашборд и без общего data.js."""
 import json, os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -17,7 +19,7 @@ TEMPLATE = """<!DOCTYPE html>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>__TITLE__</title>
-  <meta name="description" content="__FULLNAME__ — персональная страница роста: KPI, динамика, рекомендации и литература.">
+  <meta name="robots" content="noindex">
   <link rel="icon" type="image/svg+xml" href="../../assets/img/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,25 +34,23 @@ TEMPLATE = """<!DOCTYPE html>
   <div class="bg-grid"></div>
   <header class="nav">
     <div class="wrap nav-inner">
-      <a class="nav-logo" href="../../index.html"><span class="dot"><i class="ph-fill ph-robot" style="color:#03141a"></i></span>Моя команда ОТП</a>
-      <nav class="nav-links"><a href="../../index.html"><i class="ph ph-arrow-left"></i> К команде</a></nav>
+      <span class="nav-logo"><span class="dot"><i class="ph-fill ph-robot" style="color:#03141a"></i></span>Мои результаты</span>
     </div>
   </header>
   <main class="wrap" id="root" style="padding-top:110px;min-height:80vh"></main>
   <footer class="footer">
     <div class="wrap footer-inner">
       <div>
-        <div style="font-weight:600;color:var(--text)">__SITETITLE__</div>
+        <div style="font-weight:600;color:var(--text)">Мои результаты</div>
         <div style="margin-top:4px">__FULLNAME__</div>
       </div>
-      <a class="btn btn-ghost" href="../../index.html" style="font-size:.85rem"><i class="ph ph-arrow-left"></i> На главный дашборд</a>
     </div>
   </footer>
+  <script>window.OTP_EMP = __OTP_EMP__;</script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <script src="../../assets/js/data.js"></script>
   <script src="../../assets/js/common.js"></script>
   <script src="../../assets/js/profile.js"></script>
 </body>
@@ -62,18 +62,25 @@ def main():
     os.makedirs(TEAM_DIR, exist_ok=True)
     n = 0
     for e in data["employees"]:
+        emp_data = {
+            "meta": data["meta"],
+            "metrics": data["metrics"],
+            "months": data["months"],
+            "totalEmployees": len(data["employees"]),
+            "employee": e,
+        }
         html = (TEMPLATE
                 .replace("__ID__", e["id"])
-                .replace("__TITLE__", f'Мои результаты · {e["shortName"]} | Моя команда ОТП')
-                .replace("__FULLNAME__", e["fullName"])
-                .replace("__SITETITLE__", "Мои результаты"))
+                .replace("__OTP_EMP__", json.dumps(emp_data, ensure_ascii=False))
+                .replace("__TITLE__", f'Мои результаты · {e["shortName"]}')
+                .replace("__FULLNAME__", e["fullName"]))
         d = os.path.join(TEAM_DIR, e.get("slug", e["id"]))
         os.makedirs(d, exist_ok=True)
         with open(os.path.join(d, "index.html"), "w", encoding="utf-8") as f:
             f.write(html)
         n += 1
-        print(f"  OK team/{e['id']}/index.html  ({e['siteTitle']})")
-    print(f"\nГотово: {n} страниц -> {TEAM_DIR}")
+        print(f"  OK team/{e.get('slug', e['id'])}/index.html")
+    print(f"\nГотово: {n} страниц (изолированных, без ссылок на общий дашборд)")
 
 if __name__ == "__main__":
     main()

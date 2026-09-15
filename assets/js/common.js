@@ -1,7 +1,7 @@
 /* Общий слой: smooth-scroll, GSAP reveal/parallax, тема Chart.js, хелперы */
 (function () {
   "use strict";
-  const D = window.OTP_DATA || null;
+  const D = window.OTP_DATA || window.OTP_EMP || null;
 
   /* ---------- Lenis smooth scroll (Apple-подобный) ---------- */
   let lenis = null;
@@ -116,7 +116,7 @@
   };
   otp.fmt = (n) => new Intl.NumberFormat("ru-RU").format(Math.round(n));
   otp.rub = (n) => otp.fmt(n) + " ₽";
-  otp.byId = (id) => (D ? D.employees.find((e) => e.id === id) : null);
+  otp.byId = (id) => (D && D.employees ? D.employees.find((e) => e.id === id) : null);
   otp.initials = (name) => {
     const p = name.trim().split(/\s+/);
     return ((p[0] ? p[0][0] : "") + (p[1] ? p[1][0] : "")).toUpperCase();

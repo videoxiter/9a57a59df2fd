@@ -1,11 +1,10 @@
 /* Логика персональной страницы сотрудника */
 (function () {
   "use strict";
-  const D = window.OTP_DATA;
+  const D = window.OTP_EMP;
   const root = document.getElementById("root");
-  const id = document.body.dataset.profile;
-  const emp = otp.byId(id);
-  if (!emp) { root.innerHTML = '<p class="muted" style="padding:60px 0">Сотрудник не найден.</p>'; return; }
+  const emp = D && D.employee;
+  if (!emp) { root.innerHTML = '<p class="muted" style="padding:60px 0">Страница недоступна.</p>'; return; }
 
   const MKEYS = otp.MKEYS;
   const hasKpi = !!emp.current;
@@ -96,7 +95,7 @@
     ? '<span class="badge badge-left"><i class="ph ph-archive"></i> ' + (emp.statusNote || "выбыл") + '</span>'
     : '<span class="badge badge-good"><i class="ph ph-check"></i> в команде</span>';
 
-  const rankTxt = hasKpi ? `место #${emp.rank} из ${D.employees.length}` : "руководитель — KPI не ведётся";
+  const rankTxt = hasKpi ? `место #${emp.rank} из ${D.totalEmployees}` : "руководитель — KPI не ведётся";
   const starsBadge = hasKpi && emp.stars > 0
     ? `<span class="badge" style="color:var(--warn)"><i class="ph-fill ph-star"></i> +${emp.stars} ${emp.stars === 1 ? "звезда" : "звёзды"} за рост</span>` : "";
 
