@@ -10,30 +10,35 @@ window.OTP_DATA = {
     "quality": {
       "label": "Качество",
       "icon": "ph-shield-check",
+      "emoji": "✅",
       "color": "#22d3ee",
       "desc": "Точность выполнения задач, отсутствие возвратов и рекламаций"
     },
     "learnability": {
       "label": "Обучаемость",
       "icon": "ph-graduation-cap",
+      "emoji": "🎓",
       "color": "#a78bfa",
       "desc": "Скорость освоения нового, работа с БЗ, снижение повторных вопросов"
     },
     "initiative": {
       "label": "Инициатива",
       "icon": "ph-rocket-launch",
+      "emoji": "⚡",
       "color": "#fbbf24",
       "desc": "Готовность брать на себя, предлагать улучшения, проактивность"
     },
     "engagement": {
       "label": "Вовлечённость",
       "icon": "ph-users-three",
+      "emoji": "👥",
       "color": "#34d399",
       "desc": "Командность, доступность, помощь коллегам, участие в жизни отдела"
     },
     "discipline": {
       "label": "Требования к работе",
       "icon": "ph-clipboard-text",
+      "emoji": "📋",
       "color": "#fb7185",
       "desc": "Соблюдение регламентов, оформление задач, дисциплина"
     }
@@ -45,7 +50,7 @@ window.OTP_DATA = {
       "title": "Легенда",
       "desc": "Средний KPI 9.0+ за месяц",
       "color": "#fbbf24",
-      "glyph": "9+"
+      "glyph": "🔥"
     },
     {
       "id": "pro",
@@ -53,7 +58,7 @@ window.OTP_DATA = {
       "title": "Профи",
       "desc": "Средний KPI 8.0–8.9",
       "color": "#cbd5e1",
-      "glyph": "8"
+      "glyph": "😎"
     },
     {
       "id": "growing",
@@ -61,7 +66,7 @@ window.OTP_DATA = {
       "title": "Развивающийся",
       "desc": "Средний KPI 7.0–7.9",
       "color": "#d97706",
-      "glyph": "7"
+      "glyph": "📈"
     },
     {
       "id": "starter",
@@ -69,7 +74,7 @@ window.OTP_DATA = {
       "title": "На старте",
       "desc": "Средний KPI ниже 7.0 — есть зона роста",
       "color": "#8b96a8",
-      "glyph": "‹7"
+      "glyph": "🤓"
     },
     {
       "id": "top",
@@ -77,7 +82,7 @@ window.OTP_DATA = {
       "title": "Топ месяца",
       "desc": "1-е место в рейтинге по среднему KPI",
       "color": "#22d3ee",
-      "glyph": "№1"
+      "glyph": "🥇"
     },
     {
       "id": "perfect",
@@ -93,7 +98,7 @@ window.OTP_DATA = {
       "title": "Безупречное качество",
       "desc": "Качество 10/10 — без возвратов и рекламаций",
       "color": "#22d3ee",
-      "glyph": "10"
+      "glyph": "👍"
     },
     {
       "id": "learning",
@@ -101,7 +106,7 @@ window.OTP_DATA = {
       "title": "Гуру обучения",
       "desc": "Обучаемость 10/10 — быстро осваивает новое",
       "color": "#a78bfa",
-      "glyph": "10"
+      "glyph": "📚"
     },
     {
       "id": "initiative",
@@ -109,7 +114,7 @@ window.OTP_DATA = {
       "title": "Мастер инициативы",
       "desc": "Инициатива 10/10 — проактивность и предложения",
       "color": "#fbbf24",
-      "glyph": "10"
+      "glyph": "💡"
     },
     {
       "id": "engagement",
@@ -117,7 +122,7 @@ window.OTP_DATA = {
       "title": "Командный дух",
       "desc": "Вовлечённость 10/10 — командность и помощь коллегам",
       "color": "#34d399",
-      "glyph": "10"
+      "glyph": "🤝"
     },
     {
       "id": "discipline",
@@ -125,7 +130,7 @@ window.OTP_DATA = {
       "title": "Страж дисциплины",
       "desc": "Требования к работе 10/10 — регламенты и порядок",
       "color": "#fb7185",
-      "glyph": "10"
+      "glyph": "🤖"
     },
     {
       "id": "breakthrough",
@@ -133,7 +138,7 @@ window.OTP_DATA = {
       "title": "Прорыв месяца",
       "desc": "Рост среднего KPI на +1 и больше за месяц",
       "color": "#34d399",
-      "glyph": "+1"
+      "glyph": "🚀"
     },
     {
       "id": "stability",
@@ -141,7 +146,7 @@ window.OTP_DATA = {
       "title": "Стабильность",
       "desc": "3+ месяца подряд без падения среднего KPI",
       "color": "#60a5fa",
-      "glyph": "3м"
+      "glyph": "⚓"
     },
     {
       "id": "hero",
@@ -149,7 +154,7 @@ window.OTP_DATA = {
       "title": "Герой-спасатель",
       "desc": "Больше всех выходных смен / переработок за месяц",
       "color": "#f87171",
-      "glyph": "🔥"
+      "glyph": "🦸"
     },
     {
       "id": "changer",
@@ -157,7 +162,7 @@ window.OTP_DATA = {
       "title": "Меняет мир!",
       "desc": "Больше всех изменений в работе или отделе за месяц",
       "color": "#c084fc",
-      "glyph": "✦"
+      "glyph": "🕶️"
     },
     {
       "id": "seller",
@@ -165,7 +170,7 @@ window.OTP_DATA = {
       "title": "Продавец месяца",
       "desc": "Сделал хотя бы одну продажу ИТ-оборудования за месяц",
       "color": "#2dd4bf",
-      "glyph": "₽"
+      "glyph": "💰"
     },
     {
       "id": "budget",
@@ -173,7 +178,7 @@ window.OTP_DATA = {
       "title": "Вне бюджета!",
       "desc": "Сократил ежемесячный расход отдела",
       "color": "#38bdf8",
-      "glyph": "↓"
+      "glyph": "📉"
     }
   ],
   "months": [
@@ -766,7 +771,7 @@ window.OTP_DATA = {
           "title": "Легенда",
           "desc": "Средний KPI 9.0+ за месяц",
           "color": "#fbbf24",
-          "glyph": "9+"
+          "glyph": "🔥"
         },
         {
           "id": "top",
@@ -774,7 +779,7 @@ window.OTP_DATA = {
           "title": "Топ месяца",
           "desc": "1-е место в рейтинге по среднему KPI",
           "color": "#22d3ee",
-          "glyph": "№1"
+          "glyph": "🥇"
         },
         {
           "id": "quality",
@@ -782,7 +787,7 @@ window.OTP_DATA = {
           "title": "Безупречное качество",
           "desc": "Качество 10/10 — без возвратов и рекламаций",
           "color": "#22d3ee",
-          "glyph": "10"
+          "glyph": "👍"
         },
         {
           "id": "learning",
@@ -790,7 +795,7 @@ window.OTP_DATA = {
           "title": "Гуру обучения",
           "desc": "Обучаемость 10/10 — быстро осваивает новое",
           "color": "#a78bfa",
-          "glyph": "10"
+          "glyph": "📚"
         },
         {
           "id": "initiative",
@@ -798,7 +803,7 @@ window.OTP_DATA = {
           "title": "Мастер инициативы",
           "desc": "Инициатива 10/10 — проактивность и предложения",
           "color": "#fbbf24",
-          "glyph": "10"
+          "glyph": "💡"
         },
         {
           "id": "engagement",
@@ -806,7 +811,7 @@ window.OTP_DATA = {
           "title": "Командный дух",
           "desc": "Вовлечённость 10/10 — командность и помощь коллегам",
           "color": "#34d399",
-          "glyph": "10"
+          "glyph": "🤝"
         },
         {
           "id": "discipline",
@@ -814,7 +819,7 @@ window.OTP_DATA = {
           "title": "Страж дисциплины",
           "desc": "Требования к работе 10/10 — регламенты и порядок",
           "color": "#fb7185",
-          "glyph": "10"
+          "glyph": "🤖"
         },
         {
           "id": "perfect",
@@ -830,7 +835,7 @@ window.OTP_DATA = {
           "title": "Стабильность",
           "desc": "3+ месяца подряд без падения среднего KPI",
           "color": "#60a5fa",
-          "glyph": "3м"
+          "glyph": "⚓"
         }
       ]
     },
@@ -1401,7 +1406,7 @@ window.OTP_DATA = {
           "title": "Развивающийся",
           "desc": "Средний KPI 7.0–7.9",
           "color": "#d97706",
-          "glyph": "7"
+          "glyph": "📈"
         },
         {
           "id": "engagement",
@@ -1409,7 +1414,7 @@ window.OTP_DATA = {
           "title": "Командный дух",
           "desc": "Вовлечённость 10/10 — командность и помощь коллегам",
           "color": "#34d399",
-          "glyph": "10"
+          "glyph": "🤝"
         },
         {
           "id": "breakthrough",
@@ -1417,7 +1422,7 @@ window.OTP_DATA = {
           "title": "Прорыв месяца",
           "desc": "Рост среднего KPI на +1 и больше за месяц",
           "color": "#34d399",
-          "glyph": "+1"
+          "glyph": "🚀"
         },
         {
           "id": "stability",
@@ -1425,7 +1430,7 @@ window.OTP_DATA = {
           "title": "Стабильность",
           "desc": "3+ месяца подряд без падения среднего KPI",
           "color": "#60a5fa",
-          "glyph": "3м"
+          "glyph": "⚓"
         }
       ]
     },
@@ -1797,7 +1802,7 @@ window.OTP_DATA = {
           "title": "Профи",
           "desc": "Средний KPI 8.0–8.9",
           "color": "#cbd5e1",
-          "glyph": "8"
+          "glyph": "😎"
         },
         {
           "id": "engagement",
@@ -1805,7 +1810,7 @@ window.OTP_DATA = {
           "title": "Командный дух",
           "desc": "Вовлечённость 10/10 — командность и помощь коллегам",
           "color": "#34d399",
-          "glyph": "10"
+          "glyph": "🤝"
         },
         {
           "id": "stability",
@@ -1813,7 +1818,7 @@ window.OTP_DATA = {
           "title": "Стабильность",
           "desc": "3+ месяца подряд без падения среднего KPI",
           "color": "#60a5fa",
-          "glyph": "3м"
+          "glyph": "⚓"
         }
       ]
     },
@@ -2140,7 +2145,7 @@ window.OTP_DATA = {
           "title": "Профи",
           "desc": "Средний KPI 8.0–8.9",
           "color": "#cbd5e1",
-          "glyph": "8"
+          "glyph": "😎"
         },
         {
           "id": "initiative",
@@ -2148,7 +2153,7 @@ window.OTP_DATA = {
           "title": "Мастер инициативы",
           "desc": "Инициатива 10/10 — проактивность и предложения",
           "color": "#fbbf24",
-          "glyph": "10"
+          "glyph": "💡"
         }
       ]
     },
@@ -2520,7 +2525,7 @@ window.OTP_DATA = {
           "title": "Развивающийся",
           "desc": "Средний KPI 7.0–7.9",
           "color": "#d97706",
-          "glyph": "7"
+          "glyph": "📈"
         }
       ]
     },
@@ -2940,7 +2945,7 @@ window.OTP_DATA = {
           "title": "Развивающийся",
           "desc": "Средний KPI 7.0–7.9",
           "color": "#d97706",
-          "glyph": "7"
+          "glyph": "📈"
         }
       ]
     },
@@ -3167,7 +3172,7 @@ window.OTP_DATA = {
           "title": "Легенда",
           "desc": "Средний KPI 9.0+ за месяц",
           "color": "#fbbf24",
-          "glyph": "9+"
+          "glyph": "🔥"
         },
         {
           "id": "quality",
@@ -3175,7 +3180,7 @@ window.OTP_DATA = {
           "title": "Безупречное качество",
           "desc": "Качество 10/10 — без возвратов и рекламаций",
           "color": "#22d3ee",
-          "glyph": "10"
+          "glyph": "👍"
         },
         {
           "id": "learning",
@@ -3183,7 +3188,7 @@ window.OTP_DATA = {
           "title": "Гуру обучения",
           "desc": "Обучаемость 10/10 — быстро осваивает новое",
           "color": "#a78bfa",
-          "glyph": "10"
+          "glyph": "📚"
         },
         {
           "id": "initiative",
@@ -3191,7 +3196,7 @@ window.OTP_DATA = {
           "title": "Мастер инициативы",
           "desc": "Инициатива 10/10 — проактивность и предложения",
           "color": "#fbbf24",
-          "glyph": "10"
+          "glyph": "💡"
         },
         {
           "id": "engagement",
@@ -3199,7 +3204,7 @@ window.OTP_DATA = {
           "title": "Командный дух",
           "desc": "Вовлечённость 10/10 — командность и помощь коллегам",
           "color": "#34d399",
-          "glyph": "10"
+          "glyph": "🤝"
         },
         {
           "id": "discipline",
@@ -3207,7 +3212,7 @@ window.OTP_DATA = {
           "title": "Страж дисциплины",
           "desc": "Требования к работе 10/10 — регламенты и порядок",
           "color": "#fb7185",
-          "glyph": "10"
+          "glyph": "🤖"
         },
         {
           "id": "perfect",
@@ -3223,7 +3228,7 @@ window.OTP_DATA = {
           "title": "Стабильность",
           "desc": "3+ месяца подряд без падения среднего KPI",
           "color": "#60a5fa",
-          "glyph": "3м"
+          "glyph": "⚓"
         }
       ]
     },
@@ -3600,7 +3605,7 @@ window.OTP_DATA = {
           "title": "Профи",
           "desc": "Средний KPI 8.0–8.9",
           "color": "#cbd5e1",
-          "glyph": "8"
+          "glyph": "😎"
         },
         {
           "id": "engagement",
@@ -3608,7 +3613,7 @@ window.OTP_DATA = {
           "title": "Командный дух",
           "desc": "Вовлечённость 10/10 — командность и помощь коллегам",
           "color": "#34d399",
-          "glyph": "10"
+          "glyph": "🤝"
         },
         {
           "id": "breakthrough",
@@ -3616,7 +3621,7 @@ window.OTP_DATA = {
           "title": "Прорыв месяца",
           "desc": "Рост среднего KPI на +1 и больше за месяц",
           "color": "#34d399",
-          "glyph": "+1"
+          "glyph": "🚀"
         },
         {
           "id": "stability",
@@ -3624,7 +3629,7 @@ window.OTP_DATA = {
           "title": "Стабильность",
           "desc": "3+ месяца подряд без падения среднего KPI",
           "color": "#60a5fa",
-          "glyph": "3м"
+          "glyph": "⚓"
         }
       ]
     },
@@ -3904,7 +3909,7 @@ window.OTP_DATA = {
           "title": "Легенда",
           "desc": "Средний KPI 9.0+ за месяц",
           "color": "#fbbf24",
-          "glyph": "9+"
+          "glyph": "🔥"
         },
         {
           "id": "quality",
@@ -3912,7 +3917,7 @@ window.OTP_DATA = {
           "title": "Безупречное качество",
           "desc": "Качество 10/10 — без возвратов и рекламаций",
           "color": "#22d3ee",
-          "glyph": "10"
+          "glyph": "👍"
         },
         {
           "id": "learning",
@@ -3920,7 +3925,7 @@ window.OTP_DATA = {
           "title": "Гуру обучения",
           "desc": "Обучаемость 10/10 — быстро осваивает новое",
           "color": "#a78bfa",
-          "glyph": "10"
+          "glyph": "📚"
         },
         {
           "id": "engagement",
@@ -3928,7 +3933,7 @@ window.OTP_DATA = {
           "title": "Командный дух",
           "desc": "Вовлечённость 10/10 — командность и помощь коллегам",
           "color": "#34d399",
-          "glyph": "10"
+          "glyph": "🤝"
         },
         {
           "id": "discipline",
@@ -3936,7 +3941,7 @@ window.OTP_DATA = {
           "title": "Страж дисциплины",
           "desc": "Требования к работе 10/10 — регламенты и порядок",
           "color": "#fb7185",
-          "glyph": "10"
+          "glyph": "🤖"
         },
         {
           "id": "stability",
@@ -3944,7 +3949,7 @@ window.OTP_DATA = {
           "title": "Стабильность",
           "desc": "3+ месяца подряд без падения среднего KPI",
           "color": "#60a5fa",
-          "glyph": "3м"
+          "glyph": "⚓"
         }
       ]
     }

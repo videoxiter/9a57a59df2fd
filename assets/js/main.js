@@ -60,7 +60,7 @@
       const mini = hasKpi
         ? MKEYS.map((k) => {
             const m = D.metrics[k];
-            return `<div class="mm"><i class="${m.icon}" style="color:${m.color}"></i><div class="v">${e.current[k]}</div><div class="l">${m.label.split(" ")[0]}</div></div>`;
+            return `<div class="mm"><span style="font-size:1.15rem;line-height:1">${m.emoji || ""}</span><div class="v">${e.current[k]}</div><div class="l">${m.label.split(" ")[0]}</div></div>`;
           }).join("")
         : '<div class="mm" style="grid-column:1/-1;color:var(--muted);padding:12px"><i class="ph ph-crown"></i> KPI не ведётся — руководитель</div>';
       const leftTag = e.status === "left" ? '<span class="badge badge-left" style="font-size:.68rem">выбыл</span>' : "";

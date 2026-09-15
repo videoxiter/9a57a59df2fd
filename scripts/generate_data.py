@@ -14,15 +14,15 @@ OUT = os.path.join(ROOT, "assets", "js", "data.js")
 MONTH_LABEL = {"2026-04": "Апр 2026", "2026-05": "Май 2026", "2026-06": "Июн 2026", "2026-07": "Июл 2026"}
 
 METRICS = {
-    "quality":      {"label": "Качество",       "icon": "ph-shield-check", "color": "#22d3ee",
+    "quality":      {"label": "Качество",       "icon": "ph-shield-check", "emoji": "✅", "color": "#22d3ee",
                      "desc": "Точность выполнения задач, отсутствие возвратов и рекламаций"},
-    "learnability": {"label": "Обучаемость",    "icon": "ph-graduation-cap", "color": "#a78bfa",
+    "learnability": {"label": "Обучаемость",    "icon": "ph-graduation-cap", "emoji": "🎓", "color": "#a78bfa",
                      "desc": "Скорость освоения нового, работа с БЗ, снижение повторных вопросов"},
-    "initiative":   {"label": "Инициатива",     "icon": "ph-rocket-launch", "color": "#fbbf24",
+    "initiative":   {"label": "Инициатива",     "icon": "ph-rocket-launch", "emoji": "⚡", "color": "#fbbf24",
                      "desc": "Готовность брать на себя, предлагать улучшения, проактивность"},
-    "engagement":   {"label": "Вовлечённость",  "icon": "ph-users-three", "color": "#34d399",
+    "engagement":   {"label": "Вовлечённость",  "icon": "ph-users-three", "emoji": "👥", "color": "#34d399",
                      "desc": "Командность, доступность, помощь коллегам, участие в жизни отдела"},
-    "discipline":   {"label": "Требования к работе", "icon": "ph-clipboard-text", "color": "#fb7185",
+    "discipline":   {"label": "Требования к работе", "icon": "ph-clipboard-text", "emoji": "📋", "color": "#fb7185",
                      "desc": "Соблюдение регламентов, оформление задач, дисциплина"},
 }
 MKEYS = list(METRICS.keys())
@@ -330,23 +330,23 @@ def gen_recommendations(negatives, kpi):
 
 # ---------- геймификация ----------
 AWARDS_CATALOG = [
-    {"id": "legend",    "icon": "ph-trophy",         "title": "Легенда",            "desc": "Средний KPI 9.0+ за месяц", "color": "#fbbf24", "glyph": "9+"},
-    {"id": "pro",       "icon": "ph-medal",          "title": "Профи",              "desc": "Средний KPI 8.0–8.9", "color": "#cbd5e1", "glyph": "8"},
-    {"id": "growing",   "icon": "ph-medal",          "title": "Развивающийся",      "desc": "Средний KPI 7.0–7.9", "color": "#d97706", "glyph": "7"},
-    {"id": "starter",   "icon": "ph-seedling",       "title": "На старте",          "desc": "Средний KPI ниже 7.0 — есть зона роста", "color": "#8b96a8", "glyph": "‹7"},
-    {"id": "top",       "icon": "ph-crown",          "title": "Топ месяца",         "desc": "1-е место в рейтинге по среднему KPI", "color": "#22d3ee", "glyph": "№1"},
+    {"id": "legend",    "icon": "ph-trophy",         "title": "Легенда",            "desc": "Средний KPI 9.0+ за месяц", "color": "#fbbf24", "glyph": "🔥"},
+    {"id": "pro",       "icon": "ph-medal",          "title": "Профи",              "desc": "Средний KPI 8.0–8.9", "color": "#cbd5e1", "glyph": "😎"},
+    {"id": "growing",   "icon": "ph-medal",          "title": "Развивающийся",      "desc": "Средний KPI 7.0–7.9", "color": "#d97706", "glyph": "📈"},
+    {"id": "starter",   "icon": "ph-seedling",       "title": "На старте",          "desc": "Средний KPI ниже 7.0 — есть зона роста", "color": "#8b96a8", "glyph": "🤓"},
+    {"id": "top",       "icon": "ph-crown",          "title": "Топ месяца",         "desc": "1-е место в рейтинге по среднему KPI", "color": "#22d3ee", "glyph": "🥇"},
     {"id": "perfect",   "icon": "ph-star-four",      "title": "Идеальная пятёрка",  "desc": "Все 5 метрик = 10/10", "color": "#fbbf24", "glyph": "5"},
-    {"id": "quality",   "icon": "ph-shield-check",   "title": "Безупречное качество", "desc": "Качество 10/10 — без возвратов и рекламаций", "color": "#22d3ee", "glyph": "10"},
-    {"id": "learning",  "icon": "ph-graduation-cap", "title": "Гуру обучения",      "desc": "Обучаемость 10/10 — быстро осваивает новое", "color": "#a78bfa", "glyph": "10"},
-    {"id": "initiative","icon": "ph-rocket-launch",  "title": "Мастер инициативы",  "desc": "Инициатива 10/10 — проактивность и предложения", "color": "#fbbf24", "glyph": "10"},
-    {"id": "engagement","icon": "ph-users-three",    "title": "Командный дух",      "desc": "Вовлечённость 10/10 — командность и помощь коллегам", "color": "#34d399", "glyph": "10"},
-    {"id": "discipline","icon": "ph-clipboard-text", "title": "Страж дисциплины",   "desc": "Требования к работе 10/10 — регламенты и порядок", "color": "#fb7185", "glyph": "10"},
-    {"id": "breakthrough","icon": "ph-trend-up",     "title": "Прорыв месяца",      "desc": "Рост среднего KPI на +1 и больше за месяц", "color": "#34d399", "glyph": "+1"},
-    {"id": "stability", "icon": "ph-arrows-clockwise","title": "Стабильность",      "desc": "3+ месяца подряд без падения среднего KPI", "color": "#60a5fa", "glyph": "3м"},
-    {"id": "hero",      "icon": "ph-fire-extinguisher","title": "Герой-спасатель",  "desc": "Больше всех выходных смен / переработок за месяц", "color": "#f87171", "glyph": "🔥"},
-    {"id": "changer",   "icon": "ph-sparkle",        "title": "Меняет мир!",        "desc": "Больше всех изменений в работе или отделе за месяц", "color": "#c084fc", "glyph": "✦"},
-    {"id": "seller",    "icon": "ph-hand-coins",     "title": "Продавец месяца",   "desc": "Сделал хотя бы одну продажу ИТ-оборудования за месяц", "color": "#2dd4bf", "glyph": "₽"},
-    {"id": "budget",    "icon": "ph-piggy-bank",     "title": "Вне бюджета!",      "desc": "Сократил ежемесячный расход отдела", "color": "#38bdf8", "glyph": "↓"},
+    {"id": "quality",   "icon": "ph-shield-check",   "title": "Безупречное качество", "desc": "Качество 10/10 — без возвратов и рекламаций", "color": "#22d3ee", "glyph": "👍"},
+    {"id": "learning",  "icon": "ph-graduation-cap", "title": "Гуру обучения",      "desc": "Обучаемость 10/10 — быстро осваивает новое", "color": "#a78bfa", "glyph": "📚"},
+    {"id": "initiative","icon": "ph-rocket-launch",  "title": "Мастер инициативы",  "desc": "Инициатива 10/10 — проактивность и предложения", "color": "#fbbf24", "glyph": "💡"},
+    {"id": "engagement","icon": "ph-users-three",    "title": "Командный дух",      "desc": "Вовлечённость 10/10 — командность и помощь коллегам", "color": "#34d399", "glyph": "🤝"},
+    {"id": "discipline","icon": "ph-clipboard-text", "title": "Страж дисциплины",   "desc": "Требования к работе 10/10 — регламенты и порядок", "color": "#fb7185", "glyph": "🤖"},
+    {"id": "breakthrough","icon": "ph-trend-up",     "title": "Прорыв месяца",      "desc": "Рост среднего KPI на +1 и больше за месяц", "color": "#34d399", "glyph": "🚀"},
+    {"id": "stability", "icon": "ph-arrows-clockwise","title": "Стабильность",      "desc": "3+ месяца подряд без падения среднего KPI", "color": "#60a5fa", "glyph": "⚓"},
+    {"id": "hero",      "icon": "ph-fire-extinguisher","title": "Герой-спасатель",  "desc": "Больше всех выходных смен / переработок за месяц", "color": "#f87171", "glyph": "🦸"},
+    {"id": "changer",   "icon": "ph-sparkle",        "title": "Меняет мир!",        "desc": "Больше всех изменений в работе или отделе за месяц", "color": "#c084fc", "glyph": "🕶️"},
+    {"id": "seller",    "icon": "ph-hand-coins",     "title": "Продавец месяца",   "desc": "Сделал хотя бы одну продажу ИТ-оборудования за месяц", "color": "#2dd4bf", "glyph": "💰"},
+    {"id": "budget",    "icon": "ph-piggy-bank",     "title": "Вне бюджета!",      "desc": "Сократил ежемесячный расход отдела", "color": "#38bdf8", "glyph": "📉"},
 ]
 CATALOG_BY_ID = {a["id"]: a for a in AWARDS_CATALOG}
 

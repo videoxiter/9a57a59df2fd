@@ -15,8 +15,6 @@ const { chromium } = require("playwright");
   console.log("HOME title=" + await page.title());
   console.log("LB_ROWS=" + await page.locator(".lb-row").count());
   console.log("EMP_CARDS=" + await page.locator(".emp-card").count());
-  const lbText = await page.locator(".lb-row").first().textContent();
-  console.log("LB_HAS_LVL=" + lbText.includes("LVL"));
   console.log("HOME_ERRORS=" + JSON.stringify(errors));
 
   // ===== профиль с KPI (Фролов) =====
@@ -25,19 +23,20 @@ const { chromium } = require("playwright");
   await page.waitForTimeout(4000);
   const bodyText = await page.locator("body").textContent();
   console.log("\nFROLOV title=" + await page.title());
-  console.log("H1=" + (await page.locator("h1").first().textContent()).trim());
   console.log("HAS_RANK_POSITION=" + /место\s*#/.test(bodyText));
+  console.log("HERO_HAS_LVL=" + bodyText.includes("LVL"));
+  console.log("HERO_HAS_PROGRESS=" + bodyText.includes("до след."));
+  console.log("HERO_HAS_KPI_LABEL=" + bodyText.includes("средний KPI"));
   console.log("AWARD_TILES=" + await page.locator(".awards-row .award-tile").count());
-  console.log("MEDALS=" + await page.locator(".awards-row .medal-glyph").count());
   console.log("STAR_MEDAL=" + await page.locator(".awards-row .star-medal").count());
-  console.log("LVL_BADGE=" + (await page.locator(".lvl-badge").first().textContent()).trim());
-  const badges = await page.locator(".profile-hero .badge").allTextContents();
-  console.log("HERO_BADGES=" + JSON.stringify(badges));
+  const glyphs = await page.locator(".awards-row .medal-glyph").allTextContents();
+  console.log("MEDAL_GLYPHS=" + JSON.stringify(glyphs));
+  const kpiEmoji = await page.locator(".metric-tile .ic").allTextContents();
+  console.log("KPI_EMOJIS=" + JSON.stringify(kpiEmoji));
   console.log("STEPS=" + await page.locator(".step").count());
   console.log("ZONES=" + await page.locator(".step .zone").count());
   console.log("RES_EXT_LINKS=" + await page.locator("a.book[href^='http']").count());
   console.log("INTERNAL_LINKS=" + await page.locator("a[data-internal]").count());
-  console.log("HASH_LINKS=" + await page.locator("a[href='#']").count());
   // справочник
   await page.locator("#glossary-toggle").click();
   await page.waitForTimeout(300);
@@ -50,6 +49,7 @@ const { chromium } = require("playwright");
   console.log("GLOSSARY_HAS_CHANGER=" + glossaryText.includes("Меняет мир"));
   console.log("GLOSSARY_HAS_SELLER=" + glossaryText.includes("Продавец месяца"));
   console.log("GLOSSARY_HAS_BUDGET=" + glossaryText.includes("Вне бюджета"));
+  // бонус fallback (у Фролова деньги есть, проверим что секция рендерится)
   console.log("FROLOV_ERRORS=" + JSON.stringify(errors));
 
   // ===== профиль без KPI (Яковленков) =====
@@ -59,7 +59,7 @@ const { chromium } = require("playwright");
   const yakText = await page.locator("body").textContent();
   console.log("\nYAK title=" + await page.title());
   console.log("HAS_RANK_POSITION=" + /место\s*#/.test(yakText));
-  console.log("LVL_BADGE=" + (await page.locator(".lvl-badge").first().textContent()).trim());
+  console.log("HERO_HAS_LVL=" + yakText.includes("LVL"));
   console.log("AWARD_TILES=" + await page.locator(".awards-row .award-tile").count());
   console.log("YAK_ERRORS=" + JSON.stringify(errors));
 

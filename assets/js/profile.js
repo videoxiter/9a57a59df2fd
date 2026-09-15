@@ -29,8 +29,6 @@
   const lvl = emp.lvl || 1;
   const inLvl = emp.stars_in_level || 0;
   const delta = emp.stars_delta || 0;
-  const lvlBadge = `<span class="badge lvl-badge"><i class="ph ph-shield-star"></i> LVL ${lvl}</span>`;
-  const starsBadge = hasKpi ? `<span class="badge" style="color:var(--warn)"><i class="ph-fill ph-star"></i> ${inLvl}/10 ⭐ до LVL ${lvl + 1}</span>` : "";
   const deltaBadge = delta > 0
     ? `<span class="badge badge-good"><i class="ph-fill ph-star"></i> +${delta} ⭐ за месяц</span>`
     : delta < 0
@@ -63,7 +61,7 @@
           const m = D.metrics[k];
           const d = metricDelta(i, k);
           const dc = d.c === "up" ? "good" : d.c === "down" ? "bad" : "muted";
-          return `<div class="metric-tile"><span class="ic" style="background:${otp.hexA(m.color, 0.12)};color:${m.color}"><i class="${m.icon}"></i></span><div style="flex:1"><div class="name">${m.label}</div><div class="val" style="color:${m.color}">${cur[k]}<span style="font-size:.8rem;color:var(--${dc})"> ${d.s}</span></div></div></div>`;
+          return `<div class="metric-tile"><span class="ic" style="background:${otp.hexA(m.color, 0.12)};color:${m.color}"><span style="font-size:1.3rem;line-height:1">${m.emoji || ""}</span></span><div style="flex:1"><div class="name">${m.label}</div><div class="val" style="color:${m.color}">${cur[k]}<span style="font-size:.8rem;color:var(--${dc})"> ${d.s}</span></div></div></div>`;
         }).join("")
       : `<div class="demo-banner" style="margin:0;grid-column:1/-1;border-color:rgba(34,211,238,.28);color:var(--accent-2)"><i class="ph ph-info"></i> За ${cur.month} KPI не зафиксирован.</div>`;
 
@@ -73,7 +71,7 @@
     const money = cur.money || [];
     document.getElementById("bonus-items").innerHTML = money.length
       ? money.map((b) => `<div class="bonus-item"><span class="amt">+${otp.fmt(b.amount)} ₽</span><div><div class="d">${b.text}</div>${tickets(b.text).length ? `<div class="v">${tLinks(b.text)}</div>` : ""}</div></div>`).join("")
-      : `<p class="muted">За ${cur.month} детализация бонуса не указана.</p>`;
+      : `<p class="muted">Детализация бонуса за ${cur.month} — в процессе разработки.</p>`;
 
     // сильные стороны / зоны роста
     const pos = cur.positives || [];
@@ -121,15 +119,16 @@
           <p class="tag">${emp.tagline}</p>
           <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px">
             ${statusBadge}
-            ${lvlBadge}
-            ${starsBadge}
             ${deltaBadge}
             ${hasKpi ? `<span class="badge"><i class="ph ph-${trendIcon}"></i> тренд ${trend.delta > 0 ? "+" + trend.delta : trend.delta} за период</span>` : ""}
           </div>
         </div>
-        <div style="text-align:center;min-width:120px">
-          <div style="font-family:var(--font-mono);font-size:.8rem;color:var(--muted)">средний KPI</div>
-          <div style="font-family:var(--font-mono);font-size:3rem;font-weight:700;color:var(--accent-2);line-height:1">${hasKpi ? emp.avg.toFixed(1) : "—"}</div>
+        <div style="text-align:center;min-width:150px">
+          <div style="font-family:var(--font-mono);font-size:.72rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase">уровень</div>
+          <div style="font-family:var(--font-mono);font-size:2.6rem;font-weight:800;line-height:1;background:linear-gradient(135deg,var(--accent),#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent">LVL ${lvl}</div>
+          <div style="font-size:.82rem;color:var(--warn);margin-top:6px"><i class="ph-fill ph-star"></i> ${inLvl}/10 ⭐ до след.</div>
+          <div style="margin-top:14px;font-family:var(--font-mono);font-size:.72rem;color:var(--muted)">средний KPI</div>
+          <div style="font-family:var(--font-mono);font-size:2rem;font-weight:700;color:var(--accent-2);line-height:1">${hasKpi ? emp.avg.toFixed(1) : "—"}</div>
         </div>
       </div>
     </section>
