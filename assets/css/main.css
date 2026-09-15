@@ -377,6 +377,20 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
 }
 .fact-line i { color: var(--accent); margin-right: 3px; }
 
+/* --- переключатель месяцев --- */
+.month-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.month-tab {
+  padding: 8px 16px; border-radius: var(--radius-pill); cursor: pointer;
+  background: var(--card); border: 1px solid var(--border); color: var(--muted);
+  font-family: var(--font-mono); font-size: .84rem; transition: all .2s;
+}
+.month-tab:hover { border-color: var(--accent-dim); color: var(--text); }
+.month-tab.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+  color: #03141a; border-color: transparent; font-weight: 700;
+  box-shadow: 0 4px 16px -4px rgba(34,211,238,.5);
+}
+
 /* --- reduced motion --- */
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }

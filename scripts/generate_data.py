@@ -329,6 +329,14 @@ def build():
             for key in MKEYS:
                 row[key] = (k.get(key) if k else None)
             row["bonus"] = d.get("bonus")
+            negs = d.get("negatives", [])
+            row["money"] = d.get("money", [])
+            row["negatives"] = negs
+            row["positives"] = d.get("positives", [])
+            if eid == "yakovlenkov":
+                row["recommendations"] = content.get("custom", {}).get("recommendations", [])
+            else:
+                row["recommendations"] = gen_recommendations(negs, k)
             history.append(row)
         last_with_kpi = [h for h in history if h.get("quality") is not None]
         current = {key: last_with_kpi[-1][key] for key in MKEYS} if last_with_kpi else None
