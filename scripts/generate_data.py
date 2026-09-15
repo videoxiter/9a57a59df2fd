@@ -353,47 +353,102 @@ CATALOG_BY_ID = {a["id"]: a for a in AWARDS_CATALOG}
 def _award_objects(ids):
     return [dict(CATALOG_BY_ID[i]) for i in ids if i in CATALOG_BY_ID]
 
-def _stable(emp):
-    hist = [h for h in emp["history"] if h.get("quality") is not None]
-    if len(hist) < 3:
-        return False
-    avgs = [sum(h[k] for k in MKEYS) / 5 for h in hist[-3:]]
-    return all(avgs[i] <= avgs[i + 1] for i in range(len(avgs) - 1))
+STRENGTH_PHRASES = {
+    "quality": "Задачи делаешь сразу верно — без возвратов и рекламаций",
+    "learnability": "Быстро осваиваешь новое и не повторяешь одних и тех же ошибок",
+    "initiative": "Сам берёшь задачи и предлагаешь улучшения — проактивность",
+    "engagement": "Командный игрок: на тебя можно положиться, помогаешь коллегам",
+    "discipline": "Регламенты и порядок держишь чётко, без напоминаний",
+}
 
-def awards_for(emp):
-    ids = []
-    kpi = emp.get("current")
+
+def gen_strengths(row, kpi):
+    """Сильные стороны (что получается круто) — из высоких метрик и фактов."""
+    items = []
     if kpi:
-        avg = emp["avg"]
-        if avg >= 9:
-            ids.append("legend")
-        elif avg >= 8:
-            ids.append("pro")
-        elif avg >= 7:
-            ids.append("growing")
-        else:
-            ids.append("starter")
-        if emp.get("rank") == 1:
-            ids.append("top")
-        if kpi.get("quality") == 10:
-            ids.append("quality")
-        if kpi.get("learnability") == 10:
-            ids.append("learning")
-        if kpi.get("initiative") == 10:
-            ids.append("initiative")
-        if kpi.get("engagement") == 10:
-            ids.append("engagement")
-        if kpi.get("discipline") == 10:
-            ids.append("discipline")
-        if all(v == 10 for v in kpi.values()):
-            ids.append("perfect")
-        if emp.get("growth_delta", 0) >= 1:
-            ids.append("breakthrough")
-        if _stable(emp):
+        for key in MKEYS:
+            if kpi[key] == 10:
+                items.append([f"{METRICS[key]['label']} 10/10", STRENGTH_PHRASES[key]])
+        for key in MKEYS:
+            if 8 <= kpi[key] < 10:
+                items.append([f"{METRICS[key]['label']} {kpi[key]}/10", STRENGTH_PHRASES[key]])
+    for p in row.get("positives", []):
+        items.append([p["text"], "Отмечено руководителем за месяц"])
+    return items[:6]
+
+
+def gen_growth(negatives):
+    """Зоны роста — что поднять (зона) + как прокачать + факт-доказательство (тикет)."""
+    items = []
+    for n in negatives:
+        text = n["text"].lower()
+        zone, method = "Техническая глубина", "Разбирай сложные кейсы до корневой причины и фиксируй решение в БЗ"
+        for key, kws, z, meth, _ in THEMES:
+            if any(k in text for k in kws):
+                zone, method = z, meth
+                break
+        items.append({"zone": zone, "advice": method, "fact": n["text"],
+                      "ticket": tickets_of(n["text"]) or ""})
+    return items
+
+
+def awards_for_row(history, i, rank, manual_ids):
+    """Награды за конкретный месяц (i) по KPI этого месяца."""
+    row = history[i]
+    kpi = {k: row[k] for k in MKEYS}
+    ids = list(manual_ids)
+    if any(v is None for v in kpi.values()):
+        return _award_objects(ids)
+    avg = sum(kpi.values()) / 5
+    if avg >= 9:
+        ids.append("legend")
+    elif avg >= 8:
+        ids.append("pro")
+    elif avg >= 7:
+        ids.append("growing")
+    else:
+        ids.append("starter")
+    if rank == 1:
+        ids.append("top")
+    for key, aid in (("quality", "quality"), ("learnability", "learning"), ("initiative", "initiative"),
+                     ("engagement", "engagement"), ("discipline", "discipline")):
+        if kpi[key] == 10:
+            ids.append(aid)
+    if all(v == 10 for v in kpi.values()):
+        ids.append("perfect")
+    if i > 0:
+        prev = history[i - 1]
+        if all(prev[k] is not None for k in MKEYS):
+            da = avg - sum(prev[k] for k in MKEYS) / 5
+            if da >= 1:
+                ids.append("breakthrough")
+    if i >= 2:
+        avgs, ok = [], True
+        for j in range(i - 2, i + 1):
+            if any(history[j][k] is None for k in MKEYS):
+                ok = False
+                break
+            avgs.append(sum(history[j][k] for k in MKEYS) / 5)
+        if ok and all(avgs[a] <= avgs[a + 1] for a in range(2)):
             ids.append("stability")
-    # ручные награды (заполняет руководитель ежемесячно)
-    ids += emp.get("manual_awards", [])
     return _award_objects(ids)
+
+
+def accumulate_awards(history):
+    """Накопленные награды: уникальные по id, с месяцами получения и счётчиком."""
+    order = {a["id"]: i for i, a in enumerate(AWARDS_CATALOG)}
+    acc = {}
+    for row in history:
+        for a in row.get("awards", []):
+            if a["id"] not in acc:
+                x = dict(a)
+                x["months"] = [row["month"]]
+                x["count"] = 1
+                acc[a["id"]] = x
+            else:
+                acc[a["id"]]["months"].append(row["month"])
+                acc[a["id"]]["count"] += 1
+    return sorted(acc.values(), key=lambda x: order.get(x["id"], 99))
 
 # ---------- стабильные неугadываемые слаги (URL персональных страниц) ----------
 SLUGS = {
@@ -404,11 +459,11 @@ SLUGS = {
 }
 
 # ---------- ручные награды (заполняет руководитель ежемесячно) ----------
-# Ключ — id сотрудника, значение — список id наград из AWARDS_CATALOG.
+# Ключ — id сотрудника, значение — {месяц "YYYY-MM": [id наград из AWARDS_CATALOG]}.
 MANUAL_AWARDS = {
-    # "frolov": ["hero", "changer"],
-    # "bolgov": ["seller"],
-    # "yakovlenkov": ["budget"],
+    # "frolov": {"2026-07": ["hero", "changer"]},
+    # "bolgov": {"2026-07": ["seller"]},
+    # "yakovlenkov": {"2026-07": ["budget"]},
 }
 
 # ---------- звёзды и уровень ----------
@@ -440,9 +495,10 @@ def build():
     employees = []
     for eid, content in CONTENT.items():
         rd = real.get(eid, {"months": {}})
+        custom = content.get("custom", {})
         history = []
         for m in months:
-            row = {"month": MONTH_LABEL.get(m, m)}
+            row = {"key": m, "month": MONTH_LABEL.get(m, m)}
             d = rd["months"].get(m, {})
             k = d.get("kpi")
             for key in MKEYS:
@@ -452,26 +508,49 @@ def build():
             row["money"] = d.get("money", [])
             row["negatives"] = negs
             row["positives"] = d.get("positives", [])
+            row["kpi"] = {key: row[key] for key in MKEYS}
+            row["avg"] = round(sum(v for v in row["kpi"].values() if v is not None) / 5, 2) if k else None
+            row["rank"] = None
             if eid == "yakovlenkov":
-                row["recommendations"] = content.get("custom", {}).get("recommendations", [])
+                row["strengths"] = custom.get("strengths", [])
+                row["growth"] = [{"zone": g.get("problem", ""), "advice": g.get("effect", ""),
+                                  "fact": g.get("cause", ""), "ticket": g.get("ticket", "")}
+                                 for g in custom.get("growth", [])]
+                row["recommendations"] = custom.get("recommendations", [])
             else:
+                row["strengths"] = gen_strengths(row, k)
+                row["growth"] = gen_growth(negs)
                 row["recommendations"] = gen_recommendations(negs, k)
             history.append(row)
+        employees.append({"eid": eid, "content": content, "history": history})
+
+    # рейтинг по каждому месяцу (по avg, без KPI — в конец)
+    for mi in range(len(months)):
+        with_kpi = [e for e in employees if e["history"][mi]["avg"] is not None]
+        ranked = sorted(with_kpi, key=lambda e: -e["history"][mi]["avg"])
+        for pos, e in enumerate(ranked, 1):
+            e["history"][mi]["rank"] = pos
+
+    # награды за каждый месяц + накопление
+    result = []
+    for e in employees:
+        eid, content, history = e["eid"], e["content"], e["history"]
+        for i, row in enumerate(history):
+            manual = MANUAL_AWARDS.get(eid, {}).get(row["key"], [])
+            row["awards"] = awards_for_row(history, i, row["rank"], manual)
+
         last_with_kpi = [h for h in history if h.get("quality") is not None]
         current = {key: last_with_kpi[-1][key] for key in MKEYS} if last_with_kpi else None
         avg = round(sum(current.values()) / 5, 2) if current else None
-        # рост среднего vs предыдущий месяц с KPI
         growth_delta = 0
         if len(last_with_kpi) >= 2:
             a = sum(last_with_kpi[-2][k] for k in MKEYS) / 5
             b = sum(last_with_kpi[-1][k] for k in MKEYS) / 5
             growth_delta = round(b - a, 2)
-        # звёзды и уровень (кумулятивно по месяцам)
         stars_total, stars_delta = compute_stars(history)
-        latest = rd["months"].get(months[-1], {})
+        latest = history[-1]
         emp = {
-            "id": eid,
-            "slug": SLUGS.get(eid, eid),
+            "id": eid, "slug": SLUGS.get(eid, eid),
             "fullName": content["fullName"], "shortName": content["shortName"],
             "role": content["role"], "siteTitle": content["siteTitle"],
             "tagline": content["tagline"], "personal": content["personal"],
@@ -482,23 +561,18 @@ def build():
             "current": current, "avg": avg, "growth_delta": growth_delta,
             "stars": stars_total, "stars_delta": stars_delta,
             "lvl": 1 + stars_total // 10, "stars_in_level": stars_total % 10,
-            "manual_awards": MANUAL_AWARDS.get(eid, []),
             "bonuses": latest.get("money", []),
-            "strengths": content.get("custom", {}).get("strengths", []) or
-                          [[x["text"], "Отмечено руководителем"] for x in latest.get("positives", [])][:4],
-            "growth": content.get("custom", {}).get("growth", []) or
-                      [{"problem": n["text"], "ticket": tickets_of(n["text"]) or "—"} for n in latest.get("negatives", [])][:8],
-            "recommendations": content.get("custom", {}).get("recommendations", []) or
-                               gen_recommendations(latest.get("negatives", []), current),
+            "strengths": latest.get("strengths", []),
+            "growth": latest.get("growth", []),
+            "recommendations": latest.get("recommendations", []),
+            "awards": accumulate_awards(history),
         }
-        employees.append(emp)
+        result.append(emp)
 
-    # рейтинг по avg (у кого нет KPI — в конец)
-    ranked = sorted(employees, key=lambda e: -(e["avg"] if e["avg"] is not None else -1))
+    # итоговый рейтинг (по последнему avg) — для leaderboard
+    ranked = sorted(result, key=lambda e: -(e["avg"] if e["avg"] is not None else -1))
     for i, e in enumerate(ranked, 1):
         e["rank"] = i if e["avg"] is not None else None
-    for e in employees:
-        e["awards"] = awards_for(e)
 
     data = {
         "meta": {"title": "Моя команда ОТП", "subtitle": "Отдел технической поддержки · аналитика эффективности",
@@ -506,7 +580,7 @@ def build():
         "metrics": METRICS,
         "awardsCatalog": AWARDS_CATALOG,
         "months": [MONTH_LABEL[m] for m in months],
-        "employees": employees,
+        "employees": result,
     }
     return data
 

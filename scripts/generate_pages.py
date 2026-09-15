@@ -27,7 +27,7 @@ TEMPLATE = """<!DOCTYPE html>
   <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
   <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
   <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
-  <link rel="stylesheet" href="../../assets/css/main.css?v=7">
+  <link rel="stylesheet" href="../../assets/css/main.css?v=8">
 </head>
 <body data-profile="__ID__">
   <div class="bg-stage"></div>
@@ -51,8 +51,8 @@ TEMPLATE = """<!DOCTYPE html>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <script src="../../assets/js/common.js?v=7"></script>
-  <script src="../../assets/js/profile.js?v=7"></script>
+  <script src="../../assets/js/common.js?v=8"></script>
+  <script src="../../assets/js/profile.js?v=8"></script>
 </body>
 </html>
 """

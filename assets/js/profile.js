@@ -15,8 +15,10 @@
   const trend = otp.trend(emp);
   const trendIcon = trend.dir === "up" ? "trend-up" : trend.dir === "down" ? "trend-down" : "minus";
 
+  const awardTile = (a, extra = "", ttl = "") =>
+    `<div class="award-tile${a.id === "perfect" ? " star-medal" : ""}"${ttl ? ` title="${ttl}"` : ""}><span class="medal" style="--ac:${a.color}"><span class="medal-glyph">${a.glyph || ""}</span></span><div class="a-t">${a.title}${extra}</div><div class="a-r">${a.desc}</div></div>`;
   const awards = (emp.awards || []).map((a) =>
-    `<div class="award-tile${a.id === "perfect" ? " star-medal" : ""}"><span class="medal" style="--ac:${a.color}"><span class="medal-glyph">${a.glyph || ""}</span></span><div class="a-t">${a.title}</div><div class="a-r">${a.desc}</div></div>`).join("");
+    awardTile(a, a.count > 1 ? ` <span class="got">×${a.count}</span>` : "", a.months ? `Получена: ${a.months.join(", ")}` : "")).join("");
   const earnedIds = new Set((emp.awards || []).map((a) => a.id));
   const glossary = (D.awardsCatalog || []).map((g) => {
     const earned = earnedIds.has(g.id);
@@ -53,6 +55,11 @@
 
     document.querySelectorAll(".month-tab").forEach((t, idx) => t.classList.toggle("active", idx === i));
     document.querySelectorAll(".month-label").forEach((el) => (el.textContent = cur.month));
+    const mAwards = cur.awards || [];
+    const ma = document.getElementById("month-awards");
+    if (ma) ma.innerHTML = mAwards.length
+      ? mAwards.map((a) => awardTile(a)).join("")
+      : `<p class="muted">За ${cur.month} наград не получено.</p>`;
 
     // плитки метрик
     const tilesEl = document.getElementById("metric-grid");
@@ -74,13 +81,13 @@
       : `<p class="muted">Детализация бонуса за ${cur.month} — в процессе разработки.</p>`;
 
     // сильные стороны / зоны роста
-    const pos = cur.positives || [];
-    const strengths = (pos.length ? pos.map((p) => [p.text, "Отмечено руководителем"]) : (emp.strengths || []));
-    document.getElementById("strengths-list").innerHTML = (strengths.length ? strengths : [])
-      .map((s) => `<div class="plus-item"><i class="ph ph-check-circle"></i><div><div class="b">${s[0]}</div><div class="d">${s[1]}</div></div></div>`).join("") || '<p class="muted">—</p>';
-    const neg = cur.negatives || [];
-    document.getElementById("growth-list").innerHTML = neg.length
-      ? neg.map((g) => `<div class="minus-item"><i class="ph ph-warning-circle"></i><div><div class="b">${g.text}</div>${tickets(g.text).length ? `<div class="d" style="font-family:var(--font-mono)">${tLinks(g.text)}</div>` : ""}</div></div>`).join("")
+    const strengths = cur.strengths || [];
+    document.getElementById("strengths-list").innerHTML = strengths.length
+      ? strengths.map((s) => `<div class="plus-item"><i class="ph ph-check-circle"></i><div><div class="b">${s[0]}</div><div class="d">${s[1]}</div></div></div>`).join("")
+      : '<p class="muted">За месяц сильных сторон не зафиксировано.</p>';
+    const growth = cur.growth || [];
+    document.getElementById("growth-list").innerHTML = growth.length
+      ? growth.map((g) => `<div class="minus-item"><i class="ph ph-warning-circle"></i><div><div class="b">${g.zone}</div><div class="advice">${g.advice}</div><div class="fact">${g.fact} ${tLinks(g.fact)}</div></div></div>`).join("")
       : '<p class="muted">Замечаний нет — молодец!</p>';
 
     // рекомендации
@@ -134,7 +141,9 @@
     </section>
 
     <section style="padding:6px 0 0">
-      ${awards ? `<div class="awards-row" data-stagger>${awards}</div>` : ""}
+      <div class="sub-head" data-reveal><i class="ph ph-trophy"></i> Награды за <span class="month-label">…</span></div>
+      <div class="awards-row" id="month-awards" data-stagger></div>
+      ${awards ? `<div class="sub-head" data-reveal style="margin-top:26px"><i class="ph ph-stack"></i> Накоплено за всё время · ${emp.awards.length}</div><div class="awards-row" data-stagger>${awards}</div>` : ""}
       <div style="margin-top:14px">
         <button type="button" class="btn btn-ghost" id="glossary-toggle" style="font-size:.85rem"><i class="ph ph-book-bookmark"></i> Справочник наград</button>
       </div>
@@ -147,7 +156,25 @@
 
     <section style="padding:14px 0 0"><div class="metric-grid" id="metric-grid" data-stagger></div></section>
 
-    <div class="sub-head" data-reveal><i class="ph ph-chart-line"></i> Динамика по метрикам</div>
+    <div class="sub-head" data-reveal><i class="ph ph-currency-rub"></i> Достижения и бонусы за <span class="month-label">…</span> <span id="bonus-total"></span></div>
+    <div id="bonus-items" data-stagger></div>
+
+    <div class="sub-head" data-reveal><i class="ph ph-scales"></i> Сильные стороны и зоны роста за <span class="month-label">…</span></div>
+    <div class="two-col">
+      <div class="card" data-reveal><h3 style="margin-bottom:12px"><span style="color:var(--good)">✅</span> Что получается круто</h3><div id="strengths-list"></div></div>
+      <div class="card" data-reveal><h3 style="margin-bottom:12px"><span style="color:var(--warn)">⚠️</span> Зоны роста</h3><div id="growth-list"></div></div>
+    </div>
+
+    <div class="sub-head" data-reveal><i class="ph ph-target"></i> План роста на <span class="month-label">…</span></div>
+    <div class="grid" id="plan-grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))"></div>
+
+    <div class="sub-head" data-reveal><i class="ph ph-book-open"></i> Учебные материалы под твои зоны роста</div>
+    <div class="two-col">
+      <div class="list-col" data-stagger>${books}</div>
+      <div class="list-col" data-stagger>${resources}</div>
+    </div>
+
+    <div class="sub-head" data-reveal><i class="ph ph-chart-line"></i> Динамика по месяцам</div>
     <div class="grid grid-2" style="margin-bottom:20px">
       <div class="card" data-reveal>
         <h3 style="margin-bottom:4px">Профиль за <span class="month-label">…</span></h3>
@@ -164,24 +191,6 @@
       <h3 style="margin-bottom:4px">Все метрики в динамике</h3>
       <p class="tt-hint" style="margin-bottom:16px">кликни по метрике в легенде, чтобы скрыть/показать</p>
       <div class="chart-box lg"><canvas id="chart-lines"></canvas></div>
-    </div>
-
-    <div class="sub-head" data-reveal><i class="ph ph-currency-rub"></i> Достижения и бонусы за <span class="month-label">…</span> <span id="bonus-total"></span></div>
-    <div id="bonus-items" data-stagger></div>
-
-    <div class="sub-head" data-reveal><i class="ph ph-scales"></i> Сильные стороны и зоны роста за <span class="month-label">…</span></div>
-    <div class="two-col">
-      <div class="card" data-reveal><h3 style="margin-bottom:12px"><span style="color:var(--good)">✅</span> Что получается круто</h3><div id="strengths-list"></div></div>
-      <div class="card" data-reveal><h3 style="margin-bottom:12px"><span style="color:var(--warn)">⚠️</span> Зоны роста</h3><div id="growth-list"></div></div>
-    </div>
-
-    <div class="sub-head" data-reveal><i class="ph ph-target"></i> План роста на <span class="month-label">…</span></div>
-    <div class="grid" id="plan-grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))"></div>
-
-    <div class="sub-head" data-reveal><i class="ph ph-book-open"></i> Полезная литература и ресурсы</div>
-    <div class="two-col">
-      <div class="list-col" data-stagger>${books}</div>
-      <div class="list-col" data-stagger>${resources}</div>
     </div>
 
     <section style="padding:28px 0 10px"><div class="personal-note" data-reveal>💬 ${emp.personal}</div></section>

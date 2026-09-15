@@ -309,6 +309,9 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
 .minus-item i { color: var(--warn); margin-top: 2px; }
 .plus-item .b, .minus-item .b { font-weight: 600; }
 .plus-item .d, .minus-item .d { color: var(--muted); font-size: .88rem; }
+.minus-item .advice { color: var(--accent-2); font-size: .85rem; margin-top: 4px; }
+.minus-item .fact { color: var(--muted); font-size: .8rem; margin-top: 3px; line-height: 1.4; }
+.minus-item .fact a { color: var(--accent); }
 
 /* --- план (3 шага) --- */
 .step { display: flex; gap: 16px; padding: 18px; border-radius: var(--radius-sm); background: var(--surface); border: 1px solid var(--border); }

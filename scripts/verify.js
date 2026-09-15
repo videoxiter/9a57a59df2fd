@@ -24,32 +24,16 @@ const { chromium } = require("playwright");
   const bodyText = await page.locator("body").textContent();
   console.log("\nFROLOV title=" + await page.title());
   console.log("HAS_RANK_POSITION=" + /место\s*#/.test(bodyText));
-  console.log("HERO_HAS_LVL=" + bodyText.includes("LVL"));
-  console.log("HERO_HAS_PROGRESS=" + bodyText.includes("до след."));
-  console.log("HERO_HAS_KPI_LABEL=" + bodyText.includes("средний KPI"));
-  console.log("AWARD_TILES=" + await page.locator(".awards-row .award-tile").count());
-  console.log("STAR_MEDAL=" + await page.locator(".awards-row .star-medal").count());
-  const glyphs = await page.locator(".awards-row .medal-glyph").allTextContents();
-  console.log("MEDAL_GLYPHS=" + JSON.stringify(glyphs));
-  const kpiEmoji = await page.locator(".metric-tile .ic").allTextContents();
-  console.log("KPI_EMOJIS=" + JSON.stringify(kpiEmoji));
+  console.log("MONTH_AWARDS=" + await page.locator("#month-awards .award-tile").count());
+  console.log("ACCUM_AWARDS_ROWS=" + await page.locator(".awards-row").count());
+  console.log("STRENGTHS=" + await page.locator("#strengths-list .plus-item").count());
+  console.log("GROWTH=" + await page.locator("#growth-list .minus-item").count());
+  console.log("GROWTH_HAS_ADVICE=" + await page.locator("#growth-list .advice").count());
   console.log("STEPS=" + await page.locator(".step").count());
   console.log("ZONES=" + await page.locator(".step .zone").count());
-  console.log("RES_EXT_LINKS=" + await page.locator("a.book[href^='http']").count());
-  console.log("INTERNAL_LINKS=" + await page.locator("a[data-internal]").count());
-  // справочник
   await page.locator("#glossary-toggle").click();
   await page.waitForTimeout(300);
   console.log("GLOSSARY_TILES=" + await page.locator(".glossary .award-tile").count());
-  console.log("GLOSSARY_LOCKED=" + await page.locator(".glossary .award-tile.locked").count());
-  const glossaryText = await page.locator(".glossary").textContent();
-  console.log("GLOSSARY_HAS_LEADER=" + glossaryText.includes("Руководитель"));
-  console.log("GLOSSARY_HAS_NIGHT=" + glossaryText.includes("Ночной страж"));
-  console.log("GLOSSARY_HAS_HERO=" + glossaryText.includes("Герой-спасатель"));
-  console.log("GLOSSARY_HAS_CHANGER=" + glossaryText.includes("Меняет мир"));
-  console.log("GLOSSARY_HAS_SELLER=" + glossaryText.includes("Продавец месяца"));
-  console.log("GLOSSARY_HAS_BUDGET=" + glossaryText.includes("Вне бюджета"));
-  // бонус fallback (у Фролова деньги есть, проверим что секция рендерится)
   console.log("FROLOV_ERRORS=" + JSON.stringify(errors));
 
   // ===== профиль без KPI (Яковленков) =====
@@ -59,8 +43,8 @@ const { chromium } = require("playwright");
   const yakText = await page.locator("body").textContent();
   console.log("\nYAK title=" + await page.title());
   console.log("HAS_RANK_POSITION=" + /место\s*#/.test(yakText));
-  console.log("HERO_HAS_LVL=" + yakText.includes("LVL"));
-  console.log("AWARD_TILES=" + await page.locator(".awards-row .award-tile").count());
+  console.log("STRENGTHS=" + await page.locator("#strengths-list .plus-item").count());
+  console.log("GROWTH=" + await page.locator("#growth-list .minus-item").count());
   console.log("YAK_ERRORS=" + JSON.stringify(errors));
 
   await browser.close();
