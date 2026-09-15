@@ -274,37 +274,72 @@ def gen_recommendations(negatives, kpi):
     return recs[:3]
 
 # ---------- геймификация ----------
+AWARDS_CATALOG = [
+    {"id": "leader",    "icon": "ph-crown-simple",   "title": "Руководитель",       "desc": "Главный специалист — KPI не ведётся, оценивается вся команда", "color": "#fbbf24"},
+    {"id": "legend",    "icon": "ph-trophy",         "title": "Легенда",            "desc": "Средний KPI 9.0+ за месяц", "color": "#fbbf24"},
+    {"id": "pro",       "icon": "ph-medal",          "title": "Профи",              "desc": "Средний KPI 8.0–8.9", "color": "#cbd5e1"},
+    {"id": "growing",   "icon": "ph-medal",          "title": "Развивающийся",      "desc": "Средний KPI 7.0–7.9", "color": "#d97706"},
+    {"id": "starter",   "icon": "ph-seedling",       "title": "На старте",          "desc": "Средний KPI ниже 7.0 — есть зона роста", "color": "#8b96a8"},
+    {"id": "top",       "icon": "ph-crown",          "title": "Топ месяца",         "desc": "1-е место в рейтинге по среднему KPI", "color": "#22d3ee"},
+    {"id": "perfect",   "icon": "ph-star-four",      "title": "Идеальная пятёрка",  "desc": "Все 5 метрик = 10/10", "color": "#fbbf24"},
+    {"id": "quality",   "icon": "ph-shield-check",   "title": "Безупречное качество", "desc": "Качество 10/10 — без возвратов и рекламаций", "color": "#22d3ee"},
+    {"id": "learning",  "icon": "ph-graduation-cap", "title": "Гуру обучения",      "desc": "Обучаемость 10/10 — быстро осваивает новое", "color": "#a78bfa"},
+    {"id": "initiative","icon": "ph-rocket-launch",  "title": "Мастер инициативы",  "desc": "Инициатива 10/10 — проактивность и предложения", "color": "#fbbf24"},
+    {"id": "engagement","icon": "ph-users-three",    "title": "Командный дух",      "desc": "Вовлечённость 10/10 — командность и помощь коллегам", "color": "#34d399"},
+    {"id": "discipline","icon": "ph-clipboard-text", "title": "Страж дисциплины",   "desc": "Требования к работе 10/10 — регламенты и порядок", "color": "#fb7185"},
+    {"id": "breakthrough","icon": "ph-trend-up",     "title": "Прорыв месяца",      "desc": "Рост среднего KPI на +1 и больше за месяц", "color": "#34d399"},
+    {"id": "stability", "icon": "ph-arrows-clockwise","title": "Стабильность",      "desc": "3+ месяца подряд без падения среднего KPI", "color": "#60a5fa"},
+    {"id": "night",     "icon": "ph-moon",           "title": "Ночной страж",       "desc": "Держит поддержку в ночную смену 24/7", "color": "#818cf8"},
+]
+CATALOG_BY_ID = {a["id"]: a for a in AWARDS_CATALOG}
+
+def _award_objects(ids):
+    return [dict(CATALOG_BY_ID[i]) for i in ids if i in CATALOG_BY_ID]
+
+def _stable(emp):
+    hist = [h for h in emp["history"] if h.get("quality") is not None]
+    if len(hist) < 3:
+        return False
+    avgs = [sum(h[k] for k in MKEYS) / 5 for h in hist[-3:]]
+    return all(avgs[i] <= avgs[i + 1] for i in range(len(avgs) - 1))
+
 def awards_for(emp):
-    a = []
+    ids = []
     kpi = emp.get("current")
     if emp["id"] == "yakovlenkov":
-        a.append({"icon": "ph-crown", "title": "Руководитель", "color": "#fbbf24",
-                  "reason": "Главный специалист — KPI не ведётся, оценивается команда"})
-        return a
+        return _award_objects(["leader"])
     if not kpi:
-        return a
+        return []
     avg = emp["avg"]
     if avg >= 9:
-        a.append({"icon": "ph-trophy", "title": "Легенда", "color": "#fbbf24", "reason": "Средний KPI ≥ 9"})
+        ids.append("legend")
     elif avg >= 8:
-        a.append({"icon": "ph-medal", "title": "Профи", "color": "#cbd5e1", "reason": "Средний KPI ≥ 8"})
+        ids.append("pro")
     elif avg >= 7:
-        a.append({"icon": "ph-medal", "title": "Развивающийся", "color": "#d97706", "reason": "Средний KPI ≥ 7"})
+        ids.append("growing")
     else:
-        a.append({"icon": "ph-seedling", "title": "На старте", "color": "#8b96a8", "reason": "Есть зона роста"})
+        ids.append("starter")
     if emp.get("rank") == 1:
-        a.append({"icon": "ph-crown", "title": "Топ месяца", "color": "#22d3ee", "reason": "1-е место по среднему KPI"})
+        ids.append("top")
     if kpi.get("quality") == 10:
-        a.append({"icon": "ph-shield-check", "title": "Безупречное качество", "color": "#22d3ee", "reason": "Качество 10/10"})
-    if kpi.get("engagement") == 10:
-        a.append({"icon": "ph-users-three", "title": "Командный дух", "color": "#34d399", "reason": "Вовлечённость 10/10"})
+        ids.append("quality")
+    if kpi.get("learnability") == 10:
+        ids.append("learning")
     if kpi.get("initiative") == 10:
-        a.append({"icon": "ph-rocket-launch", "title": "Мастер инициативы", "color": "#fbbf24", "reason": "Инициатива 10/10"})
+        ids.append("initiative")
+    if kpi.get("engagement") == 10:
+        ids.append("engagement")
+    if kpi.get("discipline") == 10:
+        ids.append("discipline")
     if all(v == 10 for v in kpi.values()):
-        a.append({"icon": "ph-star-four", "title": "Идеальная пятёрка", "color": "#fbbf24", "reason": "Все 5 метрик = 10/10"})
+        ids.append("perfect")
     if emp.get("growth_delta", 0) >= 1:
-        a.append({"icon": "ph-trend-up", "title": "Прорыв месяца", "color": "#34d399", "reason": "Рост среднего KPI ≥ +1 за месяц"})
-    return a
+        ids.append("breakthrough")
+    if "ночн" in emp.get("role", "").lower():
+        ids.append("night")
+    if _stable(emp):
+        ids.append("stability")
+    return _award_objects(ids)
 
 # ---------- стабильные неугadываемые слаги (URL персональных страниц) ----------
 SLUGS = {
@@ -383,6 +418,7 @@ def build():
         "meta": {"title": "Моя команда ОТП", "subtitle": "Отдел технической поддержки · аналитика эффективности",
                  "updated": MONTH_LABEL[months[-1]], "demo": False},
         "metrics": METRICS,
+        "awardsCatalog": AWARDS_CATALOG,
         "months": [MONTH_LABEL[m] for m in months],
         "employees": employees,
     }

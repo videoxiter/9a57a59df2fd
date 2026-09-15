@@ -16,7 +16,12 @@
   const trendIcon = trend.dir === "up" ? "trend-up" : trend.dir === "down" ? "trend-down" : "minus";
 
   const awards = (emp.awards || []).map((a) =>
-    `<div class="award" style="border-color:${otp.hexA(a.color, 0.35)}"><i class="${a.icon}" style="color:${a.color}"></i><div><div class="a-t">${a.title}</div><div class="a-r">${a.reason}</div></div></div>`).join("");
+    `<div class="award" style="border-color:${otp.hexA(a.color, 0.35)}"><i class="${a.icon}" style="color:${a.color}"></i><div><div class="a-t">${a.title}</div><div class="a-r">${a.desc}</div></div></div>`).join("");
+  const earnedIds = new Set((emp.awards || []).map((a) => a.id));
+  const glossary = (D.awardsCatalog || []).map((g) => {
+    const earned = earnedIds.has(g.id);
+    return `<div class="award ${earned ? "earned" : "locked"}" style="border-color:${earned ? otp.hexA(g.color, 0.4) : "var(--border)"}"><i class="${g.icon}" style="color:${earned ? g.color : "var(--faint)"}"></i><div><div class="a-t">${g.title} ${earned ? '<span class="got">· получена</span>' : ""}</div><div class="a-r">${g.desc}</div></div></div>`;
+  }).join("");
 
   const statusBadge = emp.status === "left"
     ? '<span class="badge badge-left"><i class="ph ph-archive"></i> ' + (emp.statusNote || "выбыл") + '</span>'
@@ -93,8 +98,12 @@
   /* ---------- скелет ---------- */
   const books = (emp.literature || []).map((b) =>
     `<a class="book" href="${b.url}" target="_blank" rel="noopener"><span class="ic"><i class="ph ph-book-open"></i></span><div style="flex:1"><div class="t">${b.title}</div><div class="a">${b.author}</div><div class="why">${b.why}</div></div><span class="type">${b.type}</span></a>`).join("");
-  const links = (emp.links || []).map((l) =>
-    `<a class="book" href="${l.url}" ${l.url !== "#" ? 'target="_blank" rel="noopener"' : ""}><span class="ic"><i class="${l.icon}"></i></span><div class="t" style="font-weight:600">${l.label}</div></a>`).join("");
+  const links = (emp.links || []).map((l) => {
+    if (l.url && l.url !== "#") {
+      return `<a class="book" href="${l.url}" target="_blank" rel="noopener"><span class="ic"><i class="${l.icon}"></i></span><div class="t" style="font-weight:600">${l.label}</div><span class="type">ссылка</span></a>`;
+    }
+    return `<a class="book" href="#" data-internal="${l.label}"><span class="ic"><i class="${l.icon}"></i></span><div class="t" style="font-weight:600">${l.label}</div><span class="type">внутр.</span></a>`;
+  }).join("");
 
   root.innerHTML = `
     <section style="padding:20px 0 8px">
@@ -120,7 +129,13 @@
       </div>
     </section>
 
-    ${awards ? `<section style="padding:6px 0 0"><div class="awards-row" data-stagger>${awards}</div></section>` : ""}
+    <section style="padding:6px 0 0">
+      ${awards ? `<div class="awards-row" data-stagger>${awards}</div>` : ""}
+      <div style="margin-top:14px">
+        <button type="button" class="btn btn-ghost" id="glossary-toggle" style="font-size:.85rem"><i class="ph ph-book-bookmark"></i> Справочник наград</button>
+      </div>
+      <div id="glossary" class="glossary" style="display:none">${glossary}</div>
+    </section>
 
     <section style="padding:20px 0 0">
       <div class="month-tabs" id="month-tabs" data-reveal>${history.map((h, i) => `<button class="month-tab" data-i="${i}">${h.month}</button>`).join("")}</div>
@@ -169,6 +184,22 @@
   `;
 
   document.querySelectorAll(".month-tab").forEach((t) => t.addEventListener("click", () => renderMonth(+t.dataset.i)));
+
+  const gt = document.getElementById("glossary-toggle");
+  if (gt) {
+    gt.addEventListener("click", () => {
+      const g = document.getElementById("glossary");
+      const open = g.style.display !== "none";
+      g.style.display = open ? "none" : "grid";
+      gt.innerHTML = open ? '<i class="ph ph-book-bookmark"></i> Справочник наград' : '<i class="ph ph-x"></i> Скрыть справочник';
+    });
+  }
+  document.querySelectorAll("a[data-internal]").forEach((a) => {
+    a.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      otp.toast(`«${a.dataset.internal}» — внутренний ресурс команды. Ссылку выдаст руководитель.`);
+    });
+  });
 
   /* ---------- графики ---------- */
   let radarChart = null, bonusChart = null;

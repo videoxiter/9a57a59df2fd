@@ -38,6 +38,113 @@ window.OTP_DATA = {
       "desc": "Соблюдение регламентов, оформление задач, дисциплина"
     }
   },
+  "awardsCatalog": [
+    {
+      "id": "leader",
+      "icon": "ph-crown-simple",
+      "title": "Руководитель",
+      "desc": "Главный специалист — KPI не ведётся, оценивается вся команда",
+      "color": "#fbbf24"
+    },
+    {
+      "id": "legend",
+      "icon": "ph-trophy",
+      "title": "Легенда",
+      "desc": "Средний KPI 9.0+ за месяц",
+      "color": "#fbbf24"
+    },
+    {
+      "id": "pro",
+      "icon": "ph-medal",
+      "title": "Профи",
+      "desc": "Средний KPI 8.0–8.9",
+      "color": "#cbd5e1"
+    },
+    {
+      "id": "growing",
+      "icon": "ph-medal",
+      "title": "Развивающийся",
+      "desc": "Средний KPI 7.0–7.9",
+      "color": "#d97706"
+    },
+    {
+      "id": "starter",
+      "icon": "ph-seedling",
+      "title": "На старте",
+      "desc": "Средний KPI ниже 7.0 — есть зона роста",
+      "color": "#8b96a8"
+    },
+    {
+      "id": "top",
+      "icon": "ph-crown",
+      "title": "Топ месяца",
+      "desc": "1-е место в рейтинге по среднему KPI",
+      "color": "#22d3ee"
+    },
+    {
+      "id": "perfect",
+      "icon": "ph-star-four",
+      "title": "Идеальная пятёрка",
+      "desc": "Все 5 метрик = 10/10",
+      "color": "#fbbf24"
+    },
+    {
+      "id": "quality",
+      "icon": "ph-shield-check",
+      "title": "Безупречное качество",
+      "desc": "Качество 10/10 — без возвратов и рекламаций",
+      "color": "#22d3ee"
+    },
+    {
+      "id": "learning",
+      "icon": "ph-graduation-cap",
+      "title": "Гуру обучения",
+      "desc": "Обучаемость 10/10 — быстро осваивает новое",
+      "color": "#a78bfa"
+    },
+    {
+      "id": "initiative",
+      "icon": "ph-rocket-launch",
+      "title": "Мастер инициативы",
+      "desc": "Инициатива 10/10 — проактивность и предложения",
+      "color": "#fbbf24"
+    },
+    {
+      "id": "engagement",
+      "icon": "ph-users-three",
+      "title": "Командный дух",
+      "desc": "Вовлечённость 10/10 — командность и помощь коллегам",
+      "color": "#34d399"
+    },
+    {
+      "id": "discipline",
+      "icon": "ph-clipboard-text",
+      "title": "Страж дисциплины",
+      "desc": "Требования к работе 10/10 — регламенты и порядок",
+      "color": "#fb7185"
+    },
+    {
+      "id": "breakthrough",
+      "icon": "ph-trend-up",
+      "title": "Прорыв месяца",
+      "desc": "Рост среднего KPI на +1 и больше за месяц",
+      "color": "#34d399"
+    },
+    {
+      "id": "stability",
+      "icon": "ph-arrows-clockwise",
+      "title": "Стабильность",
+      "desc": "3+ месяца подряд без падения среднего KPI",
+      "color": "#60a5fa"
+    },
+    {
+      "id": "night",
+      "icon": "ph-moon",
+      "title": "Ночной страж",
+      "desc": "Держит поддержку в ночную смену 24/7",
+      "color": "#818cf8"
+    }
+  ],
   "months": [
     "Апр 2026",
     "Май 2026",
@@ -326,10 +433,11 @@ window.OTP_DATA = {
       "rank": null,
       "awards": [
         {
-          "icon": "ph-crown",
+          "id": "leader",
+          "icon": "ph-crown-simple",
           "title": "Руководитель",
-          "color": "#fbbf24",
-          "reason": "Главный специалист — KPI не ведётся, оценивается команда"
+          "desc": "Главный специалист — KPI не ведётся, оценивается вся команда",
+          "color": "#fbbf24"
         }
       ]
     },
@@ -605,40 +713,67 @@ window.OTP_DATA = {
       "rank": 1,
       "awards": [
         {
+          "id": "legend",
           "icon": "ph-trophy",
           "title": "Легенда",
-          "color": "#fbbf24",
-          "reason": "Средний KPI ≥ 9"
+          "desc": "Средний KPI 9.0+ за месяц",
+          "color": "#fbbf24"
         },
         {
+          "id": "top",
           "icon": "ph-crown",
           "title": "Топ месяца",
-          "color": "#22d3ee",
-          "reason": "1-е место по среднему KPI"
+          "desc": "1-е место в рейтинге по среднему KPI",
+          "color": "#22d3ee"
         },
         {
+          "id": "quality",
           "icon": "ph-shield-check",
           "title": "Безупречное качество",
-          "color": "#22d3ee",
-          "reason": "Качество 10/10"
+          "desc": "Качество 10/10 — без возвратов и рекламаций",
+          "color": "#22d3ee"
         },
         {
-          "icon": "ph-users-three",
-          "title": "Командный дух",
-          "color": "#34d399",
-          "reason": "Вовлечённость 10/10"
+          "id": "learning",
+          "icon": "ph-graduation-cap",
+          "title": "Гуру обучения",
+          "desc": "Обучаемость 10/10 — быстро осваивает новое",
+          "color": "#a78bfa"
         },
         {
+          "id": "initiative",
           "icon": "ph-rocket-launch",
           "title": "Мастер инициативы",
-          "color": "#fbbf24",
-          "reason": "Инициатива 10/10"
+          "desc": "Инициатива 10/10 — проактивность и предложения",
+          "color": "#fbbf24"
         },
         {
+          "id": "engagement",
+          "icon": "ph-users-three",
+          "title": "Командный дух",
+          "desc": "Вовлечённость 10/10 — командность и помощь коллегам",
+          "color": "#34d399"
+        },
+        {
+          "id": "discipline",
+          "icon": "ph-clipboard-text",
+          "title": "Страж дисциплины",
+          "desc": "Требования к работе 10/10 — регламенты и порядок",
+          "color": "#fb7185"
+        },
+        {
+          "id": "perfect",
           "icon": "ph-star-four",
           "title": "Идеальная пятёрка",
-          "color": "#fbbf24",
-          "reason": "Все 5 метрик = 10/10"
+          "desc": "Все 5 метрик = 10/10",
+          "color": "#fbbf24"
+        },
+        {
+          "id": "stability",
+          "icon": "ph-arrows-clockwise",
+          "title": "Стабильность",
+          "desc": "3+ месяца подряд без падения среднего KPI",
+          "color": "#60a5fa"
         }
       ]
     },
@@ -1133,22 +1268,32 @@ window.OTP_DATA = {
       "rank": 8,
       "awards": [
         {
+          "id": "growing",
           "icon": "ph-medal",
           "title": "Развивающийся",
-          "color": "#d97706",
-          "reason": "Средний KPI ≥ 7"
+          "desc": "Средний KPI 7.0–7.9",
+          "color": "#d97706"
         },
         {
+          "id": "engagement",
           "icon": "ph-users-three",
           "title": "Командный дух",
-          "color": "#34d399",
-          "reason": "Вовлечённость 10/10"
+          "desc": "Вовлечённость 10/10 — командность и помощь коллегам",
+          "color": "#34d399"
         },
         {
+          "id": "breakthrough",
           "icon": "ph-trend-up",
           "title": "Прорыв месяца",
-          "color": "#34d399",
-          "reason": "Рост среднего KPI ≥ +1 за месяц"
+          "desc": "Рост среднего KPI на +1 и больше за месяц",
+          "color": "#34d399"
+        },
+        {
+          "id": "stability",
+          "icon": "ph-arrows-clockwise",
+          "title": "Стабильность",
+          "desc": "3+ месяца подряд без падения среднего KPI",
+          "color": "#60a5fa"
         }
       ]
     },
@@ -1474,16 +1619,25 @@ window.OTP_DATA = {
       "rank": 4,
       "awards": [
         {
+          "id": "pro",
           "icon": "ph-medal",
           "title": "Профи",
-          "color": "#cbd5e1",
-          "reason": "Средний KPI ≥ 8"
+          "desc": "Средний KPI 8.0–8.9",
+          "color": "#cbd5e1"
         },
         {
+          "id": "engagement",
           "icon": "ph-users-three",
           "title": "Командный дух",
-          "color": "#34d399",
-          "reason": "Вовлечённость 10/10"
+          "desc": "Вовлечённость 10/10 — командность и помощь коллегам",
+          "color": "#34d399"
+        },
+        {
+          "id": "stability",
+          "icon": "ph-arrows-clockwise",
+          "title": "Стабильность",
+          "desc": "3+ месяца подряд без падения среднего KPI",
+          "color": "#60a5fa"
         }
       ]
     },
@@ -1769,16 +1923,18 @@ window.OTP_DATA = {
       "rank": 5,
       "awards": [
         {
+          "id": "pro",
           "icon": "ph-medal",
           "title": "Профи",
-          "color": "#cbd5e1",
-          "reason": "Средний KPI ≥ 8"
+          "desc": "Средний KPI 8.0–8.9",
+          "color": "#cbd5e1"
         },
         {
+          "id": "initiative",
           "icon": "ph-rocket-launch",
           "title": "Мастер инициативы",
-          "color": "#fbbf24",
-          "reason": "Инициатива 10/10"
+          "desc": "Инициатива 10/10 — проактивность и предложения",
+          "color": "#fbbf24"
         }
       ]
     },
@@ -2097,10 +2253,11 @@ window.OTP_DATA = {
       "rank": 7,
       "awards": [
         {
+          "id": "growing",
           "icon": "ph-medal",
           "title": "Развивающийся",
-          "color": "#d97706",
-          "reason": "Средний KPI ≥ 7"
+          "desc": "Средний KPI 7.0–7.9",
+          "color": "#d97706"
         }
       ]
     },
@@ -2459,10 +2616,18 @@ window.OTP_DATA = {
       "rank": 9,
       "awards": [
         {
+          "id": "growing",
           "icon": "ph-medal",
           "title": "Развивающийся",
-          "color": "#d97706",
-          "reason": "Средний KPI ≥ 7"
+          "desc": "Средний KPI 7.0–7.9",
+          "color": "#d97706"
+        },
+        {
+          "id": "night",
+          "icon": "ph-moon",
+          "title": "Ночной страж",
+          "desc": "Держит поддержку в ночную смену 24/7",
+          "color": "#818cf8"
         }
       ]
     },
@@ -2688,34 +2853,60 @@ window.OTP_DATA = {
       "rank": 2,
       "awards": [
         {
+          "id": "legend",
           "icon": "ph-trophy",
           "title": "Легенда",
-          "color": "#fbbf24",
-          "reason": "Средний KPI ≥ 9"
+          "desc": "Средний KPI 9.0+ за месяц",
+          "color": "#fbbf24"
         },
         {
+          "id": "quality",
           "icon": "ph-shield-check",
           "title": "Безупречное качество",
-          "color": "#22d3ee",
-          "reason": "Качество 10/10"
+          "desc": "Качество 10/10 — без возвратов и рекламаций",
+          "color": "#22d3ee"
         },
         {
-          "icon": "ph-users-three",
-          "title": "Командный дух",
-          "color": "#34d399",
-          "reason": "Вовлечённость 10/10"
+          "id": "learning",
+          "icon": "ph-graduation-cap",
+          "title": "Гуру обучения",
+          "desc": "Обучаемость 10/10 — быстро осваивает новое",
+          "color": "#a78bfa"
         },
         {
+          "id": "initiative",
           "icon": "ph-rocket-launch",
           "title": "Мастер инициативы",
-          "color": "#fbbf24",
-          "reason": "Инициатива 10/10"
+          "desc": "Инициатива 10/10 — проактивность и предложения",
+          "color": "#fbbf24"
         },
         {
+          "id": "engagement",
+          "icon": "ph-users-three",
+          "title": "Командный дух",
+          "desc": "Вовлечённость 10/10 — командность и помощь коллегам",
+          "color": "#34d399"
+        },
+        {
+          "id": "discipline",
+          "icon": "ph-clipboard-text",
+          "title": "Страж дисциплины",
+          "desc": "Требования к работе 10/10 — регламенты и порядок",
+          "color": "#fb7185"
+        },
+        {
+          "id": "perfect",
           "icon": "ph-star-four",
           "title": "Идеальная пятёрка",
-          "color": "#fbbf24",
-          "reason": "Все 5 метрик = 10/10"
+          "desc": "Все 5 метрик = 10/10",
+          "color": "#fbbf24"
+        },
+        {
+          "id": "stability",
+          "icon": "ph-arrows-clockwise",
+          "title": "Стабильность",
+          "desc": "3+ месяца подряд без падения среднего KPI",
+          "color": "#60a5fa"
         }
       ]
     },
@@ -3034,22 +3225,32 @@ window.OTP_DATA = {
       "rank": 6,
       "awards": [
         {
+          "id": "pro",
           "icon": "ph-medal",
           "title": "Профи",
-          "color": "#cbd5e1",
-          "reason": "Средний KPI ≥ 8"
+          "desc": "Средний KPI 8.0–8.9",
+          "color": "#cbd5e1"
         },
         {
+          "id": "engagement",
           "icon": "ph-users-three",
           "title": "Командный дух",
-          "color": "#34d399",
-          "reason": "Вовлечённость 10/10"
+          "desc": "Вовлечённость 10/10 — командность и помощь коллегам",
+          "color": "#34d399"
         },
         {
+          "id": "breakthrough",
           "icon": "ph-trend-up",
           "title": "Прорыв месяца",
-          "color": "#34d399",
-          "reason": "Рост среднего KPI ≥ +1 за месяц"
+          "desc": "Рост среднего KPI на +1 и больше за месяц",
+          "color": "#34d399"
+        },
+        {
+          "id": "stability",
+          "icon": "ph-arrows-clockwise",
+          "title": "Стабильность",
+          "desc": "3+ месяца подряд без падения среднего KPI",
+          "color": "#60a5fa"
         }
       ]
     },
@@ -3292,22 +3493,46 @@ window.OTP_DATA = {
       "rank": 3,
       "awards": [
         {
+          "id": "legend",
           "icon": "ph-trophy",
           "title": "Легенда",
-          "color": "#fbbf24",
-          "reason": "Средний KPI ≥ 9"
+          "desc": "Средний KPI 9.0+ за месяц",
+          "color": "#fbbf24"
         },
         {
+          "id": "quality",
           "icon": "ph-shield-check",
           "title": "Безупречное качество",
-          "color": "#22d3ee",
-          "reason": "Качество 10/10"
+          "desc": "Качество 10/10 — без возвратов и рекламаций",
+          "color": "#22d3ee"
         },
         {
+          "id": "learning",
+          "icon": "ph-graduation-cap",
+          "title": "Гуру обучения",
+          "desc": "Обучаемость 10/10 — быстро осваивает новое",
+          "color": "#a78bfa"
+        },
+        {
+          "id": "engagement",
           "icon": "ph-users-three",
           "title": "Командный дух",
-          "color": "#34d399",
-          "reason": "Вовлечённость 10/10"
+          "desc": "Вовлечённость 10/10 — командность и помощь коллегам",
+          "color": "#34d399"
+        },
+        {
+          "id": "discipline",
+          "icon": "ph-clipboard-text",
+          "title": "Страж дисциплины",
+          "desc": "Требования к работе 10/10 — регламенты и порядок",
+          "color": "#fb7185"
+        },
+        {
+          "id": "stability",
+          "icon": "ph-arrows-clockwise",
+          "title": "Стабильность",
+          "desc": "3+ месяца подряд без падения среднего KPI",
+          "color": "#60a5fa"
         }
       ]
     }

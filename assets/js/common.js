@@ -134,6 +134,19 @@
     const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
     return `rgba(${r},${g},${b},${a})`;
   };
+  otp.toast = (msg) => {
+    let t = document.getElementById("otp-toast");
+    if (!t) {
+      t = document.createElement("div");
+      t.id = "otp-toast";
+      t.className = "toast";
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove("show"), 3200);
+  };
   otp.reveal = reveal;
 
   /* первичное раскрытие статики */

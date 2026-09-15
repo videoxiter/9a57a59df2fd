@@ -391,6 +391,23 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
   box-shadow: 0 4px 16px -4px rgba(34,211,238,.5);
 }
 
+/* --- toast --- */
+.toast {
+  position: fixed; left: 50%; bottom: 34px; transform: translateX(-50%) translateY(20px);
+  background: var(--card-2); color: var(--text); border: 1px solid var(--border-2);
+  padding: 12px 20px; border-radius: var(--radius-pill); font-size: .9rem;
+  box-shadow: 0 12px 40px rgba(0,0,0,.55); opacity: 0; pointer-events: none;
+  transition: opacity .3s var(--ease), transform .3s var(--ease);
+  z-index: 200; max-width: 88vw; text-align: center;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* --- справочник наград --- */
+.glossary { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; margin-top: 14px; }
+.glossary[style*="display: grid"] { display: grid !important; }
+.award.locked { opacity: .5; }
+.award .got { font-family: var(--font-mono); font-size: .68rem; color: var(--good); margin-left: 4px; white-space: nowrap; }
+
 /* --- reduced motion --- */
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
