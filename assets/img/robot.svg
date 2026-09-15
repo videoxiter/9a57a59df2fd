@@ -1,0 +1,66 @@
+<svg viewBox="0 0 240 264" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Робот-аналитик ОТП">
+  <defs>
+    <linearGradient id="rb" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b2735"/>
+      <stop offset="1" stop-color="#0e141d"/>
+    </linearGradient>
+    <linearGradient id="rb2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22d3ee"/>
+      <stop offset="1" stop-color="#0e7490"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#08121a"/>
+      <stop offset="1" stop-color="#0d1b26"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#a5f3fc"/>
+      <stop offset=".5" stop-color="#22d3ee"/>
+      <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- антенна -->
+  <line x1="120" y1="24" x2="120" y2="52" stroke="#33465a" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="120" cy="20" r="13" fill="url(#glow)"/>
+  <circle cx="120" cy="20" r="5.5" fill="#67e8f9"/>
+
+  <!-- голова -->
+  <rect x="58" y="50" width="124" height="92" rx="28" fill="url(#rb)" stroke="#2a3543" stroke-width="1.5"/>
+  <rect x="58" y="50" width="124" height="92" rx="28" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+
+  <!-- глаза -->
+  <circle cx="97" cy="90" r="16" fill="url(#glow)"/>
+  <circle cx="97" cy="90" r="7" fill="#e0faff"/>
+  <circle cx="143" cy="90" r="16" fill="url(#glow)"/>
+  <circle cx="143" cy="90" r="7" fill="#e0faff"/>
+
+  <!-- рот -->
+  <rect x="104" y="118" width="32" height="6" rx="3" fill="#22d3ee" opacity=".85"/>
+
+  <!-- шея -->
+  <rect x="106" y="140" width="28" height="14" rx="4" fill="#0b1118"/>
+
+  <!-- тело -->
+  <rect x="46" y="152" width="148" height="82" rx="22" fill="url(#rb)" stroke="#2a3543" stroke-width="1.5"/>
+
+  <!-- экран -->
+  <rect x="82" y="168" width="76" height="44" rx="12" fill="url(#screen)" stroke="#1f2733"/>
+  <polyline points="90,193 105,193 111,181 120,203 128,185 134,193 150,193"
+            fill="none" stroke="#22d3ee" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="90" cy="193" r="2.6" fill="#22d3ee"/>
+
+  <!-- лампочки статуса -->
+  <circle cx="60" cy="168" r="3" fill="#34d399"/>
+  <circle cx="72" cy="168" r="3" fill="#22d3ee"/>
+  <circle cx="84" cy="168" r="3" fill="#22d3ee" opacity=".5"/>
+
+  <!-- руки -->
+  <rect x="20" y="160" width="24" height="58" rx="12" fill="url(#rb)" stroke="#2a3543" stroke-width="1.5"/>
+  <rect x="196" y="160" width="24" height="58" rx="12" fill="url(#rb)" stroke="#2a3543" stroke-width="1.5"/>
+  <circle cx="32" cy="226" r="10" fill="url(#rb2)"/>
+  <circle cx="208" cy="226" r="10" fill="url(#rb2)"/>
+
+  <!-- ноги -->
+  <rect x="78" y="236" width="38" height="16" rx="8" fill="url(#rb)" stroke="#2a3543" stroke-width="1.5"/>
+  <rect x="124" y="236" width="38" height="16" rx="8" fill="url(#rb)" stroke="#2a3543" stroke-width="1.5"/>
+</svg>
