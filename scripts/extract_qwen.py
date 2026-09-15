@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Парсер экспорта Qwen-чата -> структурированные данные по сотрудникам ОТП.
-Извлекает: KPI (5 метрик), бонусы, факты (зоны роста с тикетами) по месяцам.
+Извлекает: KPI (5 метрик), бонусы (с детализацией по категориям), факты по месяцам.
 Вход: chat-export-*.json. Выход: scripts/extracted.json + сводка.
 """
 import json, os, re, sys
@@ -68,15 +68,90 @@ def clean_amount(s):
 
 
 def bonus_total(text):
+    """Итоговая сумма бонуса: 'Бонусная часть всего X ₽' или 'Итого бонусная часть = X ₽'."""
     m = re.search(r'(?:Бонусная часть всего|Итого бонусная часть\s*=)\s*([\d\s\u00a0\u202f.,]+?)\s*₽', text)
     if m:
         return clean_amount(m.group(1))
     return None
 
 
+def split_bonus(text):
+    """Возвращает (zone_lines, rest_text): строки детализации бонуса и остальной текст."""
+    lines = text.splitlines()
+    # Формат A: "Бонусная часть всего X ₽ :" + строки категорий до пустой строки.
+    for i, l in enumerate(lines):
+        if "онусная часть всего" in l:
+            zone = []
+            j = i + 1
+            while j < len(lines) and lines[j].strip() != "":
+                zone.append(lines[j])
+                j += 1
+            rest = "\n".join(lines[:i] + lines[j:])
+            return zone, rest
+    # Формат B: строки с суммами (₽/руб) до строки "Итого бонусная часть = …".
+    for i, l in enumerate(lines):
+        if "Итого бонусная часть" in l:
+            zone = [x for x in lines[:i] if re.search(r"[₽]|руб", x)]
+            rest = "\n".join(lines[i + 1:])
+            return zone, rest
+    return [], text
+
+
+NUM = r'\d+(?:[ \u00a0\u202f]\d{3})*'
+
+
+def last_amount(s):
+    """Последняя денежная сумма (с тысячными разделителями) перед ₽ или «руб» -> (amt, pre)."""
+    for marker in ("₽", "руб"):
+        i = s.rfind(marker)
+        if i < 0:
+            continue
+        nums = re.findall(NUM, s[:i])
+        if nums:
+            last = nums[-1]
+            amt = clean_amount(last)
+            pre = s[:s.rfind(last)].strip()
+            return amt, pre
+    return None, s
+
+
+def parse_bonus_line(s):
+    """Строка детализации бонуса -> {"amount", "text"} или None."""
+    s = s.strip()
+    if not s:
+        return None
+    # "+N - описание" (доп. денежный бонус без ₽)
+    m_plus = re.match(r'^\+(\d+(?:[.,]\d+)?)\s*[-–]\s*(.*)$', s)
+    if m_plus:
+        val = float(m_plus.group(1).replace(",", "."))
+        if val >= 50:
+            return {"amount": int(val), "text": m_plus.group(2).strip().rstrip(";,").strip()}
+        return None
+    # категория: "Label: … сумма ₽/руб" -> последняя сумма перед валютой
+    amt, pre = last_amount(s)
+    if amt is None:
+        return None
+    lm = re.match(r'^(.*?)\s*[:=]', pre)
+    label = (lm.group(1).strip() if lm else pre).rstrip(";,").strip()
+    if not label:
+        return None
+    return {"amount": amt, "text": label}
+
+
+def bonus_breakdown(text):
+    """Детализация бонуса (категории) + остальной текст без зоны бонуса."""
+    zone, rest = split_bonus(text)
+    items = []
+    for l in zone:
+        it = parse_bonus_line(l)
+        if it:
+            items.append(it)
+    return items, rest
+
+
 def fact_lines(text):
-    """Строки вида +/-N ... — денежные бонусы и факты-замечания."""
-    money, pos_note, neg = [], [], []
+    """Баллы-факты: строки +N/-N вне зоны бонуса. Деньги (N>=50 или ₽/руб) — отдельно."""
+    pos_note, neg, money = [], [], []
     for line in text.splitlines():
         s = line.strip()
         m = re.match(r'^([+-])\s*(\d+(?:[.,]\d+)?)\s*[-–]?\s*(.*)$', s)
@@ -86,15 +161,14 @@ def fact_lines(text):
         rest = m.group(3).strip()
         if len(rest) < 3:
             continue
-        is_money = bool(re.search(r"₽|руб|HELP-|ООО|смен|офис|доставк|транспорт", rest)) or val >= 50
-        item = {"value": val, "text": rest}
+        is_money = val >= 50 or bool(re.search(r"₽|руб", rest))
         if sign == "-":
-            neg.append(item)
+            neg.append({"value": val, "text": rest})
         elif is_money:
-            money.append(item)
+            money.append({"amount": int(val), "text": rest})
         else:
-            pos_note.append(item)
-    return money, pos_note, neg
+            pos_note.append({"value": val, "text": rest})
+    return pos_note, neg, money
 
 
 def main():
@@ -117,7 +191,7 @@ def main():
         raw.setdefault(eid, {}).setdefault(cur_month, []).append(t)
 
     out = {}
-    print(f"{'сотрудник':<14} {'мес':<9} {'KPI (К О И В Т)':<26} {'бонус':>9}  {'деньги':>5} {'-факт':>6}")
+    print(f"{'сотрудник':<14} {'мес':<9} {'KPI (К О И В Т)':<26} {'бонус':>9}  {'кат.':>5} {'-факт':>6}")
     print("-" * 92)
     for eid in sorted(raw):
         out[eid] = {"months": {}}
@@ -126,14 +200,16 @@ def main():
             kpi = {k: metric_score(text, names) for k, names in METRICS.items()}
             kpi = kpi if all(v is not None for v in kpi.values()) else None
             bt = bonus_total(text)
-            money, pos_note, neg = fact_lines(text)
+            breakdown, rest = bonus_breakdown(text)
+            pos_note, neg, extra_money = fact_lines(rest)
+            money = breakdown + extra_money
             if bt is None:
-                bt = int(sum(x["value"] for x in money)) if money else None
+                bt = int(sum(x["amount"] for x in money)) if money else None
             out[eid]["months"][month] = {
                 "kpi": kpi, "bonus": bt,
-                "money": [{"amount": int(x["value"]), "text": x["text"]} for x in money],
-                "positives": [{"value": x["value"], "text": x["text"]} for x in pos_note],
-                "negatives": [{"value": x["value"], "text": x["text"]} for x in neg],
+                "money": money,
+                "positives": pos_note,
+                "negatives": neg,
             }
             ks = " ".join(f"{k[:1].upper()}{v}" for k, v in kpi.items()) if kpi else "(нет KPI)"
             print(f"{eid:<14} {month:<9} {ks:<26} {bt if bt is not None else '—':>9}  {len(money):>5} {len(neg):>6}")
