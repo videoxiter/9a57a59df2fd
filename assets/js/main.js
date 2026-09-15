@@ -38,7 +38,7 @@
       const rankCls = i === 0 ? "top1" : i === 1 ? "top2" : i === 2 ? "top3" : "";
       const medal = hasKpi ? (i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1) : "👑";
       const leftBadge = e.status === "left" ? '<span class="badge badge-left">выбыл</span>' : "";
-      const stars = hasKpi && e.stars > 0 ? `<span class="lb-trend up">${"★".repeat(Math.min(e.stars, 5))}</span>` : "";
+      const stars = hasKpi ? `<span class="lb-trend up" title="уровень">LVL ${e.lvl}</span>` : "";
       const trendCell = hasKpi
         ? `<span class="lb-trend ${cls}">${arrow} ${t.delta > 0 ? "+" + t.delta : t.delta}</span>`
         : '<span class="badge" style="font-size:.68rem"><i class="ph ph-crown"></i> руководитель</span>';
@@ -65,7 +65,7 @@
         : '<div class="mm" style="grid-column:1/-1;color:var(--muted);padding:12px"><i class="ph ph-crown"></i> KPI не ведётся — руководитель</div>';
       const leftTag = e.status === "left" ? '<span class="badge badge-left" style="font-size:.68rem">выбыл</span>' : "";
       const awardTop = (e.awards && e.awards[0]) ? `<span class="badge" style="font-size:.66rem;color:${e.awards[0].color};border-color:${otp.hexA(e.awards[0].color,0.3)}"><i class="${e.awards[0].icon}"></i> ${e.awards[0].title}</span>` : "";
-      const stars = hasKpi && e.stars > 0 ? `<span style="color:var(--warn);font-size:.8rem;letter-spacing:2px">${"★".repeat(Math.min(e.stars, 5))}</span>` : "";
+      const stars = hasKpi ? `<span style="color:var(--warn);font-size:.75rem;font-weight:600"><i class="ph-fill ph-star"></i> LVL ${e.lvl} · ${e.stars_in_level}/10</span>` : "";
       return `
         <a class="card emp-card" href="../team/${e.slug}/index.html" data-reveal>
           <div class="top">

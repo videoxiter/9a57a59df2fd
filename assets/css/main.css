@@ -132,6 +132,10 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
   border-color: rgba(248,113,113,.3);
 }
 .badge-good { background: rgba(52,211,153,.12); color: var(--good); border-color: rgba(52,211,153,.3); }
+.lvl-badge {
+  background: linear-gradient(135deg, rgba(34,211,238,.2), rgba(167,139,250,.2));
+  color: var(--accent-2); border-color: rgba(34,211,238,.42); font-weight: 700;
+}
 
 /* --- карточки --- */
 .card {
@@ -310,6 +314,10 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
 .step { display: flex; gap: 16px; padding: 18px; border-radius: var(--radius-sm); background: var(--surface); border: 1px solid var(--border); }
 .step .n { font-family: var(--font-mono); font-size: 1.6rem; font-weight: 700; color: var(--accent); line-height: 1; }
 .step .act { font-weight: 600; }
+.step .zone {
+  display: inline-block; font-family: var(--font-mono); font-size: .72rem; font-weight: 700;
+  color: var(--accent); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px;
+}
 .step .res { color: var(--muted); font-size: .9rem; margin-top: 4px; }
 .step .dl { display: inline-block; margin-top: 8px; font-family: var(--font-mono); font-size: .76rem; color: var(--accent-2); background: var(--accent-glow); padding: 3px 10px; border-radius: var(--radius-pill); }
 
@@ -359,17 +367,31 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
 .sub-head { display: flex; align-items: center; gap: 10px; font-size: 1.15rem; font-weight: 650; margin: 34px 0 14px; }
 .sub-head i { color: var(--accent); font-size: 1.2rem; }
 
-/* --- геймификация --- */
-.awards-row { display: flex; flex-wrap: wrap; gap: 12px; }
-.award {
-  display: flex; align-items: center; gap: 12px; padding: 13px 16px;
-  border-radius: var(--radius-sm); background: var(--surface);
+/* --- геймификация (игровые достижения) --- */
+.awards-row { display: flex; flex-wrap: wrap; gap: 14px; }
+.award-tile {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  width: 132px; padding: 16px 10px 13px; border-radius: 16px;
+  background: linear-gradient(180deg, var(--card-2), var(--card));
   border: 1px solid var(--border); transition: transform .25s var(--ease), border-color .25s;
 }
-.award:hover { transform: translateY(-3px); }
-.award i { font-size: 1.5rem; flex-shrink: 0; }
-.award .a-t { font-weight: 650; font-size: .92rem; }
-.award .a-r { color: var(--muted); font-size: .78rem; }
+.award-tile:hover { transform: translateY(-4px); border-color: var(--accent-dim); }
+.award-tile .medal {
+  width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center;
+  margin-bottom: 10px;
+  background: radial-gradient(circle at 32% 28%, color-mix(in srgb, var(--ac) 55%, #fff), var(--ac) 68%);
+  box-shadow: 0 6px 18px -4px color-mix(in srgb, var(--ac) 55%, transparent), inset 0 2px 4px rgba(255,255,255,.22);
+}
+.award-tile .medal-glyph {
+  font-family: var(--font-mono); font-weight: 800; font-size: 1.7rem; line-height: 1; color: #04101a;
+  text-shadow: 0 1px 0 rgba(255,255,255,.35);
+}
+.award-tile.star-medal .medal {
+  border-radius: 0;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+.award-tile .a-t { font-weight: 650; font-size: .78rem; line-height: 1.25; }
+.award-tile .a-r { color: var(--muted); font-size: .68rem; line-height: 1.3; margin-top: 4px; }
 .fact-line {
   margin-top: 8px; font-size: .82rem; color: var(--muted);
   background: var(--surface); border-left: 2px solid var(--accent);
@@ -403,10 +425,13 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* --- справочник наград --- */
-.glossary { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; margin-top: 14px; }
+.glossary { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-top: 14px; }
 .glossary[style*="display: grid"] { display: grid !important; }
-.award.locked { opacity: .5; }
-.award .got { font-family: var(--font-mono); font-size: .68rem; color: var(--good); margin-left: 4px; white-space: nowrap; }
+.glossary .award-tile { width: auto; }
+.award-tile.locked { opacity: .55; }
+.award-tile.locked .medal { background: #20262f; box-shadow: none; }
+.award-tile.locked .medal-glyph { color: #4a5563; text-shadow: none; }
+.award-tile .got { font-family: var(--font-mono); font-size: .66rem; color: var(--good); white-space: nowrap; }
 
 /* --- reduced motion --- */
 @media (prefers-reduced-motion: reduce) {

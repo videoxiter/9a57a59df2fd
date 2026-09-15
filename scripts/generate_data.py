@@ -57,9 +57,9 @@ CONTENT = {
                 {"problem": "Автоматизация контроля", "ticket": "—", "effect": "Контроль держится на ручной включённости", "cause": "Не выстроена система чек-поинтов и супервайзинга"},
             ],
             "recommendations": [
-                {"action": "Автоматизировать контроль работы специалистов (n8n + Zabbix + дашборд)", "result": "Контроль без ручной проверки каждого шага", "deadline": "Сен 2026", "fact": "Руководитель: «окунуться в автоматизацию — автоматизировать контроль работы специалистов, супервайзинг»"},
-                {"action": "Раз в месяц приносить план улучшения (Jira/связь/обучение) с профитом для SLA", "result": "Инициатива вместо ожидания команд", "deadline": "Окт 2026", "fact": "Апрель: «хотелось бы больше инициативы в управлении специалистами»"},
-                {"action": "Принимать операционные решения самостоятельно, фиксируя итог для руководителя", "result": "Руководитель разгружен от «каждого чиха»", "deadline": "Окт 2026", "fact": "Апрель: «научиться принимать самостоятельно важные решения»"},
+                {"zone": "Управление и контроль", "method": "Автоматизировать контроль работы специалистов (n8n + Zabbix + дашборд)", "result": "Контроль без ручной проверки каждого шага", "deadline": "Сен 2026", "fact": "Руководитель: «окунуться в автоматизацию — автоматизировать контроль работы специалистов, супервайзинг»"},
+                {"zone": "Инициатива", "method": "Раз в месяц приносить план улучшения (Jira/связь/обучение) с профитом для SLA", "result": "Инициатива вместо ожидания команд", "deadline": "Окт 2026", "fact": "Апрель: «хотелось бы больше инициативы в управлении специалистами»"},
+                {"zone": "Самостоятельность", "method": "Принимать операционные решения самостоятельно, фиксируя итог для руководителя", "result": "Руководитель разгружен от «каждого чиха»", "deadline": "Окт 2026", "fact": "Апрель: «научиться принимать самостоятельно важные решения»"},
             ],
         },
     },
@@ -223,73 +223,130 @@ def tickets_of(text):
 
 THEMES = [
     ("sla", ["затян", "sla", "просроч", "срок", "вовремя", "своевременно", "держал задачу", "не перевёл"],
-     "Контролировать сроки: SLA-напоминания за 24 ч + эскалация при риске просрочки",
-     "Просрочки и сгоревшие SLA → ноль"),
+     "Сроки и SLA", "Контролировать сроки: SLA-напоминания за 24 ч + эскалация при риске просрочки", "Просрочки и сгоревшие SLA → ноль"),
     ("comments", ["комментар", "обратн", "сообщил", "сообщить", "разъясн", "статус"],
-     "Оставлять внешние комментарии и актуализировать статус в каждой задаче",
-     "Меньше уточняющих вопросов от пользователей и авторов"),
+     "Коммуникация", "Оставлять внешние комментарии и актуализировать статус в каждой задаче", "Меньше уточняющих вопросов от пользователей и авторов"),
     ("knowledge", ["не знает", "не знал", "бз", "как оформ", "как добав", "статья", "регламент"],
-     "Перед нестандартной операцией проверять БЗ; нет статьи — создать",
-     "Меньше ошибок по регламентам, знания фиксируются в базе"),
+     "Знание процессов", "Перед нестандартной операцией проверять БЗ; нет статьи — создать", "Меньше ошибок по регламентам, знания фиксируются в базе"),
     ("tech", ["настроил", "неверно", "sip", "принтер", "spool", "очередь", "моноблок", "пк ", "логин", "права"],
-     "Прокачать базовую диагностику (сеть, печать, ОС) на практике/курсе",
-     "Типовые инциденты решаются быстрее, без эскалации"),
+     "Технические навыки", "Прокачать базовую диагностику (сеть, печать, ОС) на практике/курсе", "Типовые инциденты решаются быстрее, без эскалации"),
     ("planning", ["контролир", "планиров", "делегир", "висят", "копят", "фокус", "самотёк"],
-     "Вести личный план задач и делегировать то, что не успеваешь сам",
-     "Нет висящих/просроченных задач, нагрузка равномерная"),
+     "Планирование", "Вести личный план задач и делегировать то, что не успеваешь сам", "Нет висящих/просроченных задач, нагрузка равномерная"),
     ("initiative", ["инициатив", "пассивн", "предложен", "мало", "проактив"],
-     "Раз в месяц приносить одно предложение по улучшению процесса",
-     "Проактивность даёт вклад в командные улучшения"),
+     "Инициатива", "Раз в месяц приносить одно предложение по улучшению процесса", "Проактивность даёт вклад в командные улучшения"),
 ]
+
+THEME_RESOURCES = {
+    "sla": ["soft", "itsm"], "comments": ["comm"], "knowledge": ["itsm", "os"],
+    "tech": ["network", "os"], "planning": ["soft"], "initiative": ["automation", "soft"],
+}
+
+RESOURCE_POOL = {
+    "network": [
+        {"title": "Хабр — статьи по сетям и сетевым технологиям", "type": "Статьи", "url": "https://habr.com/ru/hubs/networks/articles/", "icon": "ph-globe"},
+        {"title": "Основы компьютерных сетей — видеокурс (Stepik)", "type": "Видеокурс", "url": "https://stepik.org/course/1372", "icon": "ph-video"},
+    ],
+    "os": [
+        {"title": "Хабр — системное администрирование", "type": "Статьи", "url": "https://habr.com/ru/hubs/sysadmin/articles/", "icon": "ph-globe"},
+        {"title": "Хабр — Windows: установка и настройка", "type": "Статьи", "url": "https://habr.com/ru/hubs/windows/articles/", "icon": "ph-globe"},
+    ],
+    "itsm": [
+        {"title": "Хабр — ITIL и управление ИТ-услугами", "type": "Статьи", "url": "https://habr.com/ru/hubs/itil/articles/", "icon": "ph-globe"},
+        {"title": "ITIL 4 Foundation — курс на русском", "type": "Курс", "url": "https://stepik.org/course/80983", "icon": "ph-graduation-cap"},
+    ],
+    "automation": [
+        {"title": "Хабр — автоматизация процессов (n8n, скрипты)", "type": "Статьи", "url": "https://habr.com/ru/search/?q=n8n+автоматизация", "icon": "ph-globe"},
+    ],
+    "soft": [
+        {"title": "Атомные привычки — Джеймс Клир (ЛитРес)", "type": "Книга", "url": "https://www.litres.ru/book/dzheyms-klir/atomnye-privychki-40480030/", "icon": "ph-book-open"},
+        {"title": "Хабр — тайм-менеджмент и личная эффективность", "type": "Статьи", "url": "https://habr.com/ru/search/?q=тайм-менеджмент", "icon": "ph-globe"},
+    ],
+    "comm": [
+        {"title": "Как завоёвывать друзей — Дейл Карнеги (ЛитРес)", "type": "Книга", "url": "https://www.litres.ru/book/deyl-karnegi/kak-zavoevyvat-druzey-i-okazyvat-vliyanie-na-ludey-24136145/", "icon": "ph-book-open"},
+        {"title": "Хабр — деловая коммуникация и переписка", "type": "Статьи", "url": "https://habr.com/ru/search/?q=деловая+коммуникация", "icon": "ph-globe"},
+    ],
+    "sales": [
+        {"title": "Хабр — продажи в IT и работа с клиентом", "type": "Статьи", "url": "https://habr.com/ru/search/?q=продажи+IT", "icon": "ph-globe"},
+    ],
+    "inventory": [
+        {"title": "Хабр — складской учёт и управление запасами", "type": "Статьи", "url": "https://habr.com/ru/search/?q=складской+учёт", "icon": "ph-globe"},
+    ],
+}
+
+def resources_for(negatives):
+    themes = []
+    for neg in negatives:
+        text = neg["text"].lower()
+        for key, kws, _, _, _ in THEMES:
+            if key in themes:
+                continue
+            if any(k in text for k in kws):
+                themes.append(key)
+                break
+        if len(themes) >= 3:
+            break
+    if not themes:
+        themes = ["itsm", "soft"]
+    res, seen = [], set()
+    for t in themes:
+        for rkey in THEME_RESOURCES.get(t, []):
+            for r in RESOURCE_POOL.get(rkey, []):
+                if r["url"] not in seen:
+                    res.append(r)
+                    seen.add(r["url"])
+    return res[:6]
+
 
 def gen_recommendations(negatives, kpi):
     recs, used = [], set()
     for neg in sorted(negatives, key=lambda x: -x["value"]):
         text = neg["text"].lower()
         tks = tickets_of(neg["text"])
-        for key, kws, action, result in THEMES:
+        for key, kws, zone, method, result in THEMES:
             if key in used:
                 continue
             if any(k in text for k in kws):
                 fact = (tks[0] + " · " + neg["text"][:70]) if tks else neg["text"][:90]
-                recs.append({"action": action, "result": result,
+                recs.append({"zone": zone, "method": method, "result": result,
                              "deadline": "Сен 2026", "fact": fact, "ticket": tks[0] if tks else ""})
                 used.add(key)
                 break
-        if len(recs) >= 3:
+        if len(recs) >= 4:
             break
     if kpi:
-        if len(recs) < 3 and kpi.get("learnability", 0) < 8:
-            recs.append({"action": "Выделить 2 ч/нед на обучение по согласованному плану",
+        if len(recs) < 4 and kpi.get("learnability", 0) < 8:
+            recs.append({"zone": "Обучаемость", "method": "Выделить 2 ч/нед на обучение по согласованному плану",
                          "result": "Рост обучаемости и скорости", "deadline": "Сен 2026",
                          "fact": f"Обучаемость сейчас {kpi.get('learnability')}/10 — ниже целевых 8", "ticket": ""})
-        if len(recs) < 3 and kpi.get("initiative", 0) < 7:
-            recs.append({"action": "Раз в месяц предлагать одно улучшение в ретро/чат",
+        if len(recs) < 4 and kpi.get("initiative", 0) < 7:
+            recs.append({"zone": "Инициатива", "method": "Раз в месяц предлагать одно улучшение в ретро/чат",
                          "result": "Рост инициативы", "deadline": "Окт 2026",
                          "fact": f"Инициатива {kpi.get('initiative')}/10 — есть куда расти", "ticket": ""})
-    if len(recs) < 3:
-        recs.append({"action": "Разбирать 1 сложный кейс в неделю до корневой причины",
+    if len(recs) < 4:
+        recs.append({"zone": "Техническая глубина", "method": "Разбирать 1 сложный кейс в неделю до корневой причины",
                      "result": "Рост технической глубины", "deadline": "Окт 2026",
                      "fact": "Системная рекомендация на основе месячных фактов", "ticket": ""})
-    return recs[:3]
+    return recs[:4]
 
 # ---------- геймификация ----------
 AWARDS_CATALOG = [
-    {"id": "leader",    "icon": "ph-crown-simple",   "title": "Руководитель",       "desc": "Главный специалист — KPI не ведётся, оценивается вся команда", "color": "#fbbf24"},
-    {"id": "legend",    "icon": "ph-trophy",         "title": "Легенда",            "desc": "Средний KPI 9.0+ за месяц", "color": "#fbbf24"},
-    {"id": "pro",       "icon": "ph-medal",          "title": "Профи",              "desc": "Средний KPI 8.0–8.9", "color": "#cbd5e1"},
-    {"id": "growing",   "icon": "ph-medal",          "title": "Развивающийся",      "desc": "Средний KPI 7.0–7.9", "color": "#d97706"},
-    {"id": "starter",   "icon": "ph-seedling",       "title": "На старте",          "desc": "Средний KPI ниже 7.0 — есть зона роста", "color": "#8b96a8"},
-    {"id": "top",       "icon": "ph-crown",          "title": "Топ месяца",         "desc": "1-е место в рейтинге по среднему KPI", "color": "#22d3ee"},
-    {"id": "perfect",   "icon": "ph-star-four",      "title": "Идеальная пятёрка",  "desc": "Все 5 метрик = 10/10", "color": "#fbbf24"},
-    {"id": "quality",   "icon": "ph-shield-check",   "title": "Безупречное качество", "desc": "Качество 10/10 — без возвратов и рекламаций", "color": "#22d3ee"},
-    {"id": "learning",  "icon": "ph-graduation-cap", "title": "Гуру обучения",      "desc": "Обучаемость 10/10 — быстро осваивает новое", "color": "#a78bfa"},
-    {"id": "initiative","icon": "ph-rocket-launch",  "title": "Мастер инициативы",  "desc": "Инициатива 10/10 — проактивность и предложения", "color": "#fbbf24"},
-    {"id": "engagement","icon": "ph-users-three",    "title": "Командный дух",      "desc": "Вовлечённость 10/10 — командность и помощь коллегам", "color": "#34d399"},
-    {"id": "discipline","icon": "ph-clipboard-text", "title": "Страж дисциплины",   "desc": "Требования к работе 10/10 — регламенты и порядок", "color": "#fb7185"},
-    {"id": "breakthrough","icon": "ph-trend-up",     "title": "Прорыв месяца",      "desc": "Рост среднего KPI на +1 и больше за месяц", "color": "#34d399"},
-    {"id": "stability", "icon": "ph-arrows-clockwise","title": "Стабильность",      "desc": "3+ месяца подряд без падения среднего KPI", "color": "#60a5fa"},
-    {"id": "night",     "icon": "ph-moon",           "title": "Ночной страж",       "desc": "Держит поддержку в ночную смену 24/7", "color": "#818cf8"},
+    {"id": "legend",    "icon": "ph-trophy",         "title": "Легенда",            "desc": "Средний KPI 9.0+ за месяц", "color": "#fbbf24", "glyph": "9+"},
+    {"id": "pro",       "icon": "ph-medal",          "title": "Профи",              "desc": "Средний KPI 8.0–8.9", "color": "#cbd5e1", "glyph": "8"},
+    {"id": "growing",   "icon": "ph-medal",          "title": "Развивающийся",      "desc": "Средний KPI 7.0–7.9", "color": "#d97706", "glyph": "7"},
+    {"id": "starter",   "icon": "ph-seedling",       "title": "На старте",          "desc": "Средний KPI ниже 7.0 — есть зона роста", "color": "#8b96a8", "glyph": "‹7"},
+    {"id": "top",       "icon": "ph-crown",          "title": "Топ месяца",         "desc": "1-е место в рейтинге по среднему KPI", "color": "#22d3ee", "glyph": "№1"},
+    {"id": "perfect",   "icon": "ph-star-four",      "title": "Идеальная пятёрка",  "desc": "Все 5 метрик = 10/10", "color": "#fbbf24", "glyph": "5"},
+    {"id": "quality",   "icon": "ph-shield-check",   "title": "Безупречное качество", "desc": "Качество 10/10 — без возвратов и рекламаций", "color": "#22d3ee", "glyph": "10"},
+    {"id": "learning",  "icon": "ph-graduation-cap", "title": "Гуру обучения",      "desc": "Обучаемость 10/10 — быстро осваивает новое", "color": "#a78bfa", "glyph": "10"},
+    {"id": "initiative","icon": "ph-rocket-launch",  "title": "Мастер инициативы",  "desc": "Инициатива 10/10 — проактивность и предложения", "color": "#fbbf24", "glyph": "10"},
+    {"id": "engagement","icon": "ph-users-three",    "title": "Командный дух",      "desc": "Вовлечённость 10/10 — командность и помощь коллегам", "color": "#34d399", "glyph": "10"},
+    {"id": "discipline","icon": "ph-clipboard-text", "title": "Страж дисциплины",   "desc": "Требования к работе 10/10 — регламенты и порядок", "color": "#fb7185", "glyph": "10"},
+    {"id": "breakthrough","icon": "ph-trend-up",     "title": "Прорыв месяца",      "desc": "Рост среднего KPI на +1 и больше за месяц", "color": "#34d399", "glyph": "+1"},
+    {"id": "stability", "icon": "ph-arrows-clockwise","title": "Стабильность",      "desc": "3+ месяца подряд без падения среднего KPI", "color": "#60a5fa", "glyph": "3м"},
+    {"id": "hero",      "icon": "ph-fire-extinguisher","title": "Герой-спасатель",  "desc": "Больше всех выходных смен / переработок за месяц", "color": "#f87171", "glyph": "🔥"},
+    {"id": "changer",   "icon": "ph-sparkle",        "title": "Меняет мир!",        "desc": "Больше всех изменений в работе или отделе за месяц", "color": "#c084fc", "glyph": "✦"},
+    {"id": "seller",    "icon": "ph-hand-coins",     "title": "Продавец месяца",   "desc": "Сделал хотя бы одну продажу ИТ-оборудования за месяц", "color": "#2dd4bf", "glyph": "₽"},
+    {"id": "budget",    "icon": "ph-piggy-bank",     "title": "Вне бюджета!",      "desc": "Сократил ежемесячный расход отдела", "color": "#38bdf8", "glyph": "↓"},
 ]
 CATALOG_BY_ID = {a["id"]: a for a in AWARDS_CATALOG}
 
@@ -306,39 +363,36 @@ def _stable(emp):
 def awards_for(emp):
     ids = []
     kpi = emp.get("current")
-    if emp["id"] == "yakovlenkov":
-        return _award_objects(["leader"])
-    if not kpi:
-        return []
-    avg = emp["avg"]
-    if avg >= 9:
-        ids.append("legend")
-    elif avg >= 8:
-        ids.append("pro")
-    elif avg >= 7:
-        ids.append("growing")
-    else:
-        ids.append("starter")
-    if emp.get("rank") == 1:
-        ids.append("top")
-    if kpi.get("quality") == 10:
-        ids.append("quality")
-    if kpi.get("learnability") == 10:
-        ids.append("learning")
-    if kpi.get("initiative") == 10:
-        ids.append("initiative")
-    if kpi.get("engagement") == 10:
-        ids.append("engagement")
-    if kpi.get("discipline") == 10:
-        ids.append("discipline")
-    if all(v == 10 for v in kpi.values()):
-        ids.append("perfect")
-    if emp.get("growth_delta", 0) >= 1:
-        ids.append("breakthrough")
-    if "ночн" in emp.get("role", "").lower():
-        ids.append("night")
-    if _stable(emp):
-        ids.append("stability")
+    if kpi:
+        avg = emp["avg"]
+        if avg >= 9:
+            ids.append("legend")
+        elif avg >= 8:
+            ids.append("pro")
+        elif avg >= 7:
+            ids.append("growing")
+        else:
+            ids.append("starter")
+        if emp.get("rank") == 1:
+            ids.append("top")
+        if kpi.get("quality") == 10:
+            ids.append("quality")
+        if kpi.get("learnability") == 10:
+            ids.append("learning")
+        if kpi.get("initiative") == 10:
+            ids.append("initiative")
+        if kpi.get("engagement") == 10:
+            ids.append("engagement")
+        if kpi.get("discipline") == 10:
+            ids.append("discipline")
+        if all(v == 10 for v in kpi.values()):
+            ids.append("perfect")
+        if emp.get("growth_delta", 0) >= 1:
+            ids.append("breakthrough")
+        if _stable(emp):
+            ids.append("stability")
+    # ручные награды (заполняет руководитель ежемесячно)
+    ids += emp.get("manual_awards", [])
     return _award_objects(ids)
 
 # ---------- стабильные неугadываемые слаги (URL персональных страниц) ----------
@@ -348,6 +402,36 @@ SLUGS = {
     "zavyalov": "a9cb0e50ea70", "bolgov": "e5d35a6fc921", "yuryev": "8b36020d00c7",
     "pospelova": "d2b44b366961",
 }
+
+# ---------- ручные награды (заполняет руководитель ежемесячно) ----------
+# Ключ — id сотрудника, значение — список id наград из AWARDS_CATALOG.
+MANUAL_AWARDS = {
+    # "frolov": ["hero", "changer"],
+    # "bolgov": ["seller"],
+    # "yakovlenkov": ["budget"],
+}
+
+# ---------- звёзды и уровень ----------
+def star_change(prev_avg, cur_avg):
+    delta = cur_avg - prev_avg
+    if delta <= -1.0:
+        return -1
+    if delta > 0.0 or cur_avg >= 8.0:
+        return 1
+    return 0
+
+def compute_stars(history):
+    kpi_months = [h for h in history if h.get("quality") is not None]
+    total = 0
+    delta_month = 0
+    if len(kpi_months) >= 2:
+        avgs = [sum(h[k] for k in MKEYS) / 5 for h in kpi_months]
+        for i in range(1, len(avgs)):
+            ch = star_change(avgs[i - 1], avgs[i])
+            total = max(0, total + ch)
+            if i == len(avgs) - 1:
+                delta_month = ch
+    return total, delta_month
 
 # ---------- сборка ----------
 def build():
@@ -382,10 +466,8 @@ def build():
             a = sum(last_with_kpi[-2][k] for k in MKEYS) / 5
             b = sum(last_with_kpi[-1][k] for k in MKEYS) / 5
             growth_delta = round(b - a, 2)
-        # звёзды за рост (vs предыдущий месяц)
-        stars = 0
-        if len(last_with_kpi) >= 2:
-            stars = sum(1 for k in MKEYS if last_with_kpi[-1][k] > last_with_kpi[-2][k])
+        # звёзды и уровень (кумулятивно по месяцам)
+        stars_total, stars_delta = compute_stars(history)
         latest = rd["months"].get(months[-1], {})
         emp = {
             "id": eid,
@@ -393,10 +475,14 @@ def build():
             "fullName": content["fullName"], "shortName": content["shortName"],
             "role": content["role"], "siteTitle": content["siteTitle"],
             "tagline": content["tagline"], "personal": content["personal"],
-            "literature": content["literature"], "links": content["links"],
+            "literature": content["literature"],
+            "resources": resources_for(latest.get("negatives", [])),
             "status": "active",
             "history": history,
-            "current": current, "avg": avg, "growth_delta": growth_delta, "stars": stars,
+            "current": current, "avg": avg, "growth_delta": growth_delta,
+            "stars": stars_total, "stars_delta": stars_delta,
+            "lvl": 1 + stars_total // 10, "stars_in_level": stars_total % 10,
+            "manual_awards": MANUAL_AWARDS.get(eid, []),
             "bonuses": latest.get("money", []),
             "strengths": content.get("custom", {}).get("strengths", []) or
                           [[x["text"], "Отмечено руководителем"] for x in latest.get("positives", [])][:4],
@@ -435,7 +521,7 @@ def main():
     for e in data["employees"]:
         kpi = e["current"]
         ks = " ".join(str(kpi[k]) for k in MKEYS) if kpi else "(нет KPI)"
-        print(f"  #{str(e['rank']):>2} {e['fullName']:<38} avg={e['avg']}  [{ks}]  звёзд={e['stars']} наград={len(e['awards'])}")
+        print(f"  #{str(e['rank']):>2} {e['fullName']:<38} avg={e['avg']}  LVL={e['lvl']} ⭐{e['stars_in_level']}/10 [{ks}]  наград={len(e['awards'])}")
 
 if __name__ == "__main__":
     main()

@@ -16,18 +16,26 @@
   const trendIcon = trend.dir === "up" ? "trend-up" : trend.dir === "down" ? "trend-down" : "minus";
 
   const awards = (emp.awards || []).map((a) =>
-    `<div class="award" style="border-color:${otp.hexA(a.color, 0.35)}"><i class="${a.icon}" style="color:${a.color}"></i><div><div class="a-t">${a.title}</div><div class="a-r">${a.desc}</div></div></div>`).join("");
+    `<div class="award-tile${a.id === "perfect" ? " star-medal" : ""}"><span class="medal" style="--ac:${a.color}"><span class="medal-glyph">${a.glyph || ""}</span></span><div class="a-t">${a.title}</div><div class="a-r">${a.desc}</div></div>`).join("");
   const earnedIds = new Set((emp.awards || []).map((a) => a.id));
   const glossary = (D.awardsCatalog || []).map((g) => {
     const earned = earnedIds.has(g.id);
-    return `<div class="award ${earned ? "earned" : "locked"}" style="border-color:${earned ? otp.hexA(g.color, 0.4) : "var(--border)"}"><i class="${g.icon}" style="color:${earned ? g.color : "var(--faint)"}"></i><div><div class="a-t">${g.title} ${earned ? '<span class="got">· получена</span>' : ""}</div><div class="a-r">${g.desc}</div></div></div>`;
+    return `<div class="award-tile ${earned ? "earned" : "locked"}${g.id === "perfect" ? " star-medal" : ""}"><span class="medal" style="--ac:${earned ? g.color : "#3a4250"}"><span class="medal-glyph">${g.glyph || ""}</span></span><div class="a-t">${g.title} ${earned ? '<span class="got">· получена</span>' : ""}</div><div class="a-r">${g.desc}</div></div>`;
   }).join("");
 
   const statusBadge = emp.status === "left"
     ? '<span class="badge badge-left"><i class="ph ph-archive"></i> ' + (emp.statusNote || "выбыл") + '</span>'
     : '<span class="badge badge-good"><i class="ph ph-check"></i> в команде</span>';
-  const rankTxt = hasKpi ? `место #${emp.rank} из ${D.totalEmployees}` : "руководитель — KPI не ведётся";
-  const starsBadge = hasKpi && emp.stars > 0 ? `<span class="badge" style="color:var(--warn)"><i class="ph-fill ph-star"></i> +${emp.stars} ${emp.stars === 1 ? "звезда" : "звёзды"} за рост</span>` : "";
+  const lvl = emp.lvl || 1;
+  const inLvl = emp.stars_in_level || 0;
+  const delta = emp.stars_delta || 0;
+  const lvlBadge = `<span class="badge lvl-badge"><i class="ph ph-shield-star"></i> LVL ${lvl}</span>`;
+  const starsBadge = hasKpi ? `<span class="badge" style="color:var(--warn)"><i class="ph-fill ph-star"></i> ${inLvl}/10 ⭐ до LVL ${lvl + 1}</span>` : "";
+  const deltaBadge = delta > 0
+    ? `<span class="badge badge-good"><i class="ph-fill ph-star"></i> +${delta} ⭐ за месяц</span>`
+    : delta < 0
+      ? `<span class="badge badge-left"><i class="ph ph-star"></i> −${Math.abs(delta)} ⭐ за месяц</span>`
+      : "";
 
   function tickets(text) { return (text || "").match(/HELP-\d+/g) || []; }
   function tLinks(text) { return tickets(text).map((t) => `<a href="https://jira.centrofinans.ru/browse/${t}" target="_blank" rel="noopener">${t}</a>`).join(" "); }
@@ -80,7 +88,7 @@
     // рекомендации
     const recs = cur.recommendations || [];
     document.getElementById("plan-grid").innerHTML = recs.length
-      ? recs.map((r, n) => `<div class="step"><div class="n">0${n + 1}</div><div><div class="act">${r.action}</div><div class="res">→ ${r.result}</div>${r.fact ? `<div class="fact-line"><i class="ph ph-quotes"></i> ${r.fact}</div>` : ""}<span class="dl">до ${r.deadline}</span></div></div>`).join("")
+      ? recs.map((r, n) => `<div class="step"><div class="n">0${n + 1}</div><div><div class="zone">${r.zone}</div><div class="act">${r.method}</div><div class="res">→ ${r.result}</div>${r.fact ? `<div class="fact-line"><i class="ph ph-quotes"></i> ${r.fact}</div>` : ""}<span class="dl">до ${r.deadline}</span></div></div>`).join("")
       : '<p class="muted">За месяц замечаний не было — продолжай в том же духе!</p>';
 
     // радар + подсветка бонусного столбца
@@ -98,12 +106,8 @@
   /* ---------- скелет ---------- */
   const books = (emp.literature || []).map((b) =>
     `<a class="book" href="${b.url}" target="_blank" rel="noopener"><span class="ic"><i class="ph ph-book-open"></i></span><div style="flex:1"><div class="t">${b.title}</div><div class="a">${b.author}</div><div class="why">${b.why}</div></div><span class="type">${b.type}</span></a>`).join("");
-  const links = (emp.links || []).map((l) => {
-    if (l.url && l.url !== "#") {
-      return `<a class="book" href="${l.url}" target="_blank" rel="noopener"><span class="ic"><i class="${l.icon}"></i></span><div class="t" style="font-weight:600">${l.label}</div><span class="type">ссылка</span></a>`;
-    }
-    return `<a class="book" href="#" data-internal="${l.label}"><span class="ic"><i class="${l.icon}"></i></span><div class="t" style="font-weight:600">${l.label}</div><span class="type">внутр.</span></a>`;
-  }).join("");
+  const resources = (emp.resources || []).map((r) =>
+    `<a class="book" href="${r.url}" target="_blank" rel="noopener"><span class="ic"><i class="${r.icon || "ph-globe"}"></i></span><div style="flex:1"><div class="t">${r.title}</div><div class="a">${r.type}</div></div><span class="type">интернет</span></a>`).join("");
 
   root.innerHTML = `
     <section style="padding:20px 0 8px">
@@ -117,9 +121,10 @@
           <p class="tag">${emp.tagline}</p>
           <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px">
             ${statusBadge}
-            <span class="badge"><i class="ph ph-trophy"></i> ${rankTxt}</span>
-            ${hasKpi ? `<span class="badge"><i class="ph ph-${trendIcon}"></i> тренд ${trend.delta > 0 ? "+" + trend.delta : trend.delta} за год</span>` : ""}
+            ${lvlBadge}
             ${starsBadge}
+            ${deltaBadge}
+            ${hasKpi ? `<span class="badge"><i class="ph ph-${trendIcon}"></i> тренд ${trend.delta > 0 ? "+" + trend.delta : trend.delta} за период</span>` : ""}
           </div>
         </div>
         <div style="text-align:center;min-width:120px">
@@ -177,7 +182,7 @@
     <div class="sub-head" data-reveal><i class="ph ph-book-open"></i> Полезная литература и ресурсы</div>
     <div class="two-col">
       <div class="list-col" data-stagger>${books}</div>
-      <div class="list-col" data-stagger>${links}</div>
+      <div class="list-col" data-stagger>${resources}</div>
     </div>
 
     <section style="padding:28px 0 10px"><div class="personal-note" data-reveal>💬 ${emp.personal}</div></section>
@@ -194,13 +199,6 @@
       gt.innerHTML = open ? '<i class="ph ph-book-bookmark"></i> Справочник наград' : '<i class="ph ph-x"></i> Скрыть справочник';
     });
   }
-  document.querySelectorAll("a[data-internal]").forEach((a) => {
-    a.addEventListener("click", (ev) => {
-      ev.preventDefault();
-      otp.toast(`«${a.dataset.internal}» — внутренний ресурс команды. Ссылку выдаст руководитель.`);
-    });
-  });
-
   /* ---------- графики ---------- */
   let radarChart = null, bonusChart = null;
   if (window.Chart) {

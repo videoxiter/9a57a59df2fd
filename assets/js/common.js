@@ -107,7 +107,7 @@
     return vals.reduce((a, b) => a + b, 0) / vals.length;
   };
   otp.trend = (emp) => {
-    const h = emp.history || [];
+    const h = (emp.history || []).filter((row) => row.quality != null);
     if (h.length < 2) return { dir: "flat", delta: 0 };
     const a = otp.avgOf(h[0]);
     const b = otp.avgOf(h[h.length - 1]);
