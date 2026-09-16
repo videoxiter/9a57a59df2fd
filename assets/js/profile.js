@@ -18,6 +18,15 @@
 
   const trend = otp.trend(emp);
   const trendIcon = trend.dir === "up" ? "trend-up" : trend.dir === "down" ? "trend-down" : "minus";
+  // командные данные (нужны там, где у сотрудника нет KPI — например, у руководителя)
+  const team = D.team || {};
+  const teamProfileByMonth = team.profileByMonth || {};
+  const teamAvgByMonth = team.avgByMonth || {};
+  const teamMembers = team.memberCount || 0;
+  const teamProfileOf = (key) => teamProfileByMonth[key] || null;   // [5 значений] средние по команде
+  const teamAvgOf = (key) => (teamAvgByMonth[key] != null ? teamAvgByMonth[key] : null);
+  const leaderboardRows = D.leaderboard || [];
+  const myPlace = (leaderboardRows.find((r) => r.id === emp.id) || {}).place || null;
 
   const awardTile = (a, extra = "", ttl = "") =>
     `<div class="award-tile${a.id === "perfect" ? " star-medal" : ""}"${ttl ? ` title="${ttl}"` : ""}><span class="medal" style="--ac:${a.color}"><span class="medal-glyph">${a.glyph || ""}</span></span><div class="a-t">${a.title}${extra}</div><div class="a-r">${a.desc}</div></div>`;
@@ -68,6 +77,7 @@
 
     // плитки метрик
     const tilesEl = document.getElementById("metric-grid");
+    const teamProf = hasKpi ? null : teamProfileOf(cur.key);
     tilesEl.innerHTML = hasMk
       ? MKEYS.map((k) => {
           const m = D.metrics[k];
@@ -75,7 +85,12 @@
           const dc = d.c === "up" ? "good" : d.c === "down" ? "bad" : "muted";
           return `<div class="metric-tile"><span class="ic" style="background:${otp.hexA(m.color, 0.12)};color:${m.color}"><span style="font-size:1.3rem;line-height:1">${m.emoji || ""}</span></span><div style="flex:1"><div class="name">${m.label}</div><div class="val" style="color:${m.color}">${cur[k]}<span style="font-size:.8rem;color:var(--${dc})"> ${d.s}</span></div></div></div>`;
         }).join("")
-      : `<div class="demo-banner" style="margin:0;grid-column:1/-1;border-color:rgba(34,211,238,.28);color:var(--accent-2)"><i class="ph ph-info"></i> За ${cur.month} KPI не зафиксирован.</div>`;
+      : teamProf
+        ? MKEYS.map((k, j) => {
+            const m = D.metrics[k];
+            return `<div class="metric-tile team-tile" title="Средний балл команды за ${cur.month}"><span class="ic" style="background:${otp.hexA(m.color, 0.12)};color:${m.color}"><span style="font-size:1.3rem;line-height:1">👥</span></span><div style="flex:1"><div class="name">${m.label}</div><div class="val" style="color:${m.color}">${teamProf[j].toFixed(1)}<span style="font-size:.72rem;color:var(--muted)"> · команда</span></div></div></div>`;
+          }).join("")
+        : `<div class="demo-banner" style="margin:0;grid-column:1/-1;border-color:rgba(34,211,238,.28);color:var(--accent-2)"><i class="ph ph-info"></i> За ${cur.month} KPI не зафиксирован.</div>`;
 
     // бонусы
     const bt = cur.bonus;
@@ -103,7 +118,10 @@
 
     // радар + подсветка бонусного столбца
     if (radarChart) {
-      radarChart.data.datasets[0].data = hasMk ? MKEYS.map((k) => cur[k]) : [0, 0, 0, 0, 0];
+      radarChart.data.datasets[0].data = hasKpi
+        ? (hasMk ? MKEYS.map((k) => cur[k]) : MKEYS.map(() => 0))
+        : (teamProfileOf(cur.key) || MKEYS.map(() => 0));
+      radarChart.data.datasets[0].label = hasKpi ? emp.shortName : "Команда";
       radarChart.update();
     }
     if (bonusChart) {
@@ -139,8 +157,8 @@
           <div style="font-family:var(--font-mono);font-size:.72rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase">уровень</div>
           <div style="font-family:var(--font-mono);font-size:2.6rem;font-weight:800;line-height:1;background:linear-gradient(135deg,var(--accent),#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent">LVL ${lvl}</div>
           <div style="font-size:.82rem;color:var(--warn);margin-top:6px"><i class="ph-fill ph-star"></i> ${inLvl}/10 ⭐ до след.</div>
-          <div style="margin-top:14px;font-family:var(--font-mono);font-size:.72rem;color:var(--muted)">средний KPI</div>
-          <div style="font-family:var(--font-mono);font-size:2rem;font-weight:700;color:var(--accent-2);line-height:1">${hasKpi ? emp.avg.toFixed(1) : "—"}</div>
+          <div style="margin-top:14px;font-family:var(--font-mono);font-size:.72rem;color:var(--muted)">${hasKpi ? "средний KPI" : "средний KPI команды"}</div>
+          <div style="font-family:var(--font-mono);font-size:2rem;font-weight:700;color:var(--accent-2);line-height:1">${hasKpi ? emp.avg.toFixed(1) : (teamAvgOf(history[selected] && history[selected].key) != null ? teamAvgOf(history[selected].key).toFixed(1) : "—")}</div>
         </div>
       </div>
     </section>
@@ -161,7 +179,7 @@
 
     <section style="padding:14px 0 0"><div class="metric-grid" id="metric-grid" data-stagger></div></section>
 
-    <div class="sub-head" data-reveal><i class="ph ph-currency-rub"></i> Достижения и бонусы за <span class="month-label">…</span> <span id="bonus-total"></span></div>
+    <div class="sub-head" id="bonus-section" data-reveal style="scroll-margin-top:96px"><i class="ph ph-currency-rub"></i> Достижения и бонусы за <span class="month-label">…</span> <span id="bonus-total"></span></div>
     <div id="bonus-items" data-stagger></div>
 
     <div class="sub-head" data-reveal><i class="ph ph-scales"></i> Сильные стороны и зоны роста за <span class="month-label">…</span></div>
@@ -170,7 +188,7 @@
       <div class="card" data-reveal><h3 style="margin-bottom:12px"><span style="color:var(--warn)">⚠️</span> Зоны роста</h3><div id="growth-list"></div></div>
     </div>
 
-    <div class="sub-head" data-reveal><i class="ph ph-target"></i> План роста на <span class="month-label">…</span></div>
+    <div class="sub-head" data-reveal><i class="ph ph-target"></i> План роста</div>
     <div class="grid" id="plan-grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))"></div>
 
     <div class="sub-head" data-reveal><i class="ph ph-book-open"></i> Учебные материалы под твои зоны роста</div>
@@ -182,21 +200,24 @@
     <div class="sub-head" data-reveal><i class="ph ph-chart-line"></i> Динамика по месяцам</div>
     <div class="grid grid-2" style="margin-bottom:20px">
       <div class="card" data-reveal>
-        <h3 style="margin-bottom:4px">Профиль за <span class="month-label">…</span></h3>
-        <p class="tt-hint" style="margin-bottom:16px">5 метрик за выбранный месяц</p>
+        <h3 style="margin-bottom:4px">${hasKpi ? "Профиль за" : "Средний профиль команды за"} <span class="month-label">…</span></h3>
+        <p class="tt-hint" style="margin-bottom:16px">${hasKpi ? "5 метрик за выбранный месяц" : "средние по " + teamMembers + " специалистам за выбранный месяц"}</p>
         <div class="chart-box"><canvas id="chart-radar"></canvas></div>
       </div>
       <div class="card" data-reveal>
         <h3 style="margin-bottom:4px">Бонусы по месяцам</h3>
-        <p class="tt-hint" style="margin-bottom:16px">кликни по столбцу любого месяца — увидишь, за что (даже если бонуса не было)</p>
+        <p class="tt-hint" style="margin-bottom:16px">кликни по столбцу любого месяца — страница сразу перейдёт к «Достижениям и бонусам» с цифрами в рублях</p>
         <div class="chart-box"><canvas id="chart-bonus"></canvas></div>
       </div>
     </div>
     <div class="card" data-reveal style="margin-bottom:20px">
-      <h3 style="margin-bottom:4px">Все метрики в динамике</h3>
-      <p class="tt-hint" style="margin-bottom:16px">кликни по метрике в легенде, чтобы скрыть/показать</p>
+      <h3 style="margin-bottom:4px">${hasKpi ? "Все метрики в динамике" : "Все метрики команды в динамике"}</h3>
+      <p class="tt-hint" style="margin-bottom:16px">${hasKpi ? "кликни по метрике в легенде, чтобы скрыть/показать" : "средние значения по команде — кликни по метрике в легенде, чтобы скрыть/показать"}</p>
       <div class="chart-box lg"><canvas id="chart-lines"></canvas></div>
     </div>
+
+    <div class="sub-head" data-reveal><i class="ph ph-trophy"></i> Турнирная таблица команды · ${D.meta.updated}</div>
+    <div id="leaderboard" class="lb" data-reveal></div>
 
     <section style="padding:28px 0 10px"><div class="personal-note" data-reveal>💬 ${emp.personal}</div></section>
   `;
@@ -215,12 +236,12 @@
   /* ---------- графики ---------- */
   let radarChart = null, bonusChart = null;
   if (window.Chart) {
-    if (hasKpi) {
+    {
       radarChart = new Chart(document.getElementById("chart-radar"), {
         type: "radar",
         data: {
           labels: MKEYS.map((k) => D.metrics[k].label),
-          datasets: [{ label: emp.shortName, data: MKEYS.map((k) => 0), borderColor: "#22d3ee", backgroundColor: "rgba(34,211,238,.16)", borderWidth: 2, pointRadius: 4, pointHoverRadius: 7, pointBackgroundColor: "#22d3ee" }],
+          datasets: [{ label: hasKpi ? emp.shortName : "Команда", data: MKEYS.map(() => 0), borderColor: "#22d3ee", backgroundColor: "rgba(34,211,238,.16)", borderWidth: 2, pointRadius: 4, pointHoverRadius: 7, pointBackgroundColor: "#22d3ee" }],
         },
         options: {
           responsive: true, maintainAspectRatio: false,
@@ -259,13 +280,17 @@
       const rect = bonusCanvas.getBoundingClientRect();
       const v = bonusChart.scales.x.getValueForPixel(ev.clientX - rect.left);
       const i = Math.round(v);
-      if (Number.isFinite(i) && i >= 0 && i < history.length) renderMonth(i);
+      if (Number.isFinite(i) && i >= 0 && i < history.length) {
+        renderMonth(i);
+        const sec = document.getElementById("bonus-section");
+        if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     });
     new Chart(document.getElementById("chart-lines"), {
       type: "line",
       data: {
         labels: D.months,
-        datasets: MKEYS.map((k) => ({ label: D.metrics[k].label, data: history.map((h) => h[k]), borderColor: D.metrics[k].color, backgroundColor: D.metrics[k].color, tension: 0.35, borderWidth: 2, spanGaps: true, pointRadius: 3, pointHoverRadius: 5, pointHitRadius: 8 })),
+        datasets: MKEYS.map((k) => ({ label: D.metrics[k].label, data: history.map((h) => (hasKpi ? h[k] : (teamProfileOf(h.key) ? teamProfileOf(h.key)[MKEYS.indexOf(k)] : null))), borderColor: D.metrics[k].color, backgroundColor: D.metrics[k].color, tension: 0.35, borderWidth: 2, spanGaps: true, pointRadius: 3, pointHoverRadius: 5, pointHitRadius: 8 })),
       },
       options: {
         responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
@@ -275,6 +300,50 @@
     });
   }
 
+  /* ---------- турнирная таблица команды (соревновательная форма) ---------- */
+  function renderLeaderboard() {
+    const el = document.getElementById("leaderboard");
+    if (!el) return;
+    const rows = leaderboardRows;
+    if (!rows.length) { el.innerHTML = '<p class="muted">Рейтинг появится после первого месяца с KPI.</p>'; return; }
+    const medal = (p) => (p === 1 ? "🥇" : p === 2 ? "🥈" : p === 3 ? "🥉" : p);
+    const podium = rows.slice(0, 3).map((r) =>
+      `<div class="lb-podium${r.id === emp.id ? " is-me" : ""}"><div class="lb-pm">${medal(r.place)}</div><div class="lb-pn">${r.short}</div><div class="lb-pt">${r.title}</div><div class="lb-ps">LVL ${r.lvl} · ⭐ ${r.stars}</div><div class="lb-pa">${r.glyphs.join(" ")}</div></div>`).join("");
+    const list = rows.map((r) =>
+      `<div class="lb-row${r.id === emp.id ? " is-me" : ""}">
+        <span class="lb-place">${medal(r.place)}</span>
+        <span class="lb-who">${r.name}${r.id === emp.id ? '<span class="lb-you">ты</span>' : ""}<span class="lb-title-inline">${r.title}</span></span>
+        <span class="lb-lvl">LVL ${r.lvl}</span>
+        <span class="lb-stars" title="${r.starsInLevel}/10 звёзд до следующего уровня">${"★".repeat(r.starsInLevel)}${"☆".repeat(10 - r.starsInLevel)}</span>
+        <span class="lb-avg">${r.avg.toFixed(1)}</span>
+        <span class="lb-awards" title="Наград всего: ${r.awards}">${r.glyphs.join("")}<b>${r.awards}</b></span>
+      </div>`).join("");
+    const me = rows.find((r) => r.id === emp.id);
+    const tag = (r) => (r ? `${r.short} ${r.name.split(" ")[0].slice(0, 1)}.` : "—");
+    let hint;
+    if (!me) {
+      hint = `<div class="lb-hint">Ты вне турнира: по должности KPI не ведётся — зато вся команда перед тобой.</div>`;
+    } else if (me.place === 1) {
+      hint = `<div class="lb-hint lb-hint-top">🔥 Ты лидер турнира. Отрыв от ${tag(rows[1])} — ${me.gapDown} ${plural(me.gapDown)}. Держи темп: за тобой охотятся.</div>`;
+    } else {
+      const up = rows[me.place - 2], down = rows[me.place];
+      const back = me.gapUp > 0
+        ? `До ${me.place - 1}-го места (${tag(up)}) — ${me.gapUp} ${plural(me.gapUp)}.`
+        : `По очкам ты вровень с ${tag(up)}, выше решает средний KPI (${up.avg.toFixed(1)} против твоих ${me.avg.toFixed(1)}).`;
+      const ahead = down ? ` Отрыв от ${me.place + 1}-го (${tag(down)}) — ${me.gapDown} ${plural(me.gapDown)}.` : " Ты замыкаешь таблицу — вперёд.";
+      hint = `<div class="lb-hint">Ты #${me.place} из ${rows.length}. ${back}${ahead}</div>`;
+    }
+    el.innerHTML = `<div class="lb-podium-wrap">${podium}</div><div class="lb-list">${list}</div>${hint}<div class="lb-legend">Очки = LVL × 10 + ⭐ · 10 ⭐ = +1 LVL · награды копятся за все месяцы. Один уровень — за стабильность и рост KPI.</div>`;
+  }
+  function plural(n) {
+    const a = Math.abs(n) % 100, b = a % 10;
+    if (a > 10 && a < 20) return "очков";
+    if (b > 1 && b < 5) return "очка";
+    if (b === 1) return "очко";
+    return "очков";
+  }
+
+  renderLeaderboard();
   renderMonth(selected);
   otp.reveal(document);
 })();

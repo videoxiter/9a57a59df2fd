@@ -63,16 +63,23 @@ CONTENT = {
                 ["Развитие команды", "Замечает нюансы в работе специалистов, открыто говорит о них руководителю"],
                 ["ИИ и автоматизация", "Начал осваивать ИИ-технологии и автоматизацию процессов"],
                 ["Замещение руководителя", "Отлично замещал в отпуске, продвинул запуск пилота по линиям техподдержки"],
+                ["Опора в пиковые периоды", "Не прячется, когда отделу тяжело: три выходные смены в августе — «подставлю плечо, когда нужно»"],
+                ["Инвестиция в инструменты", "Оплачивает и внедряет ИИ-инструменты — это актив отдела, который возвращается автоматизацией и скоростью"],
+                ["Экспертиза полного цикла", "Держит связку «железо ↔ сеть ↔ ПО ↔ процессы»: редкая широта, которой нет ни у кого в команде"],
             ],
             "growth": [
                 {"problem": "Инициатива в управлении", "ticket": "—", "effect": "Ждёт команды «фас» вместо собственных предложений", "cause": "Привычка быть исполнителем, а не архитектором"},
                 {"problem": "Самостоятельность решений", "ticket": "—", "effect": "По каждому вопросу идёт к руководителю", "cause": "Не делегирована ответственность за решения"},
                 {"problem": "Автоматизация контроля", "ticket": "—", "effect": "Контроль держится на ручной включённости", "cause": "Не выстроена система чек-поинтов и супервайзинга"},
+                {"problem": "Передача экспертизы", "ticket": "—", "effect": "Остаёшься «единственным, кто умеет» — знания не масштабируются на команду", "cause": "ИИ и автоматизация освоены лично, без регламентов и обучения других"},
+                {"problem": "Разгрузка от рутины", "ticket": "—", "effect": "Операционка съедает время, которое нужно на архитектуру", "cause": "Повторяющиеся задачи не делегированы специалистам"},
             ],
             "recommendations": [
                 {"zone": "Управление и контроль", "method": "Автоматизировать контроль работы специалистов (n8n + Zabbix + дашборд)", "result": "Контроль без ручной проверки каждого шага", "deadline": "Сен 2026", "fact": "Руководитель: «окунуться в автоматизацию — автоматизировать контроль работы специалистов, супервайзинг»"},
                 {"zone": "Инициатива", "method": "Раз в месяц приносить план улучшения (Jira/связь/обучение) с профитом для SLA", "result": "Инициатива вместо ожидания команд", "deadline": "Окт 2026", "fact": "Апрель: «хотелось бы больше инициативы в управлении специалистами»"},
                 {"zone": "Самостоятельность", "method": "Принимать операционные решения самостоятельно, фиксируя итог для руководителя", "result": "Руководитель разгружен от «каждого чиха»", "deadline": "Окт 2026", "fact": "Апрель: «научиться принимать самостоятельно важные решения»"},
+                {"zone": "Передача экспертизы", "method": "Собрать внутренний мини-курс по ИИ-инструментам и провести 2 сессии для команды", "result": "Инструменты работают без твоего постоянного участия", "deadline": "Окт 2026", "fact": "ИИ освоен лично — по итогам месяца команда ещё не пользуется твоими инструментами"},
+                {"zone": "Проекты осени", "method": "Довести до теста три шага: «Фиксик 2.0», автодиагностика в n8n, супервайзинг L0", "result": "Роль технического лидера, подтверждённая результатом", "deadline": "Окт 2026", "fact": "План на сентябрь 2026: бот с 3 новыми сценариями, прототип диагностики, 3 алерта L0"},
             ],
         },
     },
@@ -405,6 +412,53 @@ def gen_growth(negatives):
     return items
 
 
+LVL_TITLES = [(1, "Новичок"), (2, "Боец"), (3, "Ветеран"), (4, "Мастер"), (5, "Гуру"), (7, "Легенда отдела")]
+
+
+def lvl_title(lvl):
+    """Игровое звание по уровню (для турнирной таблицы)."""
+    title = "Новичок"
+    for need, t in LVL_TITLES:
+        if lvl >= need:
+            title = t
+    return title
+
+
+def _uniq_by(items, key):
+    """Уникальные элементы списка словарей по значению ключа (первое вхождение выигрывает)."""
+    seen, out = set(), []
+    for it in items:
+        v = it.get(key)
+        if v in seen:
+            continue
+        seen.add(v)
+        out.append(it)
+    return out
+
+
+def build_leaderboard(result, exclude=("yakovlenkov",)):
+    """Турнирная таблица команды: LVL + звёзды + награды (без ссылок на страницы)."""
+    rows = []
+    for e in result:
+        if e["id"] in exclude or e["avg"] is None:
+            continue
+        rows.append({
+            "id": e["id"], "name": e["fullName"], "short": e["shortName"],
+            "lvl": e["lvl"], "stars": e["stars"], "starsInLevel": e["stars_in_level"],
+            "avg": e["avg"], "growth": e["growth_delta"], "awards": len(e["awards"]),
+            "glyphs": [a.get("glyph", "") for a in e["awards"][:5]],
+            "title": lvl_title(e["lvl"]), "score": e["lvl"] * 10 + e["stars"],
+        })
+    rows.sort(key=lambda r: (-r["score"], -r["avg"], -r["awards"]))
+    for i, r in enumerate(rows, 1):
+        r["place"] = i
+        up = rows[i - 2] if i > 1 else None
+        down = rows[i] if i < len(rows) else None
+        r["gapUp"] = (up["score"] - r["score"]) if up else None
+        r["gapDown"] = (r["score"] - down["score"]) if down else None
+    return rows
+
+
 def awards_for_row(history, i, rank, manual_ids):
     """Награды за конкретный месяц (i) по KPI этого месяца."""
     row = history[i]
@@ -474,9 +528,10 @@ SLUGS = {
 # ---------- ручные награды (заполняет руководитель ежемесячно) ----------
 # Ключ — id сотрудника, значение — {месяц "YYYY-MM": [id наград из AWARDS_CATALOG]}.
 MANUAL_AWARDS = {
+    # руководитель (Влад): награды по фактам его итогов — выходные смены, ИИ-проекты
+    "yakovlenkov": {"2026-06": ["changer"], "2026-08": ["hero", "changer"]},
     # "frolov": {"2026-07": ["hero", "changer"]},
     # "bolgov": {"2026-07": ["seller"]},
-    # "yakovlenkov": {"2026-07": ["budget"]},
 }
 
 # ---------- звёзды и уровень ----------
@@ -525,11 +580,28 @@ def build():
             row["avg"] = round(sum(v for v in row["kpi"].values() if v is not None) / 5, 2) if k else None
             row["rank"] = None
             if eid == "yakovlenkov":
-                row["strengths"] = custom.get("strengths", [])
-                row["growth"] = [{"zone": g.get("problem", ""), "advice": g.get("effect", ""),
-                                  "fact": g.get("cause", ""), "ticket": g.get("ticket", "")}
-                                 for g in custom.get("growth", [])]
-                row["recommendations"] = custom.get("recommendations", [])
+                # руководитель: плюсы/зоны = факты месяца из txt + курируемый контент (без дублей)
+                strength_pairs = [[p["text"], "Отмечено руководителем за месяц"] for p in row.get("positives", [])]
+                strength_pairs += [[s[0], s[1]] for s in custom.get("strengths", [])]
+                growth_items = gen_growth(negs) + [
+                    {"zone": g.get("problem", ""), "advice": g.get("effect", ""),
+                     "fact": g.get("cause", ""), "ticket": g.get("ticket", "")}
+                    for g in custom.get("growth", [])]
+                recs = list(custom.get("recommendations", []))
+                for extra in gen_recommendations(negs, None):
+                    if len(recs) >= 6:
+                        break
+                    if all(extra["zone"] != r.get("zone") for r in recs):
+                        recs.append(extra)
+                seen_s, uniq_s = set(), []
+                for s in strength_pairs:
+                    if s[0] in seen_s:
+                        continue
+                    seen_s.add(s[0])
+                    uniq_s.append(s)
+                row["strengths"] = uniq_s[:8]
+                row["growth"] = _uniq_by(growth_items, "zone")[:6]
+                row["recommendations"] = recs[:6]
             else:
                 row["strengths"] = gen_strengths(row, k)
                 row["growth"] = gen_growth(negs)
@@ -587,6 +659,16 @@ def build():
     for i, e in enumerate(ranked, 1):
         e["rank"] = i if e["avg"] is not None else None
 
+    # ---------- командные агрегаты (средние по специалистам с KPI; руководитель не входит) ----------
+    team_members = [e for e in employees if e["eid"] != "yakovlenkov"]
+    team_profile, team_avg = {}, {}
+    for mi, m in enumerate(months):
+        vals = [[e["history"][mi][k] for k in MKEYS] for e in team_members
+                if all(e["history"][mi][k] is not None for k in MKEYS)]
+        if vals:
+            team_profile[m] = [round(sum(v[j] for v in vals) / len(vals), 2) for j in range(5)]
+            team_avg[m] = round(sum(team_profile[m]) / 5, 2)
+
     data = {
         "meta": {"title": "Моя команда ОТП", "subtitle": "Отдел технической поддержки · аналитика эффективности",
                  "updated": month_label(months[-1]), "demo": False},
@@ -594,6 +676,9 @@ def build():
         "awardsCatalog": AWARDS_CATALOG,
         "months": [month_label(m) for m in months],
         "employees": result,
+        "team": {"profileByMonth": team_profile, "avgByMonth": team_avg,
+                 "memberCount": len(team_members), "updated": month_label(months[-1])},
+        "leaderboard": build_leaderboard(result),
     }
     return data
 
