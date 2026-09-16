@@ -1,6 +1,7 @@
 # Промежуточные и локальные артефакты
 scripts/extracted.json
 scripts/*.json
+scripts/*.bak
 __pycache__/
 *.pyc
 node_modules/

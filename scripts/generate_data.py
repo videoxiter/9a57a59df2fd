@@ -12,6 +12,19 @@ EXT = os.path.join(ROOT, "scripts", "extracted.json")
 OUT = os.path.join(ROOT, "assets", "js", "data.js")
 
 MONTH_LABEL = {"2026-04": "Апр 2026", "2026-05": "Май 2026", "2026-06": "Июн 2026", "2026-07": "Июл 2026"}
+RU_MONTH_ABBR = {1: "Янв", 2: "Фев", 3: "Мар", 4: "Апр", 5: "Май", 6: "Июн",
+                 7: "Июл", 8: "Авг", 9: "Сен", 10: "Окт", 11: "Ноя", 12: "Дек"}
+
+
+def month_label(m):
+    """Ярлык месяца для любого YYYY-MM: новые месяцы подхватываются автоматически."""
+    if m in MONTH_LABEL:
+        return MONTH_LABEL[m]
+    try:
+        y, mm = m.split("-")
+        return f"{RU_MONTH_ABBR[int(mm)]} {y}"
+    except Exception:
+        return m
 
 METRICS = {
     "quality":      {"label": "Качество",       "icon": "ph-shield-check", "emoji": "✅", "color": "#22d3ee",
@@ -498,7 +511,7 @@ def build():
         custom = content.get("custom", {})
         history = []
         for m in months:
-            row = {"key": m, "month": MONTH_LABEL.get(m, m)}
+            row = {"key": m, "month": month_label(m)}
             d = rd["months"].get(m, {})
             k = d.get("kpi")
             for key in MKEYS:
@@ -576,10 +589,10 @@ def build():
 
     data = {
         "meta": {"title": "Моя команда ОТП", "subtitle": "Отдел технической поддержки · аналитика эффективности",
-                 "updated": MONTH_LABEL[months[-1]], "demo": False},
+                 "updated": month_label(months[-1]), "demo": False},
         "metrics": METRICS,
         "awardsCatalog": AWARDS_CATALOG,
-        "months": [MONTH_LABEL[m] for m in months],
+        "months": [month_label(m) for m in months],
         "employees": result,
     }
     return data
@@ -587,7 +600,7 @@ def build():
 def main():
     data = build()
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    js = "/* РЕАЛЬНЫЕ данные (июль 2026). Источник: scripts/extracted.json */\n"
+    js = f"/* РЕАЛЬНЫЕ данные ({data['meta']['updated']}). Источник: scripts/extracted.json + itogi/*.txt */\n"
     js += "window.OTP_DATA = " + json.dumps(data, ensure_ascii=False, indent=2) + ";\n"
     with open(OUT, "w", encoding="utf-8") as f:
         f.write(js)

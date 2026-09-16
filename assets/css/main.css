@@ -420,6 +420,8 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
   color: #03141a; border-color: transparent; font-weight: 700;
   box-shadow: 0 4px 16px -4px rgba(34,211,238,.5);
 }
+.month-tab.empty { opacity: .45; border-style: dashed; }
+.month-tab.empty.active { opacity: 1; }
 
 /* --- toast --- */
 .toast {

@@ -9,7 +9,11 @@
   const MKEYS = otp.MKEYS;
   const history = emp.history || [];
   const hasKpi = !!emp.current;
-  let selected = history.length - 1;
+  // месяц «с данными» = есть все 5 KPI или есть бонус (иначе месяц ещё не заполнен)
+  const monthHasData = (h) => MKEYS.every((k) => h[k] != null) || h.bonus != null;
+  const filledMonths = history.map((h, i) => (monthHasData(h) ? i : -1)).filter((i) => i >= 0);
+  // открываем последний заполненный месяц (у кого нет августа — показываем июль и т.д.)
+  let selected = filledMonths.length ? filledMonths[filledMonths.length - 1] : Math.max(0, history.length - 1);
   document.title = `Мои результаты · ${emp.shortName}`;
 
   const trend = otp.trend(emp);
@@ -49,8 +53,9 @@
 
   /* ---------- рендер выбранного месяца ---------- */
   function renderMonth(i) {
-    selected = i;
     const cur = history[i];
+    if (!cur) return;
+    selected = i;
     const hasMk = cur && MKEYS.every((k) => cur[k] != null);
 
     document.querySelectorAll(".month-tab").forEach((t, idx) => t.classList.toggle("active", idx === i));
@@ -151,7 +156,7 @@
     </section>
 
     <section style="padding:20px 0 0">
-      <div class="month-tabs" id="month-tabs" data-reveal>${history.map((h, i) => `<button class="month-tab" data-i="${i}">${h.month}</button>`).join("")}</div>
+      <div class="month-tabs" id="month-tabs" data-reveal>${history.map((h, i) => `<button class="month-tab${monthHasData(h) ? "" : " empty"}" data-i="${i}"${monthHasData(h) ? "" : ' title="За этот месяц данных пока нет"'}>${h.month}</button>`).join("")}</div>
     </section>
 
     <section style="padding:14px 0 0"><div class="metric-grid" id="metric-grid" data-stagger></div></section>
@@ -183,7 +188,7 @@
       </div>
       <div class="card" data-reveal>
         <h3 style="margin-bottom:4px">Бонусы по месяцам</h3>
-        <p class="tt-hint" style="margin-bottom:16px">кликни по столбцу — увидишь, за что</p>
+        <p class="tt-hint" style="margin-bottom:16px">кликни по столбцу любого месяца — увидишь, за что (даже если бонуса не было)</p>
         <div class="chart-box"><canvas id="chart-bonus"></canvas></div>
       </div>
     </div>
@@ -224,21 +229,37 @@
         },
       });
     }
-    bonusChart = new Chart(document.getElementById("chart-bonus"), {
+    const bonusCanvas = document.getElementById("chart-bonus");
+    bonusChart = new Chart(bonusCanvas, {
       type: "bar",
       data: {
         labels: D.months,
-        datasets: [{ label: "Бонус", data: history.map((h) => h.bonus), backgroundColor: "#0e7490", hoverBackgroundColor: "#22d3ee", borderRadius: 6, maxBarThickness: 28 }],
+        datasets: [{ label: "Бонус", data: history.map((h) => (h.bonus == null ? 0 : h.bonus)), backgroundColor: "#0e7490", hoverBackgroundColor: "#22d3ee", borderRadius: 6, maxBarThickness: 28 }],
       },
       options: {
         responsive: true, maintainAspectRatio: false,
-        onClick: (e, els) => { if (els && els.length) renderMonth(els[0].index); },
+        interaction: { mode: "index", intersect: false },
         scales: {
-          y: { grid: { color: "rgba(255,255,255,.05)" }, ticks: { callback: (v) => otp.fmt(v) + " ₽" } },
+          y: { beginAtZero: true, grid: { color: "rgba(255,255,255,.05)" }, ticks: { callback: (v) => otp.fmt(v) + " ₽" } },
           x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 7 } },
         },
-        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => otp.rub(c.parsed.y) } } },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: {
+            label: (c) => (history[c.dataIndex] && history[c.dataIndex].bonus != null ? otp.rub(c.parsed.y) : "бонуса не было"),
+            afterLabel: () => "клик — подробности этого месяца",
+          } },
+        },
       },
+    });
+    // клик по любому месяцу (в т.ч. где бонуса не было / столбец нулевой) — определяем месяц по координате
+    bonusCanvas.style.cursor = "pointer";
+    bonusCanvas.addEventListener("click", (ev) => {
+      if (!bonusChart || !bonusChart.scales.x) return;
+      const rect = bonusCanvas.getBoundingClientRect();
+      const v = bonusChart.scales.x.getValueForPixel(ev.clientX - rect.left);
+      const i = Math.round(v);
+      if (Number.isFinite(i) && i >= 0 && i < history.length) renderMonth(i);
     });
     new Chart(document.getElementById("chart-lines"), {
       type: "line",
