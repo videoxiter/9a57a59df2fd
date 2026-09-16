@@ -383,8 +383,10 @@ STRENGTH_PHRASES = {
 
 
 def gen_strengths(row, kpi):
-    """Сильные стороны (что получается круто) — из высоких метрик и фактов."""
+    """Сильные стороны месяца: сначала факты руководителя, затем высокие метрики."""
     items = []
+    for p in row.get("positives", []):
+        items.append([p["text"], "Отмечено руководителем за месяц"])
     if kpi:
         for key in MKEYS:
             if kpi[key] == 10:
@@ -392,8 +394,6 @@ def gen_strengths(row, kpi):
         for key in MKEYS:
             if 8 <= kpi[key] < 10:
                 items.append([f"{METRICS[key]['label']} {kpi[key]}/10", STRENGTH_PHRASES[key]])
-    for p in row.get("positives", []):
-        items.append([p["text"], "Отмечено руководителем за месяц"])
     return items[:6]
 
 
@@ -543,18 +543,89 @@ def star_change(prev_avg, cur_avg):
         return 1
     return 0
 
+
+def star_reason(prev_avg, cur_avg):
+    """Понятное объяснение: за что звезда начислена, снята или не изменилась."""
+    d = round(cur_avg - prev_avg, 2)
+    ch = star_change(prev_avg, cur_avg)
+    if ch == 1:
+        if d > 0:
+            return f"Средний KPI вырос: {prev_avg:.2f} → {cur_avg:.2f} (+{d:.2f}) — рост даёт +1 ⭐".replace("-", "−")
+        return f"Средний KPI удержан выше порога 8.0 ({cur_avg:.2f}) — удержание даёт +1 ⭐"
+    if ch == -1:
+        return f"Средний KPI упал: {prev_avg:.2f} → {cur_avg:.2f} ({d:.2f}) — падение на 1.0 и больше снимает ⭐".replace("-", "−")
+    return f"Средний KPI {cur_avg:.2f}: роста к прошлому месяцу нет и порог 8.0 не взят — ⭐ остаётся без изменений"
+
+
 def compute_stars(history):
+    """Звёзды за все месяцы + журнал «за что» по каждому переходу."""
     kpi_months = [h for h in history if h.get("quality") is not None]
     total = 0
     delta_month = 0
-    if len(kpi_months) >= 2:
+    log = []
+    if kpi_months:
         avgs = [sum(h[k] for k in MKEYS) / 5 for h in kpi_months]
+        log.append({"key": kpi_months[0]["key"], "month": kpi_months[0]["month"],
+                    "from": None, "to": round(avgs[0], 2), "delta": None, "stars": None,
+                    "total": 0, "kind": "start",
+                    "reason": f"Точка отсчёта: средний KPI {avgs[0]:.2f}. Звёзды за первый месяц не начисляются."})
         for i in range(1, len(avgs)):
             ch = star_change(avgs[i - 1], avgs[i])
+            before = total
             total = max(0, total + ch)
             if i == len(avgs) - 1:
                 delta_month = ch
-    return total, delta_month
+            reason = star_reason(avgs[i - 1], avgs[i])
+            if ch < 0 and before + ch < 0:
+                reason += " (звёзд не осталось: ниже нуля не уходим)"
+            log.append({"key": kpi_months[i]["key"], "month": kpi_months[i]["month"],
+                        "from": round(avgs[i - 1], 2), "to": round(avgs[i], 2),
+                        "delta": round(avgs[i] - avgs[i - 1], 2), "stars": ch, "total": total,
+                        "kind": "gain" if ch > 0 else ("loss" if ch < 0 else "hold"),
+                        "reason": reason})
+    return total, delta_month, log
+
+
+# ---------- правила игры (раскрываются на персональной странице) ----------
+RULE_STARS = [
+    {"icon": "⭐", "title": "+1 ⭐ за рост",
+     "text": "Средний KPI за месяц вырос к прошлому месяцу — начисляется звезда. Удержание среднего KPI на 8.0 и выше тоже даёт +1 ⭐."},
+    {"icon": "🔻", "title": "−1 ⭐ за падение",
+     "text": "Средний KPI упал на 1.0 и больше — одна звезда снимается. Падение меньше 1.0 звёзды не снимает."},
+    {"icon": "🚧", "title": "Ниже нуля не уходим",
+     "text": "Снять можно только до 0. Один тяжёлый месяц не обнуляет всё накопленное."},
+    {"icon": "🏆", "title": "10 ⭐ = +1 LVL",
+     "text": "Каждые 10 звёзд дают новый уровень. Уровень не понижается, звёзды продолжают копиться внутри уровня."},
+    {"icon": "📅", "title": "Отсчёт с первого месяца",
+     "text": "Первый месяц с KPI — точка отсчёта. Дальше каждый месяц сравнивается с предыдущим."},
+]
+
+RULE_LEVELS = [
+    {"lvl": 1, "stars": "0–9 ⭐", "title": "Новичок",
+     "perks": ["Своя страница результатов: KPI по месяцам, план роста и напутствие",
+               "Доступ к учебным материалам под твои зоны роста"]},
+    {"lvl": 2, "stars": "10–19 ⭐", "title": "Боец",
+     "perks": ["Результаты идут в дашборд руководителя и влияют на месячный бонус",
+               "Бонусные задачи с повышенной ставкой — в первую очередь тебе"]},
+    {"lvl": 3, "stars": "20–29 ⭐", "title": "Ветеран",
+     "perks": ["Приоритет при выборе проектов, смен и периода отпуска",
+               "Право заявить свою тему в план развития отдела"]},
+    {"lvl": 4, "stars": "30–39 ⭐", "title": "Мастер",
+     "perks": ["Статус наставника: ведёшь новичка и получаешь за это доплату",
+               "Твои регламенты уходят в базу знаний отдела под твоим именем"]},
+    {"lvl": 5, "stars": "40–49 ⭐", "title": "Гуру",
+     "perks": ["Обучение и сертификация за счёт компании",
+               "Участие в защите приоритетов отдела перед руководством"]},
+    {"lvl": 6, "stars": "50–59 ⭐", "title": "Эксперт",
+     "perks": ["Своё направление в зоне твоей ответственности",
+               "Допуск к аудиту качества работы коллег"]},
+    {"lvl": 7, "stars": "60+ ⭐", "title": "Легенда отдела",
+     "perks": ["Рекомендация на повышение грейда или должности",
+               "Участие в распределении премиального фонда и планировании целей отдела"]},
+]
+
+RULES = {"stars": RULE_STARS, "levels": RULE_LEVELS, "lvlStep": 10,
+         "scoreFormula": "Очки турнира = LVL × 10 + ⭐"}
 
 # ---------- сборка ----------
 def build():
@@ -635,7 +706,7 @@ def build():
             a = sum(last_with_kpi[-2][k] for k in MKEYS) / 5
             b = sum(last_with_kpi[-1][k] for k in MKEYS) / 5
             growth_delta = round(b - a, 2)
-        stars_total, stars_delta = compute_stars(history)
+        stars_total, stars_delta, stars_log = compute_stars(history)
         latest = history[-1]
         emp = {
             "id": eid, "slug": SLUGS.get(eid, eid),
@@ -647,7 +718,7 @@ def build():
             "status": "active",
             "history": history,
             "current": current, "avg": avg, "growth_delta": growth_delta,
-            "stars": stars_total, "stars_delta": stars_delta,
+            "stars": stars_total, "stars_delta": stars_delta, "starLog": stars_log,
             "lvl": 1 + stars_total // 10, "stars_in_level": stars_total % 10,
             "bonuses": latest.get("money", []),
             "strengths": latest.get("strengths", []),
@@ -677,6 +748,7 @@ def build():
                  "updated": month_label(months[-1]), "demo": False},
         "metrics": METRICS,
         "awardsCatalog": AWARDS_CATALOG,
+        "rules": RULES,
         "months": [month_label(m) for m in months],
         "employees": result,
         "team": {"profileByMonth": team_profile, "avgByMonth": team_avg,

@@ -27,7 +27,7 @@ TEMPLATE = """<!DOCTYPE html>
   <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
   <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
   <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
-  <link rel="stylesheet" href="../../assets/css/main.css?v=11">
+  <link rel="stylesheet" href="../../assets/css/main.css?v=12">
 </head>
 <body data-profile="__ID__">
   <div class="bg-stage"></div>
@@ -51,8 +51,8 @@ TEMPLATE = """<!DOCTYPE html>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <script src="../../assets/js/common.js?v=11"></script>
-  <script src="../../assets/js/profile.js?v=11"></script>
+  <script src="../../assets/js/common.js?v=12"></script>
+  <script src="../../assets/js/profile.js?v=12"></script>
 </body>
 </html>
 """
@@ -66,10 +66,13 @@ def main():
             "meta": data["meta"],
             "metrics": data["metrics"],
             "awardsCatalog": data["awardsCatalog"],
+            "rules": data.get("rules", {}),
             "months": data["months"],
             "totalEmployees": len(data["employees"]),
             "team": data.get("team", {}),
-            "leaderboard": data.get("leaderboard", []),
+            # турнирная таблица — только на странице руководителя; у специалистов её нет
+            # ни в разметке, ни в исходнике страницы (изоляция данных коллег)
+            "leaderboard": data.get("leaderboard", []) if e["id"] == "yakovlenkov" else [],
             "employee": e,
         }
         html = (TEMPLATE

@@ -50,6 +50,50 @@
       ? `<span class="badge badge-left"><i class="ph ph-star"></i> −${Math.abs(delta)} ⭐ за месяц</span>`
       : "";
 
+  /* ---------- уровень, звёзды и правила игры ---------- */
+  const showBoard = emp.id === "yakovlenkov";          // турнирная таблица — только у руководителя
+  const RULES = D.rules || null;
+  const RULE_LEVELS = (RULES && RULES.levels) || [];
+  const lvlInfo = (n) => RULE_LEVELS.find((x) => x.lvl === n) || null;
+  const lvlNow = lvlInfo(lvl);
+  const lvlNext = lvlInfo(lvl + 1);
+  const starsNeed = Math.max(0, 10 - inLvl);
+  const starsBar = Array.from({ length: 10 }, (_, i) => `<span class="sb${i < inLvl ? " on" : ""}">${i < inLvl ? "★" : "☆"}</span>`).join("");
+  const starLog = emp.starLog || [];
+  const starLogRows = starLog.length
+    ? starLog.map((r) => {
+        const sign = r.stars == null ? "точка отсчёта" : r.stars > 0 ? "+1 ⭐" : r.stars < 0 ? "−1 ⭐" : "0 ⭐";
+        const cls = r.stars == null ? "start" : r.stars > 0 ? "gain" : r.stars < 0 ? "loss" : "hold";
+        return `<div class="sl-row ${cls}"><span class="sl-m">${r.month}</span><span class="sl-k">${sign}</span><span class="sl-r">${r.reason}</span><span class="sl-t">${r.total} ⭐</span></div>`;
+      }).join("")
+    : '<p class="muted">Журнал появится после второго месяца с KPI.</p>';
+  const rulesStars = RULES && RULES.stars
+    ? RULES.stars.map((s) => `<div class="rule-tile"><span class="rule-ic">${s.icon}</span><div><div class="rule-t">${s.title}</div><div class="rule-d">${s.text}</div></div></div>`).join("")
+    : "";
+  const rulesLevels = RULE_LEVELS.map((L) => {
+    const isNow = L.lvl === lvl, passed = L.lvl < lvl;
+    return `<div class="lvl-row${isNow ? " is-now" : ""}${passed ? " is-passed" : ""}">
+      <div class="lvl-cell"><span class="lvl-n">LVL ${L.lvl}</span><span class="lvl-s">${L.stars}</span></div>
+      <div class="lvl-body"><div class="lvl-t">${L.title}${isNow ? ' <span class="got">· твой уровень сейчас</span>' : passed ? ' <span class="got">· пройден</span>' : ""}</div>
+      <ul class="lvl-perks">${L.perks.map((x) => `<li>${x}</li>`).join("")}</ul></div></div>`;
+  }).join("");
+  const avgNow = emp.avg;
+  const growItems = [];
+  if (lvlNext) {
+    growItems.push(`До <b>LVL ${lvlNext.lvl} «${lvlNext.title}»</b> осталось <b>${starsNeed} ⭐</b> — по звезде за каждый месяц, где средний KPI вырос или удержан на 8.0 и выше (то есть минимум ${starsNeed} ${pluralM(starsNeed)} такой работы).`);
+    growItems.push(`Что откроет LVL ${lvlNext.lvl}: ${lvlNext.perks.join("; ").toLowerCase()}.`);
+  } else {
+    growItems.push("Ты уже на максимальном уровне — держи планку и помогай расти остальным.");
+  }
+  if (avgNow != null) {
+    growItems.push(avgNow >= 8
+      ? `Средний KPI сейчас <b>${avgNow.toFixed(1)}</b> — ты в зоне удержания: не опускайся ниже 8.0, и звезда будет приходить каждый месяц.`
+      : `Средний KPI сейчас <b>${avgNow.toFixed(1)}</b> — до порога удержания 8.0 не хватает <b>${(8 - avgNow).toFixed(1)}</b>. Подними 2–3 метрики до 9–10, и удержание начнёт приносить звёзды.`);
+  }
+  if (delta < 0) growItems.push(`Последний месяц дал <b>−${Math.abs(delta)} ⭐</b> — чтобы вернуть звезду, нужен рост среднего KPI к прошлому месяцу.`);
+  growItems.push("Правило-предохранитель: падение среднего KPI меньше 1.0 звёзд не забирает — важна стабильность, а не идеальность.");
+  const rulesAwards = (D.awardsCatalog || []).map((g) => `<div class="rule-award"><span class="ra-g">${g.glyph || ""}</span><span class="ra-t">${g.title}</span><span class="ra-d">${g.desc}</span></div>`).join("");
+
   function tickets(text) { return (text || "").match(/HELP-\d+/g) || []; }
   function tLinks(text) { return tickets(text).map((t) => `<a href="https://jira.centrofinans.ru/browse/${t}" target="_blank" rel="noopener">${t}</a>`).join(" "); }
 
@@ -194,6 +238,41 @@
       <div id="glossary" class="glossary" style="display:none">${glossary}</div>
     </section>
 
+    <section style="padding:22px 0 0">
+      <div class="sub-head" data-reveal><i class="ph ph-star"></i> Уровень и звёзды<span class="plan-when">· LVL ${lvl}${lvlNow ? " «" + lvlNow.title + "»" : ""}</span></div>
+      <div class="two-col" style="align-items:start">
+        <div class="card" data-reveal>
+          <div class="lvl-head"><span class="lvl-big">LVL ${lvl}</span>${lvlNow ? `<span class="lvl-name">${lvlNow.title}</span>` : ""}</div>
+          <div class="stars-bar" title="${inLvl} из 10 звёзд внутри уровня">${starsBar}</div>
+          <div class="lvl-next">${lvlNext ? `До LVL ${lvlNext.lvl} «${lvlNext.title}» — <b>${starsNeed} ⭐</b> (${starsNeed} ${pluralM(starsNeed)} роста KPI)` : "Максимальный уровень достигнут"}</div>
+          <div class="lvl-progress"><span style="width:${inLvl * 10}%"></span></div>
+          <div class="lvl-total">Всего звёзд: <b>${emp.stars || 0}</b>${delta ? ` · последний месяц: <b>${delta > 0 ? "+" + delta : "−" + Math.abs(delta)} ⭐</b>` : ""}</div>
+        </div>
+        <div class="card" data-reveal>
+          <h3 style="margin-bottom:10px">За что приходили и уходили звёзды</h3>
+          <div class="star-log">${starLogRows}</div>
+        </div>
+      </div>
+
+      <details class="rules-card">
+        <summary><i class="ph ph-game-controller"></i> Правила игры: звёзды, уровни, награды — и что даёт высокий уровень</summary>
+        <div class="rules-body">
+          <h4 class="rules-h">Как начисляются и снимаются звёзды</h4>
+          <div class="rules-grid">${rulesStars}</div>
+
+          <h4 class="rules-h">Что даёт каждый уровень</h4>
+          <p class="tt-hint" style="margin:-4px 0 12px">уровень не понижается — набранное остаётся с тобой, звёзды продолжают копиться внутри уровня</p>
+          <div class="lvl-list">${rulesLevels}</div>
+
+          <h4 class="rules-h">Что нужно тебе, чтобы вырасти дальше</h4>
+          <ul class="grow-list">${growItems.map((g) => `<li>${g}</li>`).join("")}</ul>
+
+          <h4 class="rules-h">Как получают награды</h4>
+          <div class="rules-awards">${rulesAwards}</div>
+        </div>
+      </details>
+    </section>
+
     <section style="padding:20px 0 0">
       <div class="month-tabs" id="month-tabs" data-reveal>${history.map((h, i) => `<button class="month-tab${monthHasData(h) ? "" : " empty"}" data-i="${i}"${monthHasData(h) ? "" : ' title="За этот месяц данных пока нет"'}>${h.month}</button>`).join("")}</div>
     </section>
@@ -243,8 +322,8 @@
       <div class="chart-box lg"><canvas id="chart-lines"></canvas></div>
     </div>
 
-    <div class="sub-head" data-reveal><i class="ph ph-trophy"></i> Турнирная таблица команды · ${D.meta.updated}</div>
-    <div id="leaderboard" class="lb" data-reveal></div>
+    ${showBoard ? `<div class="sub-head" data-reveal><i class="ph ph-trophy"></i> Турнирная таблица команды · ${D.meta.updated}</div>
+    <div id="leaderboard" class="lb" data-reveal></div>` : ""}
 
     <section style="padding:28px 0 10px"><div class="personal-note" data-reveal>💬 ${emp.personal}</div></section>
   `;
@@ -329,6 +408,7 @@
 
   /* ---------- турнирная таблица команды (соревновательная форма) ---------- */
   function renderLeaderboard() {
+    if (!showBoard) return;                              // доска — только на странице руководителя
     const el = document.getElementById("leaderboard");
     if (!el) return;
     const rows = leaderboardRows;
@@ -361,6 +441,13 @@
       hint = `<div class="lb-hint">Ты #${me.place} из ${rows.length}. ${back}${ahead}</div>`;
     }
     el.innerHTML = `<div class="lb-podium-wrap">${podium}</div><div class="lb-list">${list}</div>${hint}<div class="lb-legend">Очки = LVL × 10 + ⭐ · 10 ⭐ = +1 LVL · награды копятся за все месяцы. Один уровень — за стабильность и рост KPI.</div>`;
+  }
+  function pluralM(n) {
+    const a = Math.abs(n) % 100, b = a % 10;
+    if (a > 10 && a < 20) return "месяцев";
+    if (b > 1 && b < 5) return "месяца";
+    if (b === 1) return "месяц";
+    return "месяцев";
   }
   function plural(n) {
     const a = Math.abs(n) % 100, b = a % 10;
