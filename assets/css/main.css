@@ -538,6 +538,13 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
 .sl-row.hold .sl-k { color: var(--muted); }
 .sl-row.start { opacity: .82; }
 .sl-row.start .sl-k { color: var(--muted); }
+.sl-list { margin: 0; padding-left: 15px; display: flex; flex-direction: column; gap: 3px; }
+.sl-list li { line-height: 1.35; }
+.sl-list li.sl-note { color: var(--muted); font-size: .78rem; list-style: circle; }
+.lvl-perks-now { margin-top: 12px; border-top: 1px dashed var(--border); padding-top: 10px; }
+.lvl-perks-now .lpn-h { font-family: var(--font-mono); font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.lvl-perks-now ul { margin: 7px 0 0; padding-left: 16px; display: flex; flex-direction: column; gap: 4px; }
+.lvl-perks-now li { font-size: .84rem; color: var(--text); }
 
 .rules-card {
   margin-top: 22px; border: 1px solid var(--border-2); border-radius: var(--radius);

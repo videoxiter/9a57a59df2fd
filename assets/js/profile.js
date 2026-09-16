@@ -57,14 +57,22 @@
   const lvlInfo = (n) => RULE_LEVELS.find((x) => x.lvl === n) || null;
   const lvlNow = lvlInfo(lvl);
   const lvlNext = lvlInfo(lvl + 1);
-  const starsNeed = Math.max(0, 10 - inLvl);
+  const LVL_STEP = (RULES && RULES.lvlStep) || 10;
+  const HOLD = (RULES && RULES.hold) || 9;
+  const DROP = (RULES && RULES.drop) || 1;
+  const GAIN_CAP = (RULES && RULES.gainCap) || 4;
+  const LOSS_CAP = (RULES && RULES.lossCap) || 3;
+  const starsNeed = Math.max(0, LVL_STEP - inLvl);
   const starsBar = Array.from({ length: 10 }, (_, i) => `<span class="sb${i < inLvl ? " on" : ""}">${i < inLvl ? "★" : "☆"}</span>`).join("");
   const starLog = emp.starLog || [];
   const starLogRows = starLog.length
     ? starLog.map((r) => {
-        const sign = r.stars == null ? "точка отсчёта" : r.stars > 0 ? "+1 ⭐" : r.stars < 0 ? "−1 ⭐" : "0 ⭐";
-        const cls = r.stars == null ? "start" : r.stars > 0 ? "gain" : r.stars < 0 ? "loss" : "hold";
-        return `<div class="sl-row ${cls}"><span class="sl-m">${r.month}</span><span class="sl-k">${sign}</span><span class="sl-r">${r.reason}</span><span class="sl-t">${r.total} ⭐</span></div>`;
+        const ch = r.stars || 0;
+        const sign = r.kind === "start" ? "точка отсчёта" : ch > 0 ? `+${ch} ⭐` : ch < 0 ? `−${Math.abs(ch)} ⭐` : "0 ⭐";
+        const cls = r.kind === "start" ? "start" : ch > 0 ? "gain" : ch < 0 ? "loss" : "hold";
+        const items = (r.reasons && r.reasons.length ? r.reasons : [r.reason]).map((x) => `<li>${x}</li>`).join("");
+        const notes = (r.notes || []).map((x) => `<li class="sl-note">${x}</li>`).join("");
+        return `<div class="sl-row ${cls}"><span class="sl-m">${r.month}</span><span class="sl-k">${sign}</span><div class="sl-r"><ul class="sl-list">${items}${notes}</ul></div><span class="sl-t">${r.total} ⭐</span></div>`;
       }).join("")
     : '<p class="muted">Журнал появится после второго месяца с KPI.</p>';
   const rulesStars = RULES && RULES.stars
@@ -80,18 +88,19 @@
   const avgNow = emp.avg;
   const growItems = [];
   if (lvlNext) {
-    growItems.push(`До <b>LVL ${lvlNext.lvl} «${lvlNext.title}»</b> осталось <b>${starsNeed} ⭐</b> — по звезде за каждый месяц, где средний KPI вырос или удержан на 8.0 и выше (то есть минимум ${starsNeed} ${pluralM(starsNeed)} такой работы).`);
-    growItems.push(`Что откроет LVL ${lvlNext.lvl}: ${lvlNext.perks.join("; ").toLowerCase()}.`);
+    growItems.push(`До <b>LVL ${lvlNext.lvl} «${lvlNext.title}»</b> осталось <b>${starsNeed} ⭐</b>. Звезда приходит за рост среднего KPI, за удержание ${HOLD.toFixed(1)} и выше, за каждую новую награду и за особые заслуги — за месяц можно заработать до ${GAIN_CAP} ⭐.`);
+    growItems.push(`Что откроет LVL ${lvlNext.lvl} «${lvlNext.title}»: ${lvlNext.perks.join("; ")}.`);
   } else {
     growItems.push("Ты уже на максимальном уровне — держи планку и помогай расти остальным.");
   }
   if (avgNow != null) {
-    growItems.push(avgNow >= 8
-      ? `Средний KPI сейчас <b>${avgNow.toFixed(1)}</b> — ты в зоне удержания: не опускайся ниже 8.0, и звезда будет приходить каждый месяц.`
-      : `Средний KPI сейчас <b>${avgNow.toFixed(1)}</b> — до порога удержания 8.0 не хватает <b>${(8 - avgNow).toFixed(1)}</b>. Подними 2–3 метрики до 9–10, и удержание начнёт приносить звёзды.`);
+    growItems.push(avgNow >= HOLD
+      ? `Средний KPI сейчас <b>${avgNow.toFixed(1)}</b> — ты в зоне удержания: держи ${HOLD.toFixed(1)} и выше, и звезда за удержание будет приходить каждый месяц дополнительно к звезде за рост.`
+      : `Средний KPI сейчас <b>${avgNow.toFixed(1)}</b> — до порога удержания ${HOLD.toFixed(1)} не хватает <b>${(HOLD - avgNow).toFixed(1)}</b>. Подними 2–3 метрики до 9–10 — и удержание начнёт приносить звёзды.`);
   }
   if (delta < 0) growItems.push(`Последний месяц дал <b>−${Math.abs(delta)} ⭐</b> — чтобы вернуть звезду, нужен рост среднего KPI к прошлому месяцу.`);
-  growItems.push("Правило-предохранитель: падение среднего KPI меньше 1.0 звёзд не забирает — важна стабильность, а не идеальность.");
+  growItems.push(`Предохранители: падение среднего KPI меньше ${DROP.toFixed(1)} звёзд не забирает, за месяц снимается не больше ${LOSS_CAP} ⭐ и ниже нуля звёзды не уходят.`);
+  growItems.push("Награды работают на тебя дважды: каждая новая награда даёт звезду сразу, а каждые 10 одинаковых награда одного вида — ещё одну.");
   const rulesAwards = (D.awardsCatalog || []).map((g) => `<div class="rule-award"><span class="ra-g">${g.glyph || ""}</span><span class="ra-t">${g.title}</span><span class="ra-d">${g.desc}</span></div>`).join("");
 
   function tickets(text) { return (text || "").match(/HELP-\d+/g) || []; }
@@ -244,7 +253,8 @@
         <div class="card" data-reveal>
           <div class="lvl-head"><span class="lvl-big">LVL ${lvl}</span>${lvlNow ? `<span class="lvl-name">${lvlNow.title}</span>` : ""}</div>
           <div class="stars-bar" title="${inLvl} из 10 звёзд внутри уровня">${starsBar}</div>
-          <div class="lvl-next">${lvlNext ? `До LVL ${lvlNext.lvl} «${lvlNext.title}» — <b>${starsNeed} ⭐</b> (${starsNeed} ${pluralM(starsNeed)} роста KPI)` : "Максимальный уровень достигнут"}</div>
+          <div class="lvl-next">${lvlNext ? `До LVL ${lvlNext.lvl} «${lvlNext.title}» — <b>${starsNeed} ⭐</b> (рост KPI, удержание ${HOLD.toFixed(1)}, награды)` : "Максимальный уровень достигнут"}</div>
+          ${lvlNow && lvlNow.perks.length ? `<div class="lvl-perks-now"><span class="lpn-h">Что даёт твой LVL ${lvlNow.lvl} «${lvlNow.title}»:</span><ul>${lvlNow.perks.map((x) => `<li>${x}</li>`).join("")}</ul></div>` : ""}
           <div class="lvl-progress"><span style="width:${inLvl * 10}%"></span></div>
           <div class="lvl-total">Всего звёзд: <b>${emp.stars || 0}</b>${delta ? ` · последний месяц: <b>${delta > 0 ? "+" + delta : "−" + Math.abs(delta)} ⭐</b>` : ""}</div>
         </div>
