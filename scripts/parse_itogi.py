@@ -48,6 +48,36 @@ RE_SCORE = re.compile(r"(\d{1,2})\s*/\s*10")
 RE_BONUS = re.compile(r"Бонусы за[^\n:]*:\s*([\d\s\u00a0]+)\s*(?:руб|₽)")
 RE_MONEY = re.compile(r"▸\s*([\d\s\u00a0]+)\s*(?:руб|₽)[^\n]*?—\s*([^\n]+)")
 RE_BULLET = re.compile(r"^\s*[•\-\u2022]\s+(.+)$")
+RE_NUM_ITEM = re.compile(r"^\s*\d{1,2}[.)]\s+")
+
+# --- секции руководителя: помесячный план роста и напутствие ---
+# хвостовые «украшения» менеджера («!:», «!:!») допускаем: [\s!:—–-]*$
+RE_PLAN_SEC = re.compile(
+    r"^\s*(?:🎯\s*)?(?:твой\s+)?план\s+на\s+(?P<t>[^:!]{2,90}?)[\s!:—–-]*$", re.I)
+RE_REC_SEC = re.compile(
+    r"^\s*[!\s]*рекомендации\s+для\s+роста[\s!:—–-]*$", re.I)
+RE_MENT_SEC = re.compile(r"^\s*(?:💬\s*)?напутствие[\s!:—–-]*$", re.I)
+RE_DEADLINE = re.compile(r"^\s*(?:дедлайн|срок|крайний срок)\b", re.I)
+# абзац письма внутри секции плана (когда руководитель не поставил «💬 Напутствие:»)
+RE_MENT_START = re.compile(
+    r"^(?:Если\b|После\b|Действуй\b|Ты\b|Мы\b|Так держать|Но\b|Помни\b|Сейчас\b|Давай\b|"
+    r"Двигаемся\b|Впереди\b|Жду\b|Надеюсь\b|Покажи\b|Значит\b|У тебя\b|Вперёд\b|Поздравляю\b|"
+    r"Отдельно\b|Кстати\b|Хватит\b|Верю\b|Уверен\b|Я вижу\b|Я знаю\b|Никогда\b)", re.I)
+# «Название — пояснение»: короткий фрагмент до тире = пояснение к шагу с тем же названием
+RE_DASH_DEF = re.compile(r"^(.{3,32}?)\s+[—–-]\s+")
+RE_RESULT = re.compile(r"^\s*твой\s+результат\s*[:—-]\s*", re.I)
+RE_RESULT_IN = re.compile(r"\s*твой\s+результат\s*[:—-]\s*", re.I)
+# начало письма-напутствия: обращение по имени («Андрей, …») или явные маркеры
+RE_ADDRESS = re.compile(
+    r"^(?:[^\wА-Яа-яЁё]{0,4}\s*)?(?:важно\b|запомни\b|на one-to-one\b|[А-ЯЁ][а-яё]{2,12}\s*,)",
+    re.I)
+RE_MENT_HINT = re.compile(
+    r"я верю в тебя|давай честно|давай поговорим|давай смотреть правде|хватайся за него|"
+    r"не как исполнитель", re.I)
+# служебные строки вне секций — в напутствие не берём
+RE_SKIP_LINE = re.compile(
+    r"^\s*(?:👤|💡|▸|\+|p\.s\.|📅|📈|📊|🏆|💰|kpi|качество:|обучаемость:|инициатива:|"
+    r"вовлеч|требовани|итого|бонус)", re.I)
 
 SEC_STRENGTH = re.compile(
     r"^\s*(?:(?:✅|💪|🔥)\s*что\s+(?:получилось|получается)\s+круто|!\s*достоинства и сильные стороны\s*!|достоинства и сильные стороны)",
@@ -56,6 +86,9 @@ SEC_GROWTH = re.compile(
     r"^\s*(?:❌\s*зоны роста|!\s*зоны роста\s*!|зоны роста)", re.I)
 SEC_STOP = re.compile(
     r"^\s*(?:📊|📈|📅|🎯|💬|⚠️|💡|📌|P\.S\.|Рекомендации для роста|Как прокачать|Итог|ИТОГИ ЗА|\d+\.\s)", re.I)
+# тот же стоп-список, но БЕЗ нумерованных пунктов: внутри секции плана «1. …» — это шаг
+RE_STOP_STRICT = re.compile(
+    r"^\s*(?:📊|📈|📅|🎯|💬|⚠️|💡|📌|P\.S\.|Как прокачать|Итог|ИТОГИ ЗА)", re.I)
 
 
 def read_text(path):
@@ -71,6 +104,64 @@ def read_text(path):
 
 def num(s):
     return int(re.sub(r"[^\d]", "", s) or 0)
+
+
+def _split_step(text):
+    """Шаг плана -> {"title", "text", "result"}.
+
+    «Разработать концепцию … . Провести аудит … Твой результат: документ или схема.»
+    -> title = первое предложение, text = остальное, result = после «Твой результат:».
+    Заголовок режется по границе предложения/двоеточия ВНЕ кавычек «…» и скобок.
+    """
+    t = text.strip()
+    parts = RE_RESULT_IN.split(t, maxsplit=1)
+    body = parts[0].strip()
+    result = parts[1].strip() if len(parts) > 1 else ""
+    cut, inq, ins = None, False, 0
+    for i, ch in enumerate(body):
+        if ch == "«":
+            inq = True
+        elif ch == "»":
+            inq = False
+        elif ch == "(":
+            ins += 1
+        elif ch == ")":
+            ins = max(0, ins - 1)
+        elif not inq and ins == 0 and i + 1 < len(body) and body[i + 1] == " ":
+            if ch in ".!?":
+                cut = i
+                break
+            if ch == ":" and i >= 12:
+                cut = i
+                break
+    if cut is not None and cut >= 8:
+        title, rest = body[:cut].strip(), body[cut + 1:].strip()
+    else:
+        title, rest = (body if len(body) <= 160 else body[:160].rsplit(" ", 1)[0] + "…"), ""
+    if len(title) > 170:
+        title = title[:170].rsplit(" ", 1)[0] + "…"
+    return {"title": title, "text": rest, "result": result}
+
+
+def _ends_sentence(step):
+    tail = (step.get("text") or step.get("title") or "").strip()
+    return bool(tail) and tail[-1] in ".!?»)\""
+
+
+def _norm_plan_title(t):
+    """«Сентябрь 2026 (3 шага)» -> «Твой план на Сентябрь 2026».
+
+    None, если в «заголовок» попала фраза письма (длинная, с точкой) —
+    такой план-тайтл не должен затирать настоящий заголовок плана.
+    """
+    t = (t or "").strip()
+    t = re.sub(r"\s*[—–-]\s*(?:обязательн\w*|рекоменд\w*)\s*:?\s*$", "", t, flags=re.I)
+    t = t.strip(" .:;-—–")
+    t = re.sub(r"\s*[\(\[]\s*[^()\[\]]{0,30}?\s*[\)\]]\s*$", "", t, flags=re.I)
+    t = t.strip(" .:;-—–")
+    if not t or len(t) > 46 or "." in t:
+        return None
+    return "Твой план на " + t
 
 
 def parse_block(block):
@@ -89,29 +180,134 @@ def parse_block(block):
         return None, None
     mkey = f"{year}-{month_idx:02d}"
 
-    out = {"kpi": {}, "money": [], "positives": [], "negatives": []}
-    cur = None
-    for raw in lines:
+    out = {"kpi": {}, "money": [], "positives": [], "negatives": [],
+           "plan_steps": [], "rec_steps": [], "ment": []}
+    plan_title = None
+    cur = None           # positives | negatives | plan | recs | ment
+    ment_group = False   # идёт письмо-напутствие
+    ment_from_plan = False  # письмо началось посреди плана (может вернуться к шагам)
+    ment_bucket = "plan_steps"
+
+    stripped = [s.strip() for s in lines]
+
+    def next_nonempty(i):
+        for j in range(i + 1, len(stripped)):
+            if stripped[j]:
+                return stripped[j]
+        return None
+
+    def flush_step(text, bucket):
+        text = re.sub(r"^\s*\d{1,2}[.)]\s+", "", text).strip()
+        if text:
+            out[bucket].append(_split_step(text))
+
+    def last_of(bucket):
+        return out[bucket][-1] if out[bucket] else None
+
+    for i, raw in enumerate(lines):
         s = raw.strip()
         if not s:
             continue
+        # --- заголовки секций ---
+        if RE_MENT_SEC.match(s):
+            cur, ment_group, ment_from_plan = "ment", True, False
+            continue
+        if RE_PLAN_SEC.match(s):
+            cur, ment_group, ment_from_plan = "plan", False, False
+            plan_title = _norm_plan_title(RE_PLAN_SEC.match(s).group("t")) or plan_title
+            continue
+        if RE_REC_SEC.match(s):
+            cur, ment_group, ment_from_plan = "recs", False, False
+            continue
         if SEC_STRENGTH.match(s):
-            cur = "positives"
+            cur, ment_group = "positives", False
             continue
         if SEC_GROWTH.match(s):
-            cur = "negatives"
+            cur, ment_group = "negatives", False
             continue
-        if SEC_STOP.match(s):
-            cur = None
+
+        # --- внутри плана/рекомендаций: разбираем ДО общего стоп-списка,
+        #     иначе нумерованные пункты «1. …» съедались как служебные строки ---
+        if cur in ("plan", "recs"):
+            bucket = "plan_steps" if cur == "plan" else "rec_steps"
+            if RE_STOP_STRICT.match(s):
+                cur, ment_group, ment_from_plan = None, False, False
+                continue
+            if RE_ADDRESS.match(s) or RE_MENT_HINT.search(s[:130]) or RE_MENT_START.match(s):
+                cur, ment_group, ment_from_plan = "ment", True, True
+                ment_bucket = bucket
+                out["ment"].append(s)
+                continue
+            if RE_RESULT.match(s):
+                st = last_of(bucket)
+                if st is not None:
+                    st["result"] = RE_RESULT.sub("", s).strip()
+                continue
+            # «Дедлайн: 25.08.» отдельной строкой — это хвост предыдущего шага, не шаг
+            if RE_DEADLINE.match(s):
+                st = last_of(bucket)
+                if st is not None:
+                    if st.get("result"):
+                        st["result"] = (st["result"].rstrip() + " " + s).strip()
+                    else:
+                        st["text"] = ((st.get("text") or "") + " " + s).strip()
+                continue
+            if RE_NUM_ITEM.match(s) or RE_BULLET.match(s):
+                b = RE_BULLET.match(s)
+                flush_step(b.group(1) if b else s, bucket)
+                continue
+            # «Фиксик 2.0 — пояснение» — не новый шаг, а пояснение к одноимённому шагу
+            dm = RE_DASH_DEF.match(s)
+            if dm and out[bucket]:
+                frag = dm.group(1).strip().strip("«»\"'").lower()
+                target = None
+                if len(frag) >= 5:
+                    for cand in out[bucket]:
+                        if frag in cand["title"].lower():
+                            target = cand
+                            break
+                st = target or out[bucket][-1]
+                st["text"] = ((st.get("text") or "") + (" " if st.get("text") else "") + s).strip()
+                continue
+            st = last_of(bucket)
+            if st is not None and not st.get("result") and not _ends_sentence(st):
+                st["text"] = (st["text"] + " " + s).strip()   # продолжение шага
+                continue
+            flush_step(s, bucket)
             continue
-        # пункты сильных сторон / зон роста
+
+        if cur != "ment" and SEC_STOP.match(s):
+            cur, ment_group, ment_from_plan = None, False, False
+            continue
+
+        # --- внутри напутствия: только текст ---
+        if cur == "ment":
+            if RE_BULLET.match(s) or RE_RESULT.match(s) or "/10" in s:
+                continue
+            # новая таблица/секция внутри блока — напутствие закончилось
+            if re.match(r"^(?:📊|📅|📈|💰|❌|✅|💡|⚠️|🏆|KPI|ИТОГИ ЗА)", s, re.I):
+                cur, ment_group, ment_from_plan = None, False, False
+                continue
+            nxt = next_nonempty(i)
+            # письмо прервало план, но следом снова идёт шаг с «Твой результат» — возвращаемся
+            if ment_from_plan and nxt and RE_RESULT.match(nxt):
+                st = _split_step(s)
+                st["result"] = RE_RESULT.sub("", nxt).strip()
+                out[ment_bucket].append(st)
+                cur, ment_from_plan = "plan", False
+                continue
+            out["ment"].append(s)
+            continue
+
+        # --- сильные стороны / зоны роста ---
         if cur:
             b = RE_BULLET.match(s)
             if b:
                 val = 1.0 if cur == "positives" else 0.5
                 out[cur].append({"value": val, "text": b.group(1).strip()})
             continue
-        # KPI-строка вида «• Качество: 7/10 …» или «Качество: Хорошо (7/10)»
+
+        # --- вне секций: сначала KPI-строки («Качество: 7/10» / «• Качество 10/10 ✓») ---
         if "/10" in s:
             sc = RE_SCORE.search(s)
             if sc:
@@ -119,6 +315,13 @@ def parse_block(block):
                     if rx.search(s) and key not in out["kpi"]:
                         out["kpi"][key] = int(sc.group(1))
                         break
+                continue
+        # --- затем письмо-напутствие (обращения к сотруднику) ---
+        if (len(s) >= 60 and not RE_SKIP_LINE.match(s) and not RE_BULLET.match(s)):
+            if ment_group or RE_ADDRESS.match(s) or RE_MENT_HINT.search(s[:130]):
+                ment_group = True
+                out["ment"].append(s)
+        continue
 
     bm = RE_BONUS.search(block)
     if bm:
@@ -141,6 +344,11 @@ def parse_block(block):
         cleaned["positives"] = out["positives"]
     if out["negatives"]:
         cleaned["negatives"] = out["negatives"]
+    steps = out["plan_steps"] or out["rec_steps"]
+    if steps:
+        cleaned["plan"] = {"title": plan_title or "Рекомендации для роста", "steps": steps}
+    if out["ment"]:
+        cleaned["mentorship"] = out["ment"]
     return mkey, cleaned
 
 

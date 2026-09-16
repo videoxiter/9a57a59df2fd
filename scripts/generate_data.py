@@ -576,6 +576,9 @@ def build():
             row["money"] = d.get("money", [])
             row["negatives"] = negs
             row["positives"] = d.get("positives", [])
+            # план роста и напутствие из txt руководителя (помесячно)
+            row["planTxt"] = d.get("plan")
+            row["mentor"] = d.get("mentorship", [])
             row["kpi"] = {key: row[key] for key in MKEYS}
             row["avg"] = round(sum(v for v in row["kpi"].values() if v is not None) / 5, 2) if k else None
             row["rank"] = None

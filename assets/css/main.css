@@ -323,6 +323,15 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
 }
 .step .res { color: var(--muted); font-size: .9rem; margin-top: 4px; }
 .step .dl { display: inline-block; margin-top: 8px; font-family: var(--font-mono); font-size: .76rem; color: var(--accent-2); background: var(--accent-glow); padding: 3px 10px; border-radius: var(--radius-pill); }
+.step .zone-note { color: var(--muted); font-size: .92rem; margin-top: 6px; line-height: 1.6; }
+.step .goal { margin-top: 12px; padding: 10px 14px; border-radius: var(--radius-sm); background: var(--accent-glow); border-left: 3px solid var(--good); font-size: .92rem; }
+.step .goal-k { display: block; font-family: var(--font-mono); font-size: .66rem; letter-spacing: .1em; text-transform: uppercase; color: var(--good); margin-bottom: 4px; }
+.plan-when { font-family: var(--font-mono); font-size: .78rem; font-weight: 500; color: var(--faint); margin-left: 4px; }
+.mentor-card { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: var(--radius-sm); padding: 22px 26px; line-height: 1.75; }
+.mentor-card p { margin: 0 0 12px; }
+.mentor-card p:last-child { margin-bottom: 0; }
+.mentor-card p.lead { font-size: 1.06rem; font-weight: 600; }
+@media (max-width: 620px) { .mentor-card { padding: 18px; } }
 
 /* --- футер --- */
 .footer { border-top: 1px solid var(--border); padding: 40px 0 60px; margin-top: 40px; color: var(--faint); font-size: .85rem; }

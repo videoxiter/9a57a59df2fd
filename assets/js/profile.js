@@ -110,11 +110,32 @@
       ? growth.map((g) => `<div class="minus-item"><i class="ph ph-warning-circle"></i><div><div class="b">${g.zone}</div><div class="advice">${g.advice}</div><div class="fact">${g.fact} ${tLinks(g.fact)}</div></div></div>`).join("")
       : '<p class="muted">Замечаний нет — молодец!</p>';
 
-    // рекомендации
+    // план роста: шаги руководителя из файла итогов (помесячно) + «Твой результат»
+    const planTxt = cur.planTxt || null;
+    const planSteps = planTxt && planTxt.steps ? planTxt.steps : [];
     const recs = cur.recommendations || [];
-    document.getElementById("plan-grid").innerHTML = recs.length
-      ? recs.map((r, n) => `<div class="step"><div class="n">0${n + 1}</div><div><div class="zone">${r.zone}</div><div class="act">${r.method}</div><div class="res">→ ${r.result}</div>${r.fact ? `<div class="fact-line"><i class="ph ph-quotes"></i> ${r.fact}</div>` : ""}<span class="dl">до ${r.deadline}</span></div></div>`).join("")
-      : '<p class="muted">За месяц замечаний не было — продолжай в том же духе!</p>';
+    const planGrid = document.getElementById("plan-grid");
+    const rawTitle = planTxt && planTxt.title ? String(planTxt.title) : "";
+    const whenTxt = /^Твой план на\s*/i.test(rawTitle) ? rawTitle.replace(/^Твой план на\s*/i, "").trim() : "";
+    const whenEl = document.getElementById("plan-when");
+    if (whenEl) whenEl.textContent = planSteps.length ? "· " + (whenTxt ? "на " + whenTxt : "по итогам " + cur.month) : "";
+    if (planSteps.length) {
+      planGrid.innerHTML = planSteps.map((s, n) => `<div class="step"><div class="n">0${n + 1}</div><div><div class="act">${s.title}</div>${s.text ? `<div class="zone-note">${s.text}</div>` : ""}${s.result ? `<div class="goal"><span class="goal-k">Твой результат</span>${s.result}</div>` : ""}</div></div>`).join("");
+    } else {
+      planGrid.innerHTML = recs.length
+        ? recs.map((r, n) => `<div class="step"><div class="n">0${n + 1}</div><div><div class="zone">${r.zone}</div><div class="act">${r.method}</div><div class="res">→ ${r.result}</div>${r.fact ? `<div class="fact-line"><i class="ph ph-quotes"></i> ${r.fact}</div>` : ""}<span class="dl">до ${r.deadline}</span></div></div>`).join("")
+        : '<p class="muted">За месяц замечаний не было — продолжай в том же духе!</p>';
+    }
+
+    // напутствие руководителя — письмом, по абзацам
+    const mentor = cur.mentor || [];
+    const mWrap = document.getElementById("mentor-wrap");
+    if (mWrap) {
+      const mCard = document.getElementById("mentor-card");
+      mWrap.style.display = mentor.length ? "" : "none";
+      if (mentor.length) mCard.innerHTML = mentor.map((p, i) => `<p class="${i === 0 ? "lead" : ""}">${p}</p>`).join("");
+      else mCard.innerHTML = "";
+    }
 
     // радар + подсветка бонусного столбца
     if (radarChart) {
@@ -188,8 +209,14 @@
       <div class="card" data-reveal><h3 style="margin-bottom:12px"><span style="color:var(--warn)">⚠️</span> Зоны роста</h3><div id="growth-list"></div></div>
     </div>
 
-    <div class="sub-head" data-reveal><i class="ph ph-target"></i> План роста</div>
-    <div class="grid" id="plan-grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))"></div>
+    <div class="sub-head" data-reveal><i class="ph ph-target"></i> План роста<span class="plan-when" id="plan-when"></span></div>
+    <p class="tt-hint" id="plan-legend" style="margin:-6px 0 14px">шаги из итогов месяца · «Твой результат» — что должно получиться на выходе</p>
+    <div class="grid" id="plan-grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))"></div>
+
+    <div id="mentor-wrap" style="display:none">
+      <div class="sub-head" data-reveal style="margin-top:28px"><i class="ph ph-chats"></i> Напутствие руководителя</div>
+      <div class="mentor-card" id="mentor-card" data-reveal></div>
+    </div>
 
     <div class="sub-head" data-reveal><i class="ph ph-book-open"></i> Учебные материалы под твои зоны роста</div>
     <div class="two-col">
