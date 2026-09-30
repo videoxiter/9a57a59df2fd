@@ -261,7 +261,7 @@
       { id: "рост KPI", re: /вырос/ },
       { id: "удержание " + HOLD.toFixed(1), re: /удержан/ },
       { id: "новые награды", re: /Новая награда/ },
-      { id: "каждые 10 наград", re: /накопилось/ },
+      { id: "10 однотипных наград", re: /накопилось/ },
       { id: "решение руководителя", re: /руководител/ },
     ];
     const allReasons = starLog.flatMap((r) => r.reasons || []);
@@ -295,10 +295,10 @@
           <div class="lh-next">${lvlNext ? `До <b>LVL ${lvlNext.lvl} «${lvlNext.title}»</b> — <b>${starsNeed} ${plStars(starsNeed)}</b>` : "Максимальный уровень достигнут 🏆"}</div>
         </div>
         <div class="lh-right">
-          <div class="lh-stat"><span class="lh-k">Всего звёзд</span><span class="lh-v">${totalStars}</span></div>
-          <div class="lh-stat"><span class="lh-k">Начислено за период</span><span class="lh-v good">+${gains}</span></div>
-          <div class="lh-stat"><span class="lh-k">Снято за период</span><span class="lh-v bad">${losses} ⭐</span></div>
-          <div class="lh-stat"><span class="lh-k">Последний месяц</span><span class="lh-v">${delta > 0 ? "+" + delta : delta} ⭐</span></div>
+          <div class="lh-stat" tabindex="0"><span class="lh-k">Всего звёзд</span><span class="lh-v">${totalStars}</span><div class="tip-pop" id="tip-lvl-total"></div></div>
+          <div class="lh-stat" tabindex="0"><span class="lh-k">Начислено за период</span><span class="lh-v good">+${gains}</span><div class="tip-pop" id="tip-lvl-gain"></div></div>
+          <div class="lh-stat" tabindex="0"><span class="lh-k">Снято за период</span><span class="lh-v bad">${losses} ⭐</span><div class="tip-pop" id="tip-lvl-loss"></div></div>
+          <div class="lh-stat" tabindex="0"><span class="lh-k">Последний месяц</span><span class="lh-v">${delta > 0 ? "+" + delta : delta} ⭐</span><div class="tip-pop" id="tip-lvl-month"></div></div>
         </div>
       </div>
     </section>
@@ -308,10 +308,17 @@
         <div class="card" data-reveal>
           <h3 style="margin-bottom:10px"><i class="ph ph-gift"></i> Что даёт твой LVL ${lvl}${lvlNow ? " «" + lvlNow.title + "»" : ""}</h3>
           <ul class="perk-list">${(lvlNow ? lvlNow.perks : []).map((x) => `<li>${x}</li>`).join("") || "<li>Уровень только начинает действовать — выполняй план месяца.</li>"}</ul>
-          ${lvlNext ? `<div class="next-unlock"><span class="nu-h">На LVL ${lvlNext.lvl} «${lvlNext.title}» откроется</span><ul class="perk-list next">${lvlNext.perks.map((x) => `<li>${x}</li>`).join("")}</ul></div>` : ""}
+          ${lvlNext
+            ? `<div class="next-unlock"><span class="nu-h">На LVL ${lvlNext.lvl} «${lvlNext.title}» откроется</span><ul class="perk-list next">${lvlNext.perks.map((x) => `<li>${x}</li>`).join("")}</ul>
+               <div class="motiv-line">🚀 Ещё чуть-чуть. Действуй! До следующего уровня — <b>${starsNeed} ${plStars(starsNeed)}</b>.</div></div>`
+            : `<div class="next-unlock"><div class="motiv-line">🏆 Максимальный уровень достигнут. Держи планку и помогай расти остальным!</div></div>`}
         </div>
         <div class="card" data-reveal>
           <h3 style="margin-bottom:10px"><i class="ph ph-chart-line-up"></i> За что набраны звёзды</h3>
+          <div class="chart-toggle" id="star-mode">
+            <button type="button" class="ct-btn is-on" data-mode="month">За месяц</button>
+            <button type="button" class="ct-btn" data-mode="total">За год</button>
+          </div>
           <div class="kind-stats">${byKind.map((k) => `<div class="ks-row"><span class="ks-k">${k.id}</span><span class="ks-bar"><span style="width:${gains ? Math.min(100, (k.n / Math.max(1, gains)) * 100) : 0}%"></span></span><span class="ks-v">${k.n}</span></div>`).join("")}</div>
           <div class="chart-box" style="height:180px;margin-top:18px"><canvas id="chart-stars"></canvas></div>
           <p class="tt-hint" style="margin:10px 0 0">накопление звёзд по месяцам</p>
@@ -396,15 +403,6 @@
           <div class="dev-step"><span>03</span> Рекомендации наставника и чек-лист следующего уровня</div>
         </div>
       </div>
-    </section>
-
-    <section class="p-sec">
-      <div class="p-sec-head inline">
-        <h2><i class="ph-bold ph-target"></i> План роста<span class="plan-when" id="plan-when"></span></h2>
-        ${monthTabsHtml()}
-      </div>
-      <p class="tt-hint" id="plan-legend" style="margin:-4px 0 14px">шаги из итогов месяца · «Твой результат» — что должно получиться на выходе</p>
-      <div class="grid" id="plan-grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))"></div>
     </section>
 
     ${robotMenuHtml()}`;
@@ -518,56 +516,72 @@
   function bookPages() {
     const lvlRows = (from, to) => RULE_LEVELS.filter((L) => L.lvl >= from && L.lvl <= to).map((L) => `
       <div class="bk-lvl${L.lvl === lvl ? " is-now" : ""}">
-        <div class="bk-lvl-h"><span class="bk-lvl-n">LVL ${L.lvl}</span> <b>${L.title}</b> <span class="bk-lvl-s">${L.stars}</span>${L.lvl === lvl ? ' <span class="got">· твой уровень</span>' : ""}</div>
+        <div class="bk-lvl-h"><span class="bk-lvl-n">LVL ${L.lvl}</span> <b>${L.title}</b> <span class="bk-lvl-s">${L.stars}</span>${L.lvl === lvl ? ' <span class="got">· твой уровень сейчас</span>' : ""}</div>
         <ul>${L.perks.map((x) => `<li>${x}</li>`).join("")}</ul>
       </div>`).join("");
-    const starGain = (RULES.stars || []).slice(0, 6).map((s) => `<div class="rule-tile"><span class="rule-ic">${s.icon}</span><div><div class="rule-t">${s.title}</div><div class="rule-d">${s.text}</div></div></div>`).join("");
-    const starLose = (RULES.stars || []).slice(6).map((s) => `<div class="rule-tile"><span class="rule-ic">${s.icon}</span><div><div class="rule-t">${s.title}</div><div class="rule-d">${s.text}</div></div></div>`).join("");
-    const awardBook = awardsCatalog.map((g) => `<div class="bk-award"><span class="bk-a-ic">${g.glyph || ""}</span><div><div class="bk-a-t">${g.title}</div><div class="bk-a-d">${g.desc}</div>${g.motiv ? `<div class="bk-a-m">${g.motiv}</div>` : ""}</div></div>`).join("");
+    const starGain = (RULES.stars || []).filter((x) => /\+1 ⭐/.test(x.title)).map((x) => `<div class="rule-tile"><span class="rule-ic">${x.icon}</span><div><div class="rule-t">${x.title}</div><div class="rule-d">${x.text}</div></div></div>`).join("");
+    const starLose = (RULES.stars || []).filter((x) => /−1 ⭐|минус/.test(x.title)).map((x) => `<div class="rule-tile"><span class="rule-ic">${x.icon}</span><div><div class="rule-t">${x.title}</div><div class="rule-d">${x.text}</div></div></div>`).join("");
+    const bonusRules = (D.bonusRules || []).map((b) => `<div class="bk-bonus"><div class="bk-b-h"><span class="bk-b-ic">${b.icon}</span><b>${b.title}</b></div><div class="bk-b-t">${b.text}</div>${b.example ? `<div class="bk-b-e">${b.example}</div>` : ""}</div>`).join("");
+    const award = (a) => `<div class="bk-award"><span class="bk-a-ic">${a.glyph || ""}</span><div><div class="bk-a-t">${a.title}</div><div class="bk-a-d">${a.desc}</div>${a.motiv ? `<div class="bk-a-m">${a.motiv}</div>` : ""}</div></div>`;
+    const cat = (id) => award(awardsCatalog.find((a) => a.id === id));
+    const autoAwards = ["legend", "pro", "growing", "starter"].map(cat).join("");
+    const metricAwards = ["top", "perfect", "quality", "learning", "initiative", "engagement", "discipline"].map(cat).join("");
+    const manualAwards = ["breakthrough", "stability", "hero", "changer", "seller", "budget"].map(cat).join("");
 
     return [
       {
         chapter: "Глава 1", title: "Как устроена игра",
-        html: `<p>Система держится на трёх вещах: <b>KPI</b>, <b>звёзды</b> и <b>уровни</b>.</p>
+        html: `<p>Система держится на четырёх вещах: <b>KPI</b>, <b>звёзды</b>, <b>уровни</b> и <b>бонусы</b>.</p>
         <ol class="bk-list">
           <li>Каждый месяц руководитель оценивает пять метрик от 1 до 10: качество, обучаемость, инициатива, вовлечённость и требования к работе. Их средний балл — твой <b>средний KPI</b>.</li>
-          <li>За результат месяца начисляются <b>звёзды</b> ⭐ — за рост, удержание высокой планки, награды и особые заслуги. До ${GAIN_CAP} звёзд за месяц.</li>
-          <li>Каждые ${LVL_STEP} звёзд дают новый <b>уровень (LVL)</b>. Уровней десять: от «Новичка» до «Легенды отдела». Уровень <b>не понижается</b> — набранное остаётся с тобой.</li>
-          <li>Чем выше уровень, тем больше возможностей: приоритет в графике, отпуске и увольнительных, бонусные задачи, наставничество, своё направление и участие в жизни отдела.</li>
+          <li>За результат месяца начисляются <b>звёзды</b> ⭐ — за рост, удержание высокой планки, награды и особые заслуги. Лимита нет: чем больше оснований, тем больше звёзд.</li>
+          <li>Каждые <b>${LVL_STEP} звёзд</b> дают новый <b>уровень (LVL)</b>. Уровней десять: от «Новичка» до «Легенды отдела». Звёзды можно и терять — тогда уровень понижается.</li>
+          <li>Уровень открывает возможности: приоритет в графике, отпуске и увольнительных, бонусные задачи, наставничество, своё направление, участие в жизни отдела.</li>
+          <li>Параллельно идут <b>деньги</b>: KPI месяца, смены вне графика, продажа списанной техники, оптимизация связи, точечные задачи. Всё это — главы ниже.</li>
         </ol>
         <p class="bk-note">Сейчас ты на <b>LVL ${lvl} «${lvlNow ? lvlNow.title : ""}»</b>, у тебя <b>${emp.stars || 0} ⭐</b>${lvlNext ? ` — до LVL ${lvlNext.lvl} «${lvlNext.title}» осталось <b>${starsNeed} ${plStars(starsNeed)}</b>` : " — это максимальный уровень"}.</p>`,
       },
       {
         chapter: "Глава 2", title: "Как начисляются звёзды",
-        html: `<p>Основания <b>суммируются</b>: за один месяц можно заработать до <b>${GAIN_CAP} звёзд</b>.</p>${starGain}
-        <p class="bk-note">Если оснований больше четырёх, в журнале будет отметка, что сработал лимит: в приоритете звезда руководителя, рост и удержание, затем награды.</p>`,
+        html: `<p>Основания <b>суммируются</b> — за один месяц можно заработать столько звёзд, сколько оснований сработало. Лимита нет.</p>${starGain}
+        <p class="bk-note">Простой пример: месяц с ростом среднего KPI до 9.2, двумя новыми наградами и одной звездой от руководителя — это <b>4 звезды за месяц</b>.</p>`,
       },
       {
-        chapter: "Глава 3", title: "Как теряются звёзды",
-        html: `<p>Потерять можно до <b>${LOSS_CAP} звёзд</b> за месяц. Ниже нуля звёзды не уходят: один тяжёлый месяц не обнуляет накопленное.</p>${starLose}`,
+        chapter: "Глава 3", title: "Когда звёзды снимают и падает уровень",
+        html: `<p>Звёзды можно терять — и потери тоже не ограничены.</p>${starLose}
+        <p>Если снятие опускает счётчик ниже границы уровня, <b>уровень понижается</b>. Например: было ровно 10 звёзд (LVL 2), сняли одну — стало 9, и ты снова LVL 1. Ниже 1-го уровня не падаем, ниже нуля звёзды не уходят.</p>
+        <p class="bk-note">Звёзды внутри уровня показаны в карточке «Мой LVL». Там же — журнал, за что именно пришла или ушла каждая звезда.</p>`,
       },
       {
-        chapter: "Глава 4", title: "Как растёт уровень",
-        html: `<p>Стартовый уровень — <b>LVL 1 «Новичок»</b>. Каждые <b>${LVL_STEP} звёзд</b> поднимают тебя на следующий уровень. Звёзды внутри уровня видны в карточке «Мой LVL»: там же — журнал, за что именно пришла каждая звезда.</p>
-        <p>Первый месяц с KPI — точка отсчёта: звёзды за KPI начинаются со следующего месяца, а награды дают звёзды сразу.</p>
+        chapter: "Глава 4", title: "Как растёт уровень: таблица уровней",
+        html: `<p>Стартовый уровень — <b>LVL 1 «Новичок»</b>. Каждые <b>${LVL_STEP} звёзд</b> поднимают на следующий уровень; потеря звёзд может опустить назад.</p>
         <div class="bk-table">
           <div class="bk-tr bk-th"><span>Уровень</span><span>Звание</span><span>Нужно звёзд</span></div>
           ${RULE_LEVELS.map((L) => `<div class="bk-tr${L.lvl === lvl ? " is-now" : ""}"><span>LVL ${L.lvl}</span><span>${L.title}</span><span>${L.stars}</span></div>`).join("")}
         </div>
-        <p class="bk-note">Чем выше уровень — тем серьёзнее возможности. Ниже — что даёт каждый из десяти уровней.</p>`,
+        <p class="bk-note">Максимум — LVL ${RULES.maxLvl || 10} «Легенда отдела»: это 90+ звёзд за всю работу в отделе.</p>`,
       },
-      { chapter: "Глава 5", title: "Что даёт LVL 1–5", html: `<p>Каждый уровень открывает конкретные возможности — их не нужно «выпрашивать», они закреплены за уровнем.</p>${lvlRows(1, 5)}` },
-      { chapter: "Глава 6", title: "Что даёт LVL 6–10", html: `<p>Верхние уровни — это уже про влияние на отдел: наставничество, своё направление, аудит коллег, замещение руководителя.</p>${lvlRows(6, 10)}` },
-      { chapter: "Глава 7", title: "Награды: что нужно сделать", html: `<p>Наград ${awardsCatalog.length}. Часть приходит автоматически по KPI месяца, часть отмечает руководитель за конкретные заслуги.</p>${awardBook}` },
+      { chapter: "Глава 5", title: "Что даёт LVL 1–3", html: `<p>Первые уровни — про базу: свои результаты, приоритет в личных планах и графике.</p>${lvlRows(1, 3)}` },
+      { chapter: "Глава 6", title: "Что даёт LVL 4–6", html: `<p>Средние уровни — про деньги и влияние: отпуск, бонусные задачи, линия поддержки, наставничество.</p>${lvlRows(4, 6)}` },
+      { chapter: "Глава 7", title: "Что даёт LVL 7–8", html: `<p>Здесь ты становишься тем, кто задаёт стандарты: своё направление, мини-команда, аудит качества коллег.</p>${lvlRows(7, 8)}` },
+      { chapter: "Глава 8", title: "Что даёт LVL 9–10", html: `<p>Верхние уровни — прямое участие в управлении отделом и в распределении ресурсов.</p>${lvlRows(9, 10)}` },
       {
-        chapter: "Глава 8", title: "Как заработать больше звёзд",
+        chapter: "Глава 9", title: "Финансовые бонусы: за что платят",
+        html: `<p>Бонус за месяц собирается из нескольких категорий. Ниже — что за ними стоит и какие суммы встречаются в отделе.</p>${bonusRules}
+        <p class="bk-note">Твоя сумма за конкретный месяц — на странице «Бонусы», детализация по каждому начислению открывается там же.</p>`,
+      },
+      { chapter: "Глава 10", title: "Награды за KPI месяца", html: `<p>Эти четыре награды приходят автоматически по среднему KPI месяца — они же дают звёзды за новые награды.</p>${autoAwards}` },
+      { chapter: "Глава 11", title: "Награды за метрики и лидерство", html: `<p>Эти награды отмечают результат по конкретным метрикам и место в рейтинге месяца.</p>${metricAwards}` },
+      { chapter: "Глава 12", title: "Награды за поступки и пользу отделу", html: `<p>Эти награды не считаются по формулам — их отмечает руководитель за конкретные дела месяца.</p>${manualAwards}` },
+      {
+        chapter: "Глава 13", title: "Как заработать больше звёзд",
         html: `<ol class="bk-list">
           <li><b>Держи рост.</b> Даже +0.2 к среднему KPI — это звезда за рост.</li>
           <li><b>Не сбавляй после рывка.</b> Средний ${HOLD.toFixed(1)} и выше даёт звезду за удержание — отдельно от роста.</li>
-          <li><b>Поднимай метрики до 10.</b> Каждая метрика на 10 даёт свою награду, а каждая новая награда — звезду.</li>
-          <li><b>Копи награды.</b> Каждые ${LVL_STEP} одинаковых наград — ещё одна звезда.</li>
+          <li><b>Поднимай метрики до 10.</b> Каждая метрика 10/10 — своя награда, а каждая новая награда — звезда.</li>
+          <li><b>Копи награды.</b> Каждые ${LVL_STEP} однотипных наград — ещё одна звезда.</li>
           <li><b>Бери сложные задачи.</b> Особые заслуги руководитель отмечает отдельной звездой — с записью в журнале, за что именно.</li>
-          <li><b>Не роняй больше чем на ${DROP.toFixed(1)}.</b> Падение на ${DROP.toFixed(1)}+ снимает звезду, а средний ниже 5.0 — ещё одну. Стабильность дешевле, чем отыгрыш.</li>
+          <li><b>Не роняй больше чем на ${DROP.toFixed(1)}.</b> Падение на ${DROP.toFixed(1)}+ снимает звезду, а средний ниже ${(RULES.low || 5).toFixed(1)} — ещё одну. Отыгрывать всегда дороже, чем удержать.</li>
         </ol>
         <p class="bk-note">Твой ориентир на следующий месяц: ${lvlNext ? `дойти до <b>LVL ${lvlNext.lvl} «${lvlNext.title}»</b> — это ${starsNeed} ${plStars(starsNeed)}` : "удержать максимальный уровень и помогать расти команде"}.</p>`,
       },
@@ -664,17 +678,86 @@
     }
   }
 
+  /* ---------- раздел «Мой LVL»: подсказки плиток ---------- */
+  function renderLvlTips() {
+    const allReasons = starLog.flatMap((r) => (r.reasons || []).map((x) => ({ x, r })));
+    const kindStats = [
+      { id: "рост среднего KPI", re: /вырос/ },
+      { id: "удержание " + HOLD.toFixed(1) + "+", re: /удержан/ },
+      { id: "новые награды", re: /Новая награда/ },
+      { id: "каждые 10 однотипных наград", re: /накопилось/ },
+      { id: "особые заслуги (руководитель)", re: /руководител/ },
+    ].map((k) => ({ id: k.id, n: allReasons.filter((o) => k.re.test(o.x) && !/снята руководителем/.test(o.x)).length }));
+
+    const t1 = document.getElementById("tip-lvl-total");
+    if (t1) {
+      t1.innerHTML = `<div class="tip-h">Всего звёзд: ${emp.stars || 0} · LVL ${lvl} «${lvlNow ? lvlNow.title : ""}»</div>
+        ${kindStats.map((k) => `<div class="tip-row"><span>${k.id}</span><b>+${k.n}</b></div>`).join("")}
+        <div class="tip-row" style="margin-top:8px"><span>До LVL ${lvl + 1} (${(lvlInfo(lvl + 1) || {}).title || "максимум"})</span><b>${starsNeed} ⭐</b></div>
+        <div class="tip-row"><span>Уровней пройдено</span><b>${Math.max(0, lvl - 1)} из ${(RULES.maxLvl || 10) - 1}</b></div>`;
+    }
+    const gainMonths = starLog.filter((r) => (r.stars || 0) > 0);
+    const t2 = document.getElementById("tip-lvl-gain");
+    if (t2) {
+      t2.innerHTML = `<div class="tip-h">Начислено за период: +${gainMonths.reduce((a, r) => a + r.stars, 0)} ⭐</div>
+        ${gainMonths.map((r) => `<div class="tip-award"><b>${r.month}: +${r.stars} ⭐</b><i>${(r.reasons || []).slice(0, 2).join("; ").slice(0, 150)}</i></div>`).join("") || '<p class="tip-empty">Начислений пока не было.</p>'}`;
+    }
+    const lossMonths = starLog.filter((r) => (r.stars || 0) < 0);
+    const t3 = document.getElementById("tip-lvl-loss");
+    if (t3) {
+      t3.innerHTML = `<div class="tip-h">Снято за период: ${lossMonths.reduce((a, r) => a + r.stars, 0)} ⭐</div>
+        ${lossMonths.map((r) => `<div class="tip-award"><b>${r.month}: ${r.stars} ⭐</b><i>${(r.reasons || []).join("; ").slice(0, 170)}</i></div>`).join("") || '<p class="tip-empty">Снятий не было — так держать!</p>'}
+        <p class="tip-note">Снятие может опустить счётчик ниже границы уровня — тогда уровень понижается.</p>`;
+    }
+    const last = starLog[starLog.length - 1];
+    const t4 = document.getElementById("tip-lvl-month");
+    if (t4) {
+      t4.innerHTML = last
+        ? `<div class="tip-h">${last.month}: ${last.stars > 0 ? "+" + last.stars : last.stars} ⭐</div>
+           <ul>${(last.reasons || []).map((x) => `<li>${x}</li>`).join("")}</ul>
+           ${(last.notes || []).map((x) => `<p class="tip-note">${x}</p>`).join("")}
+           <div class="tip-row" style="margin-top:8px"><span>Всего на конец месяца</span><b>${last.total} ⭐</b></div>`
+        : '<p class="tip-empty">Данных за последний месяц нет.</p>';
+    }
+  }
+
   /* ---------- раздел «Мой LVL»: график накопления звёзд ---------- */
+  if (SECTION === "lvl") renderLvlTips();
+
   if (SECTION === "lvl" && window.Chart) {
     const el = document.getElementById("chart-stars");
+    let starChart = null;
+    const MODES = {
+      month: { label: "Изменение за месяц, ⭐", data: () => starLog.map((r) => r.stars || 0), fill: true, tip: (v) => (v > 0 ? `+${v} ⭐` : `${v} ⭐`), up: "#34d399", down: "#f87171" },
+      total: { label: "Всего звёзд (накопление)", data: () => starLog.map((r) => r.total), fill: true, tip: (v) => `${v} ⭐ всего`, up: "#fbbf24", down: "#fbbf24" },
+    };
+    const paintStars = (mode) => {
+      const m = MODES[mode];
+      const ds = {
+        label: m.label, data: m.data(), borderColor: m.up, backgroundColor: m.up + "2e", fill: m.fill,
+        tension: .35, borderWidth: 2, pointRadius: 4, pointHoverRadius: 7,
+        pointBackgroundColor: m.data().map((v) => (v < 0 ? "#f87171" : m.up)),
+        segment: mode === "month" ? { borderColor: (c) => ((c.p1.parsed.y || 0) < 0 ? "#f87171" : "#34d399") } : undefined,
+      };
+      if (!starChart) {
+        starChart = new Chart(el, {
+          type: "line",
+          data: { labels: starLog.map((r) => r.month), datasets: [ds] },
+          options: { responsive: true, maintainAspectRatio: false, scales: { y: { grid: { color: "rgba(255,255,255,.05)" }, title: { display: true, text: "⭐", color: "#8b96a8" } }, x: { grid: { display: false } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => m.tip(c.parsed.y) } } } },
+        });
+      } else {
+        starChart.data.datasets[0] = ds;
+        starChart.update();
+      }
+    };
     if (el) {
-      new Chart(el, {
-        type: "line",
-        data: {
-          labels: starLog.map((r) => r.month),
-          datasets: [{ label: "Звёзд всего", data: starLog.map((r) => r.total), borderColor: "#fbbf24", backgroundColor: "rgba(251,191,36,.18)", fill: true, tension: .35, borderWidth: 2, pointRadius: 4, pointHoverRadius: 6 }],
-        },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: "rgba(255,255,255,.05)" } }, x: { grid: { display: false } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `Всего звёзд: ${c.parsed.y}` } } } },
+      paintStars("month");
+      const box = document.getElementById("star-mode");
+      if (box) box.addEventListener("click", (ev) => {
+        const b = ev.target.closest(".ct-btn");
+        if (!b) return;
+        box.querySelectorAll(".ct-btn").forEach((x) => x.classList.toggle("is-on", x === b));
+        paintStars(b.dataset.mode);
       });
     }
   }
@@ -740,6 +823,7 @@
       if (da) da.innerHTML = (cur.awards || []).length ? (cur.awards || []).map((x) => awardTile(x)).join("") : '<p class="muted">Наград за этот месяц нет.</p>';
     };
     statsDetail();
+    renderLeaderboard();
   }
 
   /* ---------- раздел «Правила»: книга с перелистыванием ---------- */
@@ -753,6 +837,22 @@
     const prevBtn = document.getElementById("bk-prev");
     const nextBtn = document.getElementById("bk-next");
     dotsEl.innerHTML = pages.map((_, i) => `<span class="bk-dot" data-i="${i}"></span>`).join("");
+    /** все страницы одинаковой высоты: заранее меряем самую большую и фиксируем размер сцены */
+    const lockHeight = () => {
+      const stage = document.getElementById("book-stage");
+      if (!stage) return;
+      const probe = document.createElement("article");
+      probe.className = "book-page";
+      probe.style.cssText = "position:absolute;left:0;top:0;visibility:hidden;pointer-events:none;width:" + stage.clientWidth + "px";
+      stage.appendChild(probe);
+      let max = 0;
+      pages.forEach((pg) => {
+        probe.innerHTML = `<h3 class="bk-h">${pg.title}</h3>${pg.html}`;
+        max = Math.max(max, probe.getBoundingClientRect().height);
+      });
+      probe.remove();
+      stage.style.height = Math.ceil(max + 4) + "px";
+    };
     const paint = () => {
       pageEl.innerHTML = `<h3 class="bk-h">${pages[page].title}</h3>${pages[page].html}`;
       chEl.textContent = pages[page].chapter;
@@ -777,6 +877,46 @@
     document.querySelectorAll(".bk-dot").forEach((d) => d.addEventListener("click", () => turn(+d.dataset.i, +d.dataset.i > page ? 1 : -1)));
     document.addEventListener("keydown", (e) => { if (e.key === "ArrowRight") turn(page + 1, 1); if (e.key === "ArrowLeft") turn(page - 1, -1); });
     paint();
+    lockHeight();
+    window.addEventListener("resize", lockHeight);
+  }
+
+  /* ---------- турнирная таблица команды (соревновательная форма) ---------- */
+  function renderLeaderboard() {
+    if (!showBoard) return;                              // доска — только на странице руководителя
+    const el = document.getElementById("leaderboard");
+    if (!el) return;
+    const rows = leaderboardRows;
+    if (!rows.length) { el.innerHTML = '<p class="muted">Рейтинг появится после первого месяца с KPI.</p>'; return; }
+    const medal = (p) => (p === 1 ? "🥇" : p === 2 ? "🥈" : p === 3 ? "🥉" : p);
+    const podium = rows.slice(0, 3).map((r) =>
+      `<div class="lb-podium${r.id === emp.id ? " is-me" : ""}"><div class="lb-pm">${medal(r.place)}</div><div class="lb-pn">${r.short}</div><div class="lb-pt">${r.title}</div><div class="lb-ps">LVL ${r.lvl} · ⭐ ${r.stars}</div><div class="lb-pa">${r.glyphs.join(" ")}</div></div>`).join("");
+    const list = rows.map((r) =>
+      `<div class="lb-row${r.id === emp.id ? " is-me" : ""}">
+        <span class="lb-place">${medal(r.place)}</span>
+        <span class="lb-who">${r.name}${r.id === emp.id ? '<span class="lb-you">ты</span>' : ""}<span class="lb-title-inline">${r.title}</span></span>
+        <span class="lb-lvl">LVL ${r.lvl}</span>
+        <span class="lb-stars" title="${r.starsInLevel}/10 звёзд до следующего уровня">${"★".repeat(r.starsInLevel)}${"☆".repeat(Math.max(0, 10 - r.starsInLevel))}</span>
+        <span class="lb-avg">${r.avg.toFixed(1)}</span>
+        <span class="lb-awards" title="Наград всего: ${r.awards}">${r.glyphs.join("")}<b>${r.awards}</b></span>
+      </div>`).join("");
+    const me = rows.find((r) => r.id === emp.id);
+    const tag = (r) => (r ? `${r.short} ${r.name.split(" ")[0].slice(0, 1)}.` : "—");
+    let hint;
+    if (!me) {
+      hint = `<div class="lb-hint">Турнир ведётся между специалистами отдела — по должности руководителя KPI не оценивается, поэтому ты вне таблицы. Ниже — весь твой отдел: видно, кто на каком уровне и у кого сколько звёзд.</div>`;
+    } else if (me.place === 1) {
+      hint = `<div class="lb-hint lb-hint-top">🔥 Ты лидер турнира. Отрыв от ${tag(rows[1])} — ${me.gapDown} ${plural(me.gapDown)}. Держи темп: за тобой охотятся.</div>`;
+    } else {
+      const up = rows[me.place - 2], down = rows[me.place];
+      const back = me.gapUp > 0
+        ? `До ${me.place - 1}-го места (${tag(up)}) — ${me.gapUp} ${plural(me.gapUp)}.`
+        : `По очкам ты вровень с ${tag(up)}, выше решает средний KPI (${up.avg.toFixed(1)} против твоих ${me.avg.toFixed(1)}).`;
+      const ahead = down ? ` Отрыв от ${me.place + 1}-го (${tag(down)}) — ${me.gapDown} ${plural(me.gapDown)}.` : " Ты замыкаешь таблицу — вперёд.";
+      hint = `<div class="lb-hint">Ты #${me.place} из ${rows.length}. ${back}${ahead}</div>`;
+    }
+    const sub = `<div class="lb-sub">Участников: ${rows.length} · очки = LVL × 10 + ⭐ · LVL — 10 ⭐ · звёзды и награды копятся за все месяцы</div>`;
+    el.innerHTML = `<div class="lb-podium-wrap">${podium}</div><div class="lb-list">${list}</div>${hint}${sub}`;
   }
 
   renderMonth(selected);
