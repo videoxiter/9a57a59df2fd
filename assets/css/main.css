@@ -1046,3 +1046,7 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
 .award-tile.book .a-r { font-size: .78rem; color: var(--muted); line-height: 1.35; }
 .award-tile.book .a-m { font-size: .77rem; line-height: 1.35; }
 .award-tile.book .a-when { font-size: .7rem; color: var(--muted); line-height: 1.3; }
+
+/* --- счётчик наград в заголовке «Накоплено за всё время» --- */
+.ac-inline { font-family: var(--font-mono); font-size: 1.15rem; color: var(--warn); }
+#month-awards.awards-row { margin-bottom: 4px; }

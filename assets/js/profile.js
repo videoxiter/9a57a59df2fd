@@ -346,18 +346,18 @@
     const cur = history[selected] || {};
     const mAwards = cur.awards || [];
     const glyphs = empAwards.map((a) => a.glyph || "").join(" ");
-    const book = awardsCatalog.map((g) => {
-      const got = empAwards.find((a) => a.id === g.id);
-      return `<div class="award-tile book${got ? " earned" : " locked"}${g.id === "perfect" ? " star-medal" : ""}">
+    /** Карточка награды: медальон + название, условие, мотивация, когда получена. */
+    const bookCard = (g, got, months) => `<div class="award-tile book${got ? " earned" : " locked"}${g.id === "perfect" ? " star-medal" : ""}">
         <span class="medal" style="--ac:${got ? g.color : "#3a4250"}"><span class="medal-glyph">${g.glyph || ""}</span></span>
         <div class="a-body">
-          <div class="a-t">${g.title}${got ? ` <span class="got">· ×${got.count}</span>` : ""}</div>
+          <div class="a-t">${g.title}${got && g.count > 1 ? ` <span class="got">· ×${g.count}</span>` : got ? ' <span class="got">· получена</span>' : ""}</div>
           <div class="a-r">${g.desc}</div>
           ${g.motiv ? `<div class="a-m">💪 ${g.motiv}</div>` : ""}
-          <div class="a-when">${got ? "Получена: " + (got.months || []).join(", ") : "Ещё не получена"}</div>
+          <div class="a-when">${months && months.length ? "Получена: " + months.join(", ") : "Ещё не получена"}</div>
         </div>
       </div>`;
-    }).join("");
+    const book = awardsCatalog.map((g) => bookCard(g, !!earnedIds.has(g.id), (empAwards.find((a) => a.id === g.id) || {}).months)).join("");
+    const accumulated = empAwards.map((a) => bookCard(a, true, a.months)).join("");
 
     return `
     <section class="p-sec" data-reveal>
@@ -372,12 +372,18 @@
     </section>
 
     <section class="p-sec">
-      <div class="p-sec-head"><h2><i class="ph-bold ph-trophy"></i> Награды</h2><span class="p-sec-hint">месяц: <b class="month-label">…</b></span></div>
-      ${monthTabsHtml()}
+      <div class="p-sec-head inline">
+        <h2><i class="ph-bold ph-trophy"></i> Награды</h2>
+        ${monthTabsHtml()}
+      </div>
       <div class="sub-head" data-reveal><i class="ph ph-medal"></i> Награды за <span class="month-label">…</span></div>
       <div class="awards-row" id="month-awards" data-stagger></div>
-      <div class="sub-head" data-reveal style="margin-top:26px"><i class="ph ph-stack"></i> Накоплено за всё время</div>
-      <div class="awards-row" data-stagger>${empAwards.map((a) => awardTile(a, a.count > 1 ? ` <span class="got">×${a.count}</span>` : "", (a.months || []).join(", "))).join("") || '<p class="muted">Наград пока нет.</p>'}</div>
+      <div class="sub-head" data-reveal style="margin-top:22px">
+        <i class="ph ph-stack"></i> Накоплено за всё время ·
+        <b class="ac-inline">${totalAwardsCount}</b> ${totalAwardsCount === 1 ? "награда" : (totalAwardsCount % 10 >= 2 && totalAwardsCount % 10 <= 4 && (totalAwardsCount % 100 < 10 || totalAwardsCount % 100 > 20)) ? "награды" : "наград"}
+        <span class="plan-when">· уникальных ${empAwards.length} из ${awardsCatalog.length}</span>
+      </div>
+      <div class="awards-book" data-stagger>${accumulated || '<p class="muted">Наград пока нет.</p>'}</div>
     </section>
 
     <section class="p-sec">
