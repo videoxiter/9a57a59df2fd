@@ -107,6 +107,13 @@
 
   function plural(n) { const a = Math.abs(n) % 100, b = a % 10; if (a > 10 && a < 20) return "очков"; if (b > 1 && b < 5) return "очка"; if (b === 1) return "очко"; return "очков"; }
   function plStars(n) { const a = Math.abs(n) % 100, b = a % 10; if (a > 10 && a < 20) return "звёзд"; if (b > 1 && b < 5) return "звезды"; if (b === 1) return "звезда"; return "звёзд"; }
+  function awardWord(n) {
+    const a = Math.abs(n) % 100, b = a % 10;
+    if (a > 10 && a < 20) return "наград";
+    if (b > 1 && b < 5) return "награды";
+    if (b === 1) return "награда";
+    return "наград";
+  }
   function plMonths(n) { const a = Math.abs(n) % 100, b = a % 10; if (a > 10 && a < 20) return "месяцев"; if (b > 1 && b < 5) return "месяца"; if (b === 1) return "месяц"; return "месяцев"; }
   function tickets(text) { return (text || "").match(/HELP-\d+/g) || []; }
   function tLinks(text) { return tickets(text).map((t) => `<a href="https://jira.centrofinans.ru/browse/${t}" target="_blank" rel="noopener">${t}</a>`).join(" "); }
@@ -364,10 +371,13 @@
       <div class="awards-counter" data-reveal>
         <div class="ac-left">
           <div class="ac-num">${totalAwardsCount}</div>
-          <div class="ac-cap">наград за всё время</div>
+          <div class="ac-cap">${awardWord(totalAwardsCount)} за всё время</div>
           <div class="ac-uniq">уникальных: <b>${empAwards.length}</b> из ${awardsCatalog.length}</div>
         </div>
-        <div class="ac-glyphs">${glyphs || '<span class="muted">пока пусто — всё впереди</span>'}</div>
+        <div class="ac-top">
+          ${empAwards.slice().sort((a, b) => (b.count || 1) - (a.count || 1)).slice(0, 5).map((a) => `<div class="ac-row"><span class="ac-g">${a.glyph || ""}</span><span class="ac-n">${a.title}</span><span class="ac-c">×${a.count || 1}</span></div>`).join("") || '<span class="muted">Пока ни одной — всё впереди!</span>'}
+          <div class="ac-hint">подробнее — карточками ниже: условие, мотивация и месяц получения</div>
+        </div>
       </div>
     </section>
 
@@ -380,7 +390,7 @@
       <div class="awards-row" id="month-awards" data-stagger></div>
       <div class="sub-head" data-reveal style="margin-top:22px">
         <i class="ph ph-stack"></i> Накоплено за всё время ·
-        <b class="ac-inline">${totalAwardsCount}</b> ${totalAwardsCount === 1 ? "награда" : (totalAwardsCount % 10 >= 2 && totalAwardsCount % 10 <= 4 && (totalAwardsCount % 100 < 10 || totalAwardsCount % 100 > 20)) ? "награды" : "наград"}
+        <b class="ac-inline">${totalAwardsCount}</b> ${awardWord(totalAwardsCount)}
         <span class="plan-when">· уникальных ${empAwards.length} из ${awardsCatalog.length}</span>
       </div>
       <div class="awards-book" data-stagger>${accumulated || '<p class="muted">Наград пока нет.</p>'}</div>

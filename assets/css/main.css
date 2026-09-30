@@ -1050,3 +1050,12 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
 /* --- счётчик наград в заголовке «Накоплено за всё время» --- */
 .ac-inline { font-family: var(--font-mono); font-size: 1.15rem; color: var(--warn); }
 #month-awards.awards-row { margin-bottom: 4px; }
+
+/* --- верхний блок наград: вместо ряда эмодзи — понятный список с количеством --- */
+.ac-top { display: flex; flex-direction: column; gap: 6px; min-width: 240px; }
+.ac-row { display: grid; grid-template-columns: 24px 1fr auto; gap: 9px; align-items: center; font-size: .84rem; }
+.ac-row .ac-g { font-size: 1.05rem; line-height: 1; }
+.ac-row .ac-n { color: var(--text); }
+.ac-row .ac-c { font-family: var(--font-mono); color: var(--warn); font-weight: 700; }
+.ac-hint { margin-top: 4px; font-size: .72rem; color: var(--muted); }
+@media (max-width: 720px) { .ac-top { min-width: 0; width: 100%; } }
