@@ -350,10 +350,12 @@
       const got = empAwards.find((a) => a.id === g.id);
       return `<div class="award-tile book${got ? " earned" : " locked"}${g.id === "perfect" ? " star-medal" : ""}">
         <span class="medal" style="--ac:${got ? g.color : "#3a4250"}"><span class="medal-glyph">${g.glyph || ""}</span></span>
-        <div class="a-t">${g.title}${got ? ` <span class="got">· ×${got.count}</span>` : ""}</div>
-        <div class="a-r">${g.desc}</div>
-        ${g.motiv ? `<div class="a-m">💪 ${g.motiv}</div>` : ""}
-        <div class="a-when">${got ? "Получена: " + (got.months || []).join(", ") : "Ещё не получена"}</div>
+        <div class="a-body">
+          <div class="a-t">${g.title}${got ? ` <span class="got">· ×${got.count}</span>` : ""}</div>
+          <div class="a-r">${g.desc}</div>
+          ${g.motiv ? `<div class="a-m">💪 ${g.motiv}</div>` : ""}
+          <div class="a-when">${got ? "Получена: " + (got.months || []).join(", ") : "Ещё не получена"}</div>
+        </div>
       </div>`;
     }).join("");
 

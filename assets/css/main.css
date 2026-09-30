@@ -1037,3 +1037,12 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
 .awards-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 12px; align-items: stretch; }
 .awards-row > .award-tile { width: auto; height: 100%; }
 @media (max-width: 640px) { .awards-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* --- справочник: весь текст в правой колонке, обычными строками --- */
+.award-tile.book { grid-template-columns: 46px minmax(0, 1fr); }
+.award-tile.book .a-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.award-tile.book .a-body > * { margin-top: 0; }
+.award-tile.book .a-t { font-size: .9rem; font-weight: 600; line-height: 1.25; }
+.award-tile.book .a-r { font-size: .78rem; color: var(--muted); line-height: 1.35; }
+.award-tile.book .a-m { font-size: .77rem; line-height: 1.35; }
+.award-tile.book .a-when { font-size: .7rem; color: var(--muted); line-height: 1.3; }
