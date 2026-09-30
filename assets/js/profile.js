@@ -47,6 +47,8 @@
   const leaderboardRows = D.leaderboard || [];
   const showBoard = emp.id === "yakovlenkov";
 
+  let bestMonthKey = null;   // лучший месяц: заполняет sectionStats, читают обработчики карточек-сводок
+
   const trend = otp.trend(emp);
   const trendIcon = trend.dir === "up" ? "trend-up" : trend.dir === "down" ? "trend-down" : "minus";
 
@@ -431,6 +433,7 @@
     const withKpi = history.filter((h) => avgOf(h) != null);
     const lastAvg = emp.avg;
     const best = withKpi.slice().sort((a, b) => avgOf(b) - avgOf(a))[0];
+    bestMonthKey = best ? best.key : null;
     const bonusSum = history.reduce((s, h) => s + (h.bonus || 0), 0);
     const rows = history.map((h, i) => {
       const a = avgOf(h);
@@ -449,11 +452,31 @@
     <section class="p-sec" data-reveal>
       <div class="p-sec-head"><h2><i class="ph-bold ph-chart-line"></i> Статистика</h2><span class="p-sec-hint">вся динамика за период · клик по графику или строке — детализация месяца</span></div>
       <div class="stat-cards">
-        <div class="stat-card"><span class="sc-k">Средний KPI</span><span class="sc-v">${lastAvg != null ? lastAvg.toFixed(1) : "—"}</span><span class="sc-s">${trend.delta > 0 ? "▲ +" + trend.delta : "▼ " + trend.delta} за период</span></div>
-        <div class="stat-card"><span class="sc-k">Лучший месяц</span><span class="sc-v">${best ? best.month.split(" ")[0] : "—"}</span><span class="sc-s">${best ? "avg " + avgOf(best).toFixed(1) : "нет данных"}</span></div>
-        <div class="stat-card"><span class="sc-k">Звёзд всего</span><span class="sc-v">${emp.stars || 0}</span><span class="sc-s">LVL ${lvl} · ${inLvl}/${LVL_STEP} до след.</span></div>
-        <div class="stat-card"><span class="sc-k">Бонусы за период</span><span class="sc-v">${otp.rub(bonusSum)}</span><span class="sc-s">${history.filter((h) => h.bonus != null).length} ${plMonths(history.filter((h) => h.bonus != null).length)} с бонусом</span></div>
-        <div class="stat-card"><span class="sc-k">Наград получено</span><span class="sc-v">${totalAwardsCount}</span><span class="sc-s">уникальных ${empAwards.length} из ${awardsCatalog.length}</span></div>
+        <button type="button" class="stat-card is-link" data-action="avg" title="Показать KPI по каждому месяцу">
+          <span class="sc-k">Средний KPI</span><span class="sc-v">${lastAvg != null ? lastAvg.toFixed(1) : "—"}</span>
+          <span class="sc-s">${trend.delta > 0 ? "▲ +" + trend.delta : "▼ " + trend.delta} за период</span>
+          <span class="sc-go">детализация по месяцам <i class="ph-bold ph-arrow-down"></i></span>
+        </button>
+        <button type="button" class="stat-card is-link" data-action="best" title="Открыть этот месяц в детализации">
+          <span class="sc-k">Лучший месяц</span><span class="sc-v">${best ? best.month.split(" ")[0] : "—"}</span>
+          <span class="sc-s">${best ? "avg " + avgOf(best).toFixed(1) : "нет данных"}</span>
+          <span class="sc-go">перейти к месяцу <i class="ph-bold ph-arrow-down"></i></span>
+        </button>
+        <button type="button" class="stat-card is-link" data-action="stars" title="Журнал: когда и за что получены звёзды">
+          <span class="sc-k">Звёзд всего</span><span class="sc-v">${emp.stars || 0}</span>
+          <span class="sc-s">LVL ${lvl} · ${inLvl}/${LVL_STEP} до след.</span>
+          <span class="sc-go">за что начислены <i class="ph-bold ph-arrow-right"></i></span>
+        </button>
+        <button type="button" class="stat-card is-link" data-action="bonus" title="Страница «Бонусы» — разбивка сумм">
+          <span class="sc-k">Бонусы за период</span><span class="sc-v">${otp.rub(bonusSum)}</span>
+          <span class="sc-s">${history.filter((h) => h.bonus != null).length} ${plMonths(history.filter((h) => h.bonus != null).length)} с бонусом</span>
+          <span class="sc-go">из чего сложилось <i class="ph-bold ph-arrow-right"></i></span>
+        </button>
+        <button type="button" class="stat-card is-link" data-action="awards" title="Страница «Награды» — карточки и справочник">
+          <span class="sc-k">Наград получено</span><span class="sc-v">${totalAwardsCount}</span>
+          <span class="sc-s">уникальных ${empAwards.length} из ${awardsCatalog.length}</span>
+          <span class="sc-go">все награды <i class="ph-bold ph-arrow-right"></i></span>
+        </button>
       </div>
     </section>
 
@@ -853,6 +876,28 @@
       clickMonth(avgChart, avgEl); clickMonth(bonusChart, bonusEl);
     }
     document.querySelectorAll(".st-row").forEach((tr) => tr.addEventListener("click", () => renderMonth(+tr.dataset.i)));
+
+    // карточки-сводки: детализация или переход на раздел
+    document.querySelectorAll(".stat-card[data-action]").forEach((card) => card.addEventListener("click", () => {
+      const act = card.dataset.action;
+      if (act === "avg") {
+        const t = document.querySelector(".stat-table-wrap");
+        if (t) { t.scrollIntoView({ behavior: "smooth", block: "start" }); t.classList.remove("pulse"); void t.offsetWidth; t.classList.add("pulse"); }
+      } else if (act === "best") {
+        const idx = bestMonthKey ? history.findIndex((h) => h.key === bestMonthKey) : -1;
+        if (idx >= 0) {
+          renderMonth(idx);
+          const d = document.querySelector(".detail-bar");
+          if (d) { d.scrollIntoView({ behavior: "smooth", block: "start" }); d.classList.remove("pulse"); void d.offsetWidth; d.classList.add("pulse"); }
+        }
+      } else if (act === "stars") {
+        location.href = navHref("lvl");
+      } else if (act === "bonus") {
+        location.href = navHref("bonus");
+      } else if (act === "awards") {
+        location.href = navHref("awards");
+      }
+    }));
 
     statsDetail = function () {
       const cur = history[selected] || {};
