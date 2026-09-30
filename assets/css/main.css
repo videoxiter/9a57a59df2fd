@@ -746,12 +746,8 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
 .ac-uniq { font-size: .78rem; color: var(--muted); font-family: var(--font-mono); margin-top: 4px; }
 .ac-glyphs { font-size: 1.9rem; letter-spacing: .12em; max-width: 60%; line-height: 1.5; }
 
-.awards-book { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
-.award-tile.book { align-items: flex-start; text-align: left; padding: 16px; }
-.award-tile.book .medal { margin-bottom: 10px; }
 .a-m { margin-top: 8px; font-size: .8rem; color: var(--accent-2); font-style: italic; }
 .a-when { margin-top: 6px; font-size: .72rem; color: var(--muted); font-family: var(--font-mono); }
-.award-tile.book.earned { border-color: rgba(251, 191, 36, .35); }
 
 /* --- «Мой рост»: в разработке --- */
 .dev-card { position: relative; overflow: hidden; text-align: center; padding: 64px 26px; border-radius: var(--radius); border: 1px solid var(--border-2); background: var(--card); }
@@ -964,18 +960,19 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
   border-color: rgba(34, 211, 238, .45); background: rgba(34, 211, 238, .06); outline: none;
 }
 
-/* --- справочник наград: компактные карточки в несколько колонок --- */
-.awards-book { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 12px; align-items: start; }
+/* --- справочник наград: ровная сетка, карточки одинаковой высоты в ряду --- */
+.awards-book { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 12px; align-items: stretch; }
 .award-tile.book {
-  display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: start;
-  padding: 13px 15px; text-align: left; min-height: 0;
+  width: auto; height: 100%; min-height: 0;
+  display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 13px; align-items: start;
+  padding: 14px 16px; text-align: left;
 }
-.award-tile.book .medal { width: 44px; height: 44px; margin: 0; }
-.award-tile.book .medal .medal-glyph { font-size: 1.5rem; }
-.award-tile.book .a-t { font-size: .9rem; font-weight: 600; }
-.award-tile.book .a-r { font-size: .78rem; color: var(--muted); margin-top: 2px; }
-.award-tile.book .a-m { font-size: .76rem; margin-top: 5px; }
-.award-tile.book .a-when { font-size: .7rem; margin-top: 5px; }
+.award-tile.book .medal { width: 46px; height: 46px; margin: 0; }
+.award-tile.book .medal-glyph { font-size: 1.55rem; }
+.award-tile.book .a-t { font-size: .9rem; font-weight: 600; line-height: 1.25; }
+.award-tile.book .a-r { font-size: .78rem; color: var(--muted); margin-top: 3px; line-height: 1.35; }
+.award-tile.book .a-m { font-size: .77rem; margin-top: 6px; }
+.award-tile.book .a-when { font-size: .7rem; margin-top: 6px; }
 @media (max-width: 720px) { .awards-book { grid-template-columns: 1fr; } }
 
 /* --- подсказки в плитках «Мой LVL» --- */
@@ -1006,7 +1003,6 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
 .lb-sub { margin-top: 10px; font-size: .74rem; color: var(--muted); font-family: var(--font-mono); }
 
 /* справочник наград: карточки на всю ширину ячейки (наследуют width:132px у плиток) */
-.award-tile.book { width: auto; }
 /* подсказки плиток «Мой LVL» */
 
 /* --- сумма: подписи СНАРУЖИ звезды, внутри только цифры --- */
