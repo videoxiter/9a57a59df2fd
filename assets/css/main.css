@@ -887,12 +887,12 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
 .bonus-items .bonus-item { margin: 0; }
 
 /* --- компактная карточка суммы --- */
-.money-card .money-star { width: 200px; height: 200px; }
-.money-card .ms-sum { font-size: 1.6rem; }
-.money-card .bonus-side { flex-direction: row; flex-wrap: wrap; gap: 8px; }
-.money-card .bs-item { flex: 1 1 46%; padding: 9px 12px; }
-.money-card .bs-k { font-size: .74rem; }
-.money-card .bs-v { font-size: .95rem; }
+.money-star { width: 220px; height: 220px; }
+.ms-sum { font-size: 1.4rem; }
+.bonus-side { display: flex; flex-direction: column; gap: 8px; }
+.bs-item { padding: 10px 13px; }
+.bs-k { font-size: .78rem; }
+.bs-v { font-size: 1rem; }
 
 /* --- читаемость: ссылки-компоненты не должны брать дефолтный синий --- */
 .p-nav .nav-logo { color: var(--text); }
@@ -901,18 +901,69 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
 .p-lvl-s { color: var(--muted); }
 
 /* --- звезда с суммой: текст строго внутри --- */
-.money-card .money-star { width: 240px; height: 240px; }
-.money-card .ms-in { padding: 0 44px; gap: 1px; }
-.money-card .ms-cap { font-size: .56rem; letter-spacing: .06em; line-height: 1.15; }
-.money-card .ms-sum { font-size: 1.5rem; letter-spacing: -.01em; white-space: nowrap; color: #2b1a02; text-shadow: 0 0 14px rgba(255, 255, 255, .55); }
-.money-card .ms-sub { font-size: .56rem; line-height: 1.15; }
-@media (max-width: 720px) { .money-card .ms-in { padding: 0 34px; } .money-card .ms-sum { font-size: 1.05rem; } }
+.money-star { width: 220px; height: 220px; }
+.ms-in { padding: 0 44px; gap: 1px; }
+.ms-cap { font-size: .56rem; letter-spacing: .06em; line-height: 1.15; }
+.ms-sum { font-size: 1.4rem; letter-spacing: -.01em; white-space: nowrap; color: #2b1a02; text-shadow: 0 0 14px rgba(255, 255, 255, .55); }
+.ms-sub { font-size: .58rem; line-height: 1.15; }
+@media (max-width: 720px) { .ms-in { padding: 0 32px; } .ms-sum { font-size: 1rem; } }
 
 /* --- без KPI (руководитель): карточка суммы на всю ширину --- */
 .bonus-cols.solo { grid-template-columns: minmax(0, 560px); justify-content: center; }
 .bonus-cols.solo .money-card { width: 100%; }
 
 /* сумма и подписи — по ширине текста, чтобы автоподгонка и центровка работали */
-.money-card .ms-in { align-items: center; }
-.money-card .ms-sum { width: max-content; align-self: center; }
-.money-card .ms-cap, .money-card .ms-sub { width: max-content; max-width: 150px; align-self: center; text-align: center; }
+.ms-in { align-items: center; }
+.ms-sum { width: max-content; align-self: center; }
+.ms-cap, .ms-sub { width: max-content; max-width: 160px; align-self: center; text-align: center; }
+
+/* --- единый блок «Бонусы»: слева KPI+детализация, справа звезда --- */
+.bonus-unit { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 22px; padding: 18px 20px; align-items: start; }
+@media (max-width: 980px) { .bonus-unit { grid-template-columns: 1fr; } }
+.bu-left { min-width: 0; }
+.bu-right {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  padding: 14px 16px 16px; border-radius: 14px;
+  border: 1px solid rgba(251, 191, 36, .22);
+  background: radial-gradient(120% 130% at 50% 0%, rgba(251, 191, 36, .1), rgba(251, 191, 36, .01) 65%);
+}
+.bu-right .money-star { width: 230px; height: 230px; margin: -4px auto 0; }
+.bu-right .money-star .ms-in { padding: 0 42px; }
+.bu-right .money-star .ms-sum { font-size: 1.5rem; }
+.bu-right .bonus-side { width: 100%; flex-direction: column; }
+.bu-right .bs-item { flex: none; }
+.bu-left .bonus-items { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+
+/* --- всплывающие подсказки на плитках под звездой --- */
+.bs-item { position: relative; cursor: help; transition: border-color .2s, background .2s; }
+.bs-item:hover, .bs-item:focus-visible { border-color: rgba(34, 211, 238, .45); background: rgba(34, 211, 238, .06); outline: none; }
+.bs-item::after {
+  content: "?"; position: absolute; top: 8px; right: 9px; width: 15px; height: 15px; border-radius: 50%;
+  display: grid; place-items: center; font-size: .62rem; font-family: var(--font-mono);
+  color: var(--muted); border: 1px solid var(--border-2); background: rgba(255, 255, 255, .03);
+}
+.tip-pop {
+  position: absolute; bottom: calc(100% + 10px); right: 0; z-index: 40;
+  width: min(330px, 82vw); max-height: 300px; overflow-y: auto;
+  padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border-2);
+  background: #0b131b; box-shadow: 0 22px 50px rgba(0, 0, 0, .6);
+  opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity .2s, transform .2s;
+  font-size: .8rem; font-family: var(--font-sans); font-weight: 400; color: var(--text); text-align: left;
+}
+.tip-pop::after {
+  content: ""; position: absolute; top: 100%; right: 22px; border: 7px solid transparent; border-top-color: #0b131b;
+}
+.bs-item:hover .tip-pop, .bs-item:focus-within .tip-pop, .bs-item:focus .tip-pop { opacity: 1; transform: none; }
+.tip-h { font-weight: 700; color: var(--accent-2); margin-bottom: 8px; font-size: .82rem; }
+.tip-pop ul { margin: 0; padding-left: 16px; display: flex; flex-direction: column; gap: 5px; }
+.tip-pop li { line-height: 1.35; color: var(--text); }
+.tip-pop li.tip-note { color: var(--muted); font-size: .74rem; list-style: circle; }
+.tip-pop .tip-row { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; border-bottom: 1px dashed var(--border); }
+.tip-pop .tip-row:last-child { border-bottom: none; }
+.tip-pop .tip-row b { font-family: var(--font-mono); color: var(--accent-2); }
+.tip-pop .tip-g { font-size: 1rem; margin-right: 5px; }
+.tip-pop .tip-award { padding: 5px 0; border-bottom: 1px dashed var(--border); }
+.tip-pop .tip-award:last-child { border-bottom: none; }
+.tip-pop .tip-award i { display: block; color: var(--muted); font-size: .72rem; font-style: normal; }
+.tip-pop .tip-empty { color: var(--muted); }
+@media (max-width: 980px) { .tip-pop { right: auto; left: 0; } .tip-pop::after { right: auto; left: 22px; } }

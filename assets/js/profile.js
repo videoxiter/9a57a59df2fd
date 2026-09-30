@@ -50,6 +50,43 @@
   const trend = otp.trend(emp);
   const trendIcon = trend.dir === "up" ? "trend-up" : trend.dir === "down" ? "trend-down" : "minus";
 
+  /** Всплывающие подсказки плиток под звездой: за что звёзды, какие награды, из чего средний KPI. */
+  function renderTips(cur) {
+    const rec = starLog.find((r) => r.key === cur.key) || null;
+    const tipStars = document.getElementById("tip-stars");
+    if (tipStars) {
+      if (!rec) {
+        tipStars.innerHTML = `<div class="tip-h">Звёзды за ${cur.month}</div><p class="tip-empty">Журнал ведётся со второго месяца с KPI — за первый месяц звёзды не начисляются.</p>`;
+      } else {
+        const ch = rec.stars || 0;
+        const head = rec.kind === "start" ? "точка отсчёта" : ch > 0 ? `+${ch} ⭐` : ch < 0 ? `${ch} ⭐` : "без изменений";
+        const items = (rec.reasons || []).map((x) => `<li>${x}</li>`).join("");
+        const notes = (rec.notes || []).map((x) => `<li class="tip-note">${x}</li>`).join("");
+        tipStars.innerHTML = `<div class="tip-h">Звёзды за ${cur.month}: ${head}</div><ul>${items}${notes}</ul>
+          <div class="tip-row" style="margin-top:8px"><span>Всего звёзд на конец месяца</span><b>${rec.total} ⭐</b></div>
+          <div class="tip-row"><span>Уровень</span><b>LVL ${Math.min(RULES.maxLvl || 10, 1 + Math.floor(rec.total / LVL_STEP))}</b></div>`;
+      }
+    }
+    const tipAwards = document.getElementById("tip-awards");
+    if (tipAwards) {
+      const list = (cur.awards || []).map((a) => `<div class="tip-award"><b><span class="tip-g">${a.glyph || ""}</span>${a.title}</b><i>${a.desc}</i></div>`).join("");
+      tipAwards.innerHTML = `<div class="tip-h">Награды за ${cur.month}: ${(cur.awards || []).length}</div>${list || '<p class="tip-empty">В этом месяце наград нет — ближайшие условия: держи метрики 10/10 и рост среднего KPI.</p>'}`;
+    }
+    const tipAvg = document.getElementById("tip-avg");
+    if (tipAvg) {
+      const rows = MKEYS.map((k) => `<div class="tip-row"><span>${metricEmoji(k)} ${metricLabel(k)}</span><b>${cur[k] != null ? cur[k] : "—"}</b></div>`).join("");
+      const a = avgOf(cur);
+      tipAvg.innerHTML = `<div class="tip-h">Средний KPI за ${cur.month}: ${a != null ? a.toFixed(2) : "нет данных"}</div>${rows}
+        <div class="tip-row" style="margin-top:8px"><span>Порог удержания</span><b>${HOLD.toFixed(1)}</b></div>
+        <div class="tip-row"><span>До удержания</span><b>${a != null ? (a >= HOLD ? "взят ✓" : "не хватает " + (HOLD - a).toFixed(2)) : "—"}</b></div>`;
+    }
+    const tipAll = document.getElementById("tip-all");
+    if (tipAll) {
+      const list = empAwards.slice(0, 8).map((a) => `<div class="tip-award"><b><span class="tip-g">${a.glyph || ""}</span>${a.title}${a.count > 1 ? " ×" + a.count : ""}</b><i>${(a.months || []).join(", ")}</i></div>`).join("");
+      tipAll.innerHTML = `<div class="tip-h">Накоплено наград: ${totalAwardsCount} (уникальных ${empAwards.length} из ${awardsCatalog.length})</div>${list}${empAwards.length > 8 ? `<p class="tip-note">и ещё ${empAwards.length - 8} — все на странице «Награды»</p>` : ""}`;
+    }
+  }
+
   /** Сумма обязана целиком лежать внутри контура звезды: подгоняем кегль по фактической ширине. */
   function fitStarSum() {
     const star = document.querySelector(".money-star");
@@ -171,12 +208,14 @@
         <h2><i class="ph-bold ph-wallet"></i> Бонусы</h2>
         ${monthTabsHtml()}
       </div>
-      <div class="bonus-cols${hasKpi ? "" : " solo"}">
-        ${hasKpi ? `<div class="card kpi-card" data-reveal>
-          <div class="sub-head" style="margin-top:0"><i class="ph ph-chart-polar"></i> KPI за <span class="month-label">…</span></div>
-          <div class="metric-grid compact" id="metric-grid" data-stagger></div>
-        </div>` : ""}
-        <div class="card money-card" data-reveal>
+      <div class="card bonus-unit" data-reveal>
+        <div class="bu-left">
+          ${hasKpi ? `<div class="sub-head" style="margin-top:0"><i class="ph ph-chart-polar"></i> KPI за <span class="month-label">…</span></div>
+          <div class="metric-grid compact" id="metric-grid" data-stagger></div>` : ""}
+          <div class="sub-head"${hasKpi ? ' style="margin-top:18px"' : ' style="margin-top:0"'}><i class="ph ph-receipt"></i> Из чего сложилась сумма за <span class="month-label">…</span></div>
+          <div id="bonus-items" class="bonus-items" data-stagger></div>
+        </div>
+        <div class="bu-right">
           <div class="money-star">
             <span class="ms-star"></span>
             <span class="ms-in">
@@ -186,19 +225,14 @@
             </span>
           </div>
           <div class="bonus-side">
-            <div class="bs-item"><span class="bs-k">Звёзды за месяц</span><span class="bs-v">${starsOfMonth > 0 ? "+" + starsOfMonth : starsOfMonth} ⭐</span></div>
-            <div class="bs-item"><span class="bs-k">Награды за месяц</span><span class="bs-v">${awardsOfMonth.length}</span></div>
+            <div class="bs-item" tabindex="0" aria-describedby="tip-stars"><span class="bs-k">Звёзды за месяц</span><span class="bs-v">${starsOfMonth > 0 ? "+" + starsOfMonth : starsOfMonth} ⭐</span><div class="tip-pop" id="tip-stars"></div></div>
+            <div class="bs-item" tabindex="0" aria-describedby="tip-awards"><span class="bs-k">Награды за месяц</span><span class="bs-v">${awardsOfMonth.length}</span><div class="tip-pop" id="tip-awards"></div></div>
             ${hasKpi
-              ? `<div class="bs-item"><span class="bs-k">Средний KPI</span><span class="bs-v" id="month-avg">—</span></div>`
-              : `<div class="bs-item"><span class="bs-k">Наград всего</span><span class="bs-v">${totalAwardsCount}</span></div>`}
+              ? `<div class="bs-item" tabindex="0" aria-describedby="tip-avg"><span class="bs-k">Средний KPI</span><span class="bs-v" id="month-avg">—</span><div class="tip-pop" id="tip-avg"></div></div>`
+              : `<div class="bs-item" tabindex="0" aria-describedby="tip-all"><span class="bs-k">Наград всего</span><span class="bs-v">${totalAwardsCount}</span><div class="tip-pop" id="tip-all"></div></div>`}
           </div>
         </div>
       </div>
-    </section>
-
-    <section class="p-sec" id="bonus-section">
-      <div class="sub-head" data-reveal><i class="ph ph-receipt"></i> Из чего сложилась сумма за <span class="month-label">…</span></div>
-      <div id="bonus-items" class="bonus-items" data-stagger></div>
     </section>
 
     <section class="p-sec">
@@ -587,6 +621,8 @@
     }
     const mAvg = document.getElementById("month-avg");
     if (mAvg) { const a = avgOf(cur); mAvg.textContent = a != null ? a.toFixed(1) : "—"; }
+
+    renderTips(cur);
 
     const money = cur.money || [];
     const it = document.getElementById("bonus-items");
