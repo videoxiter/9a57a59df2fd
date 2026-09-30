@@ -1032,3 +1032,8 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
 .kpi-strip .metric-tile .ic { width: 34px; height: 34px; flex: 0 0 auto; }
 .kpi-strip .metric-tile .name { font-size: .74rem; color: var(--muted); }
 .kpi-strip .metric-tile .val { font-size: 1.25rem; font-weight: 700; line-height: 1.1; }
+
+/* --- плитки наград (за месяц / накоплено): ровная сетка, одинаковая высота в ряду --- */
+.awards-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 12px; align-items: stretch; }
+.awards-row > .award-tile { width: auto; height: 100%; }
+@media (max-width: 640px) { .awards-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
