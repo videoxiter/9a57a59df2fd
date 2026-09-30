@@ -121,7 +121,7 @@
   function tLinks(text) { return tickets(text).map((t) => `<a href="https://jira.centrofinans.ru/browse/${t}" target="_blank" rel="noopener">${t}</a>`).join(" "); }
 
   const awardTile = (a, extra = "", ttl = "") =>
-    `<div class="award-tile${a.id === "perfect" ? " star-medal" : ""}"${ttl ? ` title="${ttl}"` : ""}><span class="medal" style="--ac:${a.color}"><span class="medal-glyph">${a.glyph || ""}</span></span><div class="a-t">${a.title}${extra}</div><div class="a-r">${a.desc}</div></div>`;
+    `<div class="award-tile${a.id === "perfect" ? " star-medal" : ""}${a.byBoss ? " from-boss" : ""}"${ttl ? ` title="${ttl}"` : ""}><span class="medal" style="--ac:${a.color}"><span class="medal-glyph">${a.glyph || ""}</span></span><div class="a-t">${a.title}${extra}${a.byBoss ? '<span class="boss-tag"><i class="ph-bold ph-user-circle"></i> от руководителя</span>' : ""}</div><div class="a-r">${a.desc}</div></div>`;
 
   const metricLabel = (k) => (D.metrics[k] || {}).label || k;
   const metricColor = (k) => (D.metrics[k] || {}).color || "#22d3ee";
@@ -253,7 +253,7 @@
     </section>
 
     <section class="p-sec" id="mentor-wrap" style="display:none">
-      <div class="sub-head" data-reveal><i class="ph ph-chats"></i> Напутствие руководителя · <span class="month-label">…</span></div>
+      <div class="boss-board" id="boss-board" data-reveal></div>
       <div class="mentor-card" id="mentor-card" data-reveal></div>
     </section>
 
@@ -266,6 +266,8 @@
     const totalStars = emp.stars || 0;
     const gains = starLog.reduce((s, r) => s + Math.max(0, r.stars || 0), 0);
     const losses = starLog.reduce((s, r) => s + Math.min(0, r.stars || 0), 0);
+    const bossGain = starLog.reduce((s, r) => s + Math.max(0, r.boss || 0), 0);
+    const bossLoss = starLog.reduce((s, r) => s + Math.min(0, r.boss || 0), 0);
     const kinds = [
       { id: "рост KPI", re: /вырос/ },
       { id: "удержание " + HOLD.toFixed(1), re: /удержан/ },
@@ -283,10 +285,11 @@
           const cls = r.kind === "start" ? "start" : ch > 0 ? "gain" : ch < 0 ? "loss" : "hold";
           const items = (r.reasons && r.reasons.length ? r.reasons : [r.reason]).map((x) => `<li>${x}</li>`).join("");
           const notes = (r.notes || []).map((x) => `<li class="sl-note">${x}</li>`).join("");
-          return `<div class="sl-row ${cls}">
+          const bossRow = r.boss ? `<div class="boss-note"><i class="ph-bold ph-user-circle"></i> От руководителя ОТП: <b>${r.boss > 0 ? "+" + r.boss : r.boss} ⭐</b>${r.boss_reason ? ` — ${r.boss_reason}` : ""}</div>` : "";
+          return `<div class="sl-row ${cls}${r.boss ? " is-boss" : ""}">
             <span class="sl-m">${r.month}</span>
             <span class="sl-k">${sign}</span>
-            <div class="sl-r"><ul class="sl-list">${items}${notes}</ul></div>
+            <div class="sl-r">${bossRow}<ul class="sl-list">${items}${notes}</ul></div>
             <span class="sl-t">${r.total} ⭐</span>
           </div>`;
         }).join("")
@@ -309,6 +312,7 @@
           <div class="lh-stat" tabindex="0"><span class="lh-k">Снято за период</span><span class="lh-v bad">${losses} ⭐</span><div class="tip-pop" id="tip-lvl-loss"></div></div>
           <div class="lh-stat" tabindex="0"><span class="lh-k">Последний месяц</span><span class="lh-v">${delta > 0 ? "+" + delta : delta} ⭐</span><div class="tip-pop" id="tip-lvl-month"></div></div>
         </div>
+        ${bossGain || bossLoss ? `<div class="boss-chip"><i class="ph-bold ph-user-circle"></i> От руководителя ОТП за период:${bossGain ? ` <b>+${bossGain} ⭐</b>` : ""}${bossLoss ? ` <b class="bad">${bossLoss} ⭐</b>` : ""}</div>` : ""}
       </div>
     </section>
 
@@ -560,8 +564,9 @@
         <div class="bk-lvl-h"><span class="bk-lvl-n">LVL ${L.lvl}</span> <b>${L.title}</b> <span class="bk-lvl-s">${L.stars}</span>${L.lvl === lvl ? ' <span class="got">· твой уровень сейчас</span>' : ""}</div>
         <ul>${L.perks.map((x) => `<li>${x}</li>`).join("")}</ul>
       </div>`).join("");
-    const starGain = (RULES.stars || []).filter((x) => /\+1 ⭐/.test(x.title)).map((x) => `<div class="rule-tile"><span class="rule-ic">${x.icon}</span><div><div class="rule-t">${x.title}</div><div class="rule-d">${x.text}</div></div></div>`).join("");
-    const starLose = (RULES.stars || []).filter((x) => /−1 ⭐|минус/.test(x.title)).map((x) => `<div class="rule-tile"><span class="rule-ic">${x.icon}</span><div><div class="rule-t">${x.title}</div><div class="rule-d">${x.text}</div></div></div>`).join("");
+    const starLead = (RULES.stars || []).filter((x) => x.kind === "info" && x.icon === "🎖").map((x) => `<div class="rule-tile"><span class="rule-ic">${x.icon}</span><div><div class="rule-t">${x.title}</div><div class="rule-d">${x.text}</div></div></div>`).join("");
+    const starGain = (RULES.stars || []).filter((x) => x.kind === "gain").map((x) => `<div class="rule-tile"><span class="rule-ic">${x.icon}</span><div><div class="rule-t">${x.title}</div><div class="rule-d">${x.text}</div></div></div>`).join("");
+    const starLose = (RULES.stars || []).filter((x) => x.kind === "loss").map((x) => `<div class="rule-tile"><span class="rule-ic">${x.icon}</span><div><div class="rule-t">${x.title}</div><div class="rule-d">${x.text}</div></div></div>`).join("");
     const bonusRules = (D.bonusRules || []).map((b) => `<div class="bk-bonus"><div class="bk-b-h"><span class="bk-b-ic">${b.icon}</span><b>${b.title}</b></div><div class="bk-b-t">${b.text}</div>${b.example ? `<div class="bk-b-e">${b.example}</div>` : ""}</div>`).join("");
     const award = (a) => `<div class="bk-award"><span class="bk-a-ic">${a.glyph || ""}</span><div><div class="bk-a-t">${a.title}</div><div class="bk-a-d">${a.desc}</div>${a.motiv ? `<div class="bk-a-m">${a.motiv}</div>` : ""}</div></div>`;
     const cat = (id) => award(awardsCatalog.find((a) => a.id === id));
@@ -584,7 +589,7 @@
       },
       {
         chapter: "Глава 2", title: "Как начисляются звёзды",
-        html: `<p>Основания <b>суммируются</b> — за один месяц можно заработать столько звёзд, сколько оснований сработало. Лимита нет.</p>${starGain}
+        html: `<p>Основания <b>суммируются</b> — за один месяц можно заработать столько звёзд, сколько оснований сработало. Лимита нет.</p>${starLead}${starGain}
         <p class="bk-note">Простой пример: месяц с ростом среднего KPI до 9.2, двумя новыми наградами и одной звездой от руководителя — это <b>4 звезды за месяц</b>.</p>`,
       },
       {
@@ -698,7 +703,21 @@
     const mWrap = document.getElementById("mentor-wrap");
     if (mWrap) {
       const mCard = document.getElementById("mentor-card");
-      mWrap.style.display = mentor.length ? "" : "none";
+      const rec = starLog.find((r) => r.key === cur.key) || {};
+      const bStars = rec.boss || 0;
+      const bReason = rec.boss_reason || "";
+      const bAwards = (cur.awards || []).filter((a) => a.byBoss);
+      const hasBoss = bStars !== 0 || bAwards.length > 0;
+      mWrap.style.display = (mentor.length || hasBoss) ? "" : "none";
+      const board = document.getElementById("boss-board");
+      if (board) {
+        board.style.display = hasBoss ? "" : "none";
+        board.innerHTML = hasBoss ? `
+          <div class="bb-head"><i class="ph-bold ph-user-circle"></i> От руководителя ОТП<span class="bb-month">за ${cur.month}</span></div>
+          ${bStars ? `<div class="bb-line"><span class="bb-ic">${bStars > 0 ? "⭐" : "🔻"}</span><span class="bb-txt"><b>${bStars > 0 ? "+" + bStars : bStars} ${plStars(Math.abs(bStars))}</b> ${bStars > 0 ? "начислено" : "снято"}${bReason ? ` — ${bReason}` : ""}</span></div>` : ""}
+          ${bAwards.length ? `<div class="bb-line"><span class="bb-ic">🏅</span><span class="bb-txt">Награды от руководителя: <b>${bAwards.map((a) => a.title).join("</b>, <b>")}</b> — присвоены лично руководителем отдела</span></div>` : ""}
+        ` : "";
+      }
       mCard.innerHTML = mentor.length ? mentor.map((p, ix) => `<p class="${ix === 0 ? "lead" : ""}">${p}</p>`).join("") : "";
     }
 

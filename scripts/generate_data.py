@@ -461,15 +461,26 @@ def build_leaderboard(result, exclude=("yakovlenkov",)):
     return rows
 
 
+def _final_awards(ids, boss_ids):
+    """Награды месяца + награды от руководителя ОТП с пометкой byBoss."""
+    for b in boss_ids:
+        if b not in ids:
+            ids.append(b)
+    out = _award_objects(ids)
+    for a in out:
+        if a["id"] in boss_ids:
+            a["byBoss"] = True
+    return out
+
+
 def awards_for_row(history, i, rank, manual_ids):
     """Награды за конкретный месяц (i) по KPI этого месяца."""
     row = history[i]
-    if row.get("awards_ot"):
-        return _award_objects(award_ids_by_titles(row["awards_ot"]))
+    boss_ids = award_ids_by_titles(row.get("awards_ot") or [])
     kpi = {k: row[k] for k in MKEYS}
     ids = list(manual_ids)
     if any(v is None for v in kpi.values()):
-        return _award_objects(ids)
+        return _final_awards(ids, boss_ids)
     avg = sum(kpi.values()) / 5
     if avg >= 9:
         ids.append("legend")
@@ -502,7 +513,7 @@ def awards_for_row(history, i, rank, manual_ids):
             avgs.append(sum(history[j][k] for k in MKEYS) / 5)
         if ok and all(avgs[a] <= avgs[a + 1] for a in range(2)):
             ids.append("stability")
-    return _award_objects(ids)
+    return _final_awards(ids, boss_ids)
 
 
 def accumulate_awards(history):
@@ -587,9 +598,7 @@ def compute_stars(history, eid):
         manual = row.get("stars_ot")
         manual_mode = manual is not None
 
-        if manual_mode:
-            pass
-        elif started:
+        if started:
             pass
         elif cur_avg is not None:
             avgs_pair = (prev_avg, cur_avg)
@@ -624,13 +633,12 @@ def compute_stars(history, eid):
                 elif TENTH_AWARD_MODE == "same" and counts[aid] % 10 == 0:
                     tenths.append((a, counts[aid], "одинаковых"))
 
-        if not manual_mode:
-            for a in fresh:
-                gains.append((4, f"Новая награда «{a['title']}» {a.get('glyph', '')}".strip() + " — за первое получение +1 ⭐"))
-            for a, n, word in tenths:
-                gains.append((5, f"Наград «{a['title']}» накопилось {n} ({word}) — за каждые 10 наград +1 ⭐"))
+        for a in fresh:
+            gains.append((4, f"Новая награда «{a['title']}» {a.get('glyph', '')}".strip() + " — за первое получение +1 ⭐"))
+        for a, n, word in tenths:
+            gains.append((5, f"Наград «{a['title']}» накопилось {n} ({word}) — за каждые 10 наград +1 ⭐"))
 
-        for m in ([] if manual_mode else MANUAL_STARS.get(eid, {}).get(row["key"], [])):
+        for m in MANUAL_STARS.get(eid, {}).get(row["key"], []):
             st = int(m.get("stars", 1))
             txt = m.get("reason", "особые заслуги перед отделом")
             if st >= 0:
@@ -643,15 +651,14 @@ def compute_stars(history, eid):
         kept_g = [t for _, t in gains]
         kept_l = [t for _, t in losses]
 
-        if manual_mode:
-            mr = row.get("stars_reason") or ""
-            if int(manual) > 0:
-                kept_g = [f"Решение руководителя ОТП: +{int(manual)} ⭐" + (f" — {mr}" if mr else "")]
-            elif int(manual) < 0:
-                kept_l = [f"Решение руководителя ОТП: {int(manual)} ⭐" + (f" — {mr}" if mr else "")]
-            else:
-                kept_g = ["Руководитель за месяц звёзд не начислял и не снимал" + (f": {mr}" if mr else " — счётчик без изменений.")]
-        ch = int(manual) if manual_mode else len(kept_g) - len(kept_l)
+        # --- начисления и снятия руководителя ОТП: идут ДОПОЛНИТЕЛЬНО к автоматическим ---
+        boss_stars, boss_reason = 0, ""
+        if manual is not None:
+            boss_stars = int(manual)
+            boss_reason = (row.get("stars_reason") or "").strip()
+            # в список автоматических оснований не добавляем: решение руководителя
+            # показывается на страницах отдельной яркой плашкой (поле boss/boss_reason)
+        ch = len(kept_g) - len(kept_l) + boss_stars
         before = total
         total = max(0, total + ch)
         lvl_before = 1 + before // 10
@@ -663,10 +670,12 @@ def compute_stars(history, eid):
         if row is work[-1]:
             delta_month = ch
         reasons = kept_g + kept_l
-        if not reasons:
+        if not reasons and not boss_stars:
             reasons = ["Оснований для звёзд в этом месяце нет — звёзды без изменений."]
-        kind = "manual" if (manual_mode and ch > 0) else ("start" if started else ("gain" if ch > 0 else ("loss" if ch < 0 else "hold")))
+        kind = "start" if started else ("gain" if ch > 0 else ("loss" if ch < 0 else "hold"))
         log.append({"key": row["key"], "month": row["month"],
+                    "boss": boss_stars, "boss_reason": boss_reason,
+                    "auto": ch - boss_stars,
                     "from": prev_avg, "to": cur_avg,
                     "delta": None if (prev_avg is None or cur_avg is None) else round(cur_avg - prev_avg, 2),
                     "stars": ch, "total": total, "reasons": reasons, "notes": notes,
@@ -678,20 +687,20 @@ def compute_stars(history, eid):
 
 # ---------- правила игры (раскрываются на персональной странице) ----------
 RULE_STARS = [
-    {"icon": "🎖", "title": "Звёзды начисляет и снимает руководитель ОТП",
+    {"icon": "🎖", "kind": "info", "title": "Звёзды начисляет и снимает руководитель ОТП",
      "text": "С сентября 2026 решение по звёздам принимает руководитель отдела: он видит работу каждого и оценивает вклад целиком. В журнале на «Моём LVL» по каждому месяцу указано, за что именно звезда начислена или снята — догадываться не нужно."},
-    {"icon": "📈", "title": "+ ⭐ за рост", "text": "Средний KPI за месяц вырос к прошлому месяцу — это первое, на что смотрит руководитель. Устойчивый рост ценится выше разового всплеска."},
-    {"icon": "🎯", "title": f"+ ⭐ за удержание {HOLD_THRESHOLD:.1f}+", "text": f"Держать средний KPI на {HOLD_THRESHOLD:.1f} и выше несколько месяцев подряд — отдельное достижение: это про стабильность, а не про один удачный месяц."},
-    {"icon": "🏅", "title": "+ ⭐ за новую награду", "text": "Первое получение награды — повод для звезды. Исключения: «На старте» и награда ниже уже полученной по показателю KPI (например, была «Развивающийся», а стала «На старте»)."},
-    {"icon": "🔟", "title": "+ ⭐ за каждые 10 однотипных наград", "text": "Каждые 10 накопленных наград одного вида дают звезду. «На старте» не считается."},
-    {"icon": "🛠", "title": "+ ⭐ за то, что держится не на словах", "text": "Решения, которые остаются в отделе: автоматизация, регламенты в базе знаний, наставничество, закрытие критичных задач и аварий, готовность выйти в выходной или ночью."},
-    {"icon": "👔", "title": "Решение руководителя — основание", "text": "Отдельная звезда ставится за конкретные заслуги, критически важные для отдела или компании: в журнале всегда написано, за что именно."},
-    {"icon": "➕", "title": "Лимита нет", "text": "Основания суммируются и не ограничены: чем больше роста, новых наград и особых заслуг, тем больше звёзд за месяц. Потолок один — 10-й уровень."},
-    {"icon": "🔻", "title": "− ⭐ за снижение KPI", "text": f"Средний KPI упал на {DROP_THRESHOLD:.1f} и больше — звезда снимается. Падение меньше {DROP_THRESHOLD:.1f} звёзды не снимает."},
-    {"icon": "🚨", "title": f"− ⭐ за KPI ниже {LOW_KPI_THRESHOLD:.1f}", "text": f"Средний KPI ниже {LOW_KPI_THRESHOLD:.1f} — критически низкий результат, звезда снимается."},
-    {"icon": "📝", "title": "− ⭐ по решению руководителя", "text": "Замечания от заказчиков, нарушения регламентов, ошибки в доступах и безопасности, повторяющиеся недоработки. В журнале указано, за что именно."},
-    {"icon": "➖", "title": "Звёзды могут уходить в минус — и тогда падает уровень", "text": "Снятие звёзд не ограничено. Если счётчик опускается ниже границы уровня (например, было 10 звёзд, сняли одну — осталось 9), уровень понижается: LVL 2 → LVL 1. Ниже 1-го уровня не падаем."},
-    {"icon": "🏆", "title": "10 звёзд = 1 уровень", "text": "Уровень считается по накопленным звёздам: 10 ⭐ — LVL 2, 20 ⭐ — LVL 3 и так далее до LVL 10 (Легенда отдела). Уровень виден в шапке твоей страницы результатов."},
+    {"icon": "📈", "kind": "gain", "title": "+1 ⭐ за рост", "text": "Средний KPI за месяц вырос к прошлому месяцу — это первое, на что смотрит руководитель. Устойчивый рост ценится выше разового всплеска."},
+    {"icon": "🎯", "kind": "gain", "title": f"+1 ⭐ за удержание {HOLD_THRESHOLD:.1f}+", "text": f"Держать средний KPI на {HOLD_THRESHOLD:.1f} и выше несколько месяцев подряд — отдельное достижение: это про стабильность, а не про один удачный месяц."},
+    {"icon": "🏅", "kind": "gain", "title": "+1 ⭐ за новую награду", "text": "Первое получение награды — повод для звезды. Исключения: «На старте» и награда ниже уже полученной по показателю KPI (например, была «Развивающийся», а стала «На старте»)."},
+    {"icon": "🔟", "kind": "gain", "title": "+1 ⭐ за каждые 10 однотипных наград", "text": "Каждые 10 накопленных наград одного вида дают звезду. «На старте» не считается."},
+    {"icon": "🛠", "kind": "gain", "title": "+1 ⭐ за то, что держится не на словах", "text": "Решения, которые остаются в отделе: автоматизация, регламенты в базе знаний, наставничество, закрытие критичных задач и аварий, готовность выйти в выходной или ночью."},
+    {"icon": "👔", "kind": "gain", "title": "Решение руководителя — основание", "text": "Отдельная звезда ставится за конкретные заслуги, критически важные для отдела или компании: в журнале всегда написано, за что именно."},
+    {"icon": "➕", "kind": "info", "title": "Лимита нет", "text": "Основания суммируются и не ограничены: чем больше роста, новых наград и особых заслуг, тем больше звёзд за месяц. Потолок один — 10-й уровень."},
+    {"icon": "🔻", "kind": "loss", "title": "− ⭐ за снижение KPI", "text": f"Средний KPI упал на {DROP_THRESHOLD:.1f} и больше — звезда снимается. Падение меньше {DROP_THRESHOLD:.1f} звёзды не снимает."},
+    {"icon": "🚨", "kind": "loss", "title": f"− ⭐ за KPI ниже {LOW_KPI_THRESHOLD:.1f}", "text": f"Средний KPI ниже {LOW_KPI_THRESHOLD:.1f} — критически низкий результат, звезда снимается."},
+    {"icon": "📝", "kind": "loss", "title": "− ⭐ по решению руководителя", "text": "Замечания от заказчиков, нарушения регламентов, ошибки в доступах и безопасности, повторяющиеся недоработки. В журнале указано, за что именно."},
+    {"icon": "➖", "kind": "loss", "title": "Звёзды могут уходить в минус — и тогда падает уровень", "text": "Снятие звёзд не ограничено. Если счётчик опускается ниже границы уровня (например, было 10 звёзд, сняли одну — осталось 9), уровень понижается: LVL 2 → LVL 1. Ниже 1-го уровня не падаем."},
+    {"icon": "🏆", "kind": "info", "title": "10 звёзд = 1 уровень", "text": "Уровень считается по накопленным звёздам: 10 ⭐ — LVL 2, 20 ⭐ — LVL 3 и так далее до LVL 10 (Легенда отдела). Уровень виден в шапке твоей страницы результатов."},
 ]
 
 RULE_LEVELS = [
