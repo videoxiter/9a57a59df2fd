@@ -23,6 +23,9 @@ import shutil
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PARSED_CLEAR = {"positives", "negatives", "mentorship", "plan", "stars_ot",
+                "stars_reason", "awards_ot", "money", "bonus"}
+
 EXT = os.path.join(ROOT, "scripts", "extracted.json")
 ITOGI_DIR = os.environ.get("ITOGI_DIR", r"G:\LMStudio\Hermes\hermes-workspace\itogi")
 
@@ -505,7 +508,9 @@ def main():
         dst.setdefault("months", {})
         for mk, data in months.items():
             cur = dst["months"].get(mk, {})
-            new = dict(cur)
+            # поля, которые целиком берутся из текущего txt: чистим перед записью,
+            # иначе удалённые из txt пункты остаются в базе «призраками» прошлых месяцев
+            new = {k: v for k, v in cur.items() if k not in PARSED_CLEAR}
             for k, v in data.items():
                 if k == "kpi_partial":
                     base = dict(cur.get("kpi") or {})

@@ -59,28 +59,9 @@ CONTENT = {
             {"label": "n8n / автоматизация", "url": "#", "icon": "ph-cpu"},
         ],
         "custom": {
-            "strengths": [
-                ["Развитие команды", "Замечает нюансы в работе специалистов, открыто говорит о них руководителю"],
-                ["ИИ и автоматизация", "Начал осваивать ИИ-технологии и автоматизацию процессов"],
-                ["Замещение руководителя", "Отлично замещал в отпуске, продвинул запуск пилота по линиям техподдержки"],
-                ["Опора в пиковые периоды", "Не прячется, когда отделу тяжело: три выходные смены в августе — «подставлю плечо, когда нужно»"],
-                ["Инвестиция в инструменты", "Оплачивает и внедряет ИИ-инструменты — это актив отдела, который возвращается автоматизацией и скоростью"],
-                ["Экспертиза полного цикла", "Держит связку «железо ↔ сеть ↔ ПО ↔ процессы»: редкая широта, которой нет ни у кого в команде"],
-            ],
-            "growth": [
-                {"problem": "Инициатива в управлении", "ticket": "—", "effect": "Ждёт команды «фас» вместо собственных предложений", "cause": "Привычка быть исполнителем, а не архитектором"},
-                {"problem": "Самостоятельность решений", "ticket": "—", "effect": "По каждому вопросу идёт к руководителю", "cause": "Не делегирована ответственность за решения"},
-                {"problem": "Автоматизация контроля", "ticket": "—", "effect": "Контроль держится на ручной включённости", "cause": "Не выстроена система чек-поинтов и супервайзинга"},
-                {"problem": "Передача экспертизы", "ticket": "—", "effect": "Остаёшься «единственным, кто умеет» — знания не масштабируются на команду", "cause": "ИИ и автоматизация освоены лично, без регламентов и обучения других"},
-                {"problem": "Разгрузка от рутины", "ticket": "—", "effect": "Операционка съедает время, которое нужно на архитектуру", "cause": "Повторяющиеся задачи не делегированы специалистам"},
-            ],
-            "recommendations": [
-                {"zone": "Управление и контроль", "method": "Автоматизировать контроль работы специалистов (n8n + Zabbix + дашборд)", "result": "Контроль без ручной проверки каждого шага", "deadline": "Сен 2026", "fact": "Руководитель: «окунуться в автоматизацию — автоматизировать контроль работы специалистов, супервайзинг»"},
-                {"zone": "Инициатива", "method": "Раз в месяц приносить план улучшения (Jira/связь/обучение) с профитом для SLA", "result": "Инициатива вместо ожидания команд", "deadline": "Окт 2026", "fact": "Апрель: «хотелось бы больше инициативы в управлении специалистами»"},
-                {"zone": "Самостоятельность", "method": "Принимать операционные решения самостоятельно, фиксируя итог для руководителя", "result": "Руководитель разгружен от «каждого чиха»", "deadline": "Окт 2026", "fact": "Апрель: «научиться принимать самостоятельно важные решения»"},
-                {"zone": "Передача экспертизы", "method": "Собрать внутренний мини-курс по ИИ-инструментам и провести 2 сессии для команды", "result": "Инструменты работают без твоего постоянного участия", "deadline": "Окт 2026", "fact": "ИИ освоен лично — по итогам месяца команда ещё не пользуется твоими инструментами"},
-                {"zone": "Проекты осени", "method": "Довести до теста три шага: «Фиксик 2.0», автодиагностика в n8n, супервайзинг L0", "result": "Роль технического лидера, подтверждённая результатом", "deadline": "Окт 2026", "fact": "План на сентябрь 2026: бот с 3 новыми сценариями, прототип диагностики, 3 алерта L0"},
-            ],
+            "strengths": [],
+            "growth": [],
+            "recommendations": [],
         },
     },
     "frolov": {
@@ -395,6 +376,25 @@ def gen_strengths(row, kpi):
             if 8 <= kpi[key] < 10:
                 items.append([f"{METRICS[key]['label']} {kpi[key]}/10", STRENGTH_PHRASES[key]])
     return items[:6]
+
+
+def growth_from_negatives(negs):
+    """Зоны роста — ровно формулировки месяца из txt: заголовок + как отработать."""
+    out, seen = [], set()
+    for n in negs:
+        t = (n.get("text") or "").strip()
+        if not t:
+            continue
+        m = re.match(r"^(.{6,95}?[.!])\s+(.+)$", t, re.S)
+        if m:
+            zone, advice = m.group(1).rstrip("."), m.group(2).strip()
+        else:
+            zone, advice = t[:80], t
+        if zone in seen:
+            continue
+        seen.add(zone)
+        out.append({"zone": zone, "advice": advice, "fact": ""})
+    return out
 
 
 def gen_growth(negatives):
@@ -801,6 +801,9 @@ RULES = {"stars": RULE_STARS, "levels": RULE_LEVELS, "lvlStep": 10, "maxLvl": MA
          "scoreFormula": "Очки турнира = LVL × 10 + ⭐"}
 
 # ---------- сборка ----------
+NO_AUTO_NOTES = set()  # сотрудники, которым не генерируются плюсы/зоны автоматически
+
+
 def build():
     real = json.load(open(EXT, encoding="utf-8"))
     months = sorted({m for e in real.values() for m in e["months"]})
@@ -830,33 +833,16 @@ def build():
             row["kpi"] = {key: row[key] for key in MKEYS}
             row["avg"] = round(sum(v for v in row["kpi"].values() if v is not None) / 5, 2) if k else None
             row["rank"] = None
-            if eid == "yakovlenkov":
-                # руководитель: плюсы/зоны = факты месяца из txt + курируемый контент (без дублей)
-                strength_pairs = [[p["text"], "Отмечено руководителем за месяц"] for p in row.get("positives", [])]
-                strength_pairs += [[s[0], s[1]] for s in custom.get("strengths", [])]
-                growth_items = gen_growth(negs) + [
-                    {"zone": g.get("problem", ""), "advice": g.get("effect", ""),
-                     "fact": g.get("cause", ""), "ticket": g.get("ticket", "")}
-                    for g in custom.get("growth", [])]
-                recs = list(custom.get("recommendations", []))
-                for extra in gen_recommendations(negs, None):
-                    if len(recs) >= 6:
-                        break
-                    if all(extra["zone"] != r.get("zone") for r in recs):
-                        recs.append(extra)
-                seen_s, uniq_s = set(), []
-                for s in strength_pairs:
-                    if s[0] in seen_s:
-                        continue
-                    seen_s.add(s[0])
-                    uniq_s.append(s)
-                row["strengths"] = uniq_s[:8]
-                row["growth"] = _uniq_by(growth_items, "zone")[:6]
-                row["recommendations"] = recs[:6]
+            # плюсы и зоны роста — ТОЛЬКО факты месяца из txt руководителя.
+            # Никакого «дополнительного» контента из других месяцев: за сентябрь видно
+            # ровно то, что руководитель отметил за сентябрь.
+            pos_pairs = [[p["text"], "Отмечено руководителем за месяц"] for p in row.get("positives", [])]
+            if pos_pairs:
+                row["strengths"] = pos_pairs
             else:
-                row["strengths"] = gen_strengths(row, k)
-                row["growth"] = gen_growth(negs)
-                row["recommendations"] = gen_recommendations(negs, k)
+                row["strengths"] = [] if eid == "yakovlenkov" or eid in NO_AUTO_NOTES else gen_strengths(row, k)
+            row["growth"] = growth_from_negatives(negs) if (negs and eid not in NO_AUTO_NOTES) else []
+            row["recommendations"] = gen_recommendations(negs, k) if negs else []
             history.append(row)
         employees.append({"eid": eid, "content": content, "history": history})
 

@@ -246,9 +246,9 @@
 
     <section class="p-sec">
       <div class="sub-head" data-reveal><i class="ph ph-scales"></i> Сильные стороны и зоны роста за <span class="month-label">…</span></div>
-      <div class="two-col">
-        <div class="card" data-reveal><h3 style="margin-bottom:12px"><span style="color:var(--good)">✅</span> Что получается круто</h3><div id="strengths-list"></div></div>
-        <div class="card" data-reveal><h3 style="margin-bottom:12px"><span style="color:var(--warn)">⚠️</span> Зоны роста</h3><div id="growth-list"></div></div>
+      <div class="two-col" id="notes-wrap">
+        <div class="card" data-reveal id="strengths-card"><h3 style="margin-bottom:12px"><span style="color:var(--good)">✅</span> Что получается круто</h3><div id="strengths-list"></div></div>
+        <div class="card" data-reveal id="growth-card"><h3 style="margin-bottom:12px"><span style="color:var(--warn)">⚠️</span> Зоны роста</h3><div id="growth-list"></div></div>
       </div>
     </section>
 
@@ -698,6 +698,16 @@
     if (gl) gl.innerHTML = (cur.growth || []).length
       ? (cur.growth || []).map((g) => `<div class="minus-item"><i class="ph ph-warning-circle"></i><div><div class="b">${g.zone}</div><div class="advice">${g.advice}</div><div class="fact">${g.fact} ${tLinks(g.fact)}</div></div></div>`).join("")
       : '<p class="muted">Замечаний нет — молодец!</p>';
+
+    // пустые блоки не показываем: если руководитель за месяц ничего не отметил — не рисуем карточки
+    const sCard = document.getElementById("strengths-card");
+    const gCard = document.getElementById("growth-card");
+    const sWrap = document.getElementById("notes-wrap");
+    const hasS = (cur.strengths || []).length > 0;
+    const hasG = (cur.growth || []).length > 0;
+    if (sCard) sCard.style.display = hasS ? "" : "none";
+    if (gCard) gCard.style.display = hasG ? "" : "none";
+    if (sWrap) sWrap.style.display = (hasS || hasG) ? "" : "none";
 
     const mentor = cur.mentor || [];
     const mWrap = document.getElementById("mentor-wrap");
