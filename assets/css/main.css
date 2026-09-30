@@ -893,3 +893,26 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
 .money-card .bs-item { flex: 1 1 46%; padding: 9px 12px; }
 .money-card .bs-k { font-size: .74rem; }
 .money-card .bs-v { font-size: .95rem; }
+
+/* --- читаемость: ссылки-компоненты не должны брать дефолтный синий --- */
+.p-nav .nav-logo { color: var(--text); }
+.p-lvl-chip, .p-lvl-chip:hover, .p-lvl-chip:visited { color: var(--text); }
+.p-lvl-t { color: var(--text); }
+.p-lvl-s { color: var(--muted); }
+
+/* --- звезда с суммой: текст строго внутри --- */
+.money-card .money-star { width: 240px; height: 240px; }
+.money-card .ms-in { padding: 0 44px; gap: 1px; }
+.money-card .ms-cap { font-size: .56rem; letter-spacing: .06em; line-height: 1.15; }
+.money-card .ms-sum { font-size: 1.5rem; letter-spacing: -.01em; white-space: nowrap; color: #2b1a02; text-shadow: 0 0 14px rgba(255, 255, 255, .55); }
+.money-card .ms-sub { font-size: .56rem; line-height: 1.15; }
+@media (max-width: 720px) { .money-card .ms-in { padding: 0 34px; } .money-card .ms-sum { font-size: 1.05rem; } }
+
+/* --- без KPI (руководитель): карточка суммы на всю ширину --- */
+.bonus-cols.solo { grid-template-columns: minmax(0, 560px); justify-content: center; }
+.bonus-cols.solo .money-card { width: 100%; }
+
+/* сумма и подписи — по ширине текста, чтобы автоподгонка и центровка работали */
+.money-card .ms-in { align-items: center; }
+.money-card .ms-sum { width: max-content; align-self: center; }
+.money-card .ms-cap, .money-card .ms-sub { width: max-content; max-width: 150px; align-self: center; text-align: center; }

@@ -50,6 +50,24 @@
   const trend = otp.trend(emp);
   const trendIcon = trend.dir === "up" ? "trend-up" : trend.dir === "down" ? "trend-down" : "minus";
 
+  /** Сумма обязана целиком лежать внутри контура звезды: подгоняем кегль по фактической ширине. */
+  function fitStarSum() {
+    const star = document.querySelector(".money-star");
+    const sum = document.getElementById("bonus-total-big");
+    if (!star || !sum) return;
+    const room = star.getBoundingClientRect().width * 0.56;
+    // inline-block: ширина элемента = ширине самого текста, иначе меряем контейнер
+    sum.style.display = "inline-block";
+    sum.style.fontSize = "";
+    let fs = parseFloat(getComputedStyle(sum).fontSize) || 20;
+    let guard = 0;
+    while (sum.getBoundingClientRect().width > room && fs > 11 && guard++ < 30) {
+      fs -= 0.5;
+      sum.style.fontSize = fs + "px";
+    }
+  }
+  window.addEventListener("resize", fitStarSum);
+
   function plural(n) { const a = Math.abs(n) % 100, b = a % 10; if (a > 10 && a < 20) return "очков"; if (b > 1 && b < 5) return "очка"; if (b === 1) return "очко"; return "очков"; }
   function plStars(n) { const a = Math.abs(n) % 100, b = a % 10; if (a > 10 && a < 20) return "звёзд"; if (b > 1 && b < 5) return "звезды"; if (b === 1) return "звезда"; return "звёзд"; }
   function plMonths(n) { const a = Math.abs(n) % 100, b = a % 10; if (a > 10 && a < 20) return "месяцев"; if (b > 1 && b < 5) return "месяца"; if (b === 1) return "месяц"; return "месяцев"; }
@@ -153,11 +171,11 @@
         <h2><i class="ph-bold ph-wallet"></i> Бонусы</h2>
         ${monthTabsHtml()}
       </div>
-      <div class="bonus-cols">
-        <div class="card kpi-card" data-reveal>
+      <div class="bonus-cols${hasKpi ? "" : " solo"}">
+        ${hasKpi ? `<div class="card kpi-card" data-reveal>
           <div class="sub-head" style="margin-top:0"><i class="ph ph-chart-polar"></i> KPI за <span class="month-label">…</span></div>
           <div class="metric-grid compact" id="metric-grid" data-stagger></div>
-        </div>
+        </div>` : ""}
         <div class="card money-card" data-reveal>
           <div class="money-star">
             <span class="ms-star"></span>
@@ -170,10 +188,17 @@
           <div class="bonus-side">
             <div class="bs-item"><span class="bs-k">Звёзды за месяц</span><span class="bs-v">${starsOfMonth > 0 ? "+" + starsOfMonth : starsOfMonth} ⭐</span></div>
             <div class="bs-item"><span class="bs-k">Награды за месяц</span><span class="bs-v">${awardsOfMonth.length}</span></div>
-            <div class="bs-item"><span class="bs-k">Средний KPI</span><span class="bs-v" id="month-avg">—</span></div>
+            ${hasKpi
+              ? `<div class="bs-item"><span class="bs-k">Средний KPI</span><span class="bs-v" id="month-avg">—</span></div>`
+              : `<div class="bs-item"><span class="bs-k">Наград всего</span><span class="bs-v">${totalAwardsCount}</span></div>`}
           </div>
         </div>
       </div>
+    </section>
+
+    <section class="p-sec" id="bonus-section">
+      <div class="sub-head" data-reveal><i class="ph ph-receipt"></i> Из чего сложилась сумма за <span class="month-label">…</span></div>
+      <div id="bonus-items" class="bonus-items" data-stagger></div>
     </section>
 
     <section class="p-sec">
@@ -187,17 +212,6 @@
     <section class="p-sec" id="mentor-wrap" style="display:none">
       <div class="sub-head" data-reveal><i class="ph ph-chats"></i> Напутствие руководителя · <span class="month-label">…</span></div>
       <div class="mentor-card" id="mentor-card" data-reveal></div>
-    </section>
-
-    <section class="p-sec" id="bonus-section">
-      <div class="sub-head" data-reveal><i class="ph ph-receipt"></i> Из чего сложилась сумма за <span class="month-label">…</span></div>
-      <div id="bonus-items" class="bonus-items" data-stagger></div>
-    </section>
-
-    <section class="p-sec">
-      <div class="sub-head" data-reveal><i class="ph ph-target"></i> План роста<span class="plan-when" id="plan-when"></span></div>
-      <p class="tt-hint" id="plan-legend" style="margin:-6px 0 14px">шаги из итогов месяца · «Твой результат» — что должно получиться на выходе</p>
-      <div class="grid" id="plan-grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))"></div>
     </section>
 
     ${robotMenuHtml()}`;
@@ -336,7 +350,7 @@
   function sectionGrowth() {
     return `
     <section class="p-sec" data-reveal>
-      <div class="p-sec-head"><h2><i class="ph-bold ph-rocket-launch"></i> Мой рост</h2></div>
+      <div class="p-sec-head"><h2><i class="ph-bold ph-rocket-launch"></i> Мой рост</h2><span class="p-sec-hint">крупный план развития · пока в разработке</span></div>
       <div class="dev-card" data-reveal>
         <div class="dev-glow"></div>
         <div class="dev-ic"><i class="ph-bold ph-rocket-launch"></i></div>
@@ -349,6 +363,16 @@
         </div>
       </div>
     </section>
+
+    <section class="p-sec">
+      <div class="p-sec-head inline">
+        <h2><i class="ph-bold ph-target"></i> План роста<span class="plan-when" id="plan-when"></span></h2>
+        ${monthTabsHtml()}
+      </div>
+      <p class="tt-hint" id="plan-legend" style="margin:-4px 0 14px">шаги из итогов месяца · «Твой результат» — что должно получиться на выходе</p>
+      <div class="grid" id="plan-grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))"></div>
+    </section>
+
     ${robotMenuHtml()}`;
   }
 
@@ -557,6 +581,7 @@
     const big = document.getElementById("bonus-total-big");
     if (big) {
       big.textContent = cur.bonus != null ? otp.rub(cur.bonus) : "—";
+      fitStarSum();
       const sub = document.getElementById("bonus-total-sub");
       if (sub) sub.textContent = cur.bonus != null ? "итог за " + cur.month : "бонус за этот месяц не зафиксирован";
     }
@@ -719,5 +744,6 @@
   }
 
   renderMonth(selected);
+  setTimeout(fitStarSum, 120);
   otp.reveal(document);
 })();
