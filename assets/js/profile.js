@@ -208,11 +208,11 @@
         <h2><i class="ph-bold ph-wallet"></i> Бонусы</h2>
         ${monthTabsHtml()}
       </div>
+      ${hasKpi ? `<div class="kpi-strip-head"><i class="ph ph-chart-polar"></i> KPI за <span class="month-label">…</span></div>
+      <div class="kpi-strip" id="metric-grid" data-stagger></div>` : ""}
       <div class="card bonus-unit" data-reveal>
         <div class="bu-left">
-          ${hasKpi ? `<div class="sub-head" style="margin-top:0"><i class="ph ph-chart-polar"></i> KPI за <span class="month-label">…</span></div>
-          <div class="metric-grid compact" id="metric-grid" data-stagger></div>` : ""}
-          <div class="sub-head"${hasKpi ? ' style="margin-top:18px"' : ' style="margin-top:0"'}><i class="ph ph-receipt"></i> Из чего сложилась сумма за <span class="month-label">…</span></div>
+          <div class="sub-head" style="margin-top:0"><i class="ph ph-receipt"></i> Из чего сложилась сумма за <span class="month-label">…</span></div>
           <div id="bonus-items" class="bonus-items" data-stagger></div>
         </div>
         <div class="bu-right">
