@@ -216,13 +216,13 @@
           <div id="bonus-items" class="bonus-items" data-stagger></div>
         </div>
         <div class="bu-right">
-          <div class="money-star">
-            <span class="ms-star"></span>
-            <span class="ms-in">
-              <span class="ms-cap">Бонусная часть за <span class="month-label">…</span></span>
-              <span class="ms-sum" id="bonus-total-big">—</span>
-              <span class="ms-sub" id="bonus-total-sub"></span>
-            </span>
+          <div class="money-wrap">
+            <div class="ms-label">Бонусная часть</div>
+            <div class="money-star">
+              <span class="ms-star"></span>
+              <span class="ms-in"><span class="ms-sum" id="bonus-total-big">—</span></span>
+            </div>
+            <div class="ms-month">за <span class="month-label">…</span></div>
           </div>
           <div class="bonus-side">
             <div class="bs-item" tabindex="0" aria-describedby="tip-stars"><span class="bs-k">Звёзды за месяц</span><span class="bs-v">${starsOfMonth > 0 ? "+" + starsOfMonth : starsOfMonth} ⭐</span><div class="tip-pop" id="tip-stars"></div></div>
@@ -630,8 +630,8 @@
     if (big) {
       big.textContent = cur.bonus != null ? otp.rub(cur.bonus) : "—";
       fitStarSum();
-      const sub = document.getElementById("bonus-total-sub");
-      if (sub) sub.textContent = cur.bonus != null ? "итог за " + cur.month : "бонус за этот месяц не зафиксирован";
+      const mon = document.querySelector(".ms-month");
+      if (mon) mon.classList.toggle("is-empty", cur.bonus == null);
     }
     const mAvg = document.getElementById("month-avg");
     if (mAvg) { const a = avgOf(cur); mAvg.textContent = a != null ? a.toFixed(1) : "—"; }
