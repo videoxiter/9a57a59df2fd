@@ -678,6 +678,40 @@
     }
   }
 
+  /* ---------- слой подсказок: живут в body, позиционируются скриптом (ничего не обрезает) ---------- */
+  function initTips() {
+    document.querySelectorAll(".bs-item .tip-pop, .lh-stat .tip-pop").forEach((tip) => {
+      if (tip.dataset.tipBound) return;
+      tip.dataset.tipBound = "1";
+      const host = tip.parentElement;
+      const holder = document.createElement("div");
+      holder.className = "tip-layer";
+      document.body.appendChild(holder);
+      holder.appendChild(tip);
+      const place = () => {
+        tip.classList.add("is-open");
+        const r = host.getBoundingClientRect();
+        const tw = tip.offsetWidth, th = tip.offsetHeight;
+        const pad = 10;
+        let top = r.top - th - 10;
+        if (top < pad) top = Math.min(window.innerHeight - th - pad, r.bottom + 10);
+        let left = r.left + r.width / 2 - tw / 2;
+        left = Math.max(pad, Math.min(left, window.innerWidth - tw - pad));
+        tip.style.top = Math.round(top) + "px";
+        tip.style.left = Math.round(left) + "px";
+      };
+      const hide = () => tip.classList.remove("is-open");
+      host.addEventListener("mouseenter", place);
+      host.addEventListener("mouseleave", hide);
+      host.addEventListener("focusin", place);
+      host.addEventListener("focusout", hide);
+      // при скролле логичнее спрятать, чем показывать «уехавшую» подсказку
+      window.addEventListener("scroll", hide, { passive: true });
+      window.addEventListener("resize", hide);
+      document.addEventListener("keydown", (e) => { if (e.key === "Escape") hide(); });
+    });
+  }
+
   /* ---------- раздел «Мой LVL»: подсказки плиток ---------- */
   function renderLvlTips() {
     const allReasons = starLog.flatMap((r) => (r.reasons || []).map((x) => ({ x, r })));
@@ -722,7 +756,7 @@
   }
 
   /* ---------- раздел «Мой LVL»: график накопления звёзд ---------- */
-  if (SECTION === "lvl") renderLvlTips();
+  if (SECTION === "lvl") { renderLvlTips(); initTips(); }
 
   if (SECTION === "lvl" && window.Chart) {
     const el = document.getElementById("chart-stars");
@@ -920,6 +954,7 @@
   }
 
   renderMonth(selected);
-  setTimeout(fitStarSum, 120);
+  if (SECTION === "bonus") initTips();
+  setTimeout(() => { fitStarSum(); if (SECTION === "bonus") initTips(); }, 150);
   otp.reveal(document);
 })();
