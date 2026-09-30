@@ -46,7 +46,7 @@ RE_BLOCK = re.compile(r"(?m)^\s*ИТОГИ ЗА\s+")
 RE_HEAD = re.compile(r"^\s*([А-Яа-яЁё]+)\s+(\d{4})")
 RE_SCORE = re.compile(r"(\d{1,2})\s*/\s*10")
 RE_BONUS = re.compile(r"Бонусы за[^\n:]*:\s*([\d\s\u00a0]+)\s*(?:руб|₽)")
-RE_MONEY = re.compile(r"▸\s*([\d\s\u00a0]+)\s*(?:руб|₽)[^\n]*?—\s*([^\n]+)")
+RE_MONEY = re.compile(r"▸\s*([\d\s\u00a0]+)\s*(?:руб|₽)[^\n]*?[—–-]\s*([^\n]+)")
 RE_BULLET = re.compile(r"^\s*[•\-\u2022]\s+(.+)$")
 RE_NUM_ITEM = re.compile(r"^\s*\d{1,2}[.)]\s+")
 
@@ -78,6 +78,19 @@ RE_MENT_HINT = re.compile(
 RE_SKIP_LINE = re.compile(
     r"^\s*(?:👤|💡|▸|\+|p\.s\.|📅|📈|📊|🏆|💰|kpi|качество:|обучаемость:|инициатива:|"
     r"вовлеч|требовани|итого|бонус)", re.I)
+
+# --- формат «Заметки» (с сентября 2026): краткие пометки руководителя ---
+SEC_NOTES = re.compile(r"^\s*заметки\s*:?\s*$", re.I)
+SEC_PLUS = re.compile(r"^\s*(?:\+|✅|👍)?\s*плюсы\s*:?\s*$", re.I)
+SEC_MINUS = re.compile(r"^\s*(?:−|-|❌)?\s*минусы\s*:?\s*$", re.I)
+SEC_MENT_OT = re.compile(r"^\s*(?:от\s+руководителя)\s*:?\s*(?P<tail>.*)$", re.I)
+RE_STARS_OT = re.compile(
+    r"^\s*зв[её]зд[^\n:]*?:\s*(?P<n>[+\-−]?\d+)\s*(?:\((?P<r>[^)]*)\))?\s*$", re.I)
+RE_AWARDS_OT = re.compile(
+    r"^\s*награды[^\n:]*?:\s*(?P<list>.+)$", re.I)
+# денежные строки: «▸ 3 000 руб. — текст», «+5240 - текст», «▸ 100 руб. - текст»
+RE_MONEY_ANY = re.compile(
+    r"^\s*(?:▸|•|\+|—|-)?\s*(?P<amt>\d[\d\s\u00a0]{0,12})\s*(?:руб|₽)?\s*[—–-]\s*(?P<txt>.+)$", re.I)
 
 SEC_STRENGTH = re.compile(
     r"^\s*(?:(?:✅|💪|🔥)\s*что\s+(?:получилось|получается)\s+круто|!\s*достоинства и сильные стороны\s*!|достоинства и сильные стороны)",
@@ -225,6 +238,35 @@ def parse_block(block):
         if SEC_GROWTH.match(s):
             cur, ment_group = "negatives", False
             continue
+        if SEC_NOTES.match(s):
+            cur, ment_group = None, False
+            continue
+        if SEC_PLUS.match(s):
+            cur, ment_group = "positives", False
+            continue
+        if SEC_MINUS.match(s):
+            cur, ment_group = "negatives", False
+            continue
+        # «От руководителя:» (письмо) — и вариант с текстом на той же строке
+        mo = SEC_MENT_OT.match(s)
+        if mo:
+            cur, ment_group, ment_from_plan = "ment", True, False
+            tail = (mo.group("tail") or "").strip().strip('"').strip("«»").strip()
+            if tail:
+                out["ment"].append(tail)
+            continue
+        # звёзды и награды от руководителя (сентябрь 2026+)
+        ms = RE_STARS_OT.match(s)
+        if ms:
+            out["stars_ot"] = int(ms.group("n").replace("−", "-").replace("+", ""))
+            out["stars_reason"] = (ms.group("r") or "").strip()
+            cur, ment_group = None, False
+            continue
+        ma = RE_AWARDS_OT.match(s)
+        if ma:
+            out["awards_ot"] = [a for a in re.findall(r'"([^"]+)"|«([^»]+)»', ma.group("list")) for a in a if a]
+            cur, ment_group = None, False
+            continue
 
         # --- внутри плана/рекомендаций: разбираем ДО общего стоп-списка,
         #     иначе нумерованные пункты «1. …» съедались как служебные строки ---
@@ -299,12 +341,15 @@ def parse_block(block):
             out["ment"].append(s)
             continue
 
-        # --- сильные стороны / зоны роста ---
-        if cur:
+        # --- сильные стороны / зоны роста (маркер «•» необязателен) ---
+        if cur in ("positives", "negatives"):
             b = RE_BULLET.match(s)
-            if b:
+            txt = (b.group(1) if b else s).strip()
+            if txt and not RE_SKIP_LINE.match(txt):
                 val = 1.0 if cur == "positives" else 0.5
-                out[cur].append({"value": val, "text": b.group(1).strip()})
+                out[cur].append({"value": val, "text": txt})
+            continue
+        if cur:
             continue
 
         # --- вне секций: сначала KPI-строки («Качество: 7/10» / «• Качество 10/10 ✓») ---
@@ -323,12 +368,42 @@ def parse_block(block):
                 out["ment"].append(s)
         continue
 
+    # дедуп пунктов (руководитель иногда дублировал строки) + поддержка «; « внутри строки
+    for bucket, val in (("positives", 1.0), ("negatives", 0.5)):
+        seen, uniq = set(), []
+        for item in out[bucket]:
+            parts = [p.strip() for p in re.split(r";\s*(?=[А-ЯЁ])", item["text"]) if p.strip()]
+            for t in parts:
+                key = t.lower().rstrip(" .;")
+                if key and key not in seen:
+                    seen.add(key)
+                    uniq.append({"value": val, "text": t.rstrip(" ;")})
+        out[bucket] = uniq
+
     bm = RE_BONUS.search(block)
     if bm:
         total = num(bm.group(1))
         out["bonus"] = total or None
+    seen_money = set()
     for amt, txt in RE_MONEY.findall(block):
-        out["money"].append({"amount": num(amt), "text": txt.strip().rstrip(";")})
+        key = (num(amt), txt.strip()[:40])
+        if key not in seen_money:
+            seen_money.add(key)
+            out["money"].append({"amount": num(amt), "text": txt.strip().rstrip(";")})
+    # строки детализации без «руб» (например «+5240 - Замещение …») — только если в них нет «/10»
+    if len(out["money"]) < 3:
+        for line in block.split("\n"):
+            head = line.strip()
+            if not head or "/10" in head or "Звёзд от" in head:
+                continue
+            mm = RE_MONEY_ANY.match(head)
+            if mm:
+                amt = num(mm.group("amt"))
+                txt = mm.group("txt").strip().rstrip(";")
+                key = (amt, txt[:40])
+                if amt >= 50 and key not in seen_money:
+                    seen_money.add(key)
+                    out["money"].append({"amount": amt, "text": txt})
 
     # чистим: не отдаём пустые поля, чтобы мёрж не затирал уже собранные данные
     cleaned = {}
@@ -349,6 +424,12 @@ def parse_block(block):
         cleaned["plan"] = {"title": plan_title or "Рекомендации для роста", "steps": steps}
     if out["ment"]:
         cleaned["mentorship"] = out["ment"]
+    if "stars_ot" in out:
+        cleaned["stars_ot"] = out["stars_ot"]
+        if out.get("stars_reason"):
+            cleaned["stars_reason"] = out["stars_reason"]
+    if out.get("awards_ot"):
+        cleaned["awards_ot"] = out["awards_ot"]
     return mkey, cleaned
 
 
