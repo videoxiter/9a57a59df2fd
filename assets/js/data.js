@@ -429,11 +429,11 @@ window.OTP_DATA = {
     "hoursBaseDate": "02.10.2026",
     "endpoint": "https://a38c05727d8692.lhr.life",
     "cloud": {
-      "provider": "offline",
-      "url": "",
-      "key": "",
+      "provider": "supabase",
+      "url": "https://qfhjkynkvltquzyskfgi.supabase.co",
+      "key": "sb_publishable_L_KQNO6S3tK2df7DhgGywQ_wt_U41Hd",
       "table": "otp_requests",
-      "_help": "provider: offline | supabase | firebase | http. supabase: url+key(anon). firebase: url базы. http: любой REST с GET/POST /requests"
+      "_help": "Секретный ключ здесь не хранится: страница публичная, а publishable-ключ закрыт RLS-политиками."
     }
   },
   "months": [

@@ -739,7 +739,8 @@
     return Math.max(0, Math.round((b - a) * 10) / 10);
   }
   function myRequests() {
-    return loadReqs().filter((r) => r.empSlug === ME_SLUG).sort((a, b) => (b.created || "").localeCompare(a.created || ""));
+    return loadReqs().filter((r) => r.empSlug === ME_SLUG && r.status !== "cancelled")
+      .sort((a, b) => (b.created || "").localeCompare(a.created || ""));
   }
   const HR_RULES = (D && D.hrRules) || { noDeductAvg: 8, leaveMaxHours: 4, queueFromLvl: 2 };
   const NO_DEDUCT = !!emp.no_deduct;                       // средний KPI за последний месяц ≥ 8.0
@@ -1062,9 +1063,9 @@
           setTimeout(() => { b2.innerHTML = '<i class="ph-bold ph-copy"></i>'; }, 1500);
         }));
         hist.querySelectorAll("[data-del]").forEach((b2) => b2.addEventListener("click", () => {
-          const left = loadReqs().filter((x) => x.id !== b2.dataset.del);
-          saveReqs(left);
-          remotePush(left);
+          // отзыв = мягкое удаление: иначе облачная копия вернёт заявку при синхронизации
+          const rec = myRequests().find((x) => x.id === b2.dataset.del);
+          if (rec) { rec.status = "cancelled"; rec.decided = new Date().toISOString(); if (CLOUD) CLOUD.upsert(rec); }
           renderHours();
           const cnt = document.getElementById("gs-req-count"); if (cnt) cnt.textContent = `· ${myRequests().length}`;
         }));

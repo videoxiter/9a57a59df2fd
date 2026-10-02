@@ -57,7 +57,7 @@
   function render() {
     const box = document.getElementById("hr-requests");
     if (!box) return;
-    const all = load2().sort((a, b) => (b.created || "").localeCompare(a.created || ""));
+    const all = load2().filter((r) => r.status !== "cancelled").sort((a, b) => (b.created || "").localeCompare(a.created || ""));
     const pending = all.filter((r) => r.status === "pending");
     const decided = all.filter((r) => r.status !== "pending");
     const owed = {};
