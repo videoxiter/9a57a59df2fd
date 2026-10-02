@@ -705,8 +705,43 @@
 
   /* ---- заявки сотрудника (переработка / увольнительная / отгул) ---- */
   const REQ_KEY = "otp_hr_requests_v1";
+  const ENDPOINT = ((D && D.hrRules && D.hrRules.endpoint) || "").replace(/\/$/, "");
   const loadReqs = () => { try { return JSON.parse(localStorage.getItem(REQ_KEY) || "[]"); } catch (e) { return []; } };
   const saveReqs = (list) => { try { localStorage.setItem(REQ_KEY, JSON.stringify(list)); } catch (e) {} };
+  /* --- общий канал: заявки ходят через сервис Hermes, а не только в этом браузере --- */
+  async function remoteAll() {
+    if (!ENDPOINT) return null;
+    try {
+      const r = await fetch(ENDPOINT + "/requests", { cache: "no-store" });
+      const j = await r.json();
+      return Array.isArray(j.requests) ? j.requests : [];
+    } catch (e) { return null; }
+  }
+  async function remotePush(list) {
+    if (!ENDPOINT) return false;
+    try {
+      await fetch(ENDPOINT + "/requests", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requests: list }) });
+      return true;
+    } catch (e) { return false; }
+  }
+  function mergeReqs(local, remote) {
+    const by = {};
+    for (const r of [...(remote || []), ...(local || [])]) {
+      const prev = by[r.id];
+      const fresh = (r.decided || r.created || "") > (prev && (prev.decided || prev.created || "") || "");
+      if (!prev || fresh) by[r.id] = Object.assign({}, prev, r);
+    }
+    return Object.values(by);
+  }
+  async function syncReqs() {
+    const remote = await remoteAll();
+    if (remote === null) return { online: false };
+    const merged = mergeReqs(loadReqs(), remote);
+    saveReqs(merged);
+    await remotePush(merged);
+    return { online: true, count: merged.length };
+  }
   const REQ_TYPES = {
     overtime: { label: "Переработка", icon: "ph-clock-plus", accent: "good" },
     leave: { label: "Увольнительная", icon: "ph-door-open", accent: "warn" },
@@ -722,15 +757,23 @@
   function myRequests() {
     return loadReqs().filter((r) => r.empSlug === ME_SLUG).sort((a, b) => (b.created || "").localeCompare(a.created || ""));
   }
+  const HR_RULES = (D && D.hrRules) || { noDeductAvg: 8, leaveMaxHours: 4, queueFromLvl: 2 };
+  const NO_DEDUCT = !!emp.no_deduct;                       // средний KPI за последний месяц ≥ 8.0
+  const MY_AVG = emp.avg;
+  const QUEUE_LVL = (emp.lvl || 1) >= (HR_RULES.queueFromLvl || 2);
   function hoursBalance() {
-    let plus = 0, minus = 0;
+    let plus = 0, minus = 0, dayoffs = 0;
     for (const r of myRequests()) {
       if (r.status !== "approved") continue;
       const h = hoursOf(r);
-      if (r.type === "overtime") plus += h; else minus += h;
+      if (r.type === "overtime") plus += h;
+      else if (r.type === "leave") { if (!NO_DEDUCT) minus += h; }
+      else dayoffs += h;                                     // отгул — компенсация выходной смены, часы не двигает
     }
-    return { plus: Math.round(plus * 10) / 10, minus: Math.round(minus * 10) / 10,
-             balance: Math.round((plus - minus) * 10) / 10 };
+    const base = emp.hours_base || 0;
+    return { base, plus: Math.round(plus * 10) / 10, minus: Math.round(minus * 10) / 10,
+             dayoffs: Math.round(dayoffs * 10) / 10,
+             balance: Math.round((base + plus - minus) * 10) / 10 };
   }
   const fmtH = (h) => (Math.round(h * 10) / 10).toString().replace(".", ",") + " ч";
   const statusChip = (r) => {
@@ -985,14 +1028,22 @@
       const b = hoursBalance();
       const reqs = myRequests();
       const pending = reqs.filter((r) => r.status === "pending").length;
-      box.innerHTML = `<div class="gs-hours">
+      const ruleNote = NO_DEDUCT
+        ? `<div class="hr-rule good"><i class="ph-bold ph-shield-check"></i> Увольнительные <b>не списывают часы</b>: средний KPI за последний месяц <b>${MY_AVG != null ? String(MY_AVG).replace(".", ",") : "—"}</b> — это ${String(HR_RULES.noDeductAvg).replace(".", ",")} и выше.</div>`
+        : `<div class="hr-rule warn"><i class="ph-bold ph-warning"></i> Увольнительные <b>списывают часы</b>: средний KPI за последний месяц <b>${MY_AVG != null ? String(MY_AVG).replace(".", ",") : "—"}</b> — нужно ${String(HR_RULES.noDeductAvg).replace(".", ",")} и выше, чтобы не списывались.</div>`;
+      const queueNote = QUEUE_LVL
+        ? `<div class="hr-rule gold"><i class="ph-bold ph-crown-simple"></i> <b>LVL ${emp.lvl} · ${lvlNow ? lvlNow.title : ""}</b> — право увольнительной <b>вне очереди</b>: приоритет при выборе даты и времени.</div>`
+        : `<div class="hr-rule muted"><i class="ph-bold ph-lock"></i> Внеочередная увольнительная откроется на <b>LVL ${HR_RULES.queueFromLvl}</b> «${(lvlInfo(HR_RULES.queueFromLvl) || {}).title || ""}» — сейчас LVL ${emp.lvl}.</div>`;
+      box.innerHTML = `<div class="hr-rules">${ruleNote}${queueNote}</div>
+        <div class="gs-hours">
         <div class="gs-h-card ${b.balance >= 0 ? "pos" : "neg"}">
           <span class="gs-h-k">${b.balance >= 0 ? "Переработка" : "Долг по часам"}</span>
           <span class="gs-h-v">${b.balance >= 0 ? "+" : "−"}${fmtH(Math.abs(b.balance))}</span>
-          <span class="gs-h-s">${b.balance >= 0 ? "часов накоплено" : "часов нужно отработать"}</span>
+          <span class="gs-h-s">${b.balance >= 0 ? "часов накоплено" : "часов нужно отработать"}${b.base ? ` · с учётом базы ${fmtH(b.base)}` : ""}</span>
         </div>
         <div class="gs-h-card"><span class="gs-h-k">Подтверждено</span><span class="gs-h-v good">+${fmtH(b.plus)}</span><span class="gs-h-s">переработки</span></div>
-        <div class="gs-h-card"><span class="gs-h-k">Списано</span><span class="gs-h-v bad">−${fmtH(b.minus)}</span><span class="gs-h-s">увольнительные и отгулы</span></div>
+        <div class="gs-h-card"><span class="gs-h-k">Списано</span><span class="gs-h-v bad">−${fmtH(b.minus)}</span><span class="gs-h-s">${NO_DEDUCT ? "увольнительные не списываются" : "увольнительные"}</span></div>
+        <div class="gs-h-card"><span class="gs-h-k">Отгулы за вых. смены</span><span class="gs-h-v">${fmtH(b.dayoffs)}</span><span class="gs-h-s">компенсация выходных смен</span></div>
         <div class="gs-h-card"><span class="gs-h-k">На согласовании</span><span class="gs-h-v">${pending}</span><span class="gs-h-s">${pending === 1 ? "заявка" : "заявок"}</span></div>
       </div>`;
       const hist = document.getElementById("gs-history");
@@ -1012,7 +1063,9 @@
           </div>`;
         }).join("") : '<p class="muted">Заявок пока нет. Оформи первую — она появится на странице руководителя.</p>';
         hist.querySelectorAll("[data-del]").forEach((b2) => b2.addEventListener("click", () => {
-          saveReqs(loadReqs().filter((x) => x.id !== b2.dataset.del));
+          const left = loadReqs().filter((x) => x.id !== b2.dataset.del);
+          saveReqs(left);
+          remotePush(left);
           renderHours();
           const cnt = document.getElementById("gs-req-count"); if (cnt) cnt.textContent = `· ${myRequests().length}`;
         }));
@@ -1056,7 +1109,11 @@
       form.innerHTML = FIELDS[type].map(([name, label, kind, req]) => kind === "textarea"
         ? `<label class="otp-f"><span>${label}</span><textarea name="${name}" rows="3" ${req ? "required" : ""} placeholder="Опиши подробно — это увидит руководитель"></textarea></label>`
         : `<label class="otp-f"><span>${label}</span><input type="${kind}" name="${name}" ${req ? "required" : ""}></label>`).join("")
-        + (type === "leave" ? `<div class="otp-note"><i class="ph ph-info"></i> Увольнительная — не больше 4 часов в день.</div>` : "")
+        + (type === "leave" ? `<div class="otp-note"><i class="ph ph-info"></i> Увольнительная — не больше ${HR_RULES.leaveMaxHours} часов в день.</div>`
+            + (NO_DEDUCT ? `<div class="otp-note good"><i class="ph-bold ph-shield-check"></i> Без списания часов: твой средний KPI ${String(MY_AVG).replace(".", ",")} ≥ ${String(HR_RULES.noDeductAvg).replace(".", ",")}.</div>`
+                         : `<div class="otp-note warn"><i class="ph-bold ph-warning"></i> Часы спишутся с переработки (средний KPI ${MY_AVG != null ? String(MY_AVG).replace(".", ",") : "—"} < ${String(HR_RULES.noDeductAvg).replace(".", ",")}).</div>`)
+            + (QUEUE_LVL ? `<div class="otp-note gold"><i class="ph-bold ph-crown-simple"></i> LVL ${emp.lvl} — увольнительная вне очереди.</div>` : "")
+            : "")
         + `<div class="otp-form-foot"><button class="btn btn-primary" type="submit"><i class="ph-bold ph-paper-plane-tilt"></i> Отправить руководителю</button>
              <button class="btn btn-ghost" type="button" id="gs-cancel">Отмена</button></div>
         <div class="otp-err" id="gs-err"></div>`;
@@ -1076,6 +1133,11 @@
         const list = loadReqs(); list.push(rec); saveReqs(list);
         modal.hidden = true;
         renderHours();
+        remotePush(list).then((ok) => {
+          const box = document.getElementById("gs-history");
+          if (box && !ok && ENDPOINT) box.insertAdjacentHTML("afterbegin",
+            '<p class="muted">Заявка сохранена локально — сервис недоступен, уйдёт при следующем открытии.</p>');
+        });
       };
     }
     document.querySelectorAll(".gs-act").forEach((b) => b.addEventListener("click", () => openForm(b.dataset.form)));
@@ -1086,6 +1148,7 @@
     renderPanel();
     renderVac();
     renderHours();
+    syncReqs().then((s) => { if (s.online) renderHours(); });
   }
 
   /* ---------- рендер раздела ---------- */

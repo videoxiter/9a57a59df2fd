@@ -12,6 +12,31 @@
   };
   const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) { return []; } };
   const save = (l) => { try { localStorage.setItem(KEY, JSON.stringify(l)); } catch (e) {} };
+  const ENDPOINT = ((window.OTP_DATA && window.OTP_DATA.hrRules && window.OTP_DATA.hrRules.endpoint) || "").replace(/\/$/, "");
+  async function pull() {
+    if (!ENDPOINT) return { online: false };
+    try {
+      const r = await fetch(ENDPOINT + "/requests", { cache: "no-store" });
+      const j = await r.json();
+      const remote = Array.isArray(j.requests) ? j.requests : [];
+      const by = {};
+      for (const x of [...remote, ...load()]) {
+        const prev = by[x.id];
+        if (!prev || (x.decided || x.created || "") > (prev.decided || prev.created || "")) by[x.id] = Object.assign({}, prev, x);
+      }
+      const merged = Object.values(by);
+      save(merged);
+      return { online: true, list: merged };
+    } catch (e) { return { online: false }; }
+  }
+  async function push(list) {
+    if (!ENDPOINT) return false;
+    try {
+      await fetch(ENDPOINT + "/requests", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requests: list }) });
+      return true;
+    } catch (e) { return false; }
+  }
   const hoursOf = (r) => {
     if (r.type === "dayoff") return r.hours || 8;
     const p = (t) => { const m = /^(\d{1,2}):(\d{2})$/.exec(t || ""); return m ? +m[1] + +m[2] / 60 : null; };
@@ -97,9 +122,12 @@
     r.reject = reject || "";
     r.decided = new Date().toISOString();
     save(list);
+    push(list);
     render();
   }
 
-  document.addEventListener("DOMContentLoaded", render);
-  if (document.readyState !== "loading") render();
+  function refresh() { render(); pull().then(() => render()); }
+  document.addEventListener("DOMContentLoaded", refresh);
+  if (document.readyState !== "loading") refresh();
+  setInterval(() => pull().then((r) => { if (r.online) render(); }), 60000);
 })();

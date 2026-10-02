@@ -422,6 +422,13 @@ window.OTP_DATA = {
       "example": ""
     }
   ],
+  "hrRules": {
+    "noDeductAvg": 8.0,
+    "leaveMaxHours": 4,
+    "queueFromLvl": 2,
+    "hoursBaseDate": "02.10.2026",
+    "endpoint": "https://a38c05727d8692.lhr.life"
+  },
   "months": [
     "Апр 2026",
     "Май 2026",
@@ -1331,6 +1338,8 @@ window.OTP_DATA = {
       "current": null,
       "avg": null,
       "growth_delta": 0,
+      "hours_base": 0,
+      "no_deduct": false,
       "stars": 112,
       "stars_delta": 110,
       "starLog": [
@@ -2841,6 +2850,8 @@ window.OTP_DATA = {
       },
       "avg": 9.6,
       "growth_delta": -0.4,
+      "hours_base": 13,
+      "no_deduct": true,
       "stars": 23,
       "stars_delta": 10,
       "starLog": [
@@ -4341,6 +4352,8 @@ window.OTP_DATA = {
       },
       "avg": 8.2,
       "growth_delta": -0.2,
+      "hours_base": 13,
+      "no_deduct": true,
       "stars": 13,
       "stars_delta": 5,
       "starLog": [
@@ -5679,6 +5692,8 @@ window.OTP_DATA = {
       },
       "avg": 7.2,
       "growth_delta": 0.0,
+      "hours_base": 1,
+      "no_deduct": false,
       "stars": 4,
       "stars_delta": -1,
       "starLog": [
@@ -6978,6 +6993,8 @@ window.OTP_DATA = {
       },
       "avg": 9.6,
       "growth_delta": 0.8,
+      "hours_base": 6,
+      "no_deduct": true,
       "stars": 15,
       "stars_delta": 6,
       "starLog": [
@@ -8323,6 +8340,8 @@ window.OTP_DATA = {
       },
       "avg": 7.0,
       "growth_delta": 0.8,
+      "hours_base": 18,
+      "no_deduct": false,
       "stars": 6,
       "stars_delta": 4,
       "starLog": [
@@ -9534,6 +9553,8 @@ window.OTP_DATA = {
       },
       "avg": 8.0,
       "growth_delta": 0.4,
+      "hours_base": 6,
+      "no_deduct": true,
       "stars": 8,
       "stars_delta": 4,
       "starLog": [
@@ -10958,6 +10979,8 @@ window.OTP_DATA = {
       },
       "avg": 9.4,
       "growth_delta": 0.2,
+      "hours_base": 8,
+      "no_deduct": true,
       "stars": 23,
       "stars_delta": 7,
       "starLog": [
@@ -12410,6 +12433,8 @@ window.OTP_DATA = {
       },
       "avg": 9.4,
       "growth_delta": 0.2,
+      "hours_base": 5,
+      "no_deduct": true,
       "stars": 15,
       "stars_delta": 5,
       "starLog": [
@@ -13830,6 +13855,8 @@ window.OTP_DATA = {
       },
       "avg": 10.0,
       "growth_delta": 0.2,
+      "hours_base": 3,
+      "no_deduct": true,
       "stars": 18,
       "stars_delta": 5,
       "starLog": [
