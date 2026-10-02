@@ -31,6 +31,11 @@ window.OTP_CLOUD = (function () {
     return Object.values(by);
   }
 
+  const COLS = ["id", "empSlug", "empName", "type", "date", "date2", "from", "to", "hours",
+                "reason", "status", "reject", "created", "decided", "noDeduct"];
+  const slim = (r) => { const o = {}; for (const k of COLS) if (r[k] !== undefined && r[k] !== null) o[k] = r[k]; return o; };
+  let noDeductCol = true;                      // колонка появится после ALTER; до этого шлём без неё
+
   async function fetchJSON(url, opts) {
     const r = await fetch(url, opts);
     if (!r.ok) throw new Error("HTTP " + r.status);
@@ -81,13 +86,23 @@ window.OTP_CLOUD = (function () {
       }
       if (c.provider === "supabase" && c.url && c.key) {
         const t = c.table || "otp_requests";
-        await fetch(`${c.url.replace(/\/$/, "")}/rest/v1/${t}`, {
+        const rows = list.map((x) => { const r = slim(x); if (!noDeductCol) delete r.noDeduct; return r; });
+        let resp = await fetch(`${c.url.replace(/\/$/, "")}/rest/v1/${t}`, {
           method: "POST",
           headers: { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json",
                      Prefer: "resolution=merge-duplicates,return=minimal" },
-          body: JSON.stringify(list),
+          body: JSON.stringify(rows),
         });
-        return true;
+        if (!resp.ok) {
+          noDeductCol = false;
+          resp = await fetch(`${c.url.replace(/\/$/, "")}/rest/v1/${t}`, {
+            method: "POST",
+            headers: { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json",
+                       Prefer: "resolution=merge-duplicates,return=minimal" },
+            body: JSON.stringify(list.map(slim)),
+          });
+        }
+        return resp.ok;
       }
     } catch (e) { return false; }
     return false;
@@ -112,13 +127,21 @@ window.OTP_CLOUD = (function () {
     try {
       if (c.provider === "supabase" && c.url && c.key) {
         const t = c.table || "otp_requests";
-        await fetch(`${c.url.replace(/\/$/, "")}/rest/v1/${t}`, {
+        const send = (rows) => fetch(`${c.url.replace(/\/$/, "")}/rest/v1/${t}`, {
           method: "POST",
           headers: { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json",
                      Prefer: "resolution=merge-duplicates,return=minimal" },
-          body: JSON.stringify([rec]),
+          body: JSON.stringify(rows),
         });
-        return { online: true };
+        const row = slim(rec);
+        if (!noDeductCol) delete row.noDeduct;
+        let resp = await send([row]);
+        if (!resp.ok && row.noDeduct !== undefined) {
+          noDeductCol = false;                   // колонки ещё нет — повторяем без неё
+          delete row.noDeduct;
+          resp = await send([row]);
+        }
+        return { online: resp.ok };
       }
       if (c.provider === "firebase" && c.url) {
         await fetch(`${c.url.replace(/\/$/, "")}/requests/${rec.id}.json`, {

@@ -29,3 +29,6 @@ drop policy if exists "otp update" on public.otp_requests;
 create policy "otp read"   on public.otp_requests for select to anon using (true);
 create policy "otp insert" on public.otp_requests for insert to anon with check (true);
 create policy "otp update" on public.otp_requests for update to anon using (true) with check (true);
+
+-- Добавлено позже: ручное «не списывать» при подтверждении заявки руководителем
+alter table public.otp_requests add column if not exists "noDeduct" boolean default false;
