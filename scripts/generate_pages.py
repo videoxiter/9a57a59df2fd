@@ -113,7 +113,7 @@ TEMPLATE = """<!DOCTYPE html>
 </html>
 """
 
-V = "36"
+V = "37"
 
 
 def secnav_html(rel, active):
@@ -147,6 +147,7 @@ def main():
             # ни в разметке, ни в исходнике страницы (изоляция данных коллег)
             "leaderboard": data.get("leaderboard", []) if e["id"] == "yakovlenkov" else [],
             "employee": emp,
+            "hrRules": data.get("hrRules", {}),
             "schedule": _schedule_for(emp, data.get("schedule")),
         }
         payload = json.dumps(emp_data, ensure_ascii=False)
