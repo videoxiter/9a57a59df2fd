@@ -774,7 +774,7 @@
   }
   const fmtH = (h) => (Math.round(h * 10) / 10).toString().replace(".", ",") + " ч";
   const statusChip = (r) => {
-    if (r.status === "approved") return `<span class="req-st ok"><i class="ph-bold ph-check-circle"></i> подтверждено</span>`;
+    if (r.status === "approved") return `<span class="req-st ok"><i class="ph-bold ph-check-circle"></i> подтверждено${r.noDeduct ? " · без списания" : ""}</span>`;
     if (r.status === "rejected") return `<span class="req-st no"><i class="ph-bold ph-x-circle"></i> отказано</span>`;
     return `<span class="req-st wait"><i class="ph-bold ph-hourglass-medium"></i> на согласовании</span>`;
   };
