@@ -35,6 +35,23 @@ window.OTP_CLOUD = (function () {
                 "reason", "status", "reject", "created", "decided", "noDeduct"];
   const slim = (r) => { const o = {}; for (const k of COLS) if (r[k] !== undefined && r[k] !== null) o[k] = r[k]; return o; };
   let noDeductCol = true;                      // колонка появится после ALTER; до этого шлём без неё
+  const MARK = "[[NO-DEDUCT]]";                // служебный маркер «без списания», пока колонки нет
+
+  /** Запись к отправке: скрываем noDeduct в reject, если колонки ещё нет. */
+  function encodeRow(r) {
+    const o = slim(r);
+    if (o.noDeduct === true && !noDeductCol) { o.reject = MARK; }
+    if (!noDeductCol) delete o.noDeduct;
+    return o;
+  }
+  /** Запись из базы: вытаскиваем «без списания» из маркера. */
+  function decodeRow(r) {
+    if (r && r.status === "approved" && String(r.reject || "").indexOf(MARK) === 0) {
+      r.noDeduct = true;
+      r.reject = "";
+    }
+    return r;
+  }
 
   async function fetchJSON(url, opts) {
     const r = await fetch(url, opts);
@@ -57,9 +74,10 @@ window.OTP_CLOUD = (function () {
       }
       if (c.provider === "supabase" && c.url && c.key) {
         const t = c.table || "otp_requests";
-        return await fetchJSON(`${c.url.replace(/\/$/, "")}/rest/v1/${t}?select=*`, {
+        const rows = await fetchJSON(`${c.url.replace(/\/$/, "")}/rest/v1/${t}?select=*`, {
           cache: "no-store", headers: { apikey: c.key, Authorization: "Bearer " + c.key },
         }) || [];
+        return rows.map(decodeRow);
       }
     } catch (e) { return null; }
     return null;
@@ -86,7 +104,7 @@ window.OTP_CLOUD = (function () {
       }
       if (c.provider === "supabase" && c.url && c.key) {
         const t = c.table || "otp_requests";
-        const rows = list.map((x) => { const r = slim(x); if (!noDeductCol) delete r.noDeduct; return r; });
+        const rows = list.map(encodeRow);
         let resp = await fetch(`${c.url.replace(/\/$/, "")}/rest/v1/${t}`, {
           method: "POST",
           headers: { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json",
@@ -99,7 +117,7 @@ window.OTP_CLOUD = (function () {
             method: "POST",
             headers: { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json",
                        Prefer: "resolution=merge-duplicates,return=minimal" },
-            body: JSON.stringify(list.map(slim)),
+            body: JSON.stringify(list.map(encodeRow)),
           });
         }
         return resp.ok;
@@ -133,8 +151,7 @@ window.OTP_CLOUD = (function () {
                      Prefer: "resolution=merge-duplicates,return=minimal" },
           body: JSON.stringify(rows),
         });
-        const row = slim(rec);
-        if (!noDeductCol) delete row.noDeduct;
+        const row = encodeRow(rec);
         let resp = await send([row]);
         if (!resp.ok && row.noDeduct !== undefined) {
           noDeductCol = false;                   // колонки ещё нет — повторяем без неё
