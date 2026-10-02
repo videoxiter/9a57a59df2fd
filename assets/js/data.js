@@ -14584,17 +14584,17 @@ window.OTP_DATA = {
       },
       "I": {
         "kind": "weekend",
-        "title": "Выходная смена I",
-        "time": "03:00–10:00",
+        "title": "1 выходная смена",
+        "time": "05:00–14:00",
         "breaks": [
-          "05:00–05:15",
-          "07:30–07:45"
+          "07:30–07:45",
+          "11:45–12:00"
         ],
-        "lunch": null
+        "lunch": "08:00–09:00"
       },
       "II": {
         "kind": "weekend",
-        "title": "Выходная смена II",
+        "title": "2 выходная смена",
         "time": "08:00–17:00",
         "breaks": [
           "10:15–10:30",
@@ -14604,13 +14604,10 @@ window.OTP_DATA = {
       },
       "III": {
         "kind": "weekend",
-        "title": "Выходная смена III",
-        "time": "10:00–19:00",
-        "breaks": [
-          "11:45–12:00",
-          "16:30–16:45"
-        ],
-        "lunch": "14:00–15:00"
+        "title": "Дневная дополнительная выходная смена",
+        "time": null,
+        "breaks": [],
+        "lunch": null
       },
       "Ср": {
         "kind": "duty",
@@ -14635,7 +14632,7 @@ window.OTP_DATA = {
       "Д": {
         "kind": "extra",
         "title": "Дополнительная смена",
-        "time": "по графику",
+        "time": null,
         "breaks": [],
         "lunch": null
       },
@@ -14683,7 +14680,7 @@ window.OTP_DATA = {
       },
       "X": {
         "kind": "dayoff",
-        "title": "Отгул за свой счёт",
+        "title": "Отгул за свой счёт (или не работает)",
         "time": null,
         "breaks": [],
         "lunch": null
@@ -15095,7 +15092,7 @@ window.OTP_DATA = {
             "6": {
               "sym": "X",
               "kind": "dayoff",
-              "title": "Отгул за свой счёт",
+              "title": "Отгул за свой счёт (или не работает)",
               "time": null,
               "breaks": [],
               "lunch": null
@@ -15103,7 +15100,7 @@ window.OTP_DATA = {
             "7": {
               "sym": "X",
               "kind": "dayoff",
-              "title": "Отгул за свой счёт",
+              "title": "Отгул за свой счёт (или не работает)",
               "time": null,
               "breaks": [],
               "lunch": null
@@ -15111,7 +15108,7 @@ window.OTP_DATA = {
             "8": {
               "sym": "X",
               "kind": "dayoff",
-              "title": "Отгул за свой счёт",
+              "title": "Отгул за свой счёт (или не работает)",
               "time": null,
               "breaks": [],
               "lunch": null
@@ -15119,7 +15116,7 @@ window.OTP_DATA = {
             "9": {
               "sym": "X",
               "kind": "dayoff",
-              "title": "Отгул за свой счёт",
+              "title": "Отгул за свой счёт (или не работает)",
               "time": null,
               "breaks": [],
               "lunch": null
@@ -15127,7 +15124,7 @@ window.OTP_DATA = {
             "10": {
               "sym": "X",
               "kind": "dayoff",
-              "title": "Отгул за свой счёт",
+              "title": "Отгул за свой счёт (или не работает)",
               "time": null,
               "breaks": [],
               "lunch": null
@@ -15135,7 +15132,7 @@ window.OTP_DATA = {
             "11": {
               "sym": "X",
               "kind": "dayoff",
-              "title": "Отгул за свой счёт",
+              "title": "Отгул за свой счёт (или не работает)",
               "time": null,
               "breaks": [],
               "lunch": null
@@ -15143,7 +15140,7 @@ window.OTP_DATA = {
             "12": {
               "sym": "X",
               "kind": "dayoff",
-              "title": "Отгул за свой счёт",
+              "title": "Отгул за свой счёт (или не работает)",
               "time": null,
               "breaks": [],
               "lunch": null
@@ -15151,7 +15148,7 @@ window.OTP_DATA = {
             "13": {
               "sym": "X",
               "kind": "dayoff",
-              "title": "Отгул за свой счёт",
+              "title": "Отгул за свой счёт (или не работает)",
               "time": null,
               "breaks": [],
               "lunch": null
@@ -15159,7 +15156,7 @@ window.OTP_DATA = {
             "14": {
               "sym": "X",
               "kind": "dayoff",
-              "title": "Отгул за свой счёт",
+              "title": "Отгул за свой счёт (или не работает)",
               "time": null,
               "breaks": [],
               "lunch": null
@@ -15167,7 +15164,7 @@ window.OTP_DATA = {
             "15": {
               "sym": "X",
               "kind": "dayoff",
-              "title": "Отгул за свой счёт",
+              "title": "Отгул за свой счёт (или не работает)",
               "time": null,
               "breaks": [],
               "lunch": null
@@ -15175,7 +15172,7 @@ window.OTP_DATA = {
             "16": {
               "sym": "X",
               "kind": "dayoff",
-              "title": "Отгул за свой счёт",
+              "title": "Отгул за свой счёт (или не работает)",
               "time": null,
               "breaks": [],
               "lunch": null
@@ -15183,7 +15180,7 @@ window.OTP_DATA = {
             "17": {
               "sym": "X",
               "kind": "dayoff",
-              "title": "Отгул за свой счёт",
+              "title": "Отгул за свой счёт (или не работает)",
               "time": null,
               "breaks": [],
               "lunch": null
@@ -15191,7 +15188,7 @@ window.OTP_DATA = {
             "18": {
               "sym": "X",
               "kind": "dayoff",
-              "title": "Отгул за свой счёт",
+              "title": "Отгул за свой счёт (или не работает)",
               "time": null,
               "breaks": [],
               "lunch": null
@@ -15199,7 +15196,7 @@ window.OTP_DATA = {
             "19": {
               "sym": "X",
               "kind": "dayoff",
-              "title": "Отгул за свой счёт",
+              "title": "Отгул за свой счёт (или не работает)",
               "time": null,
               "breaks": [],
               "lunch": null
@@ -15207,7 +15204,7 @@ window.OTP_DATA = {
             "20": {
               "sym": "X",
               "kind": "dayoff",
-              "title": "Отгул за свой счёт",
+              "title": "Отгул за свой счёт (или не работает)",
               "time": null,
               "breaks": [],
               "lunch": null
@@ -15215,7 +15212,7 @@ window.OTP_DATA = {
             "21": {
               "sym": "X",
               "kind": "dayoff",
-              "title": "Отгул за свой счёт",
+              "title": "Отгул за свой счёт (или не работает)",
               "time": null,
               "breaks": [],
               "lunch": null
@@ -15223,7 +15220,7 @@ window.OTP_DATA = {
             "22": {
               "sym": "X",
               "kind": "dayoff",
-              "title": "Отгул за свой счёт",
+              "title": "Отгул за свой счёт (или не работает)",
               "time": null,
               "breaks": [],
               "lunch": null
@@ -15231,7 +15228,7 @@ window.OTP_DATA = {
             "23": {
               "sym": "X",
               "kind": "dayoff",
-              "title": "Отгул за свой счёт",
+              "title": "Отгул за свой счёт (или не работает)",
               "time": null,
               "breaks": [],
               "lunch": null
@@ -15239,7 +15236,7 @@ window.OTP_DATA = {
             "24": {
               "sym": "X",
               "kind": "dayoff",
-              "title": "Отгул за свой счёт",
+              "title": "Отгул за свой счёт (или не работает)",
               "time": null,
               "breaks": [],
               "lunch": null
@@ -15247,7 +15244,7 @@ window.OTP_DATA = {
             "25": {
               "sym": "X",
               "kind": "dayoff",
-              "title": "Отгул за свой счёт",
+              "title": "Отгул за свой счёт (или не работает)",
               "time": null,
               "breaks": [],
               "lunch": null
@@ -15255,7 +15252,7 @@ window.OTP_DATA = {
             "26": {
               "sym": "X",
               "kind": "dayoff",
-              "title": "Отгул за свой счёт",
+              "title": "Отгул за свой счёт (или не работает)",
               "time": null,
               "breaks": [],
               "lunch": null
@@ -15263,7 +15260,7 @@ window.OTP_DATA = {
             "27": {
               "sym": "X",
               "kind": "dayoff",
-              "title": "Отгул за свой счёт",
+              "title": "Отгул за свой счёт (или не работает)",
               "time": null,
               "breaks": [],
               "lunch": null
@@ -15271,7 +15268,7 @@ window.OTP_DATA = {
             "28": {
               "sym": "X",
               "kind": "dayoff",
-              "title": "Отгул за свой счёт",
+              "title": "Отгул за свой счёт (или не работает)",
               "time": null,
               "breaks": [],
               "lunch": null
@@ -15279,7 +15276,7 @@ window.OTP_DATA = {
             "29": {
               "sym": "X",
               "kind": "dayoff",
-              "title": "Отгул за свой счёт",
+              "title": "Отгул за свой счёт (или не работает)",
               "time": null,
               "breaks": [],
               "lunch": null
@@ -15287,7 +15284,7 @@ window.OTP_DATA = {
             "30": {
               "sym": "X",
               "kind": "dayoff",
-              "title": "Отгул за свой счёт",
+              "title": "Отгул за свой счёт (или не работает)",
               "time": null,
               "breaks": [],
               "lunch": null
@@ -15295,7 +15292,7 @@ window.OTP_DATA = {
             "31": {
               "sym": "X",
               "kind": "dayoff",
-              "title": "Отгул за свой счёт",
+              "title": "Отгул за свой счёт (или не работает)",
               "time": null,
               "breaks": [],
               "lunch": null
@@ -15327,13 +15324,13 @@ window.OTP_DATA = {
             "3": {
               "sym": "I",
               "kind": "weekend",
-              "title": "Выходная смена I",
-              "time": "03:00–10:00",
+              "title": "1 выходная смена",
+              "time": "05:00–14:00",
               "breaks": [
-                "05:00–05:15",
-                "07:30–07:45"
+                "07:30–07:45",
+                "11:45–12:00"
               ],
-              "lunch": null
+              "lunch": "08:00–09:00"
             },
             "4": {
               "sym": "В",
@@ -15401,13 +15398,13 @@ window.OTP_DATA = {
             "10": {
               "sym": "I",
               "kind": "weekend",
-              "title": "Выходная смена I",
-              "time": "03:00–10:00",
+              "title": "1 выходная смена",
+              "time": "05:00–14:00",
               "breaks": [
-                "05:00–05:15",
-                "07:30–07:45"
+                "07:30–07:45",
+                "11:45–12:00"
               ],
-              "lunch": null
+              "lunch": "08:00–09:00"
             },
             "11": {
               "sym": "В",
@@ -15475,13 +15472,13 @@ window.OTP_DATA = {
             "17": {
               "sym": "I",
               "kind": "weekend",
-              "title": "Выходная смена I",
-              "time": "03:00–10:00",
+              "title": "1 выходная смена",
+              "time": "05:00–14:00",
               "breaks": [
-                "05:00–05:15",
-                "07:30–07:45"
+                "07:30–07:45",
+                "11:45–12:00"
               ],
-              "lunch": null
+              "lunch": "08:00–09:00"
             },
             "18": {
               "sym": "В",
@@ -15660,13 +15657,13 @@ window.OTP_DATA = {
             "4": {
               "sym": "I",
               "kind": "weekend",
-              "title": "Выходная смена I",
-              "time": "03:00–10:00",
+              "title": "1 выходная смена",
+              "time": "05:00–14:00",
               "breaks": [
-                "05:00–05:15",
-                "07:30–07:45"
+                "07:30–07:45",
+                "11:45–12:00"
               ],
-              "lunch": null
+              "lunch": "08:00–09:00"
             },
             "5": {
               "sym": "Т",
@@ -15909,13 +15906,13 @@ window.OTP_DATA = {
             "31": {
               "sym": "I",
               "kind": "weekend",
-              "title": "Выходная смена I",
-              "time": "03:00–10:00",
+              "title": "1 выходная смена",
+              "time": "05:00–14:00",
               "breaks": [
-                "05:00–05:15",
-                "07:30–07:45"
+                "07:30–07:45",
+                "11:45–12:00"
               ],
-              "lunch": null
+              "lunch": "08:00–09:00"
             }
           },
           "Хасанов Радион Равильевич": {
@@ -15944,7 +15941,7 @@ window.OTP_DATA = {
             "3": {
               "sym": "II",
               "kind": "weekend",
-              "title": "Выходная смена II",
+              "title": "2 выходная смена",
               "time": "08:00–17:00",
               "breaks": [
                 "10:15–10:30",
@@ -16018,7 +16015,7 @@ window.OTP_DATA = {
             "10": {
               "sym": "II",
               "kind": "weekend",
-              "title": "Выходная смена II",
+              "title": "2 выходная смена",
               "time": "08:00–17:00",
               "breaks": [
                 "10:15–10:30",
@@ -16092,7 +16089,7 @@ window.OTP_DATA = {
             "17": {
               "sym": "II",
               "kind": "weekend",
-              "title": "Выходная смена II",
+              "title": "2 выходная смена",
               "time": "08:00–17:00",
               "breaks": [
                 "10:15–10:30",
@@ -16166,13 +16163,13 @@ window.OTP_DATA = {
             "24": {
               "sym": "I",
               "kind": "weekend",
-              "title": "Выходная смена I",
-              "time": "03:00–10:00",
+              "title": "1 выходная смена",
+              "time": "05:00–14:00",
               "breaks": [
-                "05:00–05:15",
-                "07:30–07:45"
+                "07:30–07:45",
+                "11:45–12:00"
               ],
-              "lunch": null
+              "lunch": "08:00–09:00"
             },
             "25": {
               "sym": "В",
@@ -16479,7 +16476,7 @@ window.OTP_DATA = {
             "24": {
               "sym": "II",
               "kind": "weekend",
-              "title": "Выходная смена II",
+              "title": "2 выходная смена",
               "time": "08:00–17:00",
               "breaks": [
                 "10:15–10:30",
@@ -16658,7 +16655,7 @@ window.OTP_DATA = {
             "11": {
               "sym": "II",
               "kind": "weekend",
-              "title": "Выходная смена II",
+              "title": "2 выходная смена",
               "time": "08:00–17:00",
               "breaks": [
                 "10:15–10:30",
@@ -16866,7 +16863,7 @@ window.OTP_DATA = {
             "31": {
               "sym": "II",
               "kind": "weekend",
-              "title": "Выходная смена II",
+              "title": "2 выходная смена",
               "time": "08:00–17:00",
               "breaks": [
                 "10:15–10:30",
@@ -17051,13 +17048,13 @@ window.OTP_DATA = {
             "18": {
               "sym": "I",
               "kind": "weekend",
-              "title": "Выходная смена I",
-              "time": "03:00–10:00",
+              "title": "1 выходная смена",
+              "time": "05:00–14:00",
               "breaks": [
-                "05:00–05:15",
-                "07:30–07:45"
+                "07:30–07:45",
+                "11:45–12:00"
               ],
-              "lunch": null
+              "lunch": "08:00–09:00"
             },
             "19": {
               "sym": "1",
@@ -17228,7 +17225,7 @@ window.OTP_DATA = {
             "4": {
               "sym": "II",
               "kind": "weekend",
-              "title": "Выходная смена II",
+              "title": "2 выходная смена",
               "time": "08:00–17:00",
               "breaks": [
                 "10:15–10:30",
@@ -17302,13 +17299,13 @@ window.OTP_DATA = {
             "11": {
               "sym": "I",
               "kind": "weekend",
-              "title": "Выходная смена I",
-              "time": "03:00–10:00",
+              "title": "1 выходная смена",
+              "time": "05:00–14:00",
               "breaks": [
-                "05:00–05:15",
-                "07:30–07:45"
+                "07:30–07:45",
+                "11:45–12:00"
               ],
-              "lunch": null
+              "lunch": "08:00–09:00"
             },
             "12": {
               "sym": "Т",
@@ -17447,13 +17444,13 @@ window.OTP_DATA = {
             "25": {
               "sym": "I",
               "kind": "weekend",
-              "title": "Выходная смена I",
-              "time": "03:00–10:00",
+              "title": "1 выходная смена",
+              "time": "05:00–14:00",
               "breaks": [
-                "05:00–05:15",
-                "07:30–07:45"
+                "07:30–07:45",
+                "11:45–12:00"
               ],
-              "lunch": null
+              "lunch": "08:00–09:00"
             },
             "26": {
               "sym": "Ср",
@@ -17695,7 +17692,7 @@ window.OTP_DATA = {
             "18": {
               "sym": "II",
               "kind": "weekend",
-              "title": "Выходная смена II",
+              "title": "2 выходная смена",
               "time": "08:00–17:00",
               "breaks": [
                 "10:15–10:30",
