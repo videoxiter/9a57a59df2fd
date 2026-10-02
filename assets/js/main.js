@@ -181,23 +181,39 @@
     };
     const year = String(today.getFullYear());
     const vac = S.vacations && S.vacations[year] ? S.vacations[year] : {};
-    const vacRows = [];
-    for (const [fio, list] of Object.entries(vac)) for (const p of list) vacRows.push({ fio, p });
-    vacRows.sort((a, b) => a.p.from.localeCompare(b.p.from));
+    let showPast = false;                       // по умолчанию прошедшие отпуска скрыты
+    const today0 = new Date(); today0.setHours(0, 0, 0, 0);
     const fmt = (p) => {
       const f = new Date(p.from + "T00:00:00"), t = new Date(p.to + "T00:00:00");
       return `с ${f.getDate()} ${MON_GEN[f.getMonth()]} по ${t.getDate()} ${MON_GEN[t.getMonth()]}`;
     };
-    dutyBox.innerHTML = `
-      <div class="dt-grid">${dayBlock(today, "Сегодня")}${dayBlock(addDays(today, 1), "Завтра")}</div>
-      <h3 class="dt-sub"><i class="ph-bold ph-airplane-tilt"></i> Отпуска отдела · ${year}</h3>
-      <div class="gs-vac-table">
-        <div class="gs-vac-tr head"><span>Период</span><span>Сотрудник</span><span>Дней</span></div>
-        ${vacRows.map(({ fio, p }) => `<div class="gs-vac-tr">
-          <span class="gs-vac-per">${fmt(p)}</span>
-          <span class="gs-vac-who">${fio.split(" ")[0]} ${(fio.split(" ")[1] || "").slice(0, 1)}.</span>
-          <span class="gs-vac-dn">${p.days || ""}</span></div>`).join("")}
-      </div>`;
+    const renderDuty = () => {
+      const vacRows = [];
+      for (const [fio, list] of Object.entries(vac))
+        for (const p of list) {
+          if (!showPast && new Date(p.to + "T00:00:00") < today0) continue;
+          vacRows.push({ fio, p });
+        }
+      vacRows.sort((a, b) => a.p.from.localeCompare(b.p.from));
+      dutyBox.innerHTML = `
+        <div class="dt-grid">${dayBlock(today, "Сегодня")}${dayBlock(addDays(today, 1), "Завтра")}</div>
+        <div class="dt-sub-row">
+          <h3 class="dt-sub"><i class="ph-bold ph-airplane-tilt"></i> Отпуска отдела · ${year}</h3>
+          <label class="gs-past-toggle" title="Показать и уже прошедшие отпуска этого года">
+            <input type="checkbox" id="duty-past"${showPast ? " checked" : ""}> <span>показывать прошедшие</span>
+          </label>
+        </div>
+        <div class="gs-vac-table">
+          <div class="gs-vac-tr head"><span>Период</span><span>Сотрудник</span><span>Дней</span></div>
+          ${vacRows.length ? vacRows.map(({ fio, p }) => `<div class="gs-vac-tr${new Date(p.from + "T00:00:00") <= today0 && new Date(p.to + "T00:00:00") >= today0 ? " mine" : ""}">
+            <span class="gs-vac-per">${fmt(p)}</span>
+            <span class="gs-vac-who">${fio.split(" ")[0]} ${(fio.split(" ")[1] || "").slice(0, 1)}.${new Date(p.from + "T00:00:00") <= today0 && new Date(p.to + "T00:00:00") >= today0 ? ' <b class="gs-you">сейчас</b>' : ""}</span>
+            <span class="gs-vac-dn">${p.days || ""}</span></div>`).join("") : '<div class="gs-vac-tr"><span class="gs-vac-per">Прошедших периодов нет</span><span></span><span></span></div>'}
+        </div>`;
+      const chk = $("#duty-past");
+      if (chk) chk.addEventListener("change", () => { showPast = chk.checked; renderDuty(); });
+    };
+    renderDuty();
   }
 
   otp.reveal(document);

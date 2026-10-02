@@ -1426,3 +1426,9 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
 .dt-time { font-size: 12px; font-family: "JetBrains Mono", monospace; color: var(--muted-foreground); }
 .dt-ln { grid-column: 2 / -1; font-size: 11px; color: #a5b4fc; }
 .dt-sub { margin: 6px 0 4px; font-size: 16px; display: flex; align-items: center; gap: 9px; }
+
+.gs-past-toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted-foreground);
+  border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px; cursor: pointer; user-select: none; }
+.gs-past-toggle:hover { color: var(--foreground); border-color: rgba(56,189,248,.45); }
+.gs-past-toggle input { accent-color: #22d3ee; }
+.dt-sub-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }

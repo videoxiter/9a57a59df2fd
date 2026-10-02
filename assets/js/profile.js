@@ -650,7 +650,7 @@
   const samePerson = (a, b) => !!a && !!b && surname(a) === surname(b);
 
   const CUR_YEAR = new Date().getFullYear();
-  const GS = { period: "today", scope: "me", year: CUR_YEAR, day: new Date().getDate(), month: isoOf(new Date()) };
+  const GS = { period: "today", scope: "me", year: CUR_YEAR, day: new Date().getDate(), month: isoOf(new Date()), showPast: false };
   /* порядок отделa: сначала по времени смены, затем по линии (L0 → L3) */
   const LINE_ORDER = ["L0", "L1.1", "L1.2", "L2.1", "L2.2", "L2.3", "L2.4", "L3"];
   const timeRank = (sh) => { const h = sh && sh.time ? parseInt(String(sh.time).slice(0, 2), 10) : NaN; return Number.isFinite(h) ? h : 9; };
@@ -834,6 +834,9 @@
 
     <section class="p-sec" data-reveal>
       <div class="p-sec-head"><h2><i class="ph-bold ph-airplane-tilt"></i> Мои отпуска</h2>
+        <label class="gs-past-toggle" title="Прошедшие отпуска скрываются — включи, чтобы увидеть историю года">
+          <input type="checkbox" id="gs-past"> <span>показывать прошедшие</span>
+        </label>
         <div class="gs-years" id="gs-years">
           ${[{ y: CUR_YEAR, label: "Текущий" }, { y: CUR_YEAR + 1, label: "Следующий" }].map(({ y, label }) => {
             const has = !!(SCHED.vacations && SCHED.vacations[String(y)]);
@@ -1003,9 +1006,15 @@
           <span>График отпусков на ${GS.year} год ещё не опубликован. Обычно его строят с октября по декабрь предыдущего года.</span></div>`;
         return;
       }
-      const mine = vacationList(GS.year);
-      const all = vacationsAll(GS.year);
       const now = new Date(); now.setHours(0, 0, 0, 0);
+      const pastOk = (p) => GS.showPast || new Date(p.to + "T00:00:00") >= now;
+      const mine = vacationList(GS.year).filter(pastOk);
+      const allAll = vacationsAll(GS.year);
+      const all = {};
+      for (const [fio, list] of Object.entries(allAll)) {
+        const kept = list.filter(pastOk);
+        if (kept.length) all[fio] = kept;
+      }
       const next = mine.find((p) => new Date(p.to + "T00:00:00") >= now);
       const upcoming = next ? Math.round((new Date(next.from + "T00:00:00") - now) / 86400000) : null;
       box.innerHTML = `
@@ -1120,6 +1129,8 @@
       document.querySelectorAll("#gs-scope .gs-btn").forEach((x) => x.classList.toggle("on", x === b));
       renderPanel();
     }));
+    const pastChk = document.getElementById("gs-past");
+    if (pastChk) pastChk.addEventListener("change", () => { GS.showPast = pastChk.checked; renderVac(); });
     document.querySelectorAll("#gs-years .gs-year").forEach((b) => b.addEventListener("click", () => {
       GS.year = +b.dataset.year;
       document.querySelectorAll("#gs-years .gs-year").forEach((x) => x.classList.toggle("on", x === b));
