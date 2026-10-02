@@ -809,6 +809,23 @@ def _surname(fio):
     return (fio or "").split()[0].lower().replace("ё", "е")
 
 
+def _cloud():
+    """Облачная БД заявок (scripts/cloud.json): работает без ПК руководителя.
+
+    {"provider": "supabase", "url": "https://xxx.supabase.co", "key": "anon-key", "table": "otp_requests"}
+    {"provider": "firebase", "url": "https://xxx.firebaseio.com"}
+    {"provider": "http", "url": "https://..."}   — любой свой REST (GET/POST /requests)
+    {"provider": "offline"}                      — только браузер
+    """
+    path = os.path.join(ROOT, "scripts", "cloud.json")
+    try:
+        cfg = json.load(open(path, encoding="utf-8"))
+        cfg.setdefault("provider", "offline")
+        return cfg
+    except Exception:
+        return {"provider": "offline"}
+
+
 def _endpoint():
     """Адрес сервиса заявок (scripts/endpoint.txt) — общий канал для всех устройств."""
     path = os.path.join(ROOT, "scripts", "endpoint.txt")
@@ -979,7 +996,8 @@ def build():
         "bonusRules": BONUS_RULES,
         "hrRules": {"noDeductAvg": NO_LEAVE_DEDUCTION_AVG, "leaveMaxHours": 4,
                     "queueFromLvl": 2, "hoursBaseDate": "02.10.2026",
-                    "endpoint": _endpoint()},
+                    "endpoint": _endpoint(),
+                    "cloud": _cloud()},
         "months": [month_label(m) for m in months],
         "employees": result,
         "team": {"profileByMonth": team_profile, "avgByMonth": team_avg,

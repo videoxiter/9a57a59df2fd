@@ -13,30 +13,15 @@
   const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) { return []; } };
   const save = (l) => { try { localStorage.setItem(KEY, JSON.stringify(l)); } catch (e) {} };
   const ENDPOINT = ((window.OTP_DATA && window.OTP_DATA.hrRules && window.OTP_DATA.hrRules.endpoint) || "").replace(/\/$/, "");
+  const CLOUD = window.OTP_CLOUD || null;
+  const load2 = () => (CLOUD ? CLOUD.loadLocal() : load());
+  const save2 = (l) => (CLOUD ? CLOUD.saveLocal(l) : save(l));
   async function pull() {
-    if (!ENDPOINT) return { online: false };
-    try {
-      const r = await fetch(ENDPOINT + "/requests", { cache: "no-store" });
-      const j = await r.json();
-      const remote = Array.isArray(j.requests) ? j.requests : [];
-      const by = {};
-      for (const x of [...remote, ...load()]) {
-        const prev = by[x.id];
-        if (!prev || (x.decided || x.created || "") > (prev.decided || prev.created || "")) by[x.id] = Object.assign({}, prev, x);
-      }
-      const merged = Object.values(by);
-      save(merged);
-      return { online: true, list: merged };
-    } catch (e) { return { online: false }; }
+    if (!CLOUD) return { online: false };
+    const s = await CLOUD.sync();
+    return s.online ? { online: true, list: s.list } : { online: false };
   }
-  async function push(list) {
-    if (!ENDPOINT) return false;
-    try {
-      await fetch(ENDPOINT + "/requests", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requests: list }) });
-      return true;
-    } catch (e) { return false; }
-  }
+  async function push(list) { return CLOUD ? CLOUD.put(list) : false; }
   const hoursOf = (r) => {
     if (r.type === "dayoff") return r.hours || 8;
     const p = (t) => { const m = /^(\d{1,2}):(\d{2})$/.exec(t || ""); return m ? +m[1] + +m[2] / 60 : null; };
@@ -72,7 +57,7 @@
   function render() {
     const box = document.getElementById("hr-requests");
     if (!box) return;
-    const all = load().sort((a, b) => (b.created || "").localeCompare(a.created || ""));
+    const all = load2().sort((a, b) => (b.created || "").localeCompare(a.created || ""));
     const pending = all.filter((r) => r.status === "pending");
     const decided = all.filter((r) => r.status !== "pending");
     const owed = {};
@@ -93,9 +78,36 @@
       </details>
       ${Object.keys(owed).length ? `<div class="hr-owed">Баланс часов по подтверждённым заявкам:
         ${Object.entries(owed).map(([n, h]) => `<span><b>${n.split(" ")[0]}</b> ${h >= 0 ? "+" : "−"}${fmtH(Math.abs(h))}</span>`).join("")}</div>` : ""}
-      <p class="hr-note"><i class="ph ph-info"></i> Заявки хранятся в этом браузере (общий ключ с персональными страницами).
-        Чтобы решения уходили сотруднику на любое устройство, подключи вебхук Hermes — скажи, и настрою.</p>`;
+      <div class="hr-tools">
+        <button class="btn btn-ghost" id="hr-export"><i class="ph-bold ph-download-simple"></i> Экспорт заявок</button>
+        <label class="btn btn-ghost"><i class="ph-bold ph-upload-simple"></i> Импорт заявок
+          <input type="file" id="hr-import" accept=".json" hidden></label>
+        <span class="hr-provider">${(CLOUD && CLOUD.provider()) ? "канал: " + CLOUD.provider() : "канал: локальный"}</span>
+      </div>
+      <p class="hr-note"><i class="ph ph-info"></i> Экспорт/импорт — обмен заявками без общего сервера: сотрудник присылает файл,
+        ты импортируешь здесь решения. Для полной синхронизации подключи облачную базу (scripts/cloud.json).</p>`;
 
+    const exp = box.querySelector("#hr-export");
+    if (exp) exp.addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify({ requests: load2() }, null, 1)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "otp-requests-" + new Date().toISOString().slice(0, 10) + ".json";
+      a.click();
+    });
+    const imp = box.querySelector("#hr-import");
+    if (imp) imp.addEventListener("change", async () => {
+      const f = imp.files && imp.files[0];
+      if (!f) return;
+      try {
+        const j = JSON.parse(await f.text());
+        const incoming = Array.isArray(j) ? j : (j.requests || []);
+        const merged = CLOUD ? CLOUD.merge(load2(), incoming) : incoming;
+        save2(merged);
+        if (CLOUD) await CLOUD.put(merged);
+        render();
+      } catch (e) { alert("Не удалось прочитать файл заявок"); }
+    });
     box.querySelectorAll("[data-ok]").forEach((b) => b.addEventListener("click", () => decide(b.dataset.ok, "approved")));
     box.querySelectorAll("[data-no]").forEach((b) => b.addEventListener("click", () => {
       const id = b.dataset.no;
@@ -115,14 +127,14 @@
   }
 
   function decide(id, status, reject) {
-    const list = load();
+    const list = load2();
     const r = list.find((x) => x.id === id);
     if (!r) return;
     r.status = status;
     r.reject = reject || "";
     r.decided = new Date().toISOString();
-    save(list);
-    push(list);
+    save2(list);
+    if (CLOUD) CLOUD.upsert(r); else push(list);
     render();
   }
 

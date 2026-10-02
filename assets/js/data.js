@@ -427,7 +427,14 @@ window.OTP_DATA = {
     "leaveMaxHours": 4,
     "queueFromLvl": 2,
     "hoursBaseDate": "02.10.2026",
-    "endpoint": "https://a38c05727d8692.lhr.life"
+    "endpoint": "https://a38c05727d8692.lhr.life",
+    "cloud": {
+      "provider": "offline",
+      "url": "",
+      "key": "",
+      "table": "otp_requests",
+      "_help": "provider: offline | supabase | firebase | http. supabase: url+key(anon). firebase: url базы. http: любой REST с GET/POST /requests"
+    }
   },
   "months": [
     "Апр 2026",

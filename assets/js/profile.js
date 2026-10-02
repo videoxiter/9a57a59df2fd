@@ -709,22 +709,9 @@
   const loadReqs = () => { try { return JSON.parse(localStorage.getItem(REQ_KEY) || "[]"); } catch (e) { return []; } };
   const saveReqs = (list) => { try { localStorage.setItem(REQ_KEY, JSON.stringify(list)); } catch (e) {} };
   /* --- общий канал: заявки ходят через сервис Hermes, а не только в этом браузере --- */
-  async function remoteAll() {
-    if (!ENDPOINT) return null;
-    try {
-      const r = await fetch(ENDPOINT + "/requests", { cache: "no-store" });
-      const j = await r.json();
-      return Array.isArray(j.requests) ? j.requests : [];
-    } catch (e) { return null; }
-  }
-  async function remotePush(list) {
-    if (!ENDPOINT) return false;
-    try {
-      await fetch(ENDPOINT + "/requests", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requests: list }) });
-      return true;
-    } catch (e) { return false; }
-  }
+  const CLOUD = window.OTP_CLOUD || null;
+  async function remoteAll() { return CLOUD ? CLOUD.all() : null; }
+  async function remotePush(list) { return CLOUD ? CLOUD.put(list) : false; }
   function mergeReqs(local, remote) {
     const by = {};
     for (const r of [...(remote || []), ...(local || [])]) {
@@ -735,12 +722,9 @@
     return Object.values(by);
   }
   async function syncReqs() {
-    const remote = await remoteAll();
-    if (remote === null) return { online: false };
-    const merged = mergeReqs(loadReqs(), remote);
-    saveReqs(merged);
-    await remotePush(merged);
-    return { online: true, count: merged.length };
+    if (!CLOUD) return { online: false };
+    const s = await CLOUD.sync();
+    return s.online ? { online: true, count: (s.list || []).length } : { online: false };
   }
   const REQ_TYPES = {
     overtime: { label: "Переработка", icon: "ph-clock-plus", accent: "good" },
@@ -1059,9 +1043,24 @@
               ${r.status === "rejected" && r.reject ? `<em class="rej">Причина отказа: ${r.reject}</em>` : ""}
             </span>
             ${statusChip(r)}
-            ${r.status === "pending" ? `<button class="req-del" data-del="${r.id}" title="Отозвать"><i class="ph-bold ph-trash"></i></button>` : ""}
+            <span class="req-tools">
+              <button class="req-copy" data-copy="${r.id}" title="Скопировать заявку — можно отправить руководителю в мессенджере"><i class="ph-bold ph-copy"></i></button>
+              ${r.status === "pending" ? `<button class="req-del" data-del="${r.id}" title="Отозвать"><i class="ph-bold ph-trash"></i></button>` : ""}
+            </span>
           </div>`;
         }).join("") : '<p class="muted">Заявок пока нет. Оформи первую — она появится на странице руководителя.</p>';
+        hist.querySelectorAll("[data-copy]").forEach((b2) => b2.addEventListener("click", () => {
+          const r = myRequests().find((x) => x.id === b2.dataset.copy);
+          if (!r) return;
+          const t = REQ_TYPES[r.type] || { label: r.type };
+          const text = `Заявка ОТП — ${t.label}\nСотрудник: ${r.empName || ME_FIO}\n`
+            + (r.type === "dayoff" ? `Дата отгула: ${r.date}\nВыходная смена: ${r.date2}`
+                                   : `Дата: ${r.date}, время ${r.from}–${r.to} (${fmtH(hoursOf(r))})`)
+            + `\nОснование: ${r.reason}`;
+          if (navigator.clipboard) navigator.clipboard.writeText(text);
+          b2.innerHTML = '<i class="ph-bold ph-check"></i>';
+          setTimeout(() => { b2.innerHTML = '<i class="ph-bold ph-copy"></i>'; }, 1500);
+        }));
         hist.querySelectorAll("[data-del]").forEach((b2) => b2.addEventListener("click", () => {
           const left = loadReqs().filter((x) => x.id !== b2.dataset.del);
           saveReqs(left);
@@ -1133,7 +1132,7 @@
         const list = loadReqs(); list.push(rec); saveReqs(list);
         modal.hidden = true;
         renderHours();
-        remotePush(list).then((ok) => {
+        (CLOUD ? CLOUD.upsert(rec).then((r) => !!r.online) : Promise.resolve(false)).then((ok) => {
           const box = document.getElementById("gs-history");
           if (box && !ok && ENDPOINT) box.insertAdjacentHTML("afterbegin",
             '<p class="muted">Заявка сохранена локально — сервис недоступен, уйдёт при следующем открытии.</p>');
