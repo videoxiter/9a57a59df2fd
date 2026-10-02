@@ -756,6 +756,7 @@
   const HARD_METRIC = HR_RULES.noDeductHard != null ? HR_RULES.noDeductHard : 6;
   const LOW_LIMIT = HR_RULES.noDeductLowLimit != null ? HR_RULES.noDeductLowLimit : 2;
   const LOW_METRICS = emp.no_deduct_low || [];
+  const LOW_TXT = LOW_METRICS.map((m) => `${m.title} <b>${m.value}</b>`).join(", ");
   const QUEUE_LVL = (emp.lvl || 1) >= (HR_RULES.queueFromLvl || 2);
   function hoursBalance() {
     let plus = 0, minus = 0, dayoffs = 0;
@@ -1038,7 +1039,6 @@
       const b = hoursBalance();
       const reqs = myRequests();
       const pending = reqs.filter((r) => r.status === "pending").length;
-      const LOW_TXT = LOW_METRICS.map((m) => `${m.title} <b>${m.value}</b>`).join(", ");
       const ruleNote = NO_DEDUCT
         ? `<div class="hr-rule good"><i class="ph-bold ph-shield-check"></i> Увольнительные <b>не списывают часы</b>: все показатели за последний месяц ${MIN_METRIC} и выше.</div>`
         : `<div class="hr-rule warn"><i class="ph-bold ph-warning"></i> Увольнительные <b>списывают часы</b>: ${LOW_TXT ? `показатели ниже ${MIN_METRIC} — ${LOW_TXT}` : `есть показатель ${HARD_METRIC} и ниже`}. Чтобы не списывались — все показатели от ${MIN_METRIC}.</div>`;
