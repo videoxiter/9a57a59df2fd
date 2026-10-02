@@ -130,7 +130,15 @@ window.OTP_CLOUD = (function () {
   async function sync() {
     const remote = await all();
     if (remote === null) return { online: false };
-    const merged = merge(loadLocal(), remote);
+    // Облако — источник истины. Локальная копия нужна только для свежих заявок,
+    // которые ещё не успели уйти (офлайн/сбой сети). Всё остальное, чего нет в базе,
+    // считается удалённым и больше не воскрешается (иначе удалённые заявки висят вечно).
+    const FRESH_MS = 15 * 60 * 1000;
+    const now = Date.now();
+    const remoteIds = new Set((remote || []).map((r) => r.id));
+    const local = loadLocal().filter((r) => remoteIds.has(r.id) ||
+      (now - Date.parse(r.created || 0) < FRESH_MS));
+    const merged = merge(local, remote);
     saveLocal(merged);
     await put(merged);
     return { online: true, list: merged };
