@@ -1352,3 +1352,26 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
 .gs-hist-ar { margin-left: auto; transition: transform .2s; }
 .gs-hist[open] .gs-hist-ar { transform: rotate(180deg); }
 .gs-hist #gs-history { margin-top: 12px; }
+
+/* перерывы и обед — метка приглушённо, значения акцентом */
+.gd-breaks { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 6px 0; }
+.gd-bl { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; letter-spacing: .6px;
+  text-transform: uppercase; color: var(--muted-foreground); }
+.gd-bl i { font-size: 14px; color: #7dd3fc; }
+.gd-bv { font-family: "JetBrains Mono", monospace; font-size: 12.5px; padding: 2px 9px; border-radius: 999px;
+  color: #e2e8f0; background: rgba(148,163,184,.14); border: 1px solid rgba(148,163,184,.2); }
+.gd-bv.lunch { color: #fde68a; background: rgba(250,204,21,.12); border-color: rgba(250,204,21,.3); }
+
+/* отпуска отдела — таблица по периодам */
+.gs-vac-table { display: flex; flex-direction: column; max-height: 420px; overflow: auto; }
+.gs-vac-tr { display: grid; grid-template-columns: 1fr 150px 52px; gap: 10px; align-items: center;
+  padding: 8px 10px; font-size: 13px; border-bottom: 1px solid rgba(148,163,184,.1); }
+.gs-vac-tr.head { position: sticky; top: 0; background: #0b1220; z-index: 1; font-size: 11px; letter-spacing: .8px;
+  text-transform: uppercase; color: var(--muted-foreground); }
+.gs-vac-tr:nth-child(even) { background: rgba(255,255,255,.02); }
+.gs-vac-tr.mine { background: linear-gradient(90deg, rgba(56,189,248,.14), transparent 70%); }
+.gs-vac-tr.mine .gs-vac-who { color: #bae6fd; }
+.gs-vac-per { color: #cbd5e1; }
+.gs-vac-who { color: var(--foreground); }
+.gs-vac-dn { font-family: "JetBrains Mono", monospace; color: #99f6e4; text-align: right; }
+.gs-vac-dn::after { content: " дн."; color: var(--muted-foreground); font-size: 11px; }

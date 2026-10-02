@@ -794,8 +794,8 @@
       ${sh ? `<div class="gd-body">
           <div class="gd-shift"><span class="gs-sym k-${sh.kind}">${sh.sym}</span><span class="gd-shift-t">${sh.title}</span></div>
           ${sh.time ? `<div class="gd-time"><i class="ph ph-clock"></i> ${sh.time}</div>` : ""}
-          ${(sh.breaks || []).length ? `<div class="gd-breaks">перерывы: ${sh.breaks.join(", ")}</div>` : ""}
-          ${sh.lunch ? `<div class="gd-breaks">обед: ${sh.lunch}</div>` : ""}
+          ${(sh.breaks || []).length ? `<div class="gd-breaks"><span class="gd-bl"><i class="ph-bold ph-coffee"></i> Перерывы</span>${sh.breaks.map((b) => `<span class="gd-bv">${b}</span>`).join("")}</div>` : ""}
+          ${sh.lunch ? `<div class="gd-breaks"><span class="gd-bl"><i class="ph-bold ph-fork-knife"></i> Обед</span><span class="gd-bv lunch">${sh.lunch}</span></div>` : ""}
           ${ln ? `<div class="gd-line"><i class="ph ph-git-branch"></i> ${ln.id} · ${ln.title}</div>` : ""}
         </div>` : `<div class="gd-body"><div class="gs-none">смена не найдена</div></div>`}
     </div>`;
@@ -1024,11 +1024,20 @@
           </div>
           <div class="gs-vac-card">
             <div class="gs-vac-h"><i class="ph-bold ph-users-three"></i> Отпуска отдела · ${GS.year}</div>
-            <div class="gs-vac-list">${Object.entries(all).map(([fio, list]) => `
-              <div class="gs-vac-person${samePerson(fio, ME_FIO) ? " mine" : ""}">
-                <span class="gs-vac-n">${fio.split(" ")[0]} ${(fio.split(" ")[1] || "").slice(0, 1)}.</span>
-                <span class="gs-vac-p">${list.map((p) => `<i>${fmtPeriod(p)}</i>${p.days ? ` <b>${p.days}д</b>` : ""}`).join(", ")}</span>
-              </div>`).join("")}</div>
+            <div class="gs-vac-table">
+              <div class="gs-vac-tr head"><span>Период</span><span>Сотрудник</span><span>Дней</span></div>
+              ${(() => {
+                const rows = [];
+                for (const [fio, list] of Object.entries(all))
+                  for (const p of list) rows.push({ fio, p, mine: samePerson(fio, ME_FIO) });
+                rows.sort((a, b) => a.p.from.localeCompare(b.p.from));
+                return rows.map(({ fio, p, mine }) => `<div class="gs-vac-tr${mine ? " mine" : ""}">
+                  <span class="gs-vac-per">${fmtPeriod(p)}</span>
+                  <span class="gs-vac-who">${fio.split(" ")[0]} ${(fio.split(" ")[1] || "").slice(0, 1)}.${(fio.split(" ")[2] || "").slice(0, 1) ? " " + fio.split(" ")[2].slice(0, 1) + "." : ""}${mine ? ' <b class="gs-you">ты</b>' : ""}</span>
+                  <span class="gs-vac-dn">${p.days || vacDiff(p.from, p.to)}</span>
+                </div>`).join("");
+              })()}
+            </div>
           </div>
         </div>`;
     }
