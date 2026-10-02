@@ -649,7 +649,12 @@
   const surname = (f) => String(f || "").split(" ")[0].toLowerCase().replace("ё", "е");
   const samePerson = (a, b) => !!a && !!b && surname(a) === surname(b);
 
-  const GS = { period: "today", scope: "me", year: new Date().getFullYear(), day: new Date().getDate(), month: isoOf(new Date()) };
+  const CUR_YEAR = new Date().getFullYear();
+  const GS = { period: "today", scope: "me", year: CUR_YEAR, day: new Date().getDate(), month: isoOf(new Date()) };
+  /* порядок отделa: сначала по времени смены, затем по линии (L0 → L3) */
+  const LINE_ORDER = ["L0", "L1.1", "L1.2", "L2.1", "L2.2", "L2.3", "L2.4", "L3"];
+  const timeRank = (sh) => { const h = sh && sh.time ? parseInt(String(sh.time).slice(0, 2), 10) : NaN; return Number.isFinite(h) ? h : 9; };
+  const lineRank = (ln) => (ln ? (LINE_ORDER.indexOf(ln.id) < 0 ? 50 : LINE_ORDER.indexOf(ln.id)) : 99);
 
   const schedAvailable = (iso) => !!(SCHED && SCHED.months && SCHED.months[iso]);
   function schedFor(fio, iso) {
@@ -663,6 +668,8 @@
     return days ? days[String(dt.getDate())] || null : null;
   }
   function lineOn(fio, dt) {
+    // в выходные дни линии не дежурят — L не показываем
+    if (dt.getDay() === 0 || dt.getDay() === 6) return null;
     const M = SCHED && SCHED.months && SCHED.months[isoOf(dt)];
     if (!M || !M.lines) return null;
     for (const [lid, info] of Object.entries(M.lines)) {
@@ -727,7 +734,7 @@
     return s.online ? { online: true, count: (s.list || []).length } : { online: false };
   }
   const REQ_TYPES = {
-    overtime: { label: "Переработка", icon: "ph-clock-plus", accent: "good" },
+    overtime: { label: "Переработка", icon: "ph-timer", accent: "good" },
     leave: { label: "Увольнительная", icon: "ph-door-open", accent: "warn" },
     dayoff: { label: "Отгул за вых. смену", icon: "ph-calendar-minus", accent: "info" },
   };
@@ -745,8 +752,9 @@
   const HR_RULES = (D && D.hrRules) || { noDeductAvg: 8, leaveMaxHours: 4, queueFromLvl: 2 };
   const NO_DEDUCT = !!emp.no_deduct;                       // средний ≥ 9.0 и ни один показатель ниже 8
   const MY_AVG = emp.avg;
-  const AVG_TXT_MIN = String(HR_RULES.noDeductAvg).replace(".", ",");
-  const MIN_METRIC = HR_RULES.noDeductMin != null ? HR_RULES.noDeductMin : 8;
+  const MIN_METRIC = HR_RULES.noDeductMin != null ? HR_RULES.noDeductMin : 7;
+  const HARD_METRIC = HR_RULES.noDeductHard != null ? HR_RULES.noDeductHard : 6;
+  const LOW_LIMIT = HR_RULES.noDeductLowLimit != null ? HR_RULES.noDeductLowLimit : 2;
   const LOW_METRICS = emp.no_deduct_low || [];
   const QUEUE_LVL = (emp.lvl || 1) >= (HR_RULES.queueFromLvl || 2);
   function hoursBalance() {
@@ -755,7 +763,7 @@
       if (r.status !== "approved") continue;
       const h = hoursOf(r);
       if (r.type === "overtime") plus += h;
-      else if (r.type === "leave") { if (!NO_DEDUCT) minus += h; }
+      else if (r.type === "leave") { if (!NO_DEDUCT && !r.noDeduct) minus += h; }   // noDeduct — ручное решение руководителя
       else dayoffs += h;                                     // отгул — компенсация выходной смены, часы не двигает
     }
     const base = emp.hours_base || 0;
@@ -826,9 +834,9 @@
     <section class="p-sec" data-reveal>
       <div class="p-sec-head"><h2><i class="ph-bold ph-airplane-tilt"></i> Мои отпуска</h2>
         <div class="gs-years" id="gs-years">
-          ${[GS.year - 1, GS.year, GS.year + 1].map((y) => {
+          ${[{ y: CUR_YEAR, label: "Текущий" }, { y: CUR_YEAR + 1, label: "Следующий" }].map(({ y, label }) => {
             const has = !!(SCHED.vacations && SCHED.vacations[String(y)]);
-            return `<button class="gs-year${y === GS.year ? " on" : ""}${has ? "" : " empty"}" data-year="${y}">${y}${has ? "" : " · нет"}</button>`;
+            return `<button class="gs-year${y === GS.year ? " on" : ""}${has ? "" : " empty"}" data-year="${y}">${label} <b>${y}</b></button>`;
           }).join("")}
         </div>
       </div>
@@ -839,12 +847,14 @@
       <div class="p-sec-head"><h2><i class="ph-bold ph-hourglass-high"></i> Накопленные часы</h2><span class="p-sec-hint">только по тебе · считается по подтверждённым заявкам</span></div>
       <div id="gs-hours"></div>
       <div class="gs-actions">
-        <button class="gs-act" data-form="overtime"><i class="ph-bold ph-clock-plus"></i><span><b>Зарегистрировать переработку</b><i>с указанием времени и задач</i></span></button>
+        <button class="gs-act" data-form="overtime"><i class="ph-bold ph-timer"></i><span><b>Зарегистрировать переработку</b><i>с указанием времени и задач</i></span></button>
         <button class="gs-act" data-form="leave"><i class="ph-bold ph-door-open"></i><span><b>Взять увольнительную</b><i>не более 4 часов в день</i></span></button>
         <button class="gs-act" data-form="dayoff"><i class="ph-bold ph-calendar-minus"></i><span><b>Взять отгул за вых. смену</b><i>компенсация выходной смены</i></span></button>
       </div>
-      <div class="sub-head" style="margin-top:22px"><i class="ph ph-list-checks"></i> Мои заявки <span class="muted" id="gs-req-count"></span></div>
-      <div id="gs-history"></div>
+      <details class="gs-hist">
+        <summary><i class="ph-bold ph-clock-counter-clockwise"></i> История заявок <span class="muted" id="gs-req-count"></span><i class="ph-bold ph-caret-down gs-hist-ar"></i></summary>
+        <div id="gs-history"></div>
+      </details>
     </section>
 
     <div class="otp-modal" id="gs-modal" hidden>
@@ -892,6 +902,7 @@
           (isWork(sh) ? working : offs).push([fio, sh]);
         }
         const lineOf_ = (fio) => { const l = lineOn(fio, dt); return l ? `${l.id} · ${l.title}` : ""; };
+        working.sort((a, b) => timeRank(a[1]) - timeRank(b[1]) || lineRank(lineOn(a[0], dt)) - lineRank(lineOn(b[0], dt)) || a[0].localeCompare(b[0]));
         panel.innerHTML = head + `<div class="gs-team-day">
           <div class="gs-team-col"><div class="gs-team-h"><i class="ph-bold ph-briefcase"></i> На смене — ${working.length}</div>
             ${working.map(([fio, sh]) => `<div class="gs-row${samePerson(fio, ME_FIO) ? " mine" : ""}">
@@ -948,7 +959,14 @@
         return;
       }
       const M = SCHED.months[iso];
-      const fios = Object.keys(M.shifts || {}).sort((a, b) => (samePerson(b, ME_FIO) ? 1 : 0) - (samePerson(a, ME_FIO) ? 1 : 0) || a.localeCompare(b));
+      const firstWork = (fio) => {
+        for (let d = 1; d <= lastDay; d++) { const sh = (M.shifts[fio] || {})[String(d)]; if (isWork(sh)) return { sh, dt: new Date(y, m - 1, d) }; }
+        return { sh: null, dt: new Date(y, m - 1, 1) };
+      };
+      const fios = Object.keys(M.shifts || {}).sort((a, b) => {
+        const A = firstWork(a), B = firstWork(b);
+        return timeRank(A.sh) - timeRank(B.sh) || lineRank(lineOn(a, A.dt)) - lineRank(lineOn(b, B.dt)) || a.localeCompare(b);
+      });
       const rows = fios.map((fio) => `<tr class="${samePerson(fio, ME_FIO) ? "mine" : ""}">
         <td class="gs-fio-td">${fio}${samePerson(fio, ME_FIO) ? ' <span class="gs-you">ты</span>' : ""}</td>
         ${Array.from({ length: lastDay }, (_, i) => {
@@ -962,7 +980,11 @@
       function weekTable(days) {
         const iso = isoOf(today);
         const M = SCHED.months[iso] || { shifts: {} };
-        const fios = Object.keys(M.shifts || {});
+        const fios = Object.keys(M.shifts || {}).sort((a, b) => {
+          const ka = days.map((dt) => shiftOn(a, dt)).find(isWork) || null;
+          const kb = days.map((dt) => shiftOn(b, dt)).find(isWork) || null;
+          return timeRank(ka) - timeRank(kb) || lineRank(lineOn(a, days[0])) - lineRank(lineOn(b, days[0])) || a.localeCompare(b);
+        });
         return `<thead><tr><th>Сотрудник</th>${days.map((dt) => `<th>${WD_SHORT[dt.getDay()]}<br>${dt.getDate()}</th>`).join("")}</tr></thead>
           <tbody>${fios.map((fio) => `<tr class="${samePerson(fio, ME_FIO) ? "mine" : ""}">
             <td class="gs-fio-td">${fio}${samePerson(fio, ME_FIO) ? ' <span class="gs-you">ты</span>' : ""}</td>
@@ -1016,16 +1038,14 @@
       const b = hoursBalance();
       const reqs = myRequests();
       const pending = reqs.filter((r) => r.status === "pending").length;
-      const AVG_TXT = MY_AVG != null ? String(MY_AVG).replace(".", ",") : "—";
-      const LOW_TXT = LOW_METRICS.map((m) => `${m.title} ${m.value}`).join(", ");
+      const LOW_TXT = LOW_METRICS.map((m) => `${m.title} <b>${m.value}</b>`).join(", ");
       const ruleNote = NO_DEDUCT
-        ? `<div class="hr-rule good"><i class="ph-bold ph-shield-check"></i> Увольнительные <b>не списывают часы</b>: средний KPI <b>${AVG_TXT}</b> — ${AVG_TXT_MIN} и выше, и ни один показатель не ниже ${MIN_METRIC}.</div>`
-        : `<div class="hr-rule warn"><i class="ph-bold ph-warning"></i> Увольнительные <b>списывают часы</b>: ${LOW_TXT ? `показатели ниже ${MIN_METRIC} — <b>${LOW_TXT}</b>` : `средний KPI <b>${AVG_TXT}</b> ниже ${AVG_TXT_MIN}`}. Чтобы не списывались — средний ${AVG_TXT_MIN}+ и все показатели от ${MIN_METRIC}.</div>`;
+        ? `<div class="hr-rule good"><i class="ph-bold ph-shield-check"></i> Увольнительные <b>не списывают часы</b>: все показатели за последний месяц ${MIN_METRIC} и выше.</div>`
+        : `<div class="hr-rule warn"><i class="ph-bold ph-warning"></i> Увольнительные <b>списывают часы</b>: ${LOW_TXT ? `показатели ниже ${MIN_METRIC} — ${LOW_TXT}` : `есть показатель ${HARD_METRIC} и ниже`}. Чтобы не списывались — все показатели от ${MIN_METRIC}.</div>`;
       const queueNote = QUEUE_LVL
         ? `<div class="hr-rule gold"><i class="ph-bold ph-crown-simple"></i> <b>LVL ${emp.lvl} · ${lvlNow ? lvlNow.title : ""}</b> — право увольнительной <b>вне очереди</b>: приоритет при выборе даты и времени.</div>`
         : `<div class="hr-rule muted"><i class="ph-bold ph-lock"></i> Внеочередная увольнительная откроется на <b>LVL ${HR_RULES.queueFromLvl}</b> «${(lvlInfo(HR_RULES.queueFromLvl) || {}).title || ""}» — сейчас LVL ${emp.lvl}.</div>`;
-      box.innerHTML = `<div class="hr-rules">${ruleNote}${queueNote}</div>
-        <div class="gs-hours">
+      box.innerHTML = `<div class="gs-hours">
         <div class="gs-h-card ${b.balance >= 0 ? "pos" : "neg"}">
           <span class="gs-h-k">${b.balance >= 0 ? "Переработка" : "Долг по часам"}</span>
           <span class="gs-h-v">${b.balance >= 0 ? "+" : "−"}${fmtH(Math.abs(b.balance))}</span>
@@ -1035,7 +1055,8 @@
         <div class="gs-h-card"><span class="gs-h-k">Списано</span><span class="gs-h-v bad">−${fmtH(b.minus)}</span><span class="gs-h-s">${NO_DEDUCT ? "увольнительные не списываются" : "увольнительные списываются"}</span></div>
         <div class="gs-h-card"><span class="gs-h-k">Отгулы за вых. смены</span><span class="gs-h-v">${fmtH(b.dayoffs)}</span><span class="gs-h-s">компенсация выходных смен</span></div>
         <div class="gs-h-card"><span class="gs-h-k">На согласовании</span><span class="gs-h-v">${pending}</span><span class="gs-h-s">${pending === 1 ? "заявка" : "заявок"}</span></div>
-      </div>`;
+      </div>
+      <div class="hr-rules">${ruleNote}${queueNote}</div>`;
       const hist = document.getElementById("gs-history");
       if (hist) {
         hist.innerHTML = reqs.length ? reqs.map((r) => {
@@ -1115,8 +1136,8 @@
         ? `<label class="otp-f"><span>${label}</span><textarea name="${name}" rows="3" ${req ? "required" : ""} placeholder="Опиши подробно — это увидит руководитель"></textarea></label>`
         : `<label class="otp-f"><span>${label}</span><input type="${kind}" name="${name}" ${req ? "required" : ""}></label>`).join("")
         + (type === "leave" ? `<div class="otp-note"><i class="ph ph-info"></i> Увольнительная — не больше ${HR_RULES.leaveMaxHours} часов в день.</div>`
-            + (NO_DEDUCT ? `<div class="otp-note good"><i class="ph-bold ph-shield-check"></i> Без списания часов: средний KPI ${AVG_TXT} (${AVG_TXT_MIN}+) и все показатели от ${MIN_METRIC}.</div>`
-                         : `<div class="otp-note warn"><i class="ph-bold ph-warning"></i> Часы спишутся: ${LOW_TXT ? `показатели ниже ${MIN_METRIC} — ${LOW_TXT}` : `средний KPI ${AVG_TXT} ниже ${AVG_TXT_MIN}`}.</div>`)
+            + (NO_DEDUCT ? `<div class="otp-note good"><i class="ph-bold ph-shield-check"></i> Без списания часов: все показатели за последний месяц ${MIN_METRIC} и выше.</div>`
+                         : `<div class="otp-note warn"><i class="ph-bold ph-warning"></i> Часы спишутся: ${LOW_TXT ? `ниже ${MIN_METRIC} — ${LOW_TXT}` : `есть показатель ${HARD_METRIC} и ниже`}.</div>`)
             + (QUEUE_LVL ? `<div class="otp-note gold"><i class="ph-bold ph-crown-simple"></i> LVL ${emp.lvl} — увольнительная вне очереди.</div>` : "")
             : "")
         + `<div class="otp-form-foot"><button class="btn btn-primary" type="submit"><i class="ph-bold ph-paper-plane-tilt"></i> Отправить руководителю</button>

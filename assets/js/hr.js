@@ -45,11 +45,13 @@
       </span>
       ${r.status === "pending" && !decided
         ? `<span class="hr-actions">
+             ${r.type === "leave" ? `<label class="hr-nodeduct" title="Часы увольнительной не спишутся с переработки">
+               <input type="checkbox" data-nodeduct="${r.id}"> <span>не списывать</span></label>` : ""}
              <button class="hr-ok" data-ok="${r.id}" title="Одобрить"><i class="ph-bold ph-check"></i></button>
              <button class="hr-no" data-no="${r.id}" title="Отказать"><i class="ph-bold ph-x"></i></button>
            </span>`
         : r.status === "approved"
-          ? '<span class="req-st ok"><i class="ph-bold ph-check-circle"></i> подтверждено</span>'
+          ? `<span class="req-st ok"><i class="ph-bold ph-check-circle"></i> подтверждено${r.noDeduct ? " · без списания" : ""}</span>`
           : '<span class="req-st no"><i class="ph-bold ph-x-circle"></i> отказано</span>'}
     </div>`;
   }
@@ -73,7 +75,11 @@
       </div>
       <div class="hr-pending">${active.map((r) => row(r)).join("")}</div>`;
 
-    box.querySelectorAll("[data-ok]").forEach((b) => b.addEventListener("click", () => decide(b.dataset.ok, "approved")));
+    box.querySelectorAll("[data-ok]").forEach((b) => b.addEventListener("click", () => {
+      const id = b.dataset.ok;
+      const chk = box.querySelector(`[data-nodeduct="${id}"]`);
+      decide(id, "approved", "", chk ? chk.checked : false);
+    }));
     box.querySelectorAll("[data-no]").forEach((b) => b.addEventListener("click", () => {
       const id = b.dataset.no;
       const rowEl = box.querySelector(`.hr-row[data-id="${id}"]`);
@@ -91,12 +97,13 @@
     }));
   }
 
-  function decide(id, status, reject) {
+  function decide(id, status, reject, noDeduct) {
     const list = load2();
     const r = list.find((x) => x.id === id);
     if (!r) return;
     r.status = status;
     r.reject = reject || "";
+    if (status === "approved" && typeof noDeduct === "boolean") r.noDeduct = noDeduct;
     r.decided = new Date().toISOString();
     save2(list);
     if (CLOUD) CLOUD.upsert(r); else push(list);

@@ -809,6 +809,18 @@ def _surname(fio):
     return (fio or "").split()[0].lower().replace("ё", "е")
 
 
+def _no_deduct(latest):
+    """Часы увольнительных не списываются только без провальных показателей (см. константы выше)."""
+    vals = [latest.get(k) for k in MKEYS if latest.get(k) is not None]
+    if not vals:
+        return False
+    if any(v <= NO_DEDUCT_HARD_MAX for v in vals):
+        return False
+    if len([v for v in vals if v < NO_DEDUCT_MIN_METRIC]) >= NO_DEDUCT_LOW_LIMIT:
+        return False
+    return True
+
+
 def _cloud():
     """Облачная БД заявок (scripts/cloud.json): работает без ПК руководителя.
 
@@ -877,8 +889,14 @@ HOURS_BASE = {
     "frolov": 13, "bolgov": 8, "melnikov": 13, "khasanov": 1, "pestovsky": 6,
     "eliseev": 18, "zavyalov": 6, "yuryev": 5, "pospelova": 3,
 }
-NO_LEAVE_DEDUCTION_AVG = 9.0   # средний KPI за последний месяц ≥ 9.0 — увольнительные часы не списывают
-NO_DEDUCT_MIN_METRIC = 8        # ...и ни один показатель не ниже 8 (иначе списываются)
+# Часы увольнительных НЕ списываются, если у сотрудника нет «провальных» показателей:
+#   • любой показатель 6 и ниже — списание обязательно;
+#   • два и более показателя ниже 7 — тоже списание;
+#   • иначе (все показатели 7 и выше) — часы не списываются.
+# Средний KPI в этом решении больше не участвует.
+NO_DEDUCT_MIN_METRIC = 7
+NO_DEDUCT_HARD_MAX = 6
+NO_DEDUCT_LOW_LIMIT = 2
 
 
 NO_AUTO_NOTES = set()  # сотрудники, которым не генерируются плюсы/зоны автоматически
@@ -962,9 +980,7 @@ def build():
             "history": history,
             "current": current, "avg": avg, "growth_delta": growth_delta,
             "hours_base": HOURS_BASE.get(eid, 0),
-            "no_deduct": (latest.get("avg") or 0) >= NO_LEAVE_DEDUCTION_AVG
-                         and all(latest.get(k) is None or latest.get(k) >= NO_DEDUCT_MIN_METRIC for k in MKEYS)
-                         and any(latest.get(k) is not None for k in MKEYS),
+            "no_deduct": _no_deduct(latest),
             "no_deduct_low": [{"key": k, "title": (METRICS.get(k) or {}).get("label", k),
                                "value": latest.get(k)} for k in MKEYS
                               if latest.get(k) is not None and latest.get(k) < NO_DEDUCT_MIN_METRIC],
@@ -1000,9 +1016,9 @@ def build():
         "awardsCatalog": AWARDS_CATALOG,
         "rules": RULES,
         "bonusRules": BONUS_RULES,
-        "hrRules": {"noDeductAvg": NO_LEAVE_DEDUCTION_AVG, "noDeductMin": NO_DEDUCT_MIN_METRIC, "leaveMaxHours": 4,
+        "hrRules": {"noDeductMin": NO_DEDUCT_MIN_METRIC, "noDeductHard": NO_DEDUCT_HARD_MAX,
+                    "noDeductLowLimit": NO_DEDUCT_LOW_LIMIT, "leaveMaxHours": 4,
                     "queueFromLvl": 2, "hoursBaseDate": "02.10.2026",
-                    "endpoint": _endpoint(),
                     "cloud": _cloud()},
         "months": [month_label(m) for m in months],
         "employees": result,
