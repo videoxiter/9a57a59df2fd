@@ -14476,5 +14476,4718 @@ window.OTP_DATA = {
       "gapUp": 2,
       "gapDown": null
     }
-  ]
+  ],
+  "schedule": {
+    "generated": "2026-10-02",
+    "legend": {
+      "1": {
+        "kind": "shift",
+        "title": "Смена 1",
+        "time": "03:00–11:00",
+        "breaks": [
+          "05:45–06:00",
+          "09:00–09:15"
+        ],
+        "lunch": null
+      },
+      "2": {
+        "kind": "shift",
+        "title": "Смена 2",
+        "time": "09:00–18:00",
+        "breaks": [
+          "10:45–11:00",
+          "15:45–16:00"
+        ],
+        "lunch": "13:00–14:00"
+      },
+      "3": {
+        "kind": "shift",
+        "title": "Смена 3",
+        "time": "10:00–19:00",
+        "breaks": [
+          "11:45–12:00",
+          "16:45–17:00"
+        ],
+        "lunch": "14:00–15:00"
+      },
+      "I": {
+        "kind": "weekend",
+        "title": "Выходная смена I",
+        "time": "03:00–10:00",
+        "breaks": [
+          "05:00–05:15",
+          "07:30–07:45"
+        ],
+        "lunch": null
+      },
+      "II": {
+        "kind": "weekend",
+        "title": "Выходная смена II",
+        "time": "08:00–17:00",
+        "breaks": [
+          "10:15–10:30",
+          "15:00–15:15"
+        ],
+        "lunch": "12:00–13:00"
+      },
+      "III": {
+        "kind": "weekend",
+        "title": "Выходная смена III",
+        "time": "10:00–19:00",
+        "breaks": [
+          "11:45–12:00",
+          "16:30–16:45"
+        ],
+        "lunch": "14:00–15:00"
+      },
+      "Ср": {
+        "kind": "duty",
+        "title": "Дежурный по срочке",
+        "time": "09:00–18:00",
+        "breaks": [],
+        "lunch": "13:00–14:00"
+      },
+      "Т": {
+        "kind": "duty",
+        "title": "Дежурство «Тания»",
+        "time": "09:00–18:00",
+        "breaks": [],
+        "lunch": "13:00–14:00"
+      },
+      "Д": {
+        "kind": "extra",
+        "title": "Дополнительная смена",
+        "time": "по графику",
+        "breaks": [],
+        "lunch": null
+      },
+      "В": {
+        "kind": "off",
+        "title": "Выходной",
+        "time": null,
+        "breaks": [],
+        "lunch": null
+      },
+      "О": {
+        "kind": "vacation",
+        "title": "Отпуск",
+        "time": null,
+        "breaks": [],
+        "lunch": null
+      },
+      "Б": {
+        "kind": "sick",
+        "title": "Больничный",
+        "time": null,
+        "breaks": [],
+        "lunch": null
+      },
+      "У": {
+        "kind": "study",
+        "title": "Учебный отпуск",
+        "time": null,
+        "breaks": [],
+        "lunch": null
+      },
+      "Я": {
+        "kind": "workoff",
+        "title": "Отработка за отгул",
+        "time": null,
+        "breaks": [],
+        "lunch": null
+      },
+      "НВ": {
+        "kind": "dayoff",
+        "title": "Отгул с отработкой",
+        "time": null,
+        "breaks": [],
+        "lunch": null
+      },
+      "X": {
+        "kind": "dayoff",
+        "title": "Отгул за свой счёт",
+        "time": null,
+        "breaks": [],
+        "lunch": null
+      },
+      "К": {
+        "kind": "trip",
+        "title": "Командировка",
+        "time": null,
+        "breaks": [],
+        "lunch": null
+      },
+      "С": {
+        "kind": "seminar",
+        "title": "Семинар",
+        "time": null,
+        "breaks": [],
+        "lunch": null
+      },
+      "2Р": {
+        "kind": "weekend",
+        "title": "Рабочий выходной (смена 2)",
+        "time": "09:00–18:00",
+        "breaks": [
+          "10:45–11:00",
+          "15:45–16:00"
+        ],
+        "lunch": "13:00–14:00"
+      },
+      "3Р": {
+        "kind": "weekend",
+        "title": "Рабочий выходной (смена 3)",
+        "time": "10:00–19:00",
+        "breaks": [
+          "11:45–12:00",
+          "16:45–17:00"
+        ],
+        "lunch": "14:00–15:00"
+      }
+    },
+    "months": {
+      "2026-10": {
+        "shifts": {
+          "Яковлев Евгений Евгеньевич": {
+            "1": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "2": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "3": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "4": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "5": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "6": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "7": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "8": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "9": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "10": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "11": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "12": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "13": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "14": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "15": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "16": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "17": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "18": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "19": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "20": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "21": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "22": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "23": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "24": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "25": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "26": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "27": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "28": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "29": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "30": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "31": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            }
+          },
+          "Яковленков Владислав Юрьевич": {
+            "1": {
+              "sym": "Ср",
+              "kind": "duty",
+              "title": "Дежурный по срочке",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "2": {
+              "sym": "Ср",
+              "kind": "duty",
+              "title": "Дежурный по срочке",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "3": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "4": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "5": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "6": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "7": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "8": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "9": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "10": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "11": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "12": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "13": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "14": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "15": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "16": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "17": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "18": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "19": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "20": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "21": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "22": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "23": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "24": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "25": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "26": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "27": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "28": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "29": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "30": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "31": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            }
+          },
+          "Фролов Павел Александрович": {
+            "1": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "2": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "3": {
+              "sym": "I",
+              "kind": "weekend",
+              "title": "Выходная смена I",
+              "time": "03:00–10:00",
+              "breaks": [
+                "05:00–05:15",
+                "07:30–07:45"
+              ],
+              "lunch": null
+            },
+            "4": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "5": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "6": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "7": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "8": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "9": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "10": {
+              "sym": "I",
+              "kind": "weekend",
+              "title": "Выходная смена I",
+              "time": "03:00–10:00",
+              "breaks": [
+                "05:00–05:15",
+                "07:30–07:45"
+              ],
+              "lunch": null
+            },
+            "11": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "12": {
+              "sym": "Ср",
+              "kind": "duty",
+              "title": "Дежурный по срочке",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "13": {
+              "sym": "Ср",
+              "kind": "duty",
+              "title": "Дежурный по срочке",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "14": {
+              "sym": "Ср",
+              "kind": "duty",
+              "title": "Дежурный по срочке",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "15": {
+              "sym": "Ср",
+              "kind": "duty",
+              "title": "Дежурный по срочке",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "16": {
+              "sym": "Ср",
+              "kind": "duty",
+              "title": "Дежурный по срочке",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "17": {
+              "sym": "I",
+              "kind": "weekend",
+              "title": "Выходная смена I",
+              "time": "03:00–10:00",
+              "breaks": [
+                "05:00–05:15",
+                "07:30–07:45"
+              ],
+              "lunch": null
+            },
+            "18": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "19": {
+              "sym": "Ср",
+              "kind": "duty",
+              "title": "Дежурный по срочке",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "20": {
+              "sym": "Ср",
+              "kind": "duty",
+              "title": "Дежурный по срочке",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "21": {
+              "sym": "Ср",
+              "kind": "duty",
+              "title": "Дежурный по срочке",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "22": {
+              "sym": "Ср",
+              "kind": "duty",
+              "title": "Дежурный по срочке",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "23": {
+              "sym": "Ср",
+              "kind": "duty",
+              "title": "Дежурный по срочке",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "24": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "25": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "26": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "27": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "28": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "29": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "30": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "31": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            }
+          },
+          "Мельников Алексей Сергеевич": {
+            "1": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "2": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "3": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "4": {
+              "sym": "I",
+              "kind": "weekend",
+              "title": "Выходная смена I",
+              "time": "03:00–10:00",
+              "breaks": [
+                "05:00–05:15",
+                "07:30–07:45"
+              ],
+              "lunch": null
+            },
+            "5": {
+              "sym": "Т",
+              "kind": "duty",
+              "title": "Дежурство «Тания»",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "6": {
+              "sym": "Т",
+              "kind": "duty",
+              "title": "Дежурство «Тания»",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "7": {
+              "sym": "Т",
+              "kind": "duty",
+              "title": "Дежурство «Тания»",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "8": {
+              "sym": "Т",
+              "kind": "duty",
+              "title": "Дежурство «Тания»",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "9": {
+              "sym": "Т",
+              "kind": "duty",
+              "title": "Дежурство «Тания»",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "10": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "11": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "12": {
+              "sym": "О",
+              "kind": "vacation",
+              "title": "Отпуск",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "13": {
+              "sym": "О",
+              "kind": "vacation",
+              "title": "Отпуск",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "14": {
+              "sym": "О",
+              "kind": "vacation",
+              "title": "Отпуск",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "15": {
+              "sym": "О",
+              "kind": "vacation",
+              "title": "Отпуск",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "16": {
+              "sym": "О",
+              "kind": "vacation",
+              "title": "Отпуск",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "17": {
+              "sym": "О",
+              "kind": "vacation",
+              "title": "Отпуск",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "18": {
+              "sym": "О",
+              "kind": "vacation",
+              "title": "Отпуск",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "19": {
+              "sym": "О",
+              "kind": "vacation",
+              "title": "Отпуск",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "20": {
+              "sym": "О",
+              "kind": "vacation",
+              "title": "Отпуск",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "21": {
+              "sym": "О",
+              "kind": "vacation",
+              "title": "Отпуск",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "22": {
+              "sym": "О",
+              "kind": "vacation",
+              "title": "Отпуск",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "23": {
+              "sym": "О",
+              "kind": "vacation",
+              "title": "Отпуск",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "24": {
+              "sym": "О",
+              "kind": "vacation",
+              "title": "Отпуск",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "25": {
+              "sym": "О",
+              "kind": "vacation",
+              "title": "Отпуск",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "26": {
+              "sym": "3",
+              "kind": "shift",
+              "title": "Смена 3",
+              "time": "10:00–19:00",
+              "breaks": [
+                "11:45–12:00",
+                "16:45–17:00"
+              ],
+              "lunch": "14:00–15:00"
+            },
+            "27": {
+              "sym": "3",
+              "kind": "shift",
+              "title": "Смена 3",
+              "time": "10:00–19:00",
+              "breaks": [
+                "11:45–12:00",
+                "16:45–17:00"
+              ],
+              "lunch": "14:00–15:00"
+            },
+            "28": {
+              "sym": "3",
+              "kind": "shift",
+              "title": "Смена 3",
+              "time": "10:00–19:00",
+              "breaks": [
+                "11:45–12:00",
+                "16:45–17:00"
+              ],
+              "lunch": "14:00–15:00"
+            },
+            "29": {
+              "sym": "3",
+              "kind": "shift",
+              "title": "Смена 3",
+              "time": "10:00–19:00",
+              "breaks": [
+                "11:45–12:00",
+                "16:45–17:00"
+              ],
+              "lunch": "14:00–15:00"
+            },
+            "30": {
+              "sym": "3",
+              "kind": "shift",
+              "title": "Смена 3",
+              "time": "10:00–19:00",
+              "breaks": [
+                "11:45–12:00",
+                "16:45–17:00"
+              ],
+              "lunch": "14:00–15:00"
+            },
+            "31": {
+              "sym": "I",
+              "kind": "weekend",
+              "title": "Выходная смена I",
+              "time": "03:00–10:00",
+              "breaks": [
+                "05:00–05:15",
+                "07:30–07:45"
+              ],
+              "lunch": null
+            }
+          },
+          "Хасанов Радион Равильевич": {
+            "1": {
+              "sym": "3",
+              "kind": "shift",
+              "title": "Смена 3",
+              "time": "10:00–19:00",
+              "breaks": [
+                "11:45–12:00",
+                "16:45–17:00"
+              ],
+              "lunch": "14:00–15:00"
+            },
+            "2": {
+              "sym": "3",
+              "kind": "shift",
+              "title": "Смена 3",
+              "time": "10:00–19:00",
+              "breaks": [
+                "11:45–12:00",
+                "16:45–17:00"
+              ],
+              "lunch": "14:00–15:00"
+            },
+            "3": {
+              "sym": "II",
+              "kind": "weekend",
+              "title": "Выходная смена II",
+              "time": "08:00–17:00",
+              "breaks": [
+                "10:15–10:30",
+                "15:00–15:15"
+              ],
+              "lunch": "12:00–13:00"
+            },
+            "4": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "5": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "6": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "7": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "8": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "9": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "10": {
+              "sym": "II",
+              "kind": "weekend",
+              "title": "Выходная смена II",
+              "time": "08:00–17:00",
+              "breaks": [
+                "10:15–10:30",
+                "15:00–15:15"
+              ],
+              "lunch": "12:00–13:00"
+            },
+            "11": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "12": {
+              "sym": "3",
+              "kind": "shift",
+              "title": "Смена 3",
+              "time": "10:00–19:00",
+              "breaks": [
+                "11:45–12:00",
+                "16:45–17:00"
+              ],
+              "lunch": "14:00–15:00"
+            },
+            "13": {
+              "sym": "3",
+              "kind": "shift",
+              "title": "Смена 3",
+              "time": "10:00–19:00",
+              "breaks": [
+                "11:45–12:00",
+                "16:45–17:00"
+              ],
+              "lunch": "14:00–15:00"
+            },
+            "14": {
+              "sym": "3",
+              "kind": "shift",
+              "title": "Смена 3",
+              "time": "10:00–19:00",
+              "breaks": [
+                "11:45–12:00",
+                "16:45–17:00"
+              ],
+              "lunch": "14:00–15:00"
+            },
+            "15": {
+              "sym": "3",
+              "kind": "shift",
+              "title": "Смена 3",
+              "time": "10:00–19:00",
+              "breaks": [
+                "11:45–12:00",
+                "16:45–17:00"
+              ],
+              "lunch": "14:00–15:00"
+            },
+            "16": {
+              "sym": "3",
+              "kind": "shift",
+              "title": "Смена 3",
+              "time": "10:00–19:00",
+              "breaks": [
+                "11:45–12:00",
+                "16:45–17:00"
+              ],
+              "lunch": "14:00–15:00"
+            },
+            "17": {
+              "sym": "II",
+              "kind": "weekend",
+              "title": "Выходная смена II",
+              "time": "08:00–17:00",
+              "breaks": [
+                "10:15–10:30",
+                "15:00–15:15"
+              ],
+              "lunch": "12:00–13:00"
+            },
+            "18": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "19": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "20": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "21": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "22": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "23": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "24": {
+              "sym": "I",
+              "kind": "weekend",
+              "title": "Выходная смена I",
+              "time": "03:00–10:00",
+              "breaks": [
+                "05:00–05:15",
+                "07:30–07:45"
+              ],
+              "lunch": null
+            },
+            "25": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "26": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "27": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "28": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "29": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "30": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "31": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            }
+          },
+          "Пестовский Георгий Александрович": {
+            "1": {
+              "sym": "Б",
+              "kind": "sick",
+              "title": "Больничный",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "2": {
+              "sym": "Б",
+              "kind": "sick",
+              "title": "Больничный",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "3": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "4": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "5": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "6": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "7": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "8": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "9": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "10": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "11": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "12": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "13": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "14": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "15": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "16": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "17": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "18": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "19": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "20": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "21": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "22": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "23": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "24": {
+              "sym": "II",
+              "kind": "weekend",
+              "title": "Выходная смена II",
+              "time": "08:00–17:00",
+              "breaks": [
+                "10:15–10:30",
+                "15:00–15:15"
+              ],
+              "lunch": "12:00–13:00"
+            },
+            "25": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "26": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "27": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "28": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "29": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "30": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "31": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            }
+          },
+          "Елисеев Антон Андреевич": {
+            "1": {
+              "sym": "О",
+              "kind": "vacation",
+              "title": "Отпуск",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "2": {
+              "sym": "О",
+              "kind": "vacation",
+              "title": "Отпуск",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "3": {
+              "sym": "О",
+              "kind": "vacation",
+              "title": "Отпуск",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "4": {
+              "sym": "О",
+              "kind": "vacation",
+              "title": "Отпуск",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "5": {
+              "sym": "3",
+              "kind": "shift",
+              "title": "Смена 3",
+              "time": "10:00–19:00",
+              "breaks": [
+                "11:45–12:00",
+                "16:45–17:00"
+              ],
+              "lunch": "14:00–15:00"
+            },
+            "6": {
+              "sym": "3",
+              "kind": "shift",
+              "title": "Смена 3",
+              "time": "10:00–19:00",
+              "breaks": [
+                "11:45–12:00",
+                "16:45–17:00"
+              ],
+              "lunch": "14:00–15:00"
+            },
+            "7": {
+              "sym": "3",
+              "kind": "shift",
+              "title": "Смена 3",
+              "time": "10:00–19:00",
+              "breaks": [
+                "11:45–12:00",
+                "16:45–17:00"
+              ],
+              "lunch": "14:00–15:00"
+            },
+            "8": {
+              "sym": "3",
+              "kind": "shift",
+              "title": "Смена 3",
+              "time": "10:00–19:00",
+              "breaks": [
+                "11:45–12:00",
+                "16:45–17:00"
+              ],
+              "lunch": "14:00–15:00"
+            },
+            "9": {
+              "sym": "3",
+              "kind": "shift",
+              "title": "Смена 3",
+              "time": "10:00–19:00",
+              "breaks": [
+                "11:45–12:00",
+                "16:45–17:00"
+              ],
+              "lunch": "14:00–15:00"
+            },
+            "10": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "11": {
+              "sym": "II",
+              "kind": "weekend",
+              "title": "Выходная смена II",
+              "time": "08:00–17:00",
+              "breaks": [
+                "10:15–10:30",
+                "15:00–15:15"
+              ],
+              "lunch": "12:00–13:00"
+            },
+            "12": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "13": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "14": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "15": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "16": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "17": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "18": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "19": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "20": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "21": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "22": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "23": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "24": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "25": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "26": {
+              "sym": "Т",
+              "kind": "duty",
+              "title": "Дежурство «Тания»",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "27": {
+              "sym": "Т",
+              "kind": "duty",
+              "title": "Дежурство «Тания»",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "28": {
+              "sym": "Т",
+              "kind": "duty",
+              "title": "Дежурство «Тания»",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "29": {
+              "sym": "Т",
+              "kind": "duty",
+              "title": "Дежурство «Тания»",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "30": {
+              "sym": "Т",
+              "kind": "duty",
+              "title": "Дежурство «Тания»",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "31": {
+              "sym": "II",
+              "kind": "weekend",
+              "title": "Выходная смена II",
+              "time": "08:00–17:00",
+              "breaks": [
+                "10:15–10:30",
+                "15:00–15:15"
+              ],
+              "lunch": "12:00–13:00"
+            }
+          },
+          "Завьялов Максим Вячеславович": {
+            "1": {
+              "sym": "1",
+              "kind": "shift",
+              "title": "Смена 1",
+              "time": "03:00–11:00",
+              "breaks": [
+                "05:45–06:00",
+                "09:00–09:15"
+              ],
+              "lunch": null
+            },
+            "2": {
+              "sym": "1",
+              "kind": "shift",
+              "title": "Смена 1",
+              "time": "03:00–11:00",
+              "breaks": [
+                "05:45–06:00",
+                "09:00–09:15"
+              ],
+              "lunch": null
+            },
+            "3": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "4": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "5": {
+              "sym": "1",
+              "kind": "shift",
+              "title": "Смена 1",
+              "time": "03:00–11:00",
+              "breaks": [
+                "05:45–06:00",
+                "09:00–09:15"
+              ],
+              "lunch": null
+            },
+            "6": {
+              "sym": "1",
+              "kind": "shift",
+              "title": "Смена 1",
+              "time": "03:00–11:00",
+              "breaks": [
+                "05:45–06:00",
+                "09:00–09:15"
+              ],
+              "lunch": null
+            },
+            "7": {
+              "sym": "1",
+              "kind": "shift",
+              "title": "Смена 1",
+              "time": "03:00–11:00",
+              "breaks": [
+                "05:45–06:00",
+                "09:00–09:15"
+              ],
+              "lunch": null
+            },
+            "8": {
+              "sym": "1",
+              "kind": "shift",
+              "title": "Смена 1",
+              "time": "03:00–11:00",
+              "breaks": [
+                "05:45–06:00",
+                "09:00–09:15"
+              ],
+              "lunch": null
+            },
+            "9": {
+              "sym": "1",
+              "kind": "shift",
+              "title": "Смена 1",
+              "time": "03:00–11:00",
+              "breaks": [
+                "05:45–06:00",
+                "09:00–09:15"
+              ],
+              "lunch": null
+            },
+            "10": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "11": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "12": {
+              "sym": "1",
+              "kind": "shift",
+              "title": "Смена 1",
+              "time": "03:00–11:00",
+              "breaks": [
+                "05:45–06:00",
+                "09:00–09:15"
+              ],
+              "lunch": null
+            },
+            "13": {
+              "sym": "1",
+              "kind": "shift",
+              "title": "Смена 1",
+              "time": "03:00–11:00",
+              "breaks": [
+                "05:45–06:00",
+                "09:00–09:15"
+              ],
+              "lunch": null
+            },
+            "14": {
+              "sym": "1",
+              "kind": "shift",
+              "title": "Смена 1",
+              "time": "03:00–11:00",
+              "breaks": [
+                "05:45–06:00",
+                "09:00–09:15"
+              ],
+              "lunch": null
+            },
+            "15": {
+              "sym": "1",
+              "kind": "shift",
+              "title": "Смена 1",
+              "time": "03:00–11:00",
+              "breaks": [
+                "05:45–06:00",
+                "09:00–09:15"
+              ],
+              "lunch": null
+            },
+            "16": {
+              "sym": "1",
+              "kind": "shift",
+              "title": "Смена 1",
+              "time": "03:00–11:00",
+              "breaks": [
+                "05:45–06:00",
+                "09:00–09:15"
+              ],
+              "lunch": null
+            },
+            "17": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "18": {
+              "sym": "I",
+              "kind": "weekend",
+              "title": "Выходная смена I",
+              "time": "03:00–10:00",
+              "breaks": [
+                "05:00–05:15",
+                "07:30–07:45"
+              ],
+              "lunch": null
+            },
+            "19": {
+              "sym": "1",
+              "kind": "shift",
+              "title": "Смена 1",
+              "time": "03:00–11:00",
+              "breaks": [
+                "05:45–06:00",
+                "09:00–09:15"
+              ],
+              "lunch": null
+            },
+            "20": {
+              "sym": "1",
+              "kind": "shift",
+              "title": "Смена 1",
+              "time": "03:00–11:00",
+              "breaks": [
+                "05:45–06:00",
+                "09:00–09:15"
+              ],
+              "lunch": null
+            },
+            "21": {
+              "sym": "1",
+              "kind": "shift",
+              "title": "Смена 1",
+              "time": "03:00–11:00",
+              "breaks": [
+                "05:45–06:00",
+                "09:00–09:15"
+              ],
+              "lunch": null
+            },
+            "22": {
+              "sym": "1",
+              "kind": "shift",
+              "title": "Смена 1",
+              "time": "03:00–11:00",
+              "breaks": [
+                "05:45–06:00",
+                "09:00–09:15"
+              ],
+              "lunch": null
+            },
+            "23": {
+              "sym": "1",
+              "kind": "shift",
+              "title": "Смена 1",
+              "time": "03:00–11:00",
+              "breaks": [
+                "05:45–06:00",
+                "09:00–09:15"
+              ],
+              "lunch": null
+            },
+            "24": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "25": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "26": {
+              "sym": "1",
+              "kind": "shift",
+              "title": "Смена 1",
+              "time": "03:00–11:00",
+              "breaks": [
+                "05:45–06:00",
+                "09:00–09:15"
+              ],
+              "lunch": null
+            },
+            "27": {
+              "sym": "1",
+              "kind": "shift",
+              "title": "Смена 1",
+              "time": "03:00–11:00",
+              "breaks": [
+                "05:45–06:00",
+                "09:00–09:15"
+              ],
+              "lunch": null
+            },
+            "28": {
+              "sym": "1",
+              "kind": "shift",
+              "title": "Смена 1",
+              "time": "03:00–11:00",
+              "breaks": [
+                "05:45–06:00",
+                "09:00–09:15"
+              ],
+              "lunch": null
+            },
+            "29": {
+              "sym": "1",
+              "kind": "shift",
+              "title": "Смена 1",
+              "time": "03:00–11:00",
+              "breaks": [
+                "05:45–06:00",
+                "09:00–09:15"
+              ],
+              "lunch": null
+            },
+            "30": {
+              "sym": "1",
+              "kind": "shift",
+              "title": "Смена 1",
+              "time": "03:00–11:00",
+              "breaks": [
+                "05:45–06:00",
+                "09:00–09:15"
+              ],
+              "lunch": null
+            },
+            "31": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            }
+          },
+          "Болгов Андрей Владимирович": {
+            "1": {
+              "sym": "Т",
+              "kind": "duty",
+              "title": "Дежурство «Тания»",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "2": {
+              "sym": "Т",
+              "kind": "duty",
+              "title": "Дежурство «Тания»",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "3": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "4": {
+              "sym": "II",
+              "kind": "weekend",
+              "title": "Выходная смена II",
+              "time": "08:00–17:00",
+              "breaks": [
+                "10:15–10:30",
+                "15:00–15:15"
+              ],
+              "lunch": "12:00–13:00"
+            },
+            "5": {
+              "sym": "Ср",
+              "kind": "duty",
+              "title": "Дежурный по срочке",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "6": {
+              "sym": "Ср",
+              "kind": "duty",
+              "title": "Дежурный по срочке",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "7": {
+              "sym": "Ср",
+              "kind": "duty",
+              "title": "Дежурный по срочке",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "8": {
+              "sym": "Ср",
+              "kind": "duty",
+              "title": "Дежурный по срочке",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "9": {
+              "sym": "Ср",
+              "kind": "duty",
+              "title": "Дежурный по срочке",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "10": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "11": {
+              "sym": "I",
+              "kind": "weekend",
+              "title": "Выходная смена I",
+              "time": "03:00–10:00",
+              "breaks": [
+                "05:00–05:15",
+                "07:30–07:45"
+              ],
+              "lunch": null
+            },
+            "12": {
+              "sym": "Т",
+              "kind": "duty",
+              "title": "Дежурство «Тания»",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "13": {
+              "sym": "Т",
+              "kind": "duty",
+              "title": "Дежурство «Тания»",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "14": {
+              "sym": "Т",
+              "kind": "duty",
+              "title": "Дежурство «Тания»",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "15": {
+              "sym": "Т",
+              "kind": "duty",
+              "title": "Дежурство «Тания»",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "16": {
+              "sym": "Т",
+              "kind": "duty",
+              "title": "Дежурство «Тания»",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "17": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "18": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "19": {
+              "sym": "Т",
+              "kind": "duty",
+              "title": "Дежурство «Тания»",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "20": {
+              "sym": "Т",
+              "kind": "duty",
+              "title": "Дежурство «Тания»",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "21": {
+              "sym": "Т",
+              "kind": "duty",
+              "title": "Дежурство «Тания»",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "22": {
+              "sym": "Т",
+              "kind": "duty",
+              "title": "Дежурство «Тания»",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "23": {
+              "sym": "Т",
+              "kind": "duty",
+              "title": "Дежурство «Тания»",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "24": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "25": {
+              "sym": "I",
+              "kind": "weekend",
+              "title": "Выходная смена I",
+              "time": "03:00–10:00",
+              "breaks": [
+                "05:00–05:15",
+                "07:30–07:45"
+              ],
+              "lunch": null
+            },
+            "26": {
+              "sym": "Ср",
+              "kind": "duty",
+              "title": "Дежурный по срочке",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "27": {
+              "sym": "Ср",
+              "kind": "duty",
+              "title": "Дежурный по срочке",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "28": {
+              "sym": "Ср",
+              "kind": "duty",
+              "title": "Дежурный по срочке",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "29": {
+              "sym": "Ср",
+              "kind": "duty",
+              "title": "Дежурный по срочке",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "30": {
+              "sym": "Ср",
+              "kind": "duty",
+              "title": "Дежурный по срочке",
+              "time": "09:00–18:00",
+              "breaks": [],
+              "lunch": "13:00–14:00"
+            },
+            "31": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            }
+          },
+          "Юрьев Сергей Олегович": {
+            "1": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "2": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "3": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "4": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "5": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "6": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "7": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "8": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "9": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "10": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "11": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "12": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "13": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "14": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "15": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "16": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "17": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "18": {
+              "sym": "II",
+              "kind": "weekend",
+              "title": "Выходная смена II",
+              "time": "08:00–17:00",
+              "breaks": [
+                "10:15–10:30",
+                "15:00–15:15"
+              ],
+              "lunch": "12:00–13:00"
+            },
+            "19": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "20": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "21": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "22": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "23": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "24": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "25": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "26": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "27": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "28": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "29": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "30": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "31": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            }
+          },
+          "Поспелова Екатерина Алексеевна": {
+            "1": {
+              "sym": "О",
+              "kind": "vacation",
+              "title": "Отпуск",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "2": {
+              "sym": "О",
+              "kind": "vacation",
+              "title": "Отпуск",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "3": {
+              "sym": "О",
+              "kind": "vacation",
+              "title": "Отпуск",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "4": {
+              "sym": "О",
+              "kind": "vacation",
+              "title": "Отпуск",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "5": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "6": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "7": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "8": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "9": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "10": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "11": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "12": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "13": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "14": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "15": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "16": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "17": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "18": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "19": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "20": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "21": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "22": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "23": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "24": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "25": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "26": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "27": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "28": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "29": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "30": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "31": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            }
+          }
+        },
+        "lines": {
+          "L0": {
+            "title": "супервайзинг и контроль",
+            "weeks": [
+              "Яковленков Владислав Юрьевич",
+              "Болгов Андрей Владимирович",
+              "Фролов Павел Александрович",
+              "Фролов Павел Александрович",
+              "Болгов Андрей Владимирович"
+            ],
+            "labels": [
+              "28.09-02.10",
+              "05.10-09.10",
+              "12.10-16.10",
+              "19.10-23.10",
+              "26.10-30.10"
+            ]
+          },
+          "L1.1": {
+            "title": "первая линия",
+            "weeks": [
+              "Юрьев Сергей Олегович",
+              "Мельников Алексей Сергеевич",
+              "Елисеев Антон Андреевич",
+              "Хасанов Радион Равильевич",
+              "Хасанов Радион Равильевич"
+            ],
+            "labels": [
+              "28.09-02.10",
+              "05.10-09.10",
+              "12.10-16.10",
+              "19.10-23.10",
+              "26.10-30.10"
+            ]
+          },
+          "L1.2": {
+            "title": "сервисные задачи",
+            "weeks": [
+              "Хасанов Радион Равильевич",
+              "Елисеев Антон Андреевич",
+              "Хасанов Радион Равильевич",
+              "Сафронов В.А.",
+              "Мельников Алексей Сергеевич"
+            ],
+            "labels": [
+              "28.09-02.10",
+              "05.10-09.10",
+              "12.10-16.10",
+              "19.10-23.10",
+              "26.10-30.10"
+            ]
+          },
+          "L2.1": {
+            "title": "вторая линия",
+            "weeks": [
+              "Пестовский Георгий Александрович",
+              "Хасанов Радион Равильевич",
+              "Пестовский Георгий Александрович",
+              "Пестовский Георгий Александрович",
+              "Пестовский Георгий Александрович"
+            ],
+            "labels": [
+              "28.09-02.10",
+              "05.10-09.10",
+              "12.10-16.10",
+              "19.10-23.10",
+              "26.10-30.10"
+            ]
+          },
+          "L2.2": {
+            "title": "ЦО г.Северодвинск",
+            "weeks": [
+              "Фролов Павел Александрович",
+              "Пестовский Георгий Александрович",
+              "Пестовский Георгий Александрович",
+              "Пестовский Георгий Александрович",
+              "Пестовский Георгий Александрович"
+            ],
+            "labels": [
+              "28.09-02.10",
+              "05.10-09.10",
+              "12.10-16.10",
+              "19.10-23.10",
+              "26.10-30.10"
+            ]
+          },
+          "L2.3": {
+            "title": "ЦО г.Архангельск",
+            "weeks": [
+              "Яковленков Владислав Юрьевич",
+              "Мельников Алексей Сергеевич",
+              "Елисеев Антон Андреевич",
+              "Елисеев Антон Андреевич",
+              "Елисеев Антон Андреевич"
+            ],
+            "labels": [
+              "28.09-02.10",
+              "05.10-09.10",
+              "12.10-16.10",
+              "19.10-23.10",
+              "26.10-30.10"
+            ]
+          },
+          "L2.4": {
+            "title": "Корп.связь",
+            "weeks": [
+              "Мельников Алексей Сергеевич",
+              "Поспелова Екатерина Алексеевна",
+              "Поспелова Екатерина Алексеевна",
+              "Поспелова Екатерина Алексеевна",
+              "Поспелова Екатерина Алексеевна"
+            ],
+            "labels": [
+              "28.09-02.10",
+              "05.10-09.10",
+              "12.10-16.10",
+              "19.10-23.10",
+              "26.10-30.10"
+            ]
+          },
+          "L3": {
+            "title": "тех.инженеры",
+            "weeks": [
+              "Фролов Павел Александрович",
+              "Фролов Павел Александрович",
+              "Фролов Павел Александрович",
+              "Фролов Павел Александрович",
+              "Болгов Андрей Владимирович"
+            ],
+            "labels": [
+              "28.09-02.10",
+              "05.10-09.10",
+              "12.10-16.10",
+              "19.10-23.10",
+              "26.10-30.10"
+            ]
+          }
+        },
+        "facts": [
+          "Всего в этом месяце 22 рабочих дня и 9 выходных/праздничных дней.",
+          "Праздничные дни: -.",
+          "Сокращенный день (+1 час к фиксации времени переработки): -.",
+          "Выходных смен - 18 смен.",
+          "- отпуск с 21 сентября до 04 октября (14 дней), замещает",
+          "- отпуск с 21 сентября до 04 октября (14 дней), замещает",
+          "- отпуск с 12 октября до 25 октября (14 дней), замещает",
+          "- больничный с 25 сентября до (пока до 02 октября), замещает",
+          "У - Учебный отпуск"
+        ]
+      }
+    },
+    "vacations": {
+      "2021": {},
+      "2022": {
+        "Яковлев Евгений Евгеньевич": [
+          {
+            "from": "2022-01-10",
+            "to": "2022-01-14",
+            "days": 5
+          },
+          {
+            "from": "2022-05-03",
+            "to": "2022-05-06",
+            "days": 4
+          },
+          {
+            "from": "2022-08-08",
+            "to": "2022-08-26",
+            "days": 19
+          }
+        ],
+        "Колаев Евгений Олегович": [
+          {
+            "from": "2022-02-07",
+            "to": "2022-02-20",
+            "days": 14
+          },
+          {
+            "from": "2022-07-04",
+            "to": "2022-07-10",
+            "days": 7
+          },
+          {
+            "from": "2022-11-21",
+            "to": "2022-11-27",
+            "days": 7
+          }
+        ],
+        "Яковленков Владислав Юрьевич": [
+          {
+            "from": "2022-02-21",
+            "to": "2022-02-28",
+            "days": 8
+          },
+          {
+            "from": "2022-05-10",
+            "to": "2022-05-15",
+            "days": 6
+          },
+          {
+            "from": "2022-09-26",
+            "to": "2022-10-09",
+            "days": 14
+          }
+        ],
+        "Горшков Руслан Юрьевич [X]": [
+          {
+            "from": "2022-03-01",
+            "to": "2022-03-04",
+            "days": 4
+          },
+          {
+            "from": "2022-04-25",
+            "to": "2022-04-29",
+            "days": 5
+          },
+          {
+            "from": "2022-08-29",
+            "to": "2022-09-16",
+            "days": 19
+          }
+        ],
+        "Зубов Константин Андреевич": [
+          {
+            "from": "2022-03-09",
+            "to": "2022-03-22",
+            "days": 14
+          },
+          {
+            "from": "2022-10-17",
+            "to": "2022-10-23",
+            "days": 7
+          },
+          {
+            "from": "2022-11-02",
+            "to": "2022-11-08",
+            "days": 7
+          }
+        ],
+        "Иванов Сергей Александрович [X]": [
+          {
+            "from": "2022-03-23",
+            "to": "2022-03-31",
+            "days": 9
+          },
+          {
+            "from": "2022-07-12",
+            "to": "2022-07-30",
+            "days": 19
+          }
+        ],
+        "Поспелова Екатерина Алексеевна": [
+          {
+            "from": "2022-04-01",
+            "to": "2022-04-14",
+            "days": 14
+          },
+          {
+            "from": "2022-09-16",
+            "to": "2022-09-29",
+            "days": 14
+          }
+        ],
+        "Мельников Алексей Сергеевич": [
+          {
+            "from": "2022-04-18",
+            "to": "2022-04-24",
+            "days": 7
+          },
+          {
+            "from": "2022-05-16",
+            "to": "2022-05-29",
+            "days": 14
+          },
+          {
+            "from": "2022-07-31",
+            "to": "2022-08-06",
+            "days": 7
+          }
+        ],
+        "Артемов Владислав Алексеевич [X]": [
+          {
+            "from": "2022-06-24",
+            "to": "2022-07-03",
+            "days": 10
+          },
+          {
+            "from": "2022-10-13",
+            "to": "2022-10-16",
+            "days": 4
+          },
+          {
+            "from": "2022-12-01",
+            "to": "2022-12-14",
+            "days": 14
+          }
+        ],
+        "Хвиюзов Дмитрий Александрович": [
+          {
+            "from": "2022-09-17",
+            "to": "2022-09-23",
+            "days": 7
+          }
+        ],
+        "Емелин Александр Владиславович [X]": [
+          {
+            "from": "2022-10-10",
+            "to": "2022-10-12",
+            "days": 3
+          },
+          {
+            "from": "2022-11-09",
+            "to": "2022-11-20",
+            "days": 12
+          },
+          {
+            "from": "2022-11-28",
+            "to": "2022-11-30",
+            "days": 3
+          }
+        ],
+        "Ларс Эмиль Александрович [X]": [
+          {
+            "from": "2022-10-24",
+            "to": "2022-11-01",
+            "days": 9
+          }
+        ]
+      },
+      "2023": {
+        "Яковлев Евгений Евгеньевич": [
+          {
+            "from": "2023-01-09",
+            "to": "2023-01-13",
+            "days": 5
+          },
+          {
+            "from": "2023-06-12",
+            "to": "2023-06-30",
+            "days": 19
+          },
+          {
+            "from": "2023-12-19",
+            "to": "2023-12-22",
+            "days": 4
+          }
+        ],
+        "Ларс Эмиль Александрович [X]": [
+          {
+            "from": "2023-01-16",
+            "to": "2023-01-29",
+            "days": 14
+          },
+          {
+            "from": "2023-01-30",
+            "to": "2023-01-05",
+            "days": 7
+          },
+          {
+            "from": "2023-06-26",
+            "to": "2023-07-16",
+            "days": 21
+          },
+          {
+            "from": "2023-09-25",
+            "to": "2023-10-08",
+            "days": 14
+          }
+        ],
+        "Емелин Александр Владиславович [X]": [
+          {
+            "from": "2023-01-30",
+            "to": "2023-02-12",
+            "days": 14
+          },
+          {
+            "from": "2023-05-22",
+            "to": "2023-06-04",
+            "days": 14
+          }
+        ],
+        "Колаев Евгений Олегович": [
+          {
+            "from": "2023-02-13",
+            "to": "2023-02-19",
+            "days": 7
+          },
+          {
+            "from": "2023-06-26",
+            "to": "2023-07-09",
+            "days": 14
+          },
+          {
+            "from": "2023-11-20",
+            "to": "2023-11-26",
+            "days": 7
+          }
+        ],
+        "Артемов Владислав Алексеевич [X]": [
+          {
+            "from": "2023-02-20",
+            "to": "2023-03-05",
+            "days": 14
+          },
+          {
+            "from": "2023-04-10",
+            "to": "2023-04-14",
+            "days": 5
+          },
+          {
+            "from": "2023-10-23",
+            "to": "2023-10-27",
+            "days": 5
+          },
+          {
+            "from": "2023-12-04",
+            "to": "2023-12-07",
+            "days": 4
+          }
+        ],
+        "Хвиюзов Дмитрий Александрович": [
+          {
+            "from": "2023-03-06",
+            "to": "2023-03-27",
+            "days": 21
+          }
+        ],
+        "Яковленков Владислав Юрьевич": [
+          {
+            "from": "2023-03-20",
+            "to": "2023-03-26",
+            "days": 7
+          },
+          {
+            "from": "2023-08-21",
+            "to": "2023-09-10",
+            "days": 21
+          }
+        ],
+        "Зубов Константин Андреевич": [
+          {
+            "from": "2023-04-03",
+            "to": "2023-04-09",
+            "days": 7
+          },
+          {
+            "from": "2023-05-08",
+            "to": "2023-05-21",
+            "days": 14
+          },
+          {
+            "from": "2023-08-14",
+            "to": "2023-08-20",
+            "days": 7
+          }
+        ],
+        "Поспелова Екатерина Алексеевна": [
+          {
+            "from": "2023-04-03",
+            "to": "2023-04-07",
+            "days": 5
+          },
+          {
+            "from": "2023-07-29",
+            "to": "2023-08-01",
+            "days": 4
+          },
+          {
+            "from": "2023-09-11",
+            "to": "2023-09-24",
+            "days": 14
+          }
+        ],
+        "Иванов Сергей Александрович [X]": [
+          {
+            "from": "2023-04-17",
+            "to": "2023-04-30",
+            "days": 14
+          },
+          {
+            "from": "2023-11-06",
+            "to": "2023-11-19",
+            "days": 14
+          }
+        ],
+        "Горшков Руслан Юрьевич [X]": [
+          {
+            "from": "2023-05-02",
+            "to": "2023-05-05",
+            "days": 4
+          },
+          {
+            "from": "2023-07-10",
+            "to": "2023-07-28",
+            "days": 19
+          },
+          {
+            "from": "2023-10-30",
+            "to": "2023-11-03",
+            "days": 5
+          }
+        ],
+        "Шип Павел Дмитриевич [X]": [
+          {
+            "from": "2023-05-08",
+            "to": "2023-05-27",
+            "days": 20
+          }
+        ],
+        "Мельников Алексей Сергеевич": [
+          {
+            "from": "2023-07-24",
+            "to": "2023-08-06",
+            "days": 14
+          },
+          {
+            "from": "2023-10-09",
+            "to": "2023-10-22",
+            "days": 14
+          }
+        ]
+      },
+      "2024": {
+        "Фролов Павел Александрович": [
+          {
+            "from": "2024-01-09",
+            "to": "2024-01-15",
+            "days": 7
+          },
+          {
+            "from": "2024-04-27",
+            "to": "2024-05-10",
+            "days": 14
+          },
+          {
+            "from": "2024-07-08",
+            "to": "2024-07-14",
+            "days": 7
+          },
+          {
+            "from": "2024-09-23",
+            "to": "2024-09-29",
+            "days": 7
+          }
+        ],
+        "Шип Павел Дмитриевич [X]": [
+          {
+            "from": "2024-01-15",
+            "to": "2024-02-08",
+            "days": 25
+          },
+          {
+            "from": "2024-04-01",
+            "to": "2024-04-14",
+            "days": 14
+          },
+          {
+            "from": "2024-05-13",
+            "to": "2024-06-06",
+            "days": 25
+          },
+          {
+            "from": "2024-07-01",
+            "to": "2024-07-07",
+            "days": 7
+          }
+        ],
+        "Ларс Эмиль Александрович [X]": [
+          {
+            "from": "2024-01-15",
+            "to": "2024-01-28",
+            "days": 14
+          },
+          {
+            "from": "2024-02-01",
+            "to": "2024-02-21",
+            "days": 21
+          }
+        ],
+        "Зубов Константин Андреевич": [
+          {
+            "from": "2024-02-26",
+            "to": "2024-03-03",
+            "days": 7
+          },
+          {
+            "from": "2024-04-15",
+            "to": "2024-04-21",
+            "days": 7
+          },
+          {
+            "from": "2024-06-17",
+            "to": "2024-06-30",
+            "days": 14
+          }
+        ],
+        "Горшков Руслан Юрьевич [X]": [
+          {
+            "from": "2024-03-04",
+            "to": "2024-03-07",
+            "days": 4
+          }
+        ],
+        "Поспелова Екатерина Алексеевна": [
+          {
+            "from": "2024-03-07",
+            "to": "2024-03-12",
+            "days": 6
+          },
+          {
+            "from": "2024-06-01",
+            "to": "2024-06-14",
+            "days": 14
+          },
+          {
+            "from": "2024-09-30",
+            "to": "2024-10-11",
+            "days": 12
+          }
+        ],
+        "Яковлев Евгений Евгеньевич": [
+          {
+            "from": "2024-03-11",
+            "to": "2024-03-15",
+            "days": 5
+          },
+          {
+            "from": "2024-06-03",
+            "to": "2024-06-11",
+            "days": 9
+          },
+          {
+            "from": "2024-09-09",
+            "to": "2024-09-22",
+            "days": 14
+          }
+        ],
+        "Артемов Владислав Алексеевич [X]": [
+          {
+            "from": "2024-03-18",
+            "to": "2024-03-22",
+            "days": 5
+          }
+        ],
+        "Яковленков Владислав Юрьевич": [
+          {
+            "from": "2024-03-25",
+            "to": "2024-03-31",
+            "days": 7
+          },
+          {
+            "from": "2024-08-19",
+            "to": "2024-09-08",
+            "days": 21
+          }
+        ],
+        "Мельников Алексей Сергеевич": [
+          {
+            "from": "2024-06-17",
+            "to": "2024-06-30",
+            "days": 14
+          },
+          {
+            "from": "2024-10-30",
+            "to": "2024-11-12",
+            "days": 14
+          }
+        ],
+        "Иванов Сергей Александрович [X]": [
+          {
+            "from": "2024-07-08",
+            "to": "2024-07-21",
+            "days": 14
+          },
+          {
+            "from": "2024-11-18",
+            "to": "2024-12-01",
+            "days": 14
+          }
+        ],
+        "Богданов Алексей Валерьевич [X]": [
+          {
+            "from": "2024-10-14",
+            "to": "2024-10-27",
+            "days": 14
+          }
+        ],
+        "Пестовский Георгий Александрович": [
+          {
+            "from": "2024-11-18",
+            "to": "2024-12-01",
+            "days": 14
+          }
+        ],
+        "Хасанов Радион Равильевич": [
+          {
+            "from": "2024-12-02",
+            "to": "2024-12-15",
+            "days": 14
+          }
+        ]
+      },
+      "2025": {
+        "Яковленков Владислав Юрьевич": [
+          {
+            "from": "2025-01-09",
+            "to": "2025-01-10",
+            "days": 2
+          },
+          {
+            "from": "2025-03-10",
+            "to": "2025-03-14",
+            "days": 5
+          },
+          {
+            "from": "2025-04-28",
+            "to": "2025-04-30",
+            "days": 3
+          },
+          {
+            "from": "2025-08-18",
+            "to": "2025-08-31",
+            "days": 14
+          },
+          {
+            "from": "2025-10-27",
+            "to": "2025-11-01",
+            "days": 6
+          }
+        ],
+        "Мельников Алексей Сергеевич": [
+          {
+            "from": "2025-01-20",
+            "to": "2025-01-26",
+            "days": 7
+          },
+          {
+            "from": "2025-06-23",
+            "to": "2025-07-06",
+            "days": 14
+          },
+          {
+            "from": "2025-11-24",
+            "to": "2025-11-30",
+            "days": 7
+          }
+        ],
+        "Богданов Алексей Валерьевич [X]": [
+          {
+            "from": "2025-02-10",
+            "to": "2025-02-16",
+            "days": 7
+          },
+          {
+            "from": "2025-06-30",
+            "to": "2025-07-06",
+            "days": 7
+          }
+        ],
+        "Зубов Константин Андреевич": [
+          {
+            "from": "2025-02-24",
+            "to": "2025-03-02",
+            "days": 7
+          },
+          {
+            "from": "2025-06-09",
+            "to": "2025-06-22",
+            "days": 14
+          },
+          {
+            "from": "2025-09-01",
+            "to": "2025-09-07",
+            "days": 7
+          }
+        ],
+        "Елисеев Антон Андреевич": [
+          {
+            "from": "2025-02-28",
+            "to": "2025-03-13",
+            "days": 14
+          },
+          {
+            "from": "2025-09-22",
+            "to": "2025-10-05",
+            "days": 14
+          }
+        ],
+        "Пестовский Георгий Александрович": [
+          {
+            "from": "2025-03-17",
+            "to": "2025-03-23",
+            "days": 7
+          },
+          {
+            "from": "2025-05-19",
+            "to": "2025-06-08",
+            "days": 21
+          }
+        ],
+        "Хасанов Радион Равильевич": [
+          {
+            "from": "2025-03-17",
+            "to": "2025-03-30",
+            "days": 14
+          },
+          {
+            "from": "2025-07-07",
+            "to": "2025-07-20",
+            "days": 14
+          }
+        ],
+        "Поспелова Екатерина Алексеевна": [
+          {
+            "from": "2025-03-31",
+            "to": "2025-04-06",
+            "days": 7
+          },
+          {
+            "from": "2025-08-02",
+            "to": "2025-08-15",
+            "days": 14
+          },
+          {
+            "from": "2025-11-17",
+            "to": "2025-11-23",
+            "days": 7
+          }
+        ],
+        "Фролов Павел Александрович": [
+          {
+            "from": "2025-03-31",
+            "to": "2025-04-06",
+            "days": 7
+          },
+          {
+            "from": "2025-08-04",
+            "to": "2025-08-17",
+            "days": 14
+          },
+          {
+            "from": "2025-09-15",
+            "to": "2025-09-21",
+            "days": 7
+          }
+        ],
+        "Яковлев Евгений Евгеньевич": [
+          {
+            "from": "2025-04-07",
+            "to": "2025-04-11",
+            "days": 5
+          },
+          {
+            "from": "2025-05-05",
+            "to": "2025-05-07",
+            "days": 3
+          },
+          {
+            "from": "2025-06-09",
+            "to": "2025-06-11",
+            "days": 3
+          },
+          {
+            "from": "2025-07-21",
+            "to": "2025-08-03",
+            "days": 14
+          },
+          {
+            "from": "2025-11-05",
+            "to": "2025-11-07",
+            "days": 3
+          }
+        ],
+        "Сутягин Илья Викторович": [
+          {
+            "from": "2025-04-14",
+            "to": "2025-04-27",
+            "days": 14
+          },
+          {
+            "from": "2025-11-10",
+            "to": "2025-11-23",
+            "days": 14
+          }
+        ],
+        "Завьялов Максим Вячеславович": [
+          {
+            "from": "2025-04-28",
+            "to": "2025-05-11",
+            "days": 14
+          },
+          {
+            "from": "2025-09-29",
+            "to": "2025-10-12",
+            "days": 14
+          }
+        ],
+        "Иванов Сергей Александрович [X]": [
+          {
+            "from": "2025-07-07",
+            "to": "2025-07-20",
+            "days": 14
+          },
+          {
+            "from": "2025-10-13",
+            "to": "2025-10-26",
+            "days": 14
+          }
+        ]
+      },
+      "2026": {
+        "Яковлев Евгений Евгеньевич": [
+          {
+            "from": "2026-01-12",
+            "to": "2026-01-16",
+            "days": 5
+          },
+          {
+            "from": "2026-05-04",
+            "to": "2026-05-08",
+            "days": 5
+          },
+          {
+            "from": "2026-07-13",
+            "to": "2026-07-26",
+            "days": 14
+          },
+          {
+            "from": "2026-11-02",
+            "to": "2026-11-05",
+            "days": 4
+          }
+        ],
+        "Поспелова Екатерина Алексеевна": [
+          {
+            "from": "2026-01-12",
+            "to": "2026-01-24",
+            "days": 13
+          },
+          {
+            "from": "2026-04-06",
+            "to": "2026-04-24",
+            "days": 19
+          },
+          {
+            "from": "2026-09-21",
+            "to": "2026-10-04",
+            "days": 14
+          },
+          {
+            "from": "2026-11-09",
+            "to": "2026-11-13",
+            "days": 5
+          }
+        ],
+        "Пестовский Георгий Александрович": [
+          {
+            "from": "2026-01-19",
+            "to": "2026-02-01",
+            "days": 14
+          },
+          {
+            "from": "2026-07-27",
+            "to": "2026-08-09",
+            "days": 14
+          }
+        ],
+        "Хасанов Радион Равильевич": [
+          {
+            "from": "2026-02-02",
+            "to": "2026-02-15",
+            "days": 14
+          },
+          {
+            "from": "2026-05-18",
+            "to": "2026-05-31",
+            "days": 14
+          }
+        ],
+        "Болгов Андрей Владимирович": [
+          {
+            "from": "2026-02-16",
+            "to": "2026-02-22",
+            "days": 7
+          },
+          {
+            "from": "2026-06-29",
+            "to": "2026-07-12",
+            "days": 14
+          },
+          {
+            "from": "2026-08-31",
+            "to": "2026-09-06",
+            "days": 7
+          }
+        ],
+        "Елисеев Антон Андреевич": [
+          {
+            "from": "2026-02-24",
+            "to": "2026-03-09",
+            "days": 14
+          },
+          {
+            "from": "2026-09-21",
+            "to": "2026-10-04",
+            "days": 14
+          }
+        ],
+        "Зубов Константин Андреевич": [
+          {
+            "from": "2026-03-10",
+            "to": "2026-03-16",
+            "days": 7
+          },
+          {
+            "from": "2026-06-05",
+            "to": "2026-06-11",
+            "days": 7
+          }
+        ],
+        "Лузянин Никита Игоревич [X]": [
+          {
+            "from": "2026-03-16",
+            "to": "2026-04-09",
+            "days": 25
+          }
+        ],
+        "Мельников Алексей Сергеевич": [
+          {
+            "from": "2026-04-01",
+            "to": "2026-04-03",
+            "days": 3
+          },
+          {
+            "from": "2026-10-12",
+            "to": "2026-10-25",
+            "days": 14
+          },
+          {
+            "from": "2026-11-17",
+            "to": "2026-11-27",
+            "days": 11
+          }
+        ],
+        "Фролов Павел Александрович": [
+          {
+            "from": "2026-04-06",
+            "to": "2026-04-19",
+            "days": 14
+          },
+          {
+            "from": "2026-11-30",
+            "to": "2026-12-06",
+            "days": 7
+          }
+        ],
+        "Яковленков Владислав Юрьевич": [
+          {
+            "from": "2026-04-20",
+            "to": "2026-04-30",
+            "days": 11
+          },
+          {
+            "from": "2026-06-29",
+            "to": "2026-07-03",
+            "days": 5
+          },
+          {
+            "from": "2026-09-07",
+            "to": "2026-09-20",
+            "days": 14
+          }
+        ],
+        "Завьялов Максим Вячеславович": [
+          {
+            "from": "2026-05-11",
+            "to": "2026-05-17",
+            "days": 7
+          },
+          {
+            "from": "2026-08-10",
+            "to": "2026-08-30",
+            "days": 21
+          }
+        ],
+        "Сутягин Илья Викторович": [
+          {
+            "from": "2026-06-15",
+            "to": "2026-06-28",
+            "days": 14
+          }
+        ],
+        "Юрьев Сергей Олегович": [
+          {
+            "from": "2026-08-31",
+            "to": "2026-09-13",
+            "days": 14
+          }
+        ]
+      }
+    },
+    "vacationYears": [
+      {
+        "year": 2021,
+        "title": "График отпусков на 2021г. (предыдущий год)",
+        "pageId": "126005512"
+      },
+      {
+        "year": 2022,
+        "title": "График отпусков на 2022г.",
+        "pageId": "168692465"
+      },
+      {
+        "year": 2023,
+        "title": "График отпусков на 2023г.",
+        "pageId": "224390236"
+      },
+      {
+        "year": 2024,
+        "title": "График отпусков на 2024г.",
+        "pageId": "308550842"
+      },
+      {
+        "year": 2025,
+        "title": "График отпусков на 2025г.",
+        "pageId": "394095488"
+      },
+      {
+        "year": 2026,
+        "title": "График отпусков на 2026г.",
+        "pageId": "430081574"
+      }
+    ],
+    "people": [
+      {
+        "fio": "Артемов Владислав Алексеевич [X]",
+        "slug": null,
+        "surname": "артемов"
+      },
+      {
+        "fio": "Богданов Алексей Валерьевич [X]",
+        "slug": null,
+        "surname": "богданов"
+      },
+      {
+        "fio": "Болгов Андрей Владимирович",
+        "slug": "bolgov",
+        "surname": "болгов"
+      },
+      {
+        "fio": "Горшков Руслан Юрьевич [X]",
+        "slug": null,
+        "surname": "горшков"
+      },
+      {
+        "fio": "Елисеев Антон Андреевич",
+        "slug": "eliseev",
+        "surname": "елисеев"
+      },
+      {
+        "fio": "Емелин Александр Владиславович [X]",
+        "slug": null,
+        "surname": "емелин"
+      },
+      {
+        "fio": "Завьялов Максим Вячеславович",
+        "slug": "zavyalov",
+        "surname": "завьялов"
+      },
+      {
+        "fio": "Зубов Константин Андреевич",
+        "slug": null,
+        "surname": "зубов"
+      },
+      {
+        "fio": "Иванов Сергей Александрович [X]",
+        "slug": null,
+        "surname": "иванов"
+      },
+      {
+        "fio": "Колаев Евгений Олегович",
+        "slug": null,
+        "surname": "колаев"
+      },
+      {
+        "fio": "Ларс Эмиль Александрович [X]",
+        "slug": null,
+        "surname": "ларс"
+      },
+      {
+        "fio": "Лузянин Никита Игоревич [X]",
+        "slug": null,
+        "surname": "лузянин"
+      },
+      {
+        "fio": "Мельников Алексей Сергеевич",
+        "slug": "melnikov",
+        "surname": "мельников"
+      },
+      {
+        "fio": "Пестовский Георгий Александрович",
+        "slug": "pestovsky",
+        "surname": "пестовский"
+      },
+      {
+        "fio": "Поспелова Екатерина Алексеевна",
+        "slug": "pospelova",
+        "surname": "поспелова"
+      },
+      {
+        "fio": "Сутягин Илья Викторович",
+        "slug": null,
+        "surname": "сутягин"
+      },
+      {
+        "fio": "Фролов Павел Александрович",
+        "slug": "frolov",
+        "surname": "фролов"
+      },
+      {
+        "fio": "Хасанов Радион Равильевич",
+        "slug": "khasanov",
+        "surname": "хасанов"
+      },
+      {
+        "fio": "Хвиюзов Дмитрий Александрович",
+        "slug": null,
+        "surname": "хвиюзов"
+      },
+      {
+        "fio": "Шип Павел Дмитриевич [X]",
+        "slug": null,
+        "surname": "шип"
+      },
+      {
+        "fio": "Юрьев Сергей Олегович",
+        "slug": "yuryev",
+        "surname": "юрьев"
+      },
+      {
+        "fio": "Яковлев Евгений Евгеньевич",
+        "slug": null,
+        "surname": "яковлев"
+      },
+      {
+        "fio": "Яковленков Владислав Юрьевич",
+        "slug": "yakovlenkov",
+        "surname": "яковленков"
+      }
+    ]
+  }
 };

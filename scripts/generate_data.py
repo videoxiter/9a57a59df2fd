@@ -801,6 +801,51 @@ RULES = {"stars": RULE_STARS, "levels": RULE_LEVELS, "lvlStep": 10, "maxLvl": MA
          "scoreFormula": "Очки турнира = LVL × 10 + ⭐"}
 
 # ---------- сборка ----------
+# ---------- графики смен и отпусков из Confluence (scripts/fetch_confluence.py) ----------
+SCHED_PATH = os.path.join(ROOT, "scripts", "schedule.json")
+
+
+def _surname(fio):
+    return (fio or "").split()[0].lower().replace("ё", "е")
+
+
+def load_schedule():
+    """График смен + отпуска: ФИО из Confluence → slug сотрудника сайта."""
+    if not os.path.exists(SCHED_PATH):
+        return None
+    raw = json.load(open(SCHED_PATH, encoding="utf-8"))
+    sur2slug = {_surname(c["fullName"]): eid for eid, c in CONTENT.items()}
+    all_slugs = []
+    for eid, c in CONTENT.items():
+        all_slugs.append({"slug": eid, "name": c["fullName"]})
+
+    def to_slug(fio):
+        return sur2slug.get(_surname(fio))
+
+    months = {}
+    for iso, mm in raw.get("months", {}).items():
+        shifts = {}
+        for fio, days in (mm.get("shifts") or {}).items():
+            rec = {}
+            for d, sym in days.items():
+                info = raw["legend"].get(sym) or {}
+                rec[d] = {"sym": sym, "kind": info.get("kind", "other"),
+                          "title": info.get("title", sym), "time": info.get("time"),
+                          "breaks": info.get("breaks", []), "lunch": info.get("lunch")}
+            shifts[fio] = rec
+        months[iso] = {"shifts": shifts, "lines": mm.get("lines", {}), "facts": mm.get("facts", [])}
+
+    vac_people = set()
+    for y, ppl in (raw.get("vacations") or {}).items():
+        vac_people |= set(ppl)
+    people = []
+    for fio in sorted(set(list((raw.get("months", {}).get("2026-10", {}).get("shifts") or {})) + list(vac_people))):
+        people.append({"fio": fio, "slug": to_slug(fio), "surname": _surname(fio)})
+    return {"generated": raw.get("generated"), "legend": raw["legend"], "months": months,
+            "vacations": raw.get("vacations", {}), "vacationYears": raw.get("vacationYears", []),
+            "people": people}
+
+
 NO_AUTO_NOTES = set()  # сотрудники, которым не генерируются плюсы/зоны автоматически
 
 
@@ -918,6 +963,7 @@ def build():
         "team": {"profileByMonth": team_profile, "avgByMonth": team_avg,
                  "memberCount": len(team_members), "updated": month_label(months[-1])},
         "leaderboard": build_leaderboard(result),
+        "schedule": load_schedule(),
     }
     return data
 

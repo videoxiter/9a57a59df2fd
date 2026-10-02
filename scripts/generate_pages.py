@@ -24,9 +24,33 @@ SECTIONS = [
     ("lvl", "Мой LVL", "ph-medal", "уровень и звёзды"),
     ("awards", "Награды", "ph-trophy", "полученные и справочник"),
     ("growth", "Мой рост", "ph-rocket-launch", "план развития"),
+    ("graph", "Мой график", "ph-calendar-check", "смены, отпуска, часы"),
     ("stats", "Статистика", "ph-chart-line", "динамика и детализация"),
     ("rules", "Правила", "ph-book-open", "как всё устроено"),
 ]
+
+
+def _schedule_for(emp, sched):
+    """Срез графика для страницы сотрудника: смены, линии, отпуска, легенда."""
+    if not sched:
+        return None
+    slug = emp.get("slug") or emp.get("id")
+    fio = None
+    for p in sched.get("people", []):
+        if p.get("slug") == slug:
+            fio = p["fio"]
+            break
+    return {
+        "generated": sched.get("generated"),
+        "legend": sched.get("legend", {}),
+        "fio": fio,
+        "slug": slug,
+        "people": [{"fio": p["fio"], "slug": p.get("slug"), "surname": p.get("surname")}
+                   for p in sched.get("people", [])],
+        "months": sched.get("months", {}),
+        "vacations": sched.get("vacations", {}),
+        "vacationYears": sched.get("vacationYears", []),
+    }
 
 
 def load_data():
@@ -89,7 +113,7 @@ TEMPLATE = """<!DOCTYPE html>
 </html>
 """
 
-V = "33"
+V = "35"
 
 
 def secnav_html(rel, active):
@@ -123,6 +147,7 @@ def main():
             # ни в разметке, ни в исходнике страницы (изоляция данных коллег)
             "leaderboard": data.get("leaderboard", []) if e["id"] == "yakovlenkov" else [],
             "employee": emp,
+            "schedule": _schedule_for(emp, data.get("schedule")),
         }
         payload = json.dumps(emp_data, ensure_ascii=False)
         slug = e.get("slug", e["id"])

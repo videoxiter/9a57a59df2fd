@@ -164,6 +164,7 @@
     { key: "lvl", label: "Мой LVL", icon: "ph-medal", note: "уровень и звёзды" },
     { key: "awards", label: "Награды", icon: "ph-trophy", note: "полученные и справочник" },
     { key: "growth", label: "Мой рост", icon: "ph-rocket-launch", note: "план развития" },
+    { key: "graph", label: "Мой график", icon: "ph-calendar-check", note: "смены, отпуска, часы" },
     { key: "stats", label: "Статистика", icon: "ph-chart-line", note: "динамика и детализация" },
     { key: "rules", label: "Правила", icon: "ph-book-open", note: "как всё устроено" },
   ];
@@ -634,8 +635,461 @@
     ];
   }
 
+
+  /* ================= РАЗДЕЛ: МОЙ ГРАФИК (смены, отпуска, часы) ================= */
+  const SCHED = (D && D.schedule) || null;
+  const ME_SLUG = emp.slug || emp.id;
+  const ME_FIO = (SCHED && SCHED.fio) || emp.fullName;
+  const WD = ["воскресенье", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота"];
+  const WD_SHORT = ["вс", "пн", "вт", "ср", "чт", "пт", "сб"];
+  const MON_GEN = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
+  const isoOf = (dt) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}`;
+  const dmy = (dt) => `${String(dt.getDate()).padStart(2, "0")}.${String(dt.getMonth() + 1).padStart(2, "0")}.${dt.getFullYear()}`;
+  const addDays = (dt, n) => { const d = new Date(dt.getTime()); d.setDate(d.getDate() + n); return d; };
+  const surname = (f) => String(f || "").split(" ")[0].toLowerCase().replace("ё", "е");
+  const samePerson = (a, b) => !!a && !!b && surname(a) === surname(b);
+
+  const GS = { period: "today", scope: "me", year: new Date().getFullYear(), day: new Date().getDate(), month: isoOf(new Date()) };
+
+  const schedAvailable = (iso) => !!(SCHED && SCHED.months && SCHED.months[iso]);
+  function schedFor(fio, iso) {
+    const M = SCHED && SCHED.months && SCHED.months[iso];
+    if (!M) return null;
+    for (const [f, days] of Object.entries(M.shifts || {})) if (samePerson(f, fio)) return days;
+    return null;
+  }
+  function shiftOn(fio, dt) {
+    const days = schedFor(fio, isoOf(dt));
+    return days ? days[String(dt.getDate())] || null : null;
+  }
+  function lineOn(fio, dt) {
+    const M = SCHED && SCHED.months && SCHED.months[isoOf(dt)];
+    if (!M || !M.lines) return null;
+    for (const [lid, info] of Object.entries(M.lines)) {
+      const labels = info.labels || [];
+      for (let i = 0; i < labels.length; i++) {
+        const who = (info.weeks || [])[i];
+        if (!samePerson(who, fio)) continue;
+        const m = /^(\d{2})\.(\d{2})\s*-\s*(\d{2})\.(\d{2})$/.exec(String(labels[i]).trim());
+        if (!m) continue;
+        const y = dt.getFullYear();
+        const from = new Date(y, +m[2] - 1, +m[1]);
+        let to = new Date(y, +m[4] - 1, +m[3]);
+        if (to < from) to = new Date(y + 1, +m[4] - 1, +m[3]);
+        const d0 = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+        if (d0 >= from && d0 <= to) return { id: lid, title: info.title };
+      }
+    }
+    return null;
+  }
+  const shiftBadge = (sh, opts = {}) => {
+    if (!sh) return `<span class="gs-none">нет данных</span>`;
+    const cls = `gs-sym k-${sh.kind}`;
+    return `<span class="${cls}" title="${sh.title}${sh.time ? " · " + sh.time : ""}">${sh.sym}</span>`;
+  };
+  const isWork = (sh) => !!sh && ["shift", "weekend", "duty", "extra"].includes(sh.kind);
+
+  function vacationList(year) {
+    const v = (SCHED && SCHED.vacations && SCHED.vacations[String(year)]) || null;
+    if (!v) return [];
+    for (const [fio, list] of Object.entries(v)) if (samePerson(fio, ME_FIO)) return list;
+    return [];
+  }
+  function vacationsAll(year) {
+    return (SCHED && SCHED.vacations && SCHED.vacations[String(year)]) || {};
+  }
+  function vacDiff(fromIso, toIso) {
+    const a = new Date(fromIso + "T00:00:00"), b = new Date(toIso + "T00:00:00");
+    return Math.round((b - a) / 86400000) + 1;
+  }
+
+  /* ---- заявки сотрудника (переработка / увольнительная / отгул) ---- */
+  const REQ_KEY = "otp_hr_requests_v1";
+  const loadReqs = () => { try { return JSON.parse(localStorage.getItem(REQ_KEY) || "[]"); } catch (e) { return []; } };
+  const saveReqs = (list) => { try { localStorage.setItem(REQ_KEY, JSON.stringify(list)); } catch (e) {} };
+  const REQ_TYPES = {
+    overtime: { label: "Переработка", icon: "ph-clock-plus", accent: "good" },
+    leave: { label: "Увольнительная", icon: "ph-door-open", accent: "warn" },
+    dayoff: { label: "Отгул за вых. смену", icon: "ph-calendar-minus", accent: "info" },
+  };
+  function hoursOf(r) {
+    if (r.type === "dayoff") return r.hours || 8;
+    const p = (t) => { const m = /^(\d{1,2}):(\d{2})$/.exec(t || ""); return m ? +m[1] + (+m[2]) / 60 : null; };
+    const a = p(r.from), b = p(r.to);
+    if (a == null || b == null) return 0;
+    return Math.max(0, Math.round((b - a) * 10) / 10);
+  }
+  function myRequests() {
+    return loadReqs().filter((r) => r.empSlug === ME_SLUG).sort((a, b) => (b.created || "").localeCompare(a.created || ""));
+  }
+  function hoursBalance() {
+    let plus = 0, minus = 0;
+    for (const r of myRequests()) {
+      if (r.status !== "approved") continue;
+      const h = hoursOf(r);
+      if (r.type === "overtime") plus += h; else minus += h;
+    }
+    return { plus: Math.round(plus * 10) / 10, minus: Math.round(minus * 10) / 10,
+             balance: Math.round((plus - minus) * 10) / 10 };
+  }
+  const fmtH = (h) => (Math.round(h * 10) / 10).toString().replace(".", ",") + " ч";
+  const statusChip = (r) => {
+    if (r.status === "approved") return `<span class="req-st ok"><i class="ph-bold ph-check-circle"></i> подтверждено</span>`;
+    if (r.status === "rejected") return `<span class="req-st no"><i class="ph-bold ph-x-circle"></i> отказано</span>`;
+    return `<span class="req-st wait"><i class="ph-bold ph-hourglass-medium"></i> на согласовании</span>`;
+  };
+
+  function fmtPeriod(p) {
+    const f = new Date(p.from + "T00:00:00"), t = new Date(p.to + "T00:00:00");
+    const sameMonth = f.getMonth() === t.getMonth();
+    return `с ${f.getDate()} ${MON_GEN[f.getMonth()]}${sameMonth ? "" : " " + (f.getFullYear() !== t.getFullYear() ? f.getFullYear() : "")} по ${t.getDate()} ${MON_GEN[t.getMonth()]} ${t.getFullYear()}`;
+  }
+
+  function dayCard(dt, fio, opts = {}) {
+    const sh = shiftOn(fio, dt);
+    const ln = lineOn(fio, dt);
+    const kind = sh ? sh.kind : "none";
+    return `<div class="gd-card k-${kind}${opts.mine ? " mine" : ""}">
+      <div class="gd-head"><span class="gd-wd">${WD_SHORT[dt.getDay()]}</span><span class="gd-date">${dt.getDate()} ${MON_GEN[dt.getMonth()].slice(0, 3)}</span>${opts.mine ? '<span class="gd-me">моя смена</span>' : ""}</div>
+      ${sh ? `<div class="gd-body">
+          <div class="gd-shift"><span class="gs-sym k-${sh.kind}">${sh.sym}</span><span class="gd-shift-t">${sh.title}</span></div>
+          ${sh.time ? `<div class="gd-time"><i class="ph ph-clock"></i> ${sh.time}</div>` : ""}
+          ${(sh.breaks || []).length ? `<div class="gd-breaks">перерывы: ${sh.breaks.join(", ")}</div>` : ""}
+          ${sh.lunch ? `<div class="gd-breaks">обед: ${sh.lunch}</div>` : ""}
+          ${ln ? `<div class="gd-line"><i class="ph ph-git-branch"></i> ${ln.id} · ${ln.title}</div>` : ""}
+        </div>` : `<div class="gd-body"><div class="gs-none">смена не найдена</div></div>`}
+    </div>`;
+  }
+
+  function sectionGraph() {
+    if (!SCHED) {
+      return `<section class="p-sec" data-reveal><div class="p-sec-head"><h2><i class="ph-bold ph-calendar-check"></i> Мой график</h2></div>
+        <div class="dev-card"><div class="dev-ic"><i class="ph-bold ph-calendar-x"></i></div><h3>График не загружен</h3>
+        <p>Данные берутся из Confluence скриптом <code>scripts/fetch_confluence.py</code>.</p></div></section>${robotMenuHtml()}`;
+    }
+    const today = new Date();
+    const periods = [
+      ["today", "Сегодня", "ph-calendar-check"],
+      ["tomorrow", "На завтра", "ph-calendar-plus"],
+      ["week", "На неделю", "ph-calendar-dots"],
+      ["month", "Текущий месяц", "ph-calendar-blank"],
+      ["next", "Следующий месяц", "ph-calendar-star"],
+    ];
+    const scopes = [["me", "Только я", "ph-user"], ["team", "Весь отдел", "ph-users-three"]];
+    return `
+    <section class="p-sec" data-reveal>
+      <div class="p-sec-head"><h2><i class="ph-bold ph-calendar-check"></i> Мой график</h2><span class="p-sec-hint">смены, линии, отпуска и накопленные часы</span></div>
+
+      <div class="gs-controls">
+        <div class="gs-switch" id="gs-period">
+          ${periods.map(([k, label, ic]) => `<button class="gs-btn${k === GS.period ? " on" : ""}" data-period="${k}"><i class="ph ${ic}"></i><span>${label}</span></button>`).join("")}
+        </div>
+        <div class="gs-switch" id="gs-scope">
+          ${scopes.map(([k, label, ic]) => `<button class="gs-btn${k === GS.scope ? " on" : ""}" data-scope="${k}"><i class="ph ${ic}"></i><span>${label}</span></button>`).join("")}
+        </div>
+      </div>
+
+      <div class="gs-panel" id="gs-panel"></div>
+    </section>
+
+    <section class="p-sec" data-reveal>
+      <div class="p-sec-head"><h2><i class="ph-bold ph-airplane-tilt"></i> Мои отпуска</h2>
+        <div class="gs-years" id="gs-years">
+          ${[GS.year - 1, GS.year, GS.year + 1].map((y) => {
+            const has = !!(SCHED.vacations && SCHED.vacations[String(y)]);
+            return `<button class="gs-year${y === GS.year ? " on" : ""}${has ? "" : " empty"}" data-year="${y}">${y}${has ? "" : " · нет"}</button>`;
+          }).join("")}
+        </div>
+      </div>
+      <div id="gs-vac"></div>
+    </section>
+
+    <section class="p-sec" data-reveal>
+      <div class="p-sec-head"><h2><i class="ph-bold ph-hourglass-high"></i> Накопленные часы</h2><span class="p-sec-hint">только по тебе · считается по подтверждённым заявкам</span></div>
+      <div id="gs-hours"></div>
+      <div class="gs-actions">
+        <button class="gs-act" data-form="overtime"><i class="ph-bold ph-clock-plus"></i><span><b>Зарегистрировать переработку</b><i>с указанием времени и задач</i></span></button>
+        <button class="gs-act" data-form="leave"><i class="ph-bold ph-door-open"></i><span><b>Взять увольнительную</b><i>не более 4 часов в день</i></span></button>
+        <button class="gs-act" data-form="dayoff"><i class="ph-bold ph-calendar-minus"></i><span><b>Взять отгул за вых. смену</b><i>компенсация выходной смены</i></span></button>
+      </div>
+      <div class="sub-head" style="margin-top:22px"><i class="ph ph-list-checks"></i> Мои заявки <span class="muted" id="gs-req-count"></span></div>
+      <div id="gs-history"></div>
+    </section>
+
+    <div class="otp-modal" id="gs-modal" hidden>
+      <div class="otp-modal-box">
+        <button class="otp-modal-x" type="button" id="gs-modal-x"><i class="ph-bold ph-x"></i></button>
+        <h3 id="gs-modal-title">Заявка</h3>
+        <form id="gs-form"></form>
+      </div>
+    </div>
+
+    ${robotMenuHtml()}`;
+  }
+
+  function graphInit() {
+    const panel = document.getElementById("gs-panel");
+    if (!panel || !SCHED) return;
+    const today = new Date();
+    const isoMonthOf = (period) => {
+      if (period === "next") { const d = new Date(today.getFullYear(), today.getMonth() + 1, 1); return isoOf(d); }
+      return isoOf(today);
+    };
+
+    function renderPanel() {
+      const iso = isoMonthOf(GS.period);
+      if (GS.period === "next" && !schedAvailable(iso)) {
+        panel.innerHTML = `<div class="gs-empty"><i class="ph-bold ph-calendar-x"></i><b>Не опубликовано</b>
+          <span>График на ${MON_GEN[new Date(today.getFullYear(), today.getMonth() + 1, 1).getMonth()]} ещё не опубликован в Confluence.</span></div>`;
+        return;
+      }
+      if (!schedAvailable(iso)) {
+        panel.innerHTML = `<div class="gs-empty"><i class="ph-bold ph-calendar-x"></i><b>Нет данных графика</b>
+          <span>В Confluence опубликован график за другой период — запусти обновление данных.</span></div>`;
+        return;
+      }
+      if (GS.period === "today" || GS.period === "tomorrow") {
+        const dt = GS.period === "tomorrow" ? addDays(today, 1) : today;
+        const head = `<div class="gs-day-head"><b>${WD[dt.getDay()]}, ${dt.getDate()} ${MON_GEN[dt.getMonth()]}</b>
+          <span>${GS.scope === "me" ? "твоя смена" : "кто на смене"}</span></div>`;
+        if (GS.scope === "me") { panel.innerHTML = head + dayCard(dt, ME_FIO, { mine: true }); return; }
+        const M = SCHED.months[iso];
+        const working = [], offs = [];
+        for (const [fio, days] of Object.entries(M.shifts || {})) {
+          const sh = days[String(dt.getDate())];
+          if (!sh) continue;
+          (isWork(sh) ? working : offs).push([fio, sh]);
+        }
+        const lineOf_ = (fio) => { const l = lineOn(fio, dt); return l ? `${l.id} · ${l.title}` : ""; };
+        panel.innerHTML = head + `<div class="gs-team-day">
+          <div class="gs-team-col"><div class="gs-team-h"><i class="ph-bold ph-briefcase"></i> На смене — ${working.length}</div>
+            ${working.map(([fio, sh]) => `<div class="gs-row${samePerson(fio, ME_FIO) ? " mine" : ""}">
+              <span class="gs-sym k-${sh.kind}">${sh.sym}</span>
+              <span class="gs-fio">${fio}</span>
+              <span class="gs-time">${sh.time || ""}</span>
+              <span class="gs-ln">${lineOf_(fio)}</span></div>`).join("") || '<p class="muted">Никто не работает</p>'}</div>
+          <div class="gs-team-col"><div class="gs-team-h"><i class="ph-bold ph-moon"></i> Отдыхают — ${offs.length}</div>
+            ${offs.map(([fio, sh]) => `<div class="gs-row${samePerson(fio, ME_FIO) ? " mine" : ""}">
+              <span class="gs-sym k-${sh.kind}">${sh.sym}</span><span class="gs-fio">${fio}</span>
+              <span class="gs-time">${sh.title}</span></div>`).join("") || '<p class="muted">Все на смене</p>'}</div>
+        </div>`;
+        return;
+      }
+      if (GS.period === "week") {
+        const days = Array.from({ length: 7 }, (_, i) => addDays(today, i));
+        const head = `<div class="gs-day-head"><b>7 дней: ${days[0].getDate()} ${MON_GEN[days[0].getMonth()].slice(0, 3)} — ${days[6].getDate()} ${MON_GEN[days[6].getMonth()].slice(0, 3)}</b><span>${GS.scope === "me" ? "твои смены" : "смены отдела"}</span></div>`;
+        if (GS.scope === "me") {
+          panel.innerHTML = head + `<div class="gs-week">${days.map((dt) => dayCard(dt, ME_FIO, { mine: true })).join("")}</div>`;
+          return;
+        }
+        panel.innerHTML = head + `<div class="gs-scroll"><table class="gs-table">${weekTable(days)}</table></div>`;
+        return;
+      }
+      // месяц (текущий) — сетка или таблица отдела
+      const [y, m] = iso.split("-").map(Number);
+      const first = new Date(y, m - 1, 1);
+      const lastDay = new Date(y, m, 0).getDate();
+      const head = `<div class="gs-day-head"><b>${MON_GEN[m - 1]} ${y}</b><span>${GS.scope === "me" ? "твои смены" : "график отдела"}</span></div>`;
+      if (GS.scope === "me") {
+        const pad = (first.getDay() + 6) % 7;
+        let cells = "";
+        for (let i = 0; i < pad; i++) cells += `<div class="gs-cell empty"></div>`;
+        for (let d = 1; d <= lastDay; d++) {
+          const dt = new Date(y, m - 1, d);
+          const sh = shiftOn(ME_FIO, dt);
+          const ln = lineOn(ME_FIO, dt);
+          const cur = d === GS.day ? " cur" : "";
+          cells += `<div class="gs-cell${cur}${sh ? " k-" + sh.kind : ""}" data-day="${d}" title="${sh ? sh.title + (sh.time ? " · " + sh.time : "") : ""}">
+            <span class="gs-d">${d}</span>
+            ${sh ? `<span class="gs-sym k-${sh.kind}">${sh.sym}</span><span class="gs-t">${(sh.time || "").slice(0, 5)}</span>` : ""}
+            ${ln ? `<span class="gs-l">${ln.id}</span>` : ""}
+          </div>`;
+        }
+        panel.innerHTML = head + `<div class="gs-cal-head">${["пн", "вт", "ср", "чт", "пт", "сб", "вс"].map((x) => `<span>${x}</span>`).join("")}</div>
+          <div class="gs-cal">${cells}</div><div id="gs-day-detail" class="gs-detail"></div>`;
+        panel.querySelectorAll(".gs-cell[data-day]").forEach((c) => c.addEventListener("click", () => {
+          GS.day = +c.dataset.day;
+          renderPanel();
+          const dt = new Date(y, m - 1, GS.day);
+          const box = document.getElementById("gs-day-detail");
+          if (box) box.innerHTML = `<div class="gs-det-h">${WD[dt.getDay()]}, ${dt.getDate()} ${MON_GEN[dt.getMonth()]}</div>` + dayCard(dt, ME_FIO, { mine: true });
+        }));
+        return;
+      }
+      const M = SCHED.months[iso];
+      const fios = Object.keys(M.shifts || {}).sort((a, b) => (samePerson(b, ME_FIO) ? 1 : 0) - (samePerson(a, ME_FIO) ? 1 : 0) || a.localeCompare(b));
+      const rows = fios.map((fio) => `<tr class="${samePerson(fio, ME_FIO) ? "mine" : ""}">
+        <td class="gs-fio-td">${fio}${samePerson(fio, ME_FIO) ? ' <span class="gs-you">ты</span>' : ""}</td>
+        ${Array.from({ length: lastDay }, (_, i) => {
+          const sh = (M.shifts[fio] || {})[String(i + 1)];
+          return `<td class="gs-td${sh ? " k-" + sh.kind : ""}" title="${sh ? sh.title : ""}">${sh ? sh.sym : ""}</td>`;
+        }).join("")}</tr>`).join("");
+      panel.innerHTML = head + `<div class="gs-scroll"><table class="gs-table gs-month">
+        <thead><tr><th>Сотрудник</th>${Array.from({ length: lastDay }, (_, i) => `<th>${i + 1}</th>`).join("")}</tr></thead>
+        <tbody>${rows}</tbody></table></div>`;
+
+      function weekTable(days) {
+        const iso = isoOf(today);
+        const M = SCHED.months[iso] || { shifts: {} };
+        const fios = Object.keys(M.shifts || {});
+        return `<thead><tr><th>Сотрудник</th>${days.map((dt) => `<th>${WD_SHORT[dt.getDay()]}<br>${dt.getDate()}</th>`).join("")}</tr></thead>
+          <tbody>${fios.map((fio) => `<tr class="${samePerson(fio, ME_FIO) ? "mine" : ""}">
+            <td class="gs-fio-td">${fio}${samePerson(fio, ME_FIO) ? ' <span class="gs-you">ты</span>' : ""}</td>
+            ${days.map((dt) => { const sh = shiftOn(fio, dt); return `<td class="gs-td${sh ? " k-" + sh.kind : ""}" title="${sh ? sh.title + (sh.time ? " · " + sh.time : "") : ""}">${sh ? sh.sym : ""}</td>`; }).join("")}
+          </tr>`).join("")}</tbody>`;
+      }
+    }
+
+    function renderVac() {
+      const box = document.getElementById("gs-vac");
+      if (!box) return;
+      const has = !!(SCHED.vacations && SCHED.vacations[String(GS.year)]);
+      if (!has) {
+        box.innerHTML = `<div class="gs-empty small"><i class="ph-bold ph-calendar-x"></i><b>Не опубликовано</b>
+          <span>График отпусков на ${GS.year} год ещё не опубликован. Обычно его строят с октября по декабрь предыдущего года.</span></div>`;
+        return;
+      }
+      const mine = vacationList(GS.year);
+      const all = vacationsAll(GS.year);
+      const now = new Date(); now.setHours(0, 0, 0, 0);
+      const next = mine.find((p) => new Date(p.to + "T00:00:00") >= now);
+      const upcoming = next ? Math.round((new Date(next.from + "T00:00:00") - now) / 86400000) : null;
+      box.innerHTML = `
+        <div class="gs-vac-grid">
+          <div class="gs-vac-card">
+            <div class="gs-vac-h"><i class="ph-bold ph-user"></i> Мои отпуска · ${GS.year}</div>
+            ${mine.length ? mine.map((p) => {
+              const isNext = next && p.from === next.from && p.to === next.to;
+              const running = new Date(p.from + "T00:00:00") <= now && new Date(p.to + "T00:00:00") >= now;
+              return `<div class="gs-vac-row${isNext ? " next" : ""}">
+                <span class="gs-vac-d">${fmtPeriod(p)}</span>
+                <span class="gs-vac-days">${p.days || vacDiff(p.from, p.to)} дн.</span>
+                ${running ? '<span class="gs-vac-tag run">идёт сейчас</span>' : isNext ? `<span class="gs-vac-tag">ближайший${upcoming > 0 ? " · через " + upcoming + " дн." : ""}</span>` : ""}
+              </div>`;
+            }).join("") : '<p class="muted">За этот год отпусков не запланировано.</p>'}
+          </div>
+          <div class="gs-vac-card">
+            <div class="gs-vac-h"><i class="ph-bold ph-users-three"></i> Отпуска отдела · ${GS.year}</div>
+            <div class="gs-vac-list">${Object.entries(all).map(([fio, list]) => `
+              <div class="gs-vac-person${samePerson(fio, ME_FIO) ? " mine" : ""}">
+                <span class="gs-vac-n">${fio.split(" ")[0]} ${(fio.split(" ")[1] || "").slice(0, 1)}.</span>
+                <span class="gs-vac-p">${list.map((p) => `<i>${fmtPeriod(p)}</i>${p.days ? ` <b>${p.days}д</b>` : ""}`).join(", ")}</span>
+              </div>`).join("")}</div>
+          </div>
+        </div>`;
+    }
+
+    function renderHours() {
+      const box = document.getElementById("gs-hours");
+      if (!box) return;
+      const b = hoursBalance();
+      const reqs = myRequests();
+      const pending = reqs.filter((r) => r.status === "pending").length;
+      box.innerHTML = `<div class="gs-hours">
+        <div class="gs-h-card ${b.balance >= 0 ? "pos" : "neg"}">
+          <span class="gs-h-k">${b.balance >= 0 ? "Переработка" : "Долг по часам"}</span>
+          <span class="gs-h-v">${b.balance >= 0 ? "+" : "−"}${fmtH(Math.abs(b.balance))}</span>
+          <span class="gs-h-s">${b.balance >= 0 ? "часов накоплено" : "часов нужно отработать"}</span>
+        </div>
+        <div class="gs-h-card"><span class="gs-h-k">Подтверждено</span><span class="gs-h-v good">+${fmtH(b.plus)}</span><span class="gs-h-s">переработки</span></div>
+        <div class="gs-h-card"><span class="gs-h-k">Списано</span><span class="gs-h-v bad">−${fmtH(b.minus)}</span><span class="gs-h-s">увольнительные и отгулы</span></div>
+        <div class="gs-h-card"><span class="gs-h-k">На согласовании</span><span class="gs-h-v">${pending}</span><span class="gs-h-s">${pending === 1 ? "заявка" : "заявок"}</span></div>
+      </div>`;
+      const hist = document.getElementById("gs-history");
+      if (hist) {
+        hist.innerHTML = reqs.length ? reqs.map((r) => {
+          const t = REQ_TYPES[r.type] || { label: r.type, icon: "ph-note" };
+          return `<div class="req-row st-${r.status}">
+            <span class="req-ic"><i class="ph-bold ${t.icon}"></i></span>
+            <span class="req-main">
+              <b>${t.label}</b>
+              <i>${r.type === "dayoff" ? `отгул ${r.date} · за смену ${r.date2 || "—"}` : `${r.date} · ${r.from}–${r.to} (${fmtH(hoursOf(r))})`}</i>
+              ${r.reason ? `<em>${r.reason}</em>` : ""}
+              ${r.status === "rejected" && r.reject ? `<em class="rej">Причина отказа: ${r.reject}</em>` : ""}
+            </span>
+            ${statusChip(r)}
+            ${r.status === "pending" ? `<button class="req-del" data-del="${r.id}" title="Отозвать"><i class="ph-bold ph-trash"></i></button>` : ""}
+          </div>`;
+        }).join("") : '<p class="muted">Заявок пока нет. Оформи первую — она появится на странице руководителя.</p>';
+        hist.querySelectorAll("[data-del]").forEach((b2) => b2.addEventListener("click", () => {
+          saveReqs(loadReqs().filter((x) => x.id !== b2.dataset.del));
+          renderHours();
+          const cnt = document.getElementById("gs-req-count"); if (cnt) cnt.textContent = `· ${myRequests().length}`;
+        }));
+      }
+      const cnt = document.getElementById("gs-req-count");
+      if (cnt) cnt.textContent = reqs.length ? `· ${reqs.length}` : "";
+    }
+
+    /* --- переключатели --- */
+    document.querySelectorAll("#gs-period .gs-btn").forEach((b) => b.addEventListener("click", () => {
+      GS.period = b.dataset.period;
+      document.querySelectorAll("#gs-period .gs-btn").forEach((x) => x.classList.toggle("on", x === b));
+      renderPanel();
+    }));
+    document.querySelectorAll("#gs-scope .gs-btn").forEach((b) => b.addEventListener("click", () => {
+      GS.scope = b.dataset.scope;
+      document.querySelectorAll("#gs-scope .gs-btn").forEach((x) => x.classList.toggle("on", x === b));
+      renderPanel();
+    }));
+    document.querySelectorAll("#gs-years .gs-year").forEach((b) => b.addEventListener("click", () => {
+      GS.year = +b.dataset.year;
+      document.querySelectorAll("#gs-years .gs-year").forEach((x) => x.classList.toggle("on", x === b));
+      renderVac();
+    }));
+
+    /* --- формы заявок --- */
+    const modal = document.getElementById("gs-modal");
+    const form = document.getElementById("gs-form");
+    const titleEl = document.getElementById("gs-modal-title");
+    const FIELDS = {
+      overtime: [["date", "Дата", "date", true], ["from", "Время с", "time", true], ["to", "Время до", "time", true],
+                 ["reason", "Какие задачи выполнялись", "textarea", true]],
+      leave: [["date", "Дата", "date", true], ["from", "Время с", "time", true], ["to", "Время до", "time", true],
+              ["reason", "Причина", "textarea", true]],
+      dayoff: [["date", "Дата отгула", "date", true], ["date2", "Дата выходной смены", "date", true],
+               ["reason", "Причина", "textarea", true]],
+    };
+    function openForm(type) {
+      const t = REQ_TYPES[type];
+      titleEl.innerHTML = `<i class="ph-bold ${t.icon}"></i> ${t.label}`;
+      form.innerHTML = FIELDS[type].map(([name, label, kind, req]) => kind === "textarea"
+        ? `<label class="otp-f"><span>${label}</span><textarea name="${name}" rows="3" ${req ? "required" : ""} placeholder="Опиши подробно — это увидит руководитель"></textarea></label>`
+        : `<label class="otp-f"><span>${label}</span><input type="${kind}" name="${name}" ${req ? "required" : ""}></label>`).join("")
+        + (type === "leave" ? `<div class="otp-note"><i class="ph ph-info"></i> Увольнительная — не больше 4 часов в день.</div>` : "")
+        + `<div class="otp-form-foot"><button class="btn btn-primary" type="submit"><i class="ph-bold ph-paper-plane-tilt"></i> Отправить руководителю</button>
+             <button class="btn btn-ghost" type="button" id="gs-cancel">Отмена</button></div>
+        <div class="otp-err" id="gs-err"></div>`;
+      modal.hidden = false;
+      document.getElementById("gs-cancel").addEventListener("click", () => { modal.hidden = true; });
+      form.onsubmit = (e) => {
+        e.preventDefault();
+        const fd = Object.fromEntries(new FormData(form).entries());
+        const err = document.getElementById("gs-err");
+        const hours = type === "dayoff" ? 8 : (() => { const p = (x) => { const m = /^(\d{1,2}):(\d{2})$/.exec(x || ""); return m ? +m[1] + +m[2] / 60 : null; }; const a = p(fd.from), b = p(fd.to); return a == null || b == null ? null : Math.round((b - a) * 10) / 10; })();
+        if (type !== "dayoff" && (hours == null || hours <= 0)) { err.textContent = "Проверь время: конец должен быть позже начала."; return; }
+        if (type === "leave" && hours > 4) { err.textContent = `Увольнительная больше 4 часов в день недоступна (у тебя ${fmtH(hours)}).`; return; }
+        if (type === "dayoff" && !fd.date2) { err.textContent = "Укажи дату выходной смены."; return; }
+        const rec = { id: "r" + Date.now().toString(36), empSlug: ME_SLUG, empName: emp.fullName || ME_FIO,
+                      type, date: fd.date, date2: fd.date2 || "", from: fd.from || "", to: fd.to || "",
+                      hours, reason: fd.reason || "", status: "pending", reject: "", created: new Date().toISOString() };
+        const list = loadReqs(); list.push(rec); saveReqs(list);
+        modal.hidden = true;
+        renderHours();
+      };
+    }
+    document.querySelectorAll(".gs-act").forEach((b) => b.addEventListener("click", () => openForm(b.dataset.form)));
+    const mx = document.getElementById("gs-modal-x");
+    if (mx) mx.addEventListener("click", () => { modal.hidden = true; });
+    if (modal) modal.addEventListener("click", (e) => { if (e.target === modal) modal.hidden = true; });
+
+    renderPanel();
+    renderVac();
+    renderHours();
+  }
+
   /* ---------- рендер раздела ---------- */
-  const RENDER = { bonus: sectionBonus, lvl: sectionLvl, awards: sectionAwards, growth: sectionGrowth, stats: sectionStats, rules: sectionRules };
+  const RENDER = { bonus: sectionBonus, lvl: sectionLvl, awards: sectionAwards, growth: sectionGrowth, graph: sectionGraph, stats: sectionStats, rules: sectionRules };
   root.innerHTML = heroHtml() + (RENDER[SECTION] || sectionBonus)();
 
   /* ---------- общие обработчики ---------- */
@@ -827,6 +1281,7 @@
 
   /* ---------- раздел «Мой LVL»: график накопления звёзд ---------- */
   if (SECTION === "lvl") { renderLvlTips(); initTips(); }
+  if (SECTION === "graph") graphInit();
 
   if (SECTION === "lvl" && window.Chart) {
     const el = document.getElementById("chart-stars");
