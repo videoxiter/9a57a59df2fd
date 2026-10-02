@@ -57,57 +57,22 @@
   function render() {
     const box = document.getElementById("hr-requests");
     if (!box) return;
-    const all = load2().filter((r) => r.status !== "cancelled").sort((a, b) => (b.created || "").localeCompare(a.created || ""));
-    const pending = all.filter((r) => r.status === "pending");
-    const decided = all.filter((r) => r.status !== "pending");
-    const owed = {};
-    for (const r of all) {
-      if (r.status !== "approved") continue;
-      const h = hoursOf(r) * (r.type === "overtime" ? 1 : -1);
-      owed[r.empName || r.empSlug] = Math.round(((owed[r.empName || r.empSlug] || 0) + h) * 10) / 10;
+    const sec = box.closest("section") || box;
+    const active = load2().filter((r) => r.status === "pending")
+      .sort((x, y) => (y.created || "").localeCompare(x.created || ""));
+    if (!active.length) {                       // нет активных заявок — блока на странице нет
+      sec.style.display = "none";
+      box.innerHTML = "";
+      return;
     }
+    sec.style.display = "";
     box.innerHTML = `
       <div class="hr-head">
         <h2><i class="ph-bold ph-clipboard-text"></i> Заявки сотрудников</h2>
-        <span class="hr-stat">${pending.length ? `<b>${pending.length}</b> ждут решения` : "нет новых заявок"}</span>
+        <span class="hr-stat"><b>${active.length}</b> ${active.length === 1 ? "активная заявка" : "активных заявок"}</span>
       </div>
-      <div class="hr-pending">${pending.length ? pending.map((r) => row(r)).join("") : '<p class="muted">Все заявки рассмотрены.</p>'}</div>
-      <details class="hr-history" ${decided.length ? "" : "hidden"}>
-        <summary>История решений · ${decided.length}</summary>
-        ${decided.map((r) => row(r, true)).join("")}
-      </details>
-      ${Object.keys(owed).length ? `<div class="hr-owed">Баланс часов по подтверждённым заявкам:
-        ${Object.entries(owed).map(([n, h]) => `<span><b>${n.split(" ")[0]}</b> ${h >= 0 ? "+" : "−"}${fmtH(Math.abs(h))}</span>`).join("")}</div>` : ""}
-      <div class="hr-tools">
-        <button class="btn btn-ghost" id="hr-export"><i class="ph-bold ph-download-simple"></i> Экспорт заявок</button>
-        <label class="btn btn-ghost"><i class="ph-bold ph-upload-simple"></i> Импорт заявок
-          <input type="file" id="hr-import" accept=".json" hidden></label>
-        <span class="hr-provider">${(CLOUD && CLOUD.provider()) ? "канал: " + CLOUD.provider() : "канал: локальный"}</span>
-      </div>
-      <p class="hr-note"><i class="ph ph-info"></i> Экспорт/импорт — обмен заявками без общего сервера: сотрудник присылает файл,
-        ты импортируешь здесь решения. Для полной синхронизации подключи облачную базу (scripts/cloud.json).</p>`;
+      <div class="hr-pending">${active.map((r) => row(r)).join("")}</div>`;
 
-    const exp = box.querySelector("#hr-export");
-    if (exp) exp.addEventListener("click", () => {
-      const blob = new Blob([JSON.stringify({ requests: load2() }, null, 1)], { type: "application/json" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "otp-requests-" + new Date().toISOString().slice(0, 10) + ".json";
-      a.click();
-    });
-    const imp = box.querySelector("#hr-import");
-    if (imp) imp.addEventListener("change", async () => {
-      const f = imp.files && imp.files[0];
-      if (!f) return;
-      try {
-        const j = JSON.parse(await f.text());
-        const incoming = Array.isArray(j) ? j : (j.requests || []);
-        const merged = CLOUD ? CLOUD.merge(load2(), incoming) : incoming;
-        save2(merged);
-        if (CLOUD) await CLOUD.put(merged);
-        render();
-      } catch (e) { alert("Не удалось прочитать файл заявок"); }
-    });
     box.querySelectorAll("[data-ok]").forEach((b) => b.addEventListener("click", () => decide(b.dataset.ok, "approved")));
     box.querySelectorAll("[data-no]").forEach((b) => b.addEventListener("click", () => {
       const id = b.dataset.no;

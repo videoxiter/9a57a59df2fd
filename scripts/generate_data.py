@@ -877,7 +877,8 @@ HOURS_BASE = {
     "frolov": 13, "bolgov": 8, "melnikov": 13, "khasanov": 1, "pestovsky": 6,
     "eliseev": 18, "zavyalov": 6, "yuryev": 5, "pospelova": 3,
 }
-NO_LEAVE_DEDUCTION_AVG = 8.0   # средний KPI за последний месяц ≥ 8.0 — увольнительные часы не списывают
+NO_LEAVE_DEDUCTION_AVG = 9.0   # средний KPI за последний месяц ≥ 9.0 — увольнительные часы не списывают
+NO_DEDUCT_MIN_METRIC = 8        # ...и ни один показатель не ниже 8 (иначе списываются)
 
 
 NO_AUTO_NOTES = set()  # сотрудники, которым не генерируются плюсы/зоны автоматически
@@ -961,7 +962,12 @@ def build():
             "history": history,
             "current": current, "avg": avg, "growth_delta": growth_delta,
             "hours_base": HOURS_BASE.get(eid, 0),
-            "no_deduct": (latest.get("avg") or 0) >= NO_LEAVE_DEDUCTION_AVG,
+            "no_deduct": (latest.get("avg") or 0) >= NO_LEAVE_DEDUCTION_AVG
+                         and all(latest.get(k) is None or latest.get(k) >= NO_DEDUCT_MIN_METRIC for k in MKEYS)
+                         and any(latest.get(k) is not None for k in MKEYS),
+            "no_deduct_low": [{"key": k, "title": (METRICS.get(k) or {}).get("label", k),
+                               "value": latest.get(k)} for k in MKEYS
+                              if latest.get(k) is not None and latest.get(k) < NO_DEDUCT_MIN_METRIC],
             "stars": stars_total, "stars_delta": stars_delta, "starLog": stars_log,
             "lvl": max(1, min(MAX_LVL, 1 + stars_total // 10)), "stars_in_level": stars_total % 10,
             "bonuses": latest.get("money", []),
@@ -994,7 +1000,7 @@ def build():
         "awardsCatalog": AWARDS_CATALOG,
         "rules": RULES,
         "bonusRules": BONUS_RULES,
-        "hrRules": {"noDeductAvg": NO_LEAVE_DEDUCTION_AVG, "leaveMaxHours": 4,
+        "hrRules": {"noDeductAvg": NO_LEAVE_DEDUCTION_AVG, "noDeductMin": NO_DEDUCT_MIN_METRIC, "leaveMaxHours": 4,
                     "queueFromLvl": 2, "hoursBaseDate": "02.10.2026",
                     "endpoint": _endpoint(),
                     "cloud": _cloud()},

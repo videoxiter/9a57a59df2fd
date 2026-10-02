@@ -423,7 +423,8 @@ window.OTP_DATA = {
     }
   ],
   "hrRules": {
-    "noDeductAvg": 8.0,
+    "noDeductAvg": 9.0,
+    "noDeductMin": 8,
     "leaveMaxHours": 4,
     "queueFromLvl": 2,
     "hoursBaseDate": "02.10.2026",
@@ -1347,6 +1348,7 @@ window.OTP_DATA = {
       "growth_delta": 0,
       "hours_base": 0,
       "no_deduct": false,
+      "no_deduct_low": [],
       "stars": 112,
       "stars_delta": 110,
       "starLog": [
@@ -2859,6 +2861,7 @@ window.OTP_DATA = {
       "growth_delta": -0.4,
       "hours_base": 13,
       "no_deduct": true,
+      "no_deduct_low": [],
       "stars": 23,
       "stars_delta": 10,
       "starLog": [
@@ -4360,7 +4363,14 @@ window.OTP_DATA = {
       "avg": 8.2,
       "growth_delta": -0.2,
       "hours_base": 13,
-      "no_deduct": true,
+      "no_deduct": false,
+      "no_deduct_low": [
+        {
+          "key": "discipline",
+          "title": "Требования к работе",
+          "value": 7
+        }
+      ],
       "stars": 13,
       "stars_delta": 5,
       "starLog": [
@@ -5701,6 +5711,23 @@ window.OTP_DATA = {
       "growth_delta": 0.0,
       "hours_base": 1,
       "no_deduct": false,
+      "no_deduct_low": [
+        {
+          "key": "quality",
+          "title": "Качество",
+          "value": 5
+        },
+        {
+          "key": "learnability",
+          "title": "Обучаемость",
+          "value": 5
+        },
+        {
+          "key": "discipline",
+          "title": "Требования к работе",
+          "value": 7
+        }
+      ],
       "stars": 4,
       "stars_delta": -1,
       "starLog": [
@@ -7002,6 +7029,7 @@ window.OTP_DATA = {
       "growth_delta": 0.8,
       "hours_base": 6,
       "no_deduct": true,
+      "no_deduct_low": [],
       "stars": 15,
       "stars_delta": 6,
       "starLog": [
@@ -8349,6 +8377,23 @@ window.OTP_DATA = {
       "growth_delta": 0.8,
       "hours_base": 18,
       "no_deduct": false,
+      "no_deduct_low": [
+        {
+          "key": "quality",
+          "title": "Качество",
+          "value": 6
+        },
+        {
+          "key": "learnability",
+          "title": "Обучаемость",
+          "value": 5
+        },
+        {
+          "key": "discipline",
+          "title": "Требования к работе",
+          "value": 5
+        }
+      ],
       "stars": 6,
       "stars_delta": 4,
       "starLog": [
@@ -9561,7 +9606,19 @@ window.OTP_DATA = {
       "avg": 8.0,
       "growth_delta": 0.4,
       "hours_base": 6,
-      "no_deduct": true,
+      "no_deduct": false,
+      "no_deduct_low": [
+        {
+          "key": "learnability",
+          "title": "Обучаемость",
+          "value": 7
+        },
+        {
+          "key": "initiative",
+          "title": "Инициатива",
+          "value": 7
+        }
+      ],
       "stars": 8,
       "stars_delta": 4,
       "starLog": [
@@ -10987,7 +11044,14 @@ window.OTP_DATA = {
       "avg": 9.4,
       "growth_delta": 0.2,
       "hours_base": 8,
-      "no_deduct": true,
+      "no_deduct": false,
+      "no_deduct_low": [
+        {
+          "key": "discipline",
+          "title": "Требования к работе",
+          "value": 7
+        }
+      ],
       "stars": 23,
       "stars_delta": 7,
       "starLog": [
@@ -12441,7 +12505,14 @@ window.OTP_DATA = {
       "avg": 9.4,
       "growth_delta": 0.2,
       "hours_base": 5,
-      "no_deduct": true,
+      "no_deduct": false,
+      "no_deduct_low": [
+        {
+          "key": "discipline",
+          "title": "Требования к работе",
+          "value": 7
+        }
+      ],
       "stars": 15,
       "stars_delta": 5,
       "starLog": [
@@ -13864,6 +13935,7 @@ window.OTP_DATA = {
       "growth_delta": 0.2,
       "hours_base": 3,
       "no_deduct": true,
+      "no_deduct_low": [],
       "stars": 18,
       "stars_delta": 5,
       "starLog": [

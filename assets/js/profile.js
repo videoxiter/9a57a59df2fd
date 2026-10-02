@@ -743,8 +743,11 @@
       .sort((a, b) => (b.created || "").localeCompare(a.created || ""));
   }
   const HR_RULES = (D && D.hrRules) || { noDeductAvg: 8, leaveMaxHours: 4, queueFromLvl: 2 };
-  const NO_DEDUCT = !!emp.no_deduct;                       // средний KPI за последний месяц ≥ 8.0
+  const NO_DEDUCT = !!emp.no_deduct;                       // средний ≥ 9.0 и ни один показатель ниже 8
   const MY_AVG = emp.avg;
+  const AVG_TXT_MIN = String(HR_RULES.noDeductAvg).replace(".", ",");
+  const MIN_METRIC = HR_RULES.noDeductMin != null ? HR_RULES.noDeductMin : 8;
+  const LOW_METRICS = emp.no_deduct_low || [];
   const QUEUE_LVL = (emp.lvl || 1) >= (HR_RULES.queueFromLvl || 2);
   function hoursBalance() {
     let plus = 0, minus = 0, dayoffs = 0;
@@ -1013,9 +1016,11 @@
       const b = hoursBalance();
       const reqs = myRequests();
       const pending = reqs.filter((r) => r.status === "pending").length;
+      const AVG_TXT = MY_AVG != null ? String(MY_AVG).replace(".", ",") : "—";
+      const LOW_TXT = LOW_METRICS.map((m) => `${m.title} ${m.value}`).join(", ");
       const ruleNote = NO_DEDUCT
-        ? `<div class="hr-rule good"><i class="ph-bold ph-shield-check"></i> Увольнительные <b>не списывают часы</b>: средний KPI за последний месяц <b>${MY_AVG != null ? String(MY_AVG).replace(".", ",") : "—"}</b> — это ${String(HR_RULES.noDeductAvg).replace(".", ",")} и выше.</div>`
-        : `<div class="hr-rule warn"><i class="ph-bold ph-warning"></i> Увольнительные <b>списывают часы</b>: средний KPI за последний месяц <b>${MY_AVG != null ? String(MY_AVG).replace(".", ",") : "—"}</b> — нужно ${String(HR_RULES.noDeductAvg).replace(".", ",")} и выше, чтобы не списывались.</div>`;
+        ? `<div class="hr-rule good"><i class="ph-bold ph-shield-check"></i> Увольнительные <b>не списывают часы</b>: средний KPI <b>${AVG_TXT}</b> — ${AVG_TXT_MIN} и выше, и ни один показатель не ниже ${MIN_METRIC}.</div>`
+        : `<div class="hr-rule warn"><i class="ph-bold ph-warning"></i> Увольнительные <b>списывают часы</b>: ${LOW_TXT ? `показатели ниже ${MIN_METRIC} — <b>${LOW_TXT}</b>` : `средний KPI <b>${AVG_TXT}</b> ниже ${AVG_TXT_MIN}`}. Чтобы не списывались — средний ${AVG_TXT_MIN}+ и все показатели от ${MIN_METRIC}.</div>`;
       const queueNote = QUEUE_LVL
         ? `<div class="hr-rule gold"><i class="ph-bold ph-crown-simple"></i> <b>LVL ${emp.lvl} · ${lvlNow ? lvlNow.title : ""}</b> — право увольнительной <b>вне очереди</b>: приоритет при выборе даты и времени.</div>`
         : `<div class="hr-rule muted"><i class="ph-bold ph-lock"></i> Внеочередная увольнительная откроется на <b>LVL ${HR_RULES.queueFromLvl}</b> «${(lvlInfo(HR_RULES.queueFromLvl) || {}).title || ""}» — сейчас LVL ${emp.lvl}.</div>`;
@@ -1027,7 +1032,7 @@
           <span class="gs-h-s">${b.balance >= 0 ? "часов накоплено" : "часов нужно отработать"}${b.base ? ` · с учётом базы ${fmtH(b.base)}` : ""}</span>
         </div>
         <div class="gs-h-card"><span class="gs-h-k">Подтверждено</span><span class="gs-h-v good">+${fmtH(b.plus)}</span><span class="gs-h-s">переработки</span></div>
-        <div class="gs-h-card"><span class="gs-h-k">Списано</span><span class="gs-h-v bad">−${fmtH(b.minus)}</span><span class="gs-h-s">${NO_DEDUCT ? "увольнительные не списываются" : "увольнительные"}</span></div>
+        <div class="gs-h-card"><span class="gs-h-k">Списано</span><span class="gs-h-v bad">−${fmtH(b.minus)}</span><span class="gs-h-s">${NO_DEDUCT ? "увольнительные не списываются" : "увольнительные списываются"}</span></div>
         <div class="gs-h-card"><span class="gs-h-k">Отгулы за вых. смены</span><span class="gs-h-v">${fmtH(b.dayoffs)}</span><span class="gs-h-s">компенсация выходных смен</span></div>
         <div class="gs-h-card"><span class="gs-h-k">На согласовании</span><span class="gs-h-v">${pending}</span><span class="gs-h-s">${pending === 1 ? "заявка" : "заявок"}</span></div>
       </div>`;
@@ -1110,8 +1115,8 @@
         ? `<label class="otp-f"><span>${label}</span><textarea name="${name}" rows="3" ${req ? "required" : ""} placeholder="Опиши подробно — это увидит руководитель"></textarea></label>`
         : `<label class="otp-f"><span>${label}</span><input type="${kind}" name="${name}" ${req ? "required" : ""}></label>`).join("")
         + (type === "leave" ? `<div class="otp-note"><i class="ph ph-info"></i> Увольнительная — не больше ${HR_RULES.leaveMaxHours} часов в день.</div>`
-            + (NO_DEDUCT ? `<div class="otp-note good"><i class="ph-bold ph-shield-check"></i> Без списания часов: твой средний KPI ${String(MY_AVG).replace(".", ",")} ≥ ${String(HR_RULES.noDeductAvg).replace(".", ",")}.</div>`
-                         : `<div class="otp-note warn"><i class="ph-bold ph-warning"></i> Часы спишутся с переработки (средний KPI ${MY_AVG != null ? String(MY_AVG).replace(".", ",") : "—"} < ${String(HR_RULES.noDeductAvg).replace(".", ",")}).</div>`)
+            + (NO_DEDUCT ? `<div class="otp-note good"><i class="ph-bold ph-shield-check"></i> Без списания часов: средний KPI ${AVG_TXT} (${AVG_TXT_MIN}+) и все показатели от ${MIN_METRIC}.</div>`
+                         : `<div class="otp-note warn"><i class="ph-bold ph-warning"></i> Часы спишутся: ${LOW_TXT ? `показатели ниже ${MIN_METRIC} — ${LOW_TXT}` : `средний KPI ${AVG_TXT} ниже ${AVG_TXT_MIN}`}.</div>`)
             + (QUEUE_LVL ? `<div class="otp-note gold"><i class="ph-bold ph-crown-simple"></i> LVL ${emp.lvl} — увольнительная вне очереди.</div>` : "")
             : "")
         + `<div class="otp-form-foot"><button class="btn btn-primary" type="submit"><i class="ph-bold ph-paper-plane-tilt"></i> Отправить руководителю</button>
