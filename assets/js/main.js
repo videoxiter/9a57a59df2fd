@@ -1,4 +1,12 @@
-/* Логика главного дашборда «Моя команда ОТП» */
+/* Логика дашборда «Моя команда ОТП».
+   Один файл на все страницы: каждый блок срабатывает только если на странице есть его контейнер.
+
+   index.html        — Моя команда · Кто лучше · Заявки · Рейтинг по KPI
+   dynamics/         — Динамика команды (графики)
+   people/           — Специалисты (карточки)
+   duties/           — График отдела (смены и отпуска)
+   development/      — Развитие отдела
+*/
 (function () {
   "use strict";
   const D = window.OTP_DATA;
@@ -6,201 +14,275 @@
   const MKEYS = ["quality", "learnability", "initiative", "engagement", "discipline"];
   const ACTIVE = D.employees.filter((e) => e.status === "active");
   const $ = (s) => document.querySelector(s);
+  const WD_SHORT = ["вс", "пн", "вт", "ср", "чт", "пт", "сб"];
+  const WD_FULL = ["воскресенье", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота"];
+  const MON_GEN = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
+  const isoOf = (dt) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}`;
+  const addDays = (dt, n) => { const d = new Date(dt.getTime()); d.setDate(d.getDate() + n); return d; };
+  const surname = (f) => String(f || "").split(" ")[0].toLowerCase().replace("ё", "е");
+  const samePerson = (a, b) => !!a && !!b && surname(a) === surname(b);
 
   function initials(name) {
     const p = name.trim().split(/\s+/);
     return ((p[0] ? p[0][0] : "") + (p[1] ? p[1][0] : "")).toUpperCase();
   }
 
-  /* ---------- hero-статистика ---------- */
   const rated = D.employees.filter((e) => e.avg != null);
-  const teamAvgNow = +(rated.reduce((s, e) => s + e.avg, 0) / rated.length).toFixed(2);
+  const teamAvgNow = rated.length ? +(rated.reduce((s, e) => s + e.avg, 0) / rated.length).toFixed(2) : 0;
   const ranked = [...D.employees].sort((a, b) => (b.avg ?? -1) - (a.avg ?? -1));
   const leader = ranked[0];
   const lastBonus = D.employees.reduce((s, e) => s + (e.history[e.history.length - 1].bonus || 0), 0);
 
-  $("#meta-count").textContent = D.employees.length;
-  $("#meta-month").textContent = D.meta.updated;
-  $("#stat-avg").textContent = teamAvgNow.toFixed(1);
-  $("#stat-top").textContent = leader.shortName;
-  $("#stat-bonus").textContent = otp.rub(lastBonus);
-  $("#foot-updated").textContent = D.meta.updated;
+  /* ---------- шапка / подвал ---------- */
+  if ($("#meta-count")) $("#meta-count").textContent = D.employees.length;
+  if ($("#meta-month")) $("#meta-month").textContent = D.meta.updated;
+  if ($("#stat-avg")) $("#stat-avg").textContent = teamAvgNow.toFixed(1);
+  if ($("#stat-top")) $("#stat-top").textContent = leader.shortName;
+  if ($("#stat-bonus")) $("#stat-bonus").textContent = otp.rub(lastBonus);
   const fm = $("#foot-month"); if (fm) fm.textContent = D.meta.updated;
 
-  /* ---------- leaderboard ---------- */
-  const lb = $("#leaderboard");
-  lb.innerHTML = ranked
-    .map((e, i) => {
-      const hasKpi = e.avg != null;
-      const t = otp.trend(e);
-      const arrow = t.dir === "up" ? "▲" : t.dir === "down" ? "▼" : "▬";
-      const cls = t.dir === "up" ? "up" : t.dir === "down" ? "down" : "flat";
-      const rankCls = i === 0 ? "top1" : i === 1 ? "top2" : i === 2 ? "top3" : "";
-      const medal = hasKpi ? (i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1) : "👑";
-      const leftBadge = e.status === "left" ? '<span class="badge badge-left">выбыл</span>' : "";
-      const stars = hasKpi ? `<span class="lb-trend up" title="уровень">LVL ${e.lvl}</span>` : "";
-      const trendCell = hasKpi
-        ? `<span class="lb-trend ${cls}">${arrow} ${t.delta > 0 ? "+" + t.delta : t.delta}</span>`
-        : '<span class="badge" style="font-size:.68rem"><i class="ph ph-crown"></i> руководитель</span>';
-      return `
-        <a class="lb-row" href="../team/${e.slug}/index.html" data-reveal>
-          <span class="lb-rank ${rankCls}">${medal}</span>
-          <span class="lb-name">${e.fullName} ${leftBadge} ${stars}<small>${e.role}</small></span>
-          ${trendCell}
-          <span class="lb-avg">${hasKpi ? e.avg.toFixed(1) : "—"}</span>
-        </a>`;
-    })
-    .join("");
+  /* ---------- «Кто лучше»: лучший специалист месяца ---------- */
+  const bestCard = $("#best-card");
+  if (bestCard && leader && leader.avg != null) {
+    const t = otp.trend(leader);
+    const arrow = t.dir === "up" ? "▲" : t.dir === "down" ? "▼" : "▬";
+    const metrics = MKEYS.map((k) => {
+      const m = D.metrics[k];
+      const v = leader.current ? leader.current[k] : "—";
+      return `<span class="bc-m"><i class="ph-bold ${m.icon || "ph-chart-bar"}"></i><b>${v}</b><i>${m.label.split(" ")[0]}</i></span>`;
+    }).join("");
+    const awards = (leader.awards || []).slice(0, 2).map((a) => `<span class="bc-award" style="--ac:${a.color}">${a.glyph || ""} ${a.title}</span>`).join("");
+    bestCard.innerHTML = `
+      <div class="bc-left">
+        <span class="bc-crown">🏆 Лучший результат месяца</span>
+        <div class="bc-who">
+          <span class="bc-avatar">${initials(leader.fullName)}</span>
+          <div>
+            <a class="bc-name" href="../team/${leader.slug}/index.html">${leader.fullName}</a>
+            <div class="bc-role">${leader.role}</div>
+          </div>
+        </div>
+        <div class="bc-metrics">${metrics}</div>
+      </div>
+      <div class="bc-right">
+        <div class="bc-avg">${leader.avg.toFixed(1)}</div>
+        <div class="bc-avg-l">средний KPI · <span class="bc-trend ${t.dir}">${arrow} ${t.delta > 0 ? "+" + t.delta : t.delta}</span></div>
+        <div class="bc-badges"><span class="bc-badge">LVL ${leader.lvl} · ${leader.stars_in_level}/10</span>${awards}</div>
+        <a class="btn btn-primary" href="../team/${leader.slug}/index.html"><i class="ph ph-user"></i> Страница специалиста</a>
+      </div>`;
+  } else if (bestCard) {
+    bestCard.remove();
+  }
 
-  /* ---------- карточки сотрудников ---------- */
+  /* ---------- рейтинг по KPI ---------- */
+  const lb = $("#leaderboard");
+  if (lb) lb.innerHTML = ranked.map((e, i) => {
+    const hasKpi = e.avg != null;
+    const t = otp.trend(e);
+    const arrow = t.dir === "up" ? "▲" : t.dir === "down" ? "▼" : "▬";
+    const cls = t.dir === "up" ? "up" : t.dir === "down" ? "down" : "flat";
+    const rankCls = i === 0 ? "top1" : i === 1 ? "top2" : i === 2 ? "top3" : "";
+    const medal = hasKpi ? (i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1) : "👑";
+    const leftBadge = e.status === "left" ? '<span class="badge badge-left">выбыл</span>' : "";
+    const stars = hasKpi ? `<span class="lb-trend up" title="уровень">LVL ${e.lvl}</span>` : "";
+    const trendCell = hasKpi
+      ? `<span class="lb-trend ${cls}">${arrow} ${t.delta > 0 ? "+" + t.delta : t.delta}</span>`
+      : '<span class="badge" style="font-size:.68rem"><i class="ph ph-crown"></i> руководитель</span>';
+    return `
+      <a class="lb-row" href="../team/${e.slug}/index.html" data-reveal>
+        <span class="lb-rank ${rankCls}">${medal}</span>
+        <span class="lb-name">${e.fullName} ${leftBadge} ${stars}<small>${e.role}</small></span>
+        ${trendCell}
+        <span class="lb-avg">${hasKpi ? e.avg.toFixed(1) : "—"}</span>
+      </a>`;
+  }).join("");
+
+  /* ---------- карточки специалистов ---------- */
   const grid = $("#emp-grid");
-  grid.innerHTML = D.employees
-    .map((e) => {
-      const hasKpi = e.avg != null;
-      const mini = hasKpi
-        ? MKEYS.map((k) => {
-            const m = D.metrics[k];
-            return `<div class="mm"><span style="font-size:1.15rem;line-height:1">${m.emoji || ""}</span><div class="v">${e.current[k]}</div><div class="l">${m.label.split(" ")[0]}</div></div>`;
-          }).join("")
-        : '<div class="mm" style="grid-column:1/-1;color:var(--muted);padding:12px"><i class="ph ph-crown"></i> KPI не ведётся — руководитель</div>';
-      const leftTag = e.status === "left" ? '<span class="badge badge-left" style="font-size:.68rem">выбыл</span>' : "";
-      const awardTop = (e.awards && e.awards[0]) ? `<span class="badge" style="font-size:.66rem;color:${e.awards[0].color};border-color:${otp.hexA(e.awards[0].color,0.3)}"><i class="${e.awards[0].icon}"></i> ${e.awards[0].title}</span>` : "";
-      const stars = hasKpi ? `<span style="color:var(--warn);font-size:.75rem;font-weight:600"><i class="ph-fill ph-star"></i> LVL ${e.lvl} · ${e.stars_in_level}/10</span>` : "";
-      return `
-        <a class="card emp-card" href="../team/${e.slug}/index.html" data-reveal>
-          <div class="top">
-            <div style="display:flex;gap:12px;align-items:center">
-              <span class="avatar">${initials(e.fullName)}</span>
-              <div>
-                <h3>${e.shortName}</h3>
-                <div class="role">${e.role}</div>
-              </div>
-            </div>
-            <div style="text-align:right">
-              <div class="avg">${hasKpi ? e.avg.toFixed(1) : "—"}</div>
-              ${leftTag}
+  if (grid) grid.innerHTML = D.employees.map((e) => {
+    const hasKpi = e.avg != null;
+    const mini = hasKpi
+      ? MKEYS.map((k) => {
+          const m = D.metrics[k];
+          return `<div class="mm"><span style="font-size:1.15rem;line-height:1">${m.emoji || ""}</span><div class="v">${e.current[k]}</div><div class="l">${m.label.split(" ")[0]}</div></div>`;
+        }).join("")
+      : '<div class="mm" style="grid-column:1/-1;color:var(--muted);padding:12px"><i class="ph ph-crown"></i> KPI не ведётся — руководитель</div>';
+    const leftTag = e.status === "left" ? '<span class="badge badge-left" style="font-size:.68rem">выбыл</span>' : "";
+    const awardTop = (e.awards && e.awards[0]) ? `<span class="badge" style="font-size:.66rem;color:${e.awards[0].color};border-color:${otp.hexA(e.awards[0].color,0.3)}"><i class="${e.awards[0].icon}"></i> ${e.awards[0].title}</span>` : "";
+    const stars = hasKpi ? `<span style="color:var(--warn);font-size:.75rem;font-weight:600"><i class="ph-fill ph-star"></i> LVL ${e.lvl} · ${e.stars_in_level}/10</span>` : "";
+    return `
+      <a class="card emp-card" href="../team/${e.slug}/index.html" data-reveal>
+        <div class="top">
+          <div style="display:flex;gap:12px;align-items:center">
+            <span class="avatar">${initials(e.fullName)}</span>
+            <div>
+              <h3>${e.shortName}</h3>
+              <div class="role">${e.role}</div>
             </div>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;min-height:22px">${awardTop} ${stars}</div>
-          <div class="mini-metrics">${mini}</div>
-        </a>`;
-    })
-    .join("");
+          <div style="text-align:right">
+            <div class="avg">${hasKpi ? e.avg.toFixed(1) : "—"}</div>
+            ${leftTag}
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;min-height:22px">${awardTop} ${stars}</div>
+        <div class="mini-metrics">${mini}</div>
+      </a>`;
+  }).join("");
 
-  /* раскрыть контент сразу, независимо от инициализации графиков */
+  /* ---------- график отдела (смены + отпуска) ---------- */
+  const dutyBox = $("#duty-board");
+  if (dutyBox && D.schedule) {
+    const S = D.schedule;
+    const today = new Date();
+    const iso = isoOf(today);
+    const month = S.months[iso] || (S.months[Object.keys(S.months)[0]] || null);
+    const isoKey = S.months[iso] ? iso : Object.keys(S.months)[0];
+    const isWork = (sh) => sh && ["shift", "weekend", "duty", "extra"].includes(sh.kind);
+    const lineOf = (fio, dt) => {
+      const M = S.months[isoKey]; if (!M || !M.lines || dt.getDay() === 0 || dt.getDay() === 6) return null;
+      for (const [lid, info] of Object.entries(M.lines)) {
+        const labels = info.labels || [];
+        for (let i = 0; i < labels.length; i++) {
+          if (!samePerson((info.weeks || [])[i], fio)) continue;
+          const m = /^(\d{2})\.(\d{2})\s*-\s*(\d{2})\.(\d{2})$/.exec(String(labels[i]).trim());
+          if (!m) continue;
+          const y = dt.getFullYear();
+          const from = new Date(y, +m[2] - 1, +m[1]);
+          let to = new Date(y, +m[4] - 1, +m[3]);
+          if (to < from) to = new Date(y + 1, +m[4] - 1, +m[3]);
+          const d0 = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+          if (d0 >= from && d0 <= to) return { id: lid, title: info.title };
+        }
+      }
+      return null;
+    };
+    const timeRank = (sh) => { const h = sh && sh.time ? parseInt(String(sh.time).slice(0, 2), 10) : NaN; return Number.isFinite(h) ? h : 9; };
+    const dayList = (dt) => {
+      const out = [];
+      for (const [fio, days] of Object.entries((month && month.shifts) || {})) {
+        const sh = days[String(dt.getDate())];
+        if (!sh) continue;
+        out.push({ fio, sh, ln: lineOf(fio, dt) });
+      }
+      out.sort((a, b) => timeRank(a.sh) - timeRank(b.sh) || a.fio.localeCompare(b.fio));
+      return out;
+    };
+    const dayBlock = (dt, label) => {
+      const list = dayList(dt);
+      const work = list.filter((x) => isWork(x.sh));
+      const off = list.filter((x) => !isWork(x.sh));
+      return `<div class="dt-day">
+        <div class="dt-day-h"><b>${label}</b><span>${WD_FULL[dt.getDay()]}, ${dt.getDate()} ${MON_GEN[dt.getMonth()]}</span><i>${work.length} на смене · ${off.length} отдыхают</i></div>
+        <div class="dt-rows">
+          ${work.map((x) => `<div class="dt-row"><span class="gs-sym k-${x.sh.kind}">${x.sh.sym}</span><span class="dt-fio">${x.fio}</span><span class="dt-time">${x.sh.time || ""}</span><span class="dt-ln">${x.ln ? x.ln.id + " · " + x.ln.title : ""}</span></div>`).join("")}
+          ${off.map((x) => `<div class="dt-row off"><span class="gs-sym k-${x.sh.kind}">${x.sh.sym}</span><span class="dt-fio">${x.fio}</span><span class="dt-time">${x.sh.title}</span></div>`).join("")}
+        </div></div>`;
+    };
+    const year = String(today.getFullYear());
+    const vac = S.vacations && S.vacations[year] ? S.vacations[year] : {};
+    const vacRows = [];
+    for (const [fio, list] of Object.entries(vac)) for (const p of list) vacRows.push({ fio, p });
+    vacRows.sort((a, b) => a.p.from.localeCompare(b.p.from));
+    const fmt = (p) => {
+      const f = new Date(p.from + "T00:00:00"), t = new Date(p.to + "T00:00:00");
+      return `с ${f.getDate()} ${MON_GEN[f.getMonth()]} по ${t.getDate()} ${MON_GEN[t.getMonth()]}`;
+    };
+    dutyBox.innerHTML = `
+      <div class="dt-grid">${dayBlock(today, "Сегодня")}${dayBlock(addDays(today, 1), "Завтра")}</div>
+      <h3 class="dt-sub"><i class="ph-bold ph-airplane-tilt"></i> Отпуска отдела · ${year}</h3>
+      <div class="gs-vac-table">
+        <div class="gs-vac-tr head"><span>Период</span><span>Сотрудник</span><span>Дней</span></div>
+        ${vacRows.map(({ fio, p }) => `<div class="gs-vac-tr">
+          <span class="gs-vac-per">${fmt(p)}</span>
+          <span class="gs-vac-who">${fio.split(" ")[0]} ${(fio.split(" ")[1] || "").slice(0, 1)}.</span>
+          <span class="gs-vac-dn">${p.days || ""}</span></div>`).join("")}
+      </div>`;
+  }
+
   otp.reveal(document);
 
-  /* ---------- графики ---------- */
+  /* ---------- графики (страница «Динамика») ---------- */
   if (!window.Chart) return;
 
-  // 1. средний KPI команды
-  const KPI_EMPLOYEES = D.employees.filter((e) => e.current != null);
-  const teamAvgSeries = D.months.map((_, i) => {
-    const vals = KPI_EMPLOYEES.map((e) => otp.avgOf(e.history[i])).filter((v) => v > 0);
-    return +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2);
-  });
-  new Chart($("#chart-team-avg"), {
-    type: "line",
-    data: {
-      labels: D.months,
-      datasets: [{
-        label: "Средний KPI",
-        data: teamAvgSeries,
+  if ($("#chart-team-avg")) {
+    const KPI_EMPLOYEES = D.employees.filter((e) => e.current != null);
+    const teamAvgSeries = D.months.map((_, i) => {
+      const vals = KPI_EMPLOYEES.map((e) => otp.avgOf(e.history[i])).filter((v) => v > 0);
+      return +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2);
+    });
+    new Chart($("#chart-team-avg"), {
+      type: "line",
+      data: { labels: D.months, datasets: [{
+        label: "Средний KPI", data: teamAvgSeries,
         borderColor: "#22d3ee", borderWidth: 2.5, tension: 0.4,
         pointRadius: 3, pointHoverRadius: 6,
         pointBackgroundColor: "#22d3ee", pointBorderColor: "#0d1219", pointBorderWidth: 2,
-        fill: true,
-        backgroundColor: (c) => otp.lineGradient(c.chart, "#22d3ee"),
-      }],
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
-      scales: {
-        y: { min: 0, max: 10, grid: { color: "rgba(255,255,255,.05)" }, ticks: { stepSize: 2 } },
-        x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 7 } },
-      },
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: (c) => `Средний KPI: ${c.parsed.y}` } },
-      },
-    },
-  });
-
-  // 2. сумма бонусов
-  const bonusSeries = D.months.map((_, i) =>
-    D.employees.reduce((s, e) => s + (e.history[i].bonus || 0), 0));
-  new Chart($("#chart-bonus"), {
-    type: "bar",
-    data: {
-      labels: D.months,
-      datasets: [{
-        label: "Бонусы",
-        data: bonusSeries,
-        backgroundColor: "#0e7490",
-        hoverBackgroundColor: "#22d3ee",
-        borderRadius: 6, maxBarThickness: 26,
-      }],
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      scales: {
-        y: { grid: { color: "rgba(255,255,255,.05)" }, ticks: { callback: (v) => otp.fmt(v) + " ₽" } },
-        x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 7 } },
-      },
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: (c) => otp.rub(c.parsed.y) } },
-      },
-    },
-  });
-
-  // 3. радар (с выбором сотрудника)
-  const teamProfile = {};
-  const ratedEmployees = ACTIVE.filter((e) => e.current != null);
-  MKEYS.forEach((k) => {
-    teamProfile[k] = +(ratedEmployees.reduce((s, e) => s + e.current[k], 0) / ratedEmployees.length).toFixed(1);
-  });
-
-  const sel = $("#radar-select");
-  sel.innerHTML =
-    `<option value="__team__">Среднее по команде</option>` +
-    D.employees.filter((e) => e.current != null)
-      .map((e) => `<option value="${e.id}">${e.shortName} ${e.fullName.split(" ")[0]}</option>`).join("");
-
-  let radarChart = null;
-  function drawRadar() {
-    const v = sel.value;
-    const src = v === "__team__" ? teamProfile : (otp.byId(v)?.current || teamProfile);
-    const label = v === "__team__" ? "Среднее по команде" : otp.byId(v).fullName;
-    const data = MKEYS.map((k) => src[k]);
-    if (radarChart) radarChart.destroy();
-    radarChart = new Chart($("#chart-radar"), {
-      type: "radar",
-      data: {
-        labels: MKEYS.map((k) => D.metrics[k].label),
-        datasets: [{
-          label, data,
-          borderColor: "#22d3ee", backgroundColor: "rgba(34,211,238,.16)",
-          borderWidth: 2, pointRadius: 4, pointHoverRadius: 7,
-          pointBackgroundColor: "#22d3ee",
-        }],
-      },
+        fill: true, backgroundColor: (c) => otp.lineGradient(c.chart, "#22d3ee"),
+      }] },
       options: {
-        responsive: true, maintainAspectRatio: false,
+        responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
         scales: {
-          r: {
-            min: 0, max: 10, ticks: { stepSize: 2, display: false, backdropColor: "transparent" },
-            grid: { color: "rgba(255,255,255,.08)" }, angleLines: { color: "rgba(255,255,255,.08)" },
-            pointLabels: { color: "#8b96a8", font: { size: 12 } },
-          },
+          y: { min: 0, max: 10, grid: { color: "rgba(255,255,255,.05)" }, ticks: { stepSize: 2 } },
+          x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 7 } },
         },
-        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `${c.label}: ${c.parsed.r}` } } },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `Средний KPI: ${c.parsed.y}` } } },
       },
     });
   }
-  sel.addEventListener("change", drawRadar);
-  drawRadar();
 
-  /* раскрыть динамически добавленный контент */
+  if ($("#chart-bonus")) {
+    const bonusSeries = D.months.map((_, i) =>
+      D.employees.reduce((s, e) => s + (e.history[i].bonus || 0), 0));
+    new Chart($("#chart-bonus"), {
+      type: "bar",
+      data: { labels: D.months, datasets: [{ label: "Бонусы", data: bonusSeries,
+        backgroundColor: "#0e7490", hoverBackgroundColor: "#22d3ee", borderRadius: 6, maxBarThickness: 26 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: {
+          y: { grid: { color: "rgba(255,255,255,.05)" }, ticks: { callback: (v) => otp.fmt(v) + " ₽" } },
+          x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 7 } },
+        },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => otp.rub(c.parsed.y) } } },
+      },
+    });
+  }
+
+  const sel = $("#radar-select");
+  if (sel && $("#chart-radar")) {
+    const teamProfile = {};
+    const ratedEmployees = ACTIVE.filter((e) => e.current != null);
+    MKEYS.forEach((k) => {
+      teamProfile[k] = +(ratedEmployees.reduce((s, e) => s + e.current[k], 0) / ratedEmployees.length).toFixed(1);
+    });
+    sel.innerHTML = `<option value="__team__">Среднее по команде</option>` +
+      D.employees.filter((e) => e.current != null)
+        .map((e) => `<option value="${e.id}">${e.shortName} ${e.fullName.split(" ")[0]}</option>`).join("");
+    let radarChart = null;
+    const drawRadar = () => {
+      const v = sel.value;
+      const src = v === "__team__" ? teamProfile : (otp.byId(v)?.current || teamProfile);
+      const label = v === "__team__" ? "Среднее по команде" : otp.byId(v).fullName;
+      const data = MKEYS.map((k) => src[k]);
+      if (radarChart) radarChart.destroy();
+      radarChart = new Chart($("#chart-radar"), {
+        type: "radar",
+        data: { labels: MKEYS.map((k) => D.metrics[k].label), datasets: [{
+          label, data, borderColor: "#22d3ee", backgroundColor: "rgba(34,211,238,.16)",
+          borderWidth: 2, pointRadius: 4, pointHoverRadius: 7, pointBackgroundColor: "#22d3ee" }] },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: { r: { min: 0, max: 10, ticks: { stepSize: 2, display: false, backdropColor: "transparent" },
+            grid: { color: "rgba(255,255,255,.08)" }, angleLines: { color: "rgba(255,255,255,.08)" },
+            pointLabels: { color: "#8b96a8", font: { size: 12 } } } },
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `${c.label}: ${c.parsed.r}` } } },
+        },
+      });
+    };
+    sel.addEventListener("change", drawRadar);
+    drawRadar();
+  }
+
   otp.reveal(document);
 })();
