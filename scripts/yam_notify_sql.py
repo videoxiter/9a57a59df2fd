@@ -4,8 +4,12 @@
 Уведомления отправляет сама база Supabase (pg_net + триггер), поэтому ПК руководителя
 не нужен: заявка создаётся или меняет статус → база шлёт сообщение ботом.
 
-Запуск:  python yam_notify_sql.py        # печатает готовый SQL (токен берётся из data\\.env)
+Запуск:  python yam_notify_sql.py            # печатает SQL в консоль (токен берётся из data\\.env)
+         python yam_notify_sql.py --out      # плюс сохраняет копию в .verify/yam_notify.sql
 Затем:   Supabase → SQL Editor → вставить → Run
+
+ВНИМАНИЕ: вывод содержит токен бота. НИКОГДА не сохранять его внутрь репозитория
+(репозиторий публичный, GitHub Pages отдаёт любой файл по URL) — только .verify/ (в .gitignore).
 """
 import json
 import os
@@ -106,6 +110,13 @@ create trigger otp_notify_upd after update on public.otp_requests
   for each row when (old.status is distinct from new.status)
   execute function public.otp_notify();
 """
+    if "--out" in sys.argv:
+        out_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".verify")
+        os.makedirs(out_dir, exist_ok=True)
+        out = os.path.abspath(os.path.join(out_dir, "yam_notify.sql"))
+        with open(out, "w", encoding="utf-8") as fh:
+            fh.write(sql)
+        print("# копия сохранена в " + out, file=sys.stderr)
     print(sql)
     return 0
 
