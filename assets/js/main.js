@@ -51,8 +51,8 @@
   }
   async function hydrateHours() {
     const reqs = (window.OTP_CLOUD ? await window.OTP_CLOUD.all() : null) || [];
-    document.querySelectorAll("[data-hours]").forEach((el) => {
-      const emp = bySlug(el.dataset.hours) || bySurname(el.dataset.hoursfio || "");
+    document.querySelectorAll("[data-hours], [data-hoursfio]").forEach((el) => {
+      const emp = bySlug(el.dataset.hours || "") || bySurname(el.dataset.hoursfio || "");
       if (emp) el.innerHTML = hoursChip(emp, reqs);
     });
   }
