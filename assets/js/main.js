@@ -11,6 +11,8 @@
   "use strict";
   const D = window.OTP_DATA;
   if (!D) return console.error("OTP_DATA не загружен");
+  const bySlug = (s) => (D.employees || []).find((e) => e.slug === s) || null;
+  const bySurname = (fio) => (D.employees || []).find((e) => (e.fullName || "").split(" ")[0] === String(fio).split(" ")[0]) || null;
   const MKEYS = ["quality", "learnability", "initiative", "engagement", "discipline"];
   const ACTIVE = D.employees.filter((e) => e.status === "active");
   const $ = (s) => document.querySelector(s);
@@ -21,6 +23,39 @@
   const addDays = (dt, n) => { const d = new Date(dt.getTime()); d.setDate(d.getDate() + n); return d; };
   const surname = (f) => String(f || "").split(" ")[0].toLowerCase().replace("ё", "е");
   const samePerson = (a, b) => !!a && !!b && surname(a) === surname(b);
+
+  /* ---------- накопленные часы ---------- */
+  function hoursOfReq(r) {
+    if (r.type === "dayoff") return r.hours || 8;
+    const p = (x) => { const m = /^(\d{1,2}):(\d{2})$/.exec(x || ""); return m ? +m[1] + +m[2] / 60 : null; };
+    const a = p(r.from), b = p(r.to);
+    return a == null || b == null ? 0 : Math.max(0, Math.round((b - a) * 10) / 10);
+  }
+  function balanceOf(emp, reqs) {
+    if (!emp) return null;
+    let plus = 0, minus = 0;
+    for (const r of reqs) {
+      if (r.empSlug !== emp.slug || r.status !== "approved") continue;
+      const h = hoursOfReq(r);
+      if (r.type === "overtime") plus += h;
+      else if (r.type === "leave" && !r.noDeduct && !emp.no_deduct) minus += h;
+    }
+    return { balance: Math.round(((emp.hours_base || 0) + plus - minus) * 10) / 10 };
+  }
+  const fmtH = (h) => (Math.round(h * 10) / 10).toString().replace(".", ",") + " ч";
+  function hoursChip(emp, reqs) {
+    const b = balanceOf(emp, reqs);
+    if (!b) return "";
+    return `<span class="hr-hours ${b.balance >= 0 ? "pos" : "neg"}" title="накопленная переработка или долг по часам">
+      <i class="ph-bold ph-hourglass-high"></i> ${b.balance >= 0 ? "+" : "−"}${fmtH(Math.abs(b.balance))} ${b.balance >= 0 ? "накоплено" : "должен"}</span>`;
+  }
+  async function hydrateHours() {
+    const reqs = (window.OTP_CLOUD ? await window.OTP_CLOUD.all() : null) || [];
+    document.querySelectorAll("[data-hours]").forEach((el) => {
+      const emp = bySlug(el.dataset.hours) || bySurname(el.dataset.hoursfio || "");
+      if (emp) el.innerHTML = hoursChip(emp, reqs);
+    });
+  }
 
   function initials(name) {
     const p = name.trim().split(/\s+/);
@@ -91,7 +126,8 @@
     return `
       <a class="lb-row" href="../team/${e.slug}/index.html" data-reveal>
         <span class="lb-rank ${rankCls}">${medal}</span>
-        <span class="lb-name">${e.fullName} ${leftBadge} ${stars}<small>${e.role}</small></span>
+        <span class="lb-name">${e.fullName} ${leftBadge} ${stars}<small>${e.role}</small>
+          <span class="lb-hours" data-hours="${e.slug}"></span></span>
         ${trendCell}
         <span class="lb-avg">${hasKpi ? e.avg.toFixed(1) : "—"}</span>
       </a>`;
@@ -125,7 +161,8 @@
             ${leftTag}
           </div>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;min-height:22px">${awardTop} ${stars}</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;min-height:22px">${awardTop} ${stars}</div>
+        <div class="pe-hours" data-hours="${e.slug}"></div>
         <div class="mini-metrics">${mini}</div>
       </a>`;
   }).join("");
@@ -175,7 +212,7 @@
       return `<div class="dt-day">
         <div class="dt-day-h"><b>${label}</b><span>${WD_FULL[dt.getDay()]}, ${dt.getDate()} ${MON_GEN[dt.getMonth()]}</span><i>${work.length} на смене · ${off.length} отдыхают</i></div>
         <div class="dt-rows">
-          ${work.map((x) => `<div class="dt-row"><span class="gs-sym k-${x.sh.kind}">${x.sh.sym}</span><span class="dt-fio">${x.fio}</span><span class="dt-time">${x.sh.time || ""}</span><span class="dt-ln">${x.ln ? x.ln.id + " · " + x.ln.title : ""}</span></div>`).join("")}
+          ${work.map((x) => `<div class="dt-row"><span class="gs-sym k-${x.sh.kind}">${x.sh.sym}</span><span class="dt-fio">${x.fio} <span class="dt-hours" data-hoursfio="${x.fio}"></span></span><span class="dt-time">${x.sh.time || ""}</span><span class="dt-ln">${x.ln ? x.ln.id + " · " + x.ln.title : ""}</span></div>`).join("")}
           ${off.map((x) => `<div class="dt-row off"><span class="gs-sym k-${x.sh.kind}">${x.sh.sym}</span><span class="dt-fio">${x.fio}</span><span class="dt-time">${x.sh.title}</span></div>`).join("")}
         </div></div>`;
     };
@@ -217,6 +254,7 @@
   }
 
   otp.reveal(document);
+  hydrateHours();
 
   /* ---------- графики (страница «Динамика») ---------- */
   if (!window.Chart) return;

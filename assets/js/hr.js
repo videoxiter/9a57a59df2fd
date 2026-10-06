@@ -31,6 +31,31 @@
   const fmtH = (h) => (Math.round(h * 10) / 10).toString().replace(".", ",") + " ч";
   const dmy = (iso) => { if (!iso) return "—"; const [y, m, d] = iso.split("-"); return `${d}.${m}.${y}`; };
 
+  /* Баланс часов сотрудника: база + подтверждённые переработки − увольнительные
+     (увольнительные не списываются, если у сотрудника нет провальных показателей
+     или руководитель отметил «не списывать»). */
+  function empHours(slug) {
+    const D = window.OTP_DATA || {};
+    const e = (D.employees || []).find((x) => x.slug === slug);
+    const base = e ? (e.hours_base || 0) : 0;
+    let plus = 0, minus = 0;
+    for (const r of load2()) {
+      if (r.empSlug !== slug || r.status !== "approved") continue;
+      const h = hoursOf(r);
+      if (r.type === "overtime") plus += h;
+      else if (r.type === "leave" && !r.noDeduct && !(e && e.no_deduct)) minus += h;
+    }
+    return { base, plus: Math.round(plus * 10) / 10, minus: Math.round(minus * 10) / 10,
+             balance: Math.round((base + plus - minus) * 10) / 10, noDeduct: !!(e && e.no_deduct) };
+  }
+  const hoursChip = (slug) => {
+    const b = empHours(slug);
+    const cls = b.balance >= 0 ? "pos" : "neg";
+    const label = b.balance >= 0 ? "накоплено" : "должен отработать";
+    return `<span class="hr-hours ${cls}" title="База ${fmtH(b.base)} · переработки +${fmtH(b.plus)} · списано −${fmtH(b.minus)}">
+      <i class="ph-bold ph-hourglass-high"></i> ${b.balance >= 0 ? "+" : "−"}${fmtH(Math.abs(b.balance))} ${label}</span>`;
+  };
+
   function row(r, decided) {
     const t = TYPES[r.type] || { label: r.type, icon: "ph-note" };
     return `<div class="hr-row st-${r.status}" data-id="${r.id}">
@@ -41,6 +66,7 @@
               ? `отгул ${dmy(r.date)} · за выходную смену ${dmy(r.date2)}`
               : `${dmy(r.date)} · ${r.from}–${r.to} · ${fmtH(hoursOf(r))}`}</i>
         ${r.reason ? `<em>${r.reason}</em>` : ""}
+        <span class="hr-hours-line">${hoursChip(r.empSlug)}${empHours(r.empSlug).noDeduct ? '<span class="hr-hours-note">показатели 7+ — часы не списываются</span>' : ""}</span>
         ${r.status === "rejected" && r.reject ? `<em class="rej">Отказ: ${r.reject}</em>` : ""}
       </span>
       ${r.status === "pending" && !decided
