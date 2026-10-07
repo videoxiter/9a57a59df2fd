@@ -847,6 +847,17 @@ def _endpoint():
         return ""
 
 
+def load_roadmaps():
+    """Дорожные карты развития (scripts/roadmaps.json → страница «Мой рост», раздел сотрудника)."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "roadmaps.json")
+    if not os.path.exists(path):
+        return {}
+    try:
+        return json.load(open(path, encoding="utf-8"))
+    except Exception:
+        return {}
+
+
 def load_schedule():
     """График смен + отпуска: ФИО из Confluence → slug сотрудника сайта."""
     if not os.path.exists(SCHED_PATH):
@@ -1040,6 +1051,7 @@ def build():
                  "memberCount": len(team_members), "updated": month_label(months[-1])},
         "leaderboard": build_leaderboard(result),
         "schedule": load_schedule(),
+        "roadmaps": load_roadmaps(),
     }
     return data
 

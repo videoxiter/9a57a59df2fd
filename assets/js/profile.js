@@ -413,8 +413,75 @@
   }
 
   /* ================= РАЗДЕЛ: МОЙ РОСТ ================= */
+  /* ================= РАЗДЕЛ: МОЙ РОСТ (дорожная карта развития) ================= */
+  function escHtml(s) {
+    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  const rmCard = () => (D.roadmaps && D.roadmaps[emp.slug]) || null;
+
+  function rmLine(s) {
+    // «Где брать: …» одной строкой, каждая часть с иконкой
+    return escHtml(s).replace(/Где брать:\s*/, "")
+      .replace(/Как делать:\s*/g, "</p><p class=\"rm-howline\">");
+  }
+
+  function rmStage(s, i, total) {
+    return `<article class="rm-stage" data-rm="${s.n}" tabindex="0" role="button">
+      <div class="rm-node">
+        <span class="rm-num">${String(s.n).padStart(2, "0")}</span>
+        ${i < total - 1 ? '<span class="rm-stem"></span>' : '<span class="rm-flag">🏁</span>'}
+      </div>
+      <div class="rm-body">
+        <div class="rm-head">
+          <h4>${escHtml(s.title)}</h4>
+          ${s.tag ? `<span class="rm-tag">${escHtml(s.tag)}</span>` : ""}
+        </div>
+        ${(s.goals || []).length ? `<ul class="rm-goals">${s.goals.map((g) => `<li>${escHtml(g)}</li>`).join("")}</ul>` : ""}
+        ${s.value ? `<div class="rm-value"><i class="ph-bold ph-heart"></i> ${escHtml(s.value)}</div>` : ""}
+        <span class="rm-open">Что делать и где искать <i class="ph-bold ph-caret-right"></i></span>
+      </div>
+    </article>`;
+  }
+
+  function openStage(s) {
+    const prev = document.getElementById("rm-modal");
+    if (prev) prev.remove();
+    const m = document.createElement("div");
+    m.id = "rm-modal";
+    m.className = "rm-modal";
+    m.innerHTML = `<div class="rm-modal-box" role="dialog" aria-modal="true">
+      <button class="rm-close" aria-label="Закрыть"><i class="ph-bold ph-x"></i></button>
+      <div class="rm-modal-head">
+        <span class="rm-num">${String(s.n).padStart(2, "0")}</span>
+        <div>
+          <h4>${escHtml(s.title)}</h4>
+          ${s.tag ? `<span class="rm-tag">${escHtml(s.tag)}</span>` : ""}
+        </div>
+      </div>
+      <div class="rm-modal-body">
+        ${(s.goals || []).length ? `<div class="rm-block"><h5><i class="ph-bold ph-check-square"></i> Что нужно сделать</h5>
+          <ul>${s.goals.map((g) => `<li>${escHtml(g)}</li>`).join("")}</ul></div>` : ""}
+        ${s.theory ? `<div class="rm-block"><h5><i class="ph-bold ph-book-open"></i> Теория · около 10 часов, гибко</h5><p>${escHtml(s.theory)}</p></div>` : ""}
+        ${s.practice ? `<div class="rm-block"><h5><i class="ph-bold ph-wrench"></i> Практика · 10 часов = 30 минут в день</h5><p>${escHtml(s.practice)}</p></div>` : ""}
+        ${s.how ? `<div class="rm-block"><h5><i class="ph-bold ph-compass"></i> Где брать и как делать</h5><p>${rmLine(s.how)}</p></div>` : ""}
+        ${s.mind ? `<div class="rm-block rm-mind"><h5>🧘 Личный навык и самопроверка</h5><p>${escHtml(s.mind)}</p></div>` : ""}
+        ${s.value ? `<div class="rm-block rm-val"><h5><i class="ph-bold ph-heart"></i> Ценность этапа</h5><p>${escHtml(s.value)}</p></div>` : ""}
+      </div>
+    </div>`;
+    document.body.appendChild(m);
+    const close = () => m.remove();
+    m.querySelector(".rm-close").addEventListener("click", close);
+    m.addEventListener("click", (e) => { if (e.target === m) close(); });
+    document.addEventListener("keydown", function onEsc(e) {
+      if (e.key === "Escape") { close(); document.removeEventListener("keydown", onEsc); }
+    });
+  }
+
   function sectionGrowth() {
-    return `
+    const card = rmCard();
+    if (!card) {
+      return `
     <section class="p-sec" data-reveal>
       <div class="p-sec-head"><h2><i class="ph-bold ph-rocket-launch"></i> Мой рост</h2><span class="p-sec-hint">крупный план развития · пока в разработке</span></div>
       <div class="dev-card" data-reveal>
@@ -426,6 +493,39 @@
           <div class="dev-step"><span>01</span> Индивидуальный план развития по зонам роста</div>
           <div class="dev-step"><span>02</span> Цели на квартал и прогресс по ним</div>
           <div class="dev-step"><span>03</span> Рекомендации наставника и чек-лист следующего уровня</div>
+        </div>
+      </div>
+    </section>
+
+    ${robotMenuHtml()}`;
+    }
+
+    return `
+    <section class="p-sec" data-reveal>
+      <div class="p-sec-head"><h2><i class="ph-bold ph-rocket-launch"></i> Мой рост</h2>
+        <span class="p-sec-hint">индивидуальная дорожная карта развития</span></div>
+
+      <div class="rm-hero" data-reveal>
+        <div class="rm-hero-glow"></div>
+        <div class="rm-hero-top">
+          <span class="rm-badge"><i class="ph-bold ph-map-trifold"></i> Карта №${card.number} · ${escHtml(card.sheetLabel || "")}</span>
+          ${card.subtitle ? `<span class="rm-route">${escHtml(card.subtitle)}</span>` : ""}
+        </div>
+        <h3 class="rm-path">Путь: <b>${escHtml(card.title)}</b></h3>
+        ${card.goal ? `<p class="rm-goal"><i class="ph-bold ph-target"></i> <span>${escHtml(card.goal)}</span></p>` : ""}
+        ${(card.values || []).length ? `<div class="rm-values">
+          <span class="rm-values-h"><i class="ph-bold ph-diamond"></i> Ценности этого трека</span>
+          <ul>${card.values.map((v) => `<li>${escHtml(v)}</li>`).join("")}</ul>
+        </div>` : ""}
+      </div>
+
+      <div class="rm-map" data-reveal>
+        <div class="rm-map-h">
+          <h3><i class="ph-bold ph-signpost"></i> Этапы пути</h3>
+          <span class="rm-hint">нажми на этап — покажу, что делать, где брать материалы и как закреплять навык</span>
+        </div>
+        <div class="rm-track">
+          ${card.stages.map((s, i) => rmStage(s, i, card.stages.length)).join("")}
         </div>
       </div>
     </section>
@@ -1201,6 +1301,26 @@
   }
 
   /* ---------- рендер раздела ---------- */
+  /* клик по этапу дорожной карты — окно с деталями */
+  document.addEventListener("click", (e) => {
+    const stage = e.target.closest && e.target.closest(".rm-stage");
+    if (!stage) return;
+    const card = rmCard();
+    if (!card) return;
+    const st = (card.stages || []).find((s) => String(s.n) === stage.dataset.rm);
+    if (st) openStage(st);
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const stage = document.activeElement && document.activeElement.classList && document.activeElement.classList.contains("rm-stage")
+      ? document.activeElement : null;
+    if (!stage) return;
+    e.preventDefault();
+    const card = rmCard();
+    const st = card && (card.stages || []).find((s) => String(s.n) === stage.dataset.rm);
+    if (st) openStage(st);
+  });
+
   const RENDER = { bonus: sectionBonus, lvl: sectionLvl, awards: sectionAwards, growth: sectionGrowth, graph: sectionGraph, stats: sectionStats, rules: sectionRules };
   root.innerHTML = heroHtml() + (RENDER[SECTION] || sectionBonus)();
 
