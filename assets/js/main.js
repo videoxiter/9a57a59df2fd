@@ -52,9 +52,81 @@
   async function hydrateHours() {
     const reqs = (window.OTP_CLOUD ? await window.OTP_CLOUD.all() : null) || [];
     document.querySelectorAll("[data-hours], [data-hoursfio]").forEach((el) => {
-      const emp = bySlug(el.dataset.hours || "") || bySurname(el.dataset.hoursfio || "");
+      const emp = bySlug(el.dataset.hours) || bySurname(el.dataset.hoursfio || "");
       if (emp) el.innerHTML = hoursChip(emp, reqs);
     });
+    const now = new Date();
+    document.querySelectorAll("[data-today]").forEach((el) => {
+      const emp = bySlug(el.dataset.today);
+      const st = emp ? todayState(emp, now, reqs) : null;
+      el.innerHTML = st ? `<span class="td-chip k-${st.kind}" title="Линия, смена и отсутствия на сегодня"><i class="ph-bold ${tdIcon(st.kind)}"></i> ${st.text}</span>` : "";
+    });
+  }
+  const tdIcon = (k) => k === "shift" ? "ph-clock" : k === "vacation" ? "ph-airplane-tilt"
+    : k === "leave" ? "ph-door-open" : k === "dayoff" ? "ph-calendar-minus" : "ph-moon";
+
+  /* ---------- кто на какой линии и кто отсутствует (общее для дашборда) ---------- */
+  const SCH = D.schedule || null;
+  const isoDate = (dt) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+  function monthOf(dt) {
+    if (!SCH) return null;
+    const key = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}`;
+    return SCH.months[key] || null;
+  }
+  function shiftOf(fio, dt) {
+    const m = monthOf(dt);
+    const days = m && m.shifts ? m.shifts[fio] : null;
+    return days ? days[String(dt.getDate())] || null : null;
+  }
+  function lineOf(fio, dt) {
+    const m = monthOf(dt);
+    if (!m || !m.lines || dt.getDay() === 0 || dt.getDay() === 6) return null;
+    for (const [lid, info] of Object.entries(m.lines)) {
+      const labels = info.labels || [];
+      for (let i = 0; i < labels.length; i++) {
+        if (!samePerson((info.weeks || [])[i], fio)) continue;
+        const mm = /^(\d{2})\.(\d{2})\s*-\s*(\d{2})\.(\d{2})$/.exec(String(labels[i]).trim());
+        if (!mm) continue;
+        const y = dt.getFullYear();
+        const from = new Date(y, +mm[2] - 1, +mm[1]);
+        let to = new Date(y, +mm[4] - 1, +mm[3]);
+        if (to < from) to = new Date(y + 1, +mm[4] - 1, +mm[3]);
+        const d0 = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+        if (d0 >= from && d0 <= to) return { id: lid, title: info.title };
+      }
+    }
+    return null;
+  }
+  function vacationOf(fio, dt) {
+    if (!SCH || !SCH.vacations) return null;
+    const y = String(dt.getFullYear());
+    const iso = isoDate(dt);
+    for (const [name, list] of Object.entries(SCH.vacations[y] || {})) {
+      if (!samePerson(name, fio)) continue;
+      for (const p of list || []) if (p.from <= iso && iso <= p.to) return p;
+    }
+    return null;
+  }
+  /* Что с сотрудником сегодня: заявка (увольнительная/отгул) -> отпуск -> смена/выходной */
+  function todayState(emp, dt, reqs) {
+    const iso = isoDate(dt);
+    const list = (reqs || []).filter((r) => r.empSlug === emp.slug && r.status === "approved" &&
+      (r.type === "leave" || r.type === "dayoff") && r.date === iso);
+    const leave = list.find((r) => r.type === "leave");
+    const dayoff = list.find((r) => r.type === "dayoff");
+    if (leave) return { kind: "leave", text: `Увольнительная ${leave.from || ""}${leave.to ? "–" + leave.to : ""}`.trim(), hours: leave.hours };
+    if (dayoff) return { kind: "dayoff", text: dayoff.date2 ? `Отгул за выходную смену ${dayoff.date2.slice(8, 10)}.${dayoff.date2.slice(5, 7)}` : "Отгул" };
+    const vac = vacationOf(emp.fullName, dt);
+    if (vac) {
+      const to = new Date(vac.to + "T00:00:00");
+      return { kind: "vacation", text: `Отпуск до ${to.getDate()} ${MON_GEN[to.getMonth()]}` };
+    }
+    const sh = shiftOf(emp.fullName, dt);
+    if (!sh) return null;
+    const ln = lineOf(emp.fullName, dt);
+    const work = ["shift", "weekend", "duty", "extra"].includes(sh.kind);
+    if (!work) return { kind: "off", text: sh.kind === "dayoff" ? sh.title : "Выходной" };
+    return { kind: "shift", text: [ln ? ln.id : "", sh.title, sh.time || ""].filter(Boolean).join(" · "), sym: sh.sym };
   }
 
   function initials(name) {
@@ -127,7 +199,8 @@
       <a class="lb-row" href="../team/${e.slug}/index.html" data-reveal>
         <span class="lb-rank ${rankCls}">${medal}</span>
         <span class="lb-name">${e.fullName} ${leftBadge} ${stars}<small>${e.role}</small>
-          <span class="lb-hours" data-hours="${e.slug}"></span></span>
+          <span class="lb-hours" data-hours="${e.slug}"></span>
+          <span class="lb-today" data-today="${e.slug}"></span></span>
         ${trendCell}
         <span class="lb-avg">${hasKpi ? e.avg.toFixed(1) : "—"}</span>
       </a>`;
@@ -176,24 +249,6 @@
     const month = S.months[iso] || (S.months[Object.keys(S.months)[0]] || null);
     const isoKey = S.months[iso] ? iso : Object.keys(S.months)[0];
     const isWork = (sh) => sh && ["shift", "weekend", "duty", "extra"].includes(sh.kind);
-    const lineOf = (fio, dt) => {
-      const M = S.months[isoKey]; if (!M || !M.lines || dt.getDay() === 0 || dt.getDay() === 6) return null;
-      for (const [lid, info] of Object.entries(M.lines)) {
-        const labels = info.labels || [];
-        for (let i = 0; i < labels.length; i++) {
-          if (!samePerson((info.weeks || [])[i], fio)) continue;
-          const m = /^(\d{2})\.(\d{2})\s*-\s*(\d{2})\.(\d{2})$/.exec(String(labels[i]).trim());
-          if (!m) continue;
-          const y = dt.getFullYear();
-          const from = new Date(y, +m[2] - 1, +m[1]);
-          let to = new Date(y, +m[4] - 1, +m[3]);
-          if (to < from) to = new Date(y + 1, +m[4] - 1, +m[3]);
-          const d0 = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
-          if (d0 >= from && d0 <= to) return { id: lid, title: info.title };
-        }
-      }
-      return null;
-    };
     const timeRank = (sh) => { const h = sh && sh.time ? parseInt(String(sh.time).slice(0, 2), 10) : NaN; return Number.isFinite(h) ? h : 9; };
     const dayList = (dt) => {
       const out = [];

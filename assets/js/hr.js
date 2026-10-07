@@ -43,7 +43,13 @@
       if (r.empSlug !== slug || r.status !== "approved") continue;
       const h = hoursOf(r);
       if (r.type === "overtime") plus += h;
-      else if (r.type === "leave" && !r.noDeduct && !(e && e.no_deduct)) minus += h;
+      else if (r.type === "leave" || r.type === "dayoff") {
+        // списываем, если руководитель так решил (forceDeduct) либо это обычная увольнительная
+        // без защиты по показателям; отгул сам по себе часы не двигает
+        const forced = !!r.forceDeduct;
+        const plain = r.type === "leave" && !r.noDeduct && !(e && e.no_deduct);
+        if (forced || plain) minus += h;
+      }
     }
     return { base, plus: Math.round(plus * 10) / 10, minus: Math.round(minus * 10) / 10,
              balance: Math.round((base + plus - minus) * 10) / 10, noDeduct: !!(e && e.no_deduct) };
@@ -56,6 +62,42 @@
       <i class="ph-bold ph-hourglass-high"></i> ${b.balance >= 0 ? "+" : "−"}${fmtH(Math.abs(b.balance))} ${label}</span>`;
   };
 
+  /* Кто ещё отсутствует в отделе на дату заявки: отпуск, отгул, увольнительная. */
+  function absencesOn(dateIso, excludeId) {
+    const D = window.OTP_DATA || {};
+    const out = [];
+    if (!dateIso) return out;
+    const vac = (D.schedule && D.schedule.vacations && D.schedule.vacations[dateIso.slice(0, 4)]) || {};
+    for (const [fio, list] of Object.entries(vac)) {
+      for (const p of list || []) {
+        if (p.from <= dateIso && dateIso <= p.to) {
+          const to = new Date(p.to + "T00:00:00");
+          out.push({ who: fio, kind: "отпуск", note: `до ${to.getDate()}.${String(to.getMonth() + 1).padStart(2, "0")}` });
+        }
+      }
+    }
+    for (const other of load2()) {
+      if (other.id === excludeId) continue;
+      if (other.type !== "leave" && other.type !== "dayoff") continue;
+      if (other.status !== "approved" && other.status !== "pending") continue;
+      if ((other.date || "") !== dateIso) continue;
+      out.push({
+        who: other.empName || other.empSlug,
+        kind: other.type === "leave" ? "увольнительная" : "отгул",
+        note: (other.type === "leave" ? `${other.from || ""}–${other.to || ""}` : "на весь день") +
+              (other.status === "pending" ? " · ждёт решения" : ""),
+      });
+    }
+    return out;
+  }
+  function clashNote(r) {
+    const list = absencesOn(r.date, r.id);
+    if (!list.length) return "";
+    const names = list.map((x) => `${(x.who || "").split(" ").slice(0, 2).join(" ")} — ${x.kind} (${x.note})`).join("; ");
+    return `<div class="hr-clash" title="На это время в отделе уже кто-то отсутствует">
+      <i class="ph-bold ph-warning"></i> На ${dmy(r.date)} уже отсутствуют: ${names}</div>`;
+  }
+
   function row(r, decided) {
     const t = TYPES[r.type] || { label: r.type, icon: "ph-note" };
     return `<div class="hr-row st-${r.status}" data-id="${r.id}">
@@ -67,12 +109,16 @@
               : `${dmy(r.date)} · ${r.from}–${r.to} · ${fmtH(hoursOf(r))}`}</i>
         ${r.reason ? `<em>${r.reason}</em>` : ""}
         <span class="hr-hours-line">${hoursChip(r.empSlug)}${empHours(r.empSlug).noDeduct ? '<span class="hr-hours-note">показатели 7+ — часы не списываются</span>' : ""}</span>
+        ${r.forceDeduct ? '<span class="hr-forced"><i class="ph-bold ph-scissors"></i> списано по решению руководителя</span>' : ""}
+        ${clashNote(r)}
         ${r.status === "rejected" && r.reject ? `<em class="rej">Отказ: ${r.reject}</em>` : ""}
       </span>
       ${r.status === "pending" && !decided
         ? `<span class="hr-actions">
              ${r.type === "leave" ? `<label class="hr-nodeduct" title="Часы увольнительной не спишутся с переработки">
                <input type="checkbox" data-nodeduct="${r.id}"> <span>не списывать</span></label>` : ""}
+             ${r.type === "leave" || r.type === "dayoff" ? `<label class="hr-force" title="Решение руководителя сильнее правила: часы спишутся, даже если показатели позволяют не списывать">
+               <input type="checkbox" data-force="${r.id}"> <span>всё равно списать</span></label>` : ""}
              <button class="hr-ok" data-ok="${r.id}" title="Одобрить"><i class="ph-bold ph-check"></i></button>
              <button class="hr-no" data-no="${r.id}" title="Отказать"><i class="ph-bold ph-x"></i></button>
            </span>`
@@ -104,7 +150,16 @@
     box.querySelectorAll("[data-ok]").forEach((b) => b.addEventListener("click", () => {
       const id = b.dataset.ok;
       const chk = box.querySelector(`[data-nodeduct="${id}"]`);
-      decide(id, "approved", "", chk ? chk.checked : false);
+      const frc = box.querySelector(`[data-force="${id}"]`);
+      decide(id, "approved", "", chk ? chk.checked : false, frc ? frc.checked : false);
+    }));
+    box.querySelectorAll("[data-nodeduct]").forEach((c) => c.addEventListener("change", () => {
+      const f = box.querySelector(`[data-force="${c.dataset.nodeduct}"]`);
+      if (c.checked && f) f.checked = false;
+    }));
+    box.querySelectorAll("[data-force]").forEach((c) => c.addEventListener("change", () => {
+      const n = box.querySelector(`[data-nodeduct="${c.dataset.force}"]`);
+      if (c.checked && n) n.checked = false;
     }));
     box.querySelectorAll("[data-no]").forEach((b) => b.addEventListener("click", () => {
       const id = b.dataset.no;
@@ -123,13 +178,14 @@
     }));
   }
 
-  function decide(id, status, reject, noDeduct) {
+  function decide(id, status, reject, noDeduct, force) {
     const list = load2();
     const r = list.find((x) => x.id === id);
     if (!r) return;
     r.status = status;
     r.reject = reject || "";
     if (status === "approved" && typeof noDeduct === "boolean") r.noDeduct = noDeduct;
+    if (status === "approved") r.forceDeduct = !!force;
     r.decided = new Date().toISOString();
     save2(list);
     if (CLOUD) CLOUD.upsert(r); else push(list);

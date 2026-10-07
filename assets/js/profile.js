@@ -764,7 +764,10 @@
       if (r.status !== "approved") continue;
       const h = hoursOf(r);
       if (r.type === "overtime") plus += h;
-      else if (r.type === "leave") { if (!NO_DEDUCT && !r.noDeduct) minus += h; }   // noDeduct — ручное решение руководителя
+      else if (r.type === "leave" || r.type === "dayoff") {
+        // forceDeduct — руководитель решил списать часы вопреки правилу «показатели позволяют»
+        if (r.forceDeduct || (r.type === "leave" && !NO_DEDUCT && !r.noDeduct)) minus += h;
+      }
       else dayoffs += h;                                     // отгул — компенсация выходной смены, часы не двигает
     }
     const base = emp.hours_base || 0;
@@ -774,7 +777,7 @@
   }
   const fmtH = (h) => (Math.round(h * 10) / 10).toString().replace(".", ",") + " ч";
   const statusChip = (r) => {
-    if (r.status === "approved") return `<span class="req-st ok"><i class="ph-bold ph-check-circle"></i> подтверждено${r.noDeduct ? " · без списания" : ""}</span>`;
+    if (r.status === "approved") return `<span class="req-st ok"><i class="ph-bold ph-check-circle"></i> подтверждено${r.forceDeduct ? " · списано по решению руководителя" : r.noDeduct ? " · без списания" : ""}</span>`;
     if (r.status === "rejected") return `<span class="req-st no"><i class="ph-bold ph-x-circle"></i> отказано</span>`;
     return `<span class="req-st wait"><i class="ph-bold ph-hourglass-medium"></i> на согласовании</span>`;
   };
