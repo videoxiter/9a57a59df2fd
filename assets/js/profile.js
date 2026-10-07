@@ -418,7 +418,7 @@
     return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
       .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
-  const rmCard = () => (D.roadmaps && D.roadmaps[emp.slug]) || null;
+  const rmCard = () => D.roadmap || null;   // карта приходит только своя (OTP_EMP.roadmap)
 
   function rmLine(s) {
     // «Где брать: …» одной строкой, каждая часть с иконкой

@@ -114,7 +114,7 @@ TEMPLATE = """<!DOCTYPE html>
 </html>
 """
 
-V = "61"
+V = "62"
 
 
 def secnav_html(rel, active):
@@ -150,6 +150,8 @@ def main():
             "employee": emp,
             "hrRules": data.get("hrRules", {}),
             "schedule": _schedule_for(emp, data.get("schedule")),
+            # дорожная карта развития — только своя (соседние на страницу не попадают)
+            "roadmap": (data.get("roadmaps") or {}).get(e.get("slug", e["id"])),
         }
         payload = json.dumps(emp_data, ensure_ascii=False)
         slug = e.get("slug", e["id"])
