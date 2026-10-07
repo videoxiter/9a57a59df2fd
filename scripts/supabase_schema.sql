@@ -32,3 +32,7 @@ create policy "otp update" on public.otp_requests for update to anon using (true
 
 -- Добавлено позже: ручное «не списывать» при подтверждении заявки руководителем
 alter table public.otp_requests add column if not exists "noDeduct" boolean default false;
+
+-- Решение руководителя по заявке: не списывать часы и «всё равно списать» вопреки правилу.
+-- До появления этих колонок сайт хранит флаги маркером в поле reject; после ALTER — в колонках.
+alter table public.otp_requests add column if not exists "forceDeduct" boolean default false;

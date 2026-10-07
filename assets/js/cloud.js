@@ -32,21 +32,35 @@ window.OTP_CLOUD = (function () {
   }
 
   const COLS = ["id", "empSlug", "empName", "type", "date", "date2", "from", "to", "hours",
-                "reason", "status", "reject", "created", "decided", "noDeduct"];
+                "reason", "status", "reject", "created", "decided", "noDeduct", "forceDeduct"];
   const slim = (r) => { const o = {}; for (const k of COLS) if (r[k] !== undefined && r[k] !== null) o[k] = r[k]; return o; };
-  let noDeductCol = true;                      // колонка появится после ALTER; до этого шлём без неё
-  const MARK = "[[NO-DEDUCT]]";                // служебный маркер «без списания», пока колонки нет
+  let noDeductCol = true;                      // колонки появятся после ALTER; до этого шлём без них
+  const MARK = "[[OTP-FLAGS:";                 // служебный маркер флагов решения, пока колонок нет
+  const OLD_MARK = "[[NO-DEDUCT]]";            // старый маркер (совместимость)
 
-  /** Запись к отправке: скрываем noDeduct в reject, если колонки ещё нет. */
+  /** Запись к отправке: если колонок нет — прячем флаги решения в поле reject. */
   function encodeRow(r) {
     const o = slim(r);
-    if (o.noDeduct === true && !noDeductCol) { o.reject = MARK; }
-    if (!noDeductCol) delete o.noDeduct;
+    if (!noDeductCol) {
+      const flags = [];
+      if (o.noDeduct) flags.push("noDeduct");
+      if (o.forceDeduct) flags.push("forceDeduct");
+      delete o.noDeduct;
+      delete o.forceDeduct;
+      if (flags.length) o.reject = MARK + flags.join(",") + "]]" + (o.reject || "");
+    }
     return o;
   }
-  /** Запись из базы: вытаскиваем «без списания» из маркера. */
+  /** Запись из базы: вытаскиваем флаги решения обратно. */
   function decodeRow(r) {
-    if (r && r.status === "approved" && String(r.reject || "").indexOf(MARK) === 0) {
+    const s = String((r && r.reject) || "");
+    if (s.indexOf(MARK) === 0) {
+      const end = s.indexOf("]]");
+      const flags = s.slice(MARK.length, end).split(",");
+      if (flags.indexOf("noDeduct") >= 0) r.noDeduct = true;
+      if (flags.indexOf("forceDeduct") >= 0) r.forceDeduct = true;
+      r.reject = s.slice(end + 2);
+    } else if (r && r.status === "approved" && s.indexOf(OLD_MARK) === 0) {
       r.noDeduct = true;
       r.reject = "";
     }

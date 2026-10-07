@@ -38,7 +38,11 @@
       if (r.empSlug !== emp.slug || r.status !== "approved") continue;
       const h = hoursOfReq(r);
       if (r.type === "overtime") plus += h;
-      else if (r.type === "leave" && !r.noDeduct && !emp.no_deduct) minus += h;
+      else if (r.type === "leave" || r.type === "dayoff") {
+        const forced = !!r.forceDeduct;                                  // решение руководителя сильнее правила
+        const plain = r.type === "leave" && !r.noDeduct && !emp.no_deduct;
+        if (forced || plain) minus += h;
+      }
     }
     return { balance: Math.round(((emp.hours_base || 0) + plus - minus) * 10) / 10 };
   }
