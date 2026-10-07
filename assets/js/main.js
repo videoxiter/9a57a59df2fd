@@ -53,23 +53,32 @@
     return `<span class="hr-hours ${b.balance >= 0 ? "pos" : "neg"}" title="накопленная переработка или долг по часам">
       <i class="ph-bold ph-hourglass-high"></i> ${b.balance >= 0 ? "+" : "−"}${fmtH(Math.abs(b.balance))} ${b.balance >= 0 ? "накоплено" : "должен"}</span>`;
   }
+  /* Часы и статусы: сначала рисуем по локальной копии (мгновенно), потом уточняем по облаку.
+     Важно не блокировать отрисовку ожиданием сети — иначе страница остаётся пустой. */
+  let hydrating = false;
   async function hydrateHours() {
-    console.log("[hydrate] старт");
-    let reqs = [];
-    try { reqs = (window.OTP_CLOUD ? await window.OTP_CLOUD.all() : null) || []; }
-    catch (e) { console.log("[hydrate] ошибка базы: " + e.message); }
-    console.log("[hydrate] заявок: " + reqs.length + ", часовых элементов: " + document.querySelectorAll("[data-hours], [data-hoursfio]").length);
-    document.querySelectorAll("[data-hours], [data-hoursfio]").forEach((el) => {
-      const emp = bySlug(el.dataset.hours) || bySurname(el.dataset.hoursfio || "");
-      if (emp) el.innerHTML = hoursChip(emp, reqs);
-    });
-    console.log("[hydrate] после часов: " + [...document.querySelectorAll("[data-hours]")].filter((e) => e.innerHTML.trim()).length);
-    const now = new Date();
-    document.querySelectorAll("[data-today]").forEach((el) => {
-      const emp = bySlug(el.dataset.today);
-      const st = emp ? todayState(emp, now, reqs) : null;
-      el.innerHTML = st ? `<span class="td-chip k-${st.kind}" title="Линия, смена и отсутствия на сегодня"><i class="ph-bold ${tdIcon(st.kind)}"></i> ${st.text}</span>` : "";
-    });
+    if (hydrating) return;
+    hydrating = true;
+    const paint = (reqs) => {
+      document.querySelectorAll("[data-hours], [data-hoursfio]").forEach((el) => {
+        const emp = bySlug(el.dataset.hours || "") || bySurname(el.dataset.hoursfio || "");
+        if (emp) el.innerHTML = hoursChip(emp, reqs);
+      });
+      const now = new Date();
+      document.querySelectorAll("[data-today]").forEach((el) => {
+        const emp = bySlug(el.dataset.today);
+        const st = emp ? todayState(emp, now, reqs) : null;
+        el.innerHTML = st ? `<span class="td-chip k-${st.kind}" title="Линия, смена и отсутствия на сегодня"><i class="ph-bold ${tdIcon(st.kind)}"></i> ${st.text}</span>` : "";
+      });
+    };
+    try {
+      paint(window.OTP_CLOUD ? window.OTP_CLOUD.loadLocal() || [] : []);
+    } catch (e) { /* локальные данные могли быть битыми — не критично */ }
+    try {
+      const list = window.OTP_CLOUD ? await window.OTP_CLOUD.all() : null;
+      if (list) paint(list);
+    } catch (e) { /* нет сети — остаются локальные значения */ }
+    hydrating = false;
   }
   const tdIcon = (k) => k === "shift" ? "ph-clock" : k === "vacation" ? "ph-airplane-tilt"
     : k === "leave" ? "ph-door-open" : k === "dayoff" ? "ph-calendar-minus" : "ph-moon";
