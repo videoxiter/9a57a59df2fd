@@ -54,11 +54,16 @@
       <i class="ph-bold ph-hourglass-high"></i> ${b.balance >= 0 ? "+" : "−"}${fmtH(Math.abs(b.balance))} ${b.balance >= 0 ? "накоплено" : "должен"}</span>`;
   }
   async function hydrateHours() {
-    const reqs = (window.OTP_CLOUD ? await window.OTP_CLOUD.all() : null) || [];
+    console.log("[hydrate] старт");
+    let reqs = [];
+    try { reqs = (window.OTP_CLOUD ? await window.OTP_CLOUD.all() : null) || []; }
+    catch (e) { console.log("[hydrate] ошибка базы: " + e.message); }
+    console.log("[hydrate] заявок: " + reqs.length + ", часовых элементов: " + document.querySelectorAll("[data-hours], [data-hoursfio]").length);
     document.querySelectorAll("[data-hours], [data-hoursfio]").forEach((el) => {
       const emp = bySlug(el.dataset.hours) || bySurname(el.dataset.hoursfio || "");
       if (emp) el.innerHTML = hoursChip(emp, reqs);
     });
+    console.log("[hydrate] после часов: " + [...document.querySelectorAll("[data-hours]")].filter((e) => e.innerHTML.trim()).length);
     const now = new Date();
     document.querySelectorAll("[data-today]").forEach((el) => {
       const emp = bySlug(el.dataset.today);
