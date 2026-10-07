@@ -380,7 +380,7 @@
     const recBlock = rec.length ? `
       <div class="rec-block" data-reveal>
         <div class="rec-head">
-          <h3><i class="ph-bold ph-medal"></i> Признание руководителя</h3>
+          <h3><i class="ph-bold ph-medal"></i> Признание в Компании</h3>
           <span class="rec-hint">нагрудные знаки вручаются лично, вне метрик и рейтинга</span>
         </div>
         <div class="rec-list">
