@@ -361,8 +361,11 @@
     const mAwards = cur.awards || [];
     const glyphs = empAwards.map((a) => a.glyph || "").join(" ");
     /** Карточка награды: медальон + название, условие, мотивация, когда получена. */
+    const medalBox = (g, got) => g.image
+      ? `<span class="medal img-medal${got ? "" : " dim"}"><img src="${imgUrl(g.image)}" alt="${escHtml(g.title)}" loading="lazy"></span>`
+      : `<span class="medal" style="--ac:${got ? g.color : "#3a4250"}"><span class="medal-glyph">${g.glyph || ""}</span></span>`;
     const bookCard = (g, got, months) => `<div class="award-tile book${got ? " earned" : " locked"}${g.id === "perfect" ? " star-medal" : ""}">
-        <span class="medal" style="--ac:${got ? g.color : "#3a4250"}"><span class="medal-glyph">${g.glyph || ""}</span></span>
+        ${medalBox(g, got)}
         <div class="a-body">
           <div class="a-t">${g.title}${got && g.count > 1 ? ` <span class="got">· ×${g.count}</span>` : got ? ' <span class="got">· получена</span>' : ""}</div>
           <div class="a-r">${g.desc}</div>
@@ -373,8 +376,28 @@
     const book = awardsCatalog.map((g) => bookCard(g, !!earnedIds.has(g.id), (empAwards.find((a) => a.id === g.id) || {}).months)).join("");
     const accumulated = empAwards.map((a) => bookCard(a, true, a.months)).join("");
 
+    const rec = emp.recognition || [];
+    const recBlock = rec.length ? `
+      <div class="rec-block" data-reveal>
+        <div class="rec-head">
+          <h3><i class="ph-bold ph-medal"></i> Признание руководителя</h3>
+          <span class="rec-hint">нагрудные знаки вручаются лично, вне метрик и рейтинга</span>
+        </div>
+        <div class="rec-list">
+          ${rec.map((a) => `<div class="rec-card" style="--rc:${a.color}">
+            <img class="rec-img" src="${imgUrl(a.image)}" alt="${escHtml(a.title)}" loading="lazy">
+            <div class="rec-body">
+              <div class="rec-degree">${a.degree} степень</div>
+              <div class="rec-title">${escHtml(String(a.title).replace(/^Признание:\s*/, ""))}</div>
+              <div class="rec-desc">${escHtml(a.desc || "")}</div>
+            </div>
+          </div>`).join("")}
+        </div>
+      </div>` : "";
+
     return `
     <section class="p-sec" data-reveal>
+      ${recBlock}
       <div class="awards-counter" data-reveal>
         <div class="ac-left">
           <div class="ac-num">${totalAwardsCount}</div>
@@ -414,6 +437,15 @@
 
   /* ================= РАЗДЕЛ: МОЙ РОСТ ================= */
   /* ================= РАЗДЕЛ: МОЙ РОСТ (дорожная карта развития) ================= */
+  /* Путь до корня сайта (assets/ живут там) — вычисляем от текущего адреса страницы. */
+  const SITE_ROOT = (() => {
+    const path = location.pathname;
+    const i = path.indexOf("/team/");
+    if (i > 0) return path.slice(0, i + 1);
+    return path.slice(0, path.lastIndexOf("/", path.length - 2) + 1);
+  })();
+  const imgUrl = (rel) => SITE_ROOT + String(rel || "").replace(/^\/+/, "");
+
   function escHtml(s) {
     return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
       .replace(/>/g, "&gt;").replace(/"/g, "&quot;");

@@ -264,6 +264,34 @@
       </a>`;
   }).join("");
 
+  /* ---------- признание: нагрудные знаки (вручает руководитель лично) ---------- */
+  const SITE_ROOT = (() => {
+    const path = location.pathname;
+    const i = path.indexOf("/team/");
+    if (i > 0) return path.slice(0, i + 1);
+    return path.slice(0, path.lastIndexOf("/", path.length - 2) + 1);
+  })();
+  const recBox = $("#recognition-board");
+  if (recBox && (D.recognition || []).length) {
+    const rm = (s) => String(s || "").replace(/^Признание:\s*/, "");
+    recBox.innerHTML = `
+      <div class="rec-head">
+        <h3><i class="ph-bold ph-medal"></i> Признание руководителя</h3>
+        <span class="rec-hint">нагрудные знаки вручаются лично — вне метрик и рейтинга</span>
+      </div>
+      <div class="rec-list">
+        ${D.recognition.map((c) => `<div class="rec-card" style="--rc:${c.color}">
+          <img class="rec-img" src="${SITE_ROOT + String(c.image || "").replace(/^\/+/, "")}" alt="${c.title}" loading="lazy">
+          <div class="rec-body">
+            <div class="rec-degree">${c.degree} степень</div>
+            <div class="rec-title">${rm(c.title)}</div>
+            <div class="rec-desc">${c.desc || ""}</div>
+            <div class="rec-holders">${(c.holders || []).map((h) => `<span class="rec-holder${h.role ? " boss" : ""}">${h.shortName}${h.role ? " · " + h.role : ""}</span>`).join("") || '<span class="rec-none">пока никто</span>'}</div>
+          </div>
+        </div>`).join("")}
+      </div>`;
+  }
+
   /* ---------- график отдела (смены + отпуска) ---------- */
   const dutyBox = $("#duty-board");
   if (dutyBox && D.schedule) {

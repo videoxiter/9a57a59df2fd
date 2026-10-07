@@ -1552,3 +1552,31 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
 .rm-block p + p { margin-top: 7px; }
 .rm-mind h5 { color: #fde68a; }
 .rm-val h5 { color: #bbf7d0; }
+
+/* ================= ПРИЗНАНИЕ: нагрудные знаки ================= */
+.rec-board { margin-top: 26px; }
+.rec-block { border: 1px solid rgba(251,191,36,.28); border-radius: 18px; padding: 20px 22px;
+  background: radial-gradient(900px 240px at 10% -30%, rgba(251,191,36,.12), transparent 65%), var(--card); }
+.rec-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.rec-head h3 { margin: 0; font-size: 18px; display: inline-flex; align-items: center; gap: 9px; }
+.rec-hint { font-size: 12.5px; color: var(--muted-foreground); }
+.rec-list { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.rec-card { display: flex; gap: 14px; align-items: flex-start; border: 1px solid var(--border);
+  border-radius: 15px; padding: 14px 16px; background: linear-gradient(180deg, rgba(255,255,255,.02), transparent); }
+.rec-card:hover { border-color: color-mix(in srgb, var(--rc) 55%, transparent); }
+.rec-img { width: 78px; height: 78px; flex: 0 0 78px; object-fit: contain;
+  filter: drop-shadow(0 8px 18px rgba(0,0,0,.55)); }
+.rec-body { min-width: 0; }
+.rec-degree { display: inline-block; font-size: 11px; letter-spacing: .4px; text-transform: uppercase;
+  color: var(--rc); border: 1px solid color-mix(in srgb, var(--rc) 45%, transparent);
+  background: color-mix(in srgb, var(--rc) 12%, transparent); border-radius: 999px; padding: 3px 10px; margin-bottom: 7px; }
+.rec-title { font-size: 14px; font-weight: 600; line-height: 1.35; margin-bottom: 5px; }
+.rec-desc { font-size: 12.5px; color: var(--muted-foreground); line-height: 1.5; }
+.rec-holders { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.rec-holder { font-size: 11.5px; border-radius: 999px; padding: 3px 10px; border: 1px solid var(--border);
+  color: var(--foreground); background: rgba(255,255,255,.03); }
+.rec-holder.boss { color: #fde68a; border-color: rgba(251,191,36,.45); background: rgba(251,191,36,.12); }
+.rec-none { font-size: 11.5px; color: var(--muted-foreground); }
+.medal.img-medal { background: none; border: 0; box-shadow: none; }
+.medal.img-medal img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 6px 14px rgba(0,0,0,.5)); }
+.medal.img-medal.dim { opacity: .38; filter: grayscale(.7); }

@@ -196,6 +196,42 @@ window.OTP_DATA = {
       "color": "#38bdf8",
       "glyph": "📉",
       "motiv": "Найди способ сократить расходы отдела — экономия тоже победа."
+    },
+    {
+      "id": "znak3",
+      "icon": "ph-medal",
+      "title": "Признание: Нагрудный знак 3 степени (зелёные камни)",
+      "desc": "За стабильную работу и вклад в общие результаты отдела",
+      "color": "#34d399",
+      "glyph": "🎖️",
+      "image": "assets/img/awards/znak-3.png",
+      "degree": 3,
+      "manual": true,
+      "motiv": ""
+    },
+    {
+      "id": "znak2",
+      "icon": "ph-medal",
+      "title": "Признание: Нагрудный знак 2 степени (синие камни)",
+      "desc": "За весомый вклад в развитие направления и помощь коллегам",
+      "color": "#60a5fa",
+      "glyph": "🎖️",
+      "image": "assets/img/awards/znak-2.png",
+      "degree": 2,
+      "manual": true,
+      "motiv": ""
+    },
+    {
+      "id": "znak1",
+      "icon": "ph-medal",
+      "title": "Признание: Нагрудный знак 1 степени (красные камни)",
+      "desc": "Высшая степень признания: за системный вклад, который меняет работу отдела",
+      "color": "#fb7185",
+      "glyph": "🎖️",
+      "image": "assets/img/awards/znak-1.png",
+      "degree": 1,
+      "manual": true,
+      "motiv": ""
     }
   ],
   "rules": {
@@ -1690,6 +1726,7 @@ window.OTP_DATA = {
           "count": 1
         }
       ],
+      "recognition": [],
       "rank": null
     },
     {
@@ -3250,6 +3287,20 @@ window.OTP_DATA = {
           "count": 1
         }
       ],
+      "recognition": [
+        {
+          "id": "znak3",
+          "icon": "ph-medal",
+          "title": "Признание: Нагрудный знак 3 степени (зелёные камни)",
+          "desc": "За стабильную работу и вклад в общие результаты отдела",
+          "color": "#34d399",
+          "glyph": "🎖️",
+          "image": "assets/img/awards/znak-3.png",
+          "degree": 3,
+          "manual": true,
+          "motiv": ""
+        }
+      ],
       "rank": 2
     },
     {
@@ -4727,6 +4778,20 @@ window.OTP_DATA = {
           "count": 1
         }
       ],
+      "recognition": [
+        {
+          "id": "znak3",
+          "icon": "ph-medal",
+          "title": "Признание: Нагрудный знак 3 степени (зелёные камни)",
+          "desc": "За стабильную работу и вклад в общие результаты отдела",
+          "color": "#34d399",
+          "glyph": "🎖️",
+          "image": "assets/img/awards/znak-3.png",
+          "degree": 3,
+          "manual": true,
+          "motiv": ""
+        }
+      ],
       "rank": 6
     },
     {
@@ -5981,6 +6046,7 @@ window.OTP_DATA = {
           "count": 1
         }
       ],
+      "recognition": [],
       "rank": 8
     },
     {
@@ -7350,6 +7416,7 @@ window.OTP_DATA = {
           "count": 1
         }
       ],
+      "recognition": [],
       "rank": 3
     },
     {
@@ -8670,6 +8737,7 @@ window.OTP_DATA = {
           "count": 1
         }
       ],
+      "recognition": [],
       "rank": 9
     },
     {
@@ -9862,6 +9930,7 @@ window.OTP_DATA = {
           "count": 1
         }
       ],
+      "recognition": [],
       "rank": 7
     },
     {
@@ -11443,6 +11512,7 @@ window.OTP_DATA = {
           "count": 1
         }
       ],
+      "recognition": [],
       "rank": 4
     },
     {
@@ -12830,6 +12900,7 @@ window.OTP_DATA = {
           "count": 1
         }
       ],
+      "recognition": [],
       "rank": 5
     },
     {
@@ -14279,6 +14350,32 @@ window.OTP_DATA = {
             "Сен 2026"
           ],
           "count": 1
+        }
+      ],
+      "recognition": [
+        {
+          "id": "znak2",
+          "icon": "ph-medal",
+          "title": "Признание: Нагрудный знак 2 степени (синие камни)",
+          "desc": "За весомый вклад в развитие направления и помощь коллегам",
+          "color": "#60a5fa",
+          "glyph": "🎖️",
+          "image": "assets/img/awards/znak-2.png",
+          "degree": 2,
+          "manual": true,
+          "motiv": ""
+        },
+        {
+          "id": "znak3",
+          "icon": "ph-medal",
+          "title": "Признание: Нагрудный знак 3 степени (зелёные камни)",
+          "desc": "За стабильную работу и вклад в общие результаты отдела",
+          "color": "#34d399",
+          "glyph": "🎖️",
+          "image": "assets/img/awards/znak-3.png",
+          "degree": 3,
+          "manual": true,
+          "motiv": ""
         }
       ],
       "rank": 1
@@ -19085,5 +19182,94 @@ window.OTP_DATA = {
       "source": "Дорожная карта Roadmap - Андрей Болгов.xlsx",
       "name": "Андрей Болгов"
     }
-  }
+  },
+  "recognition": [
+    {
+      "id": "znak3",
+      "icon": "ph-medal",
+      "title": "Признание: Нагрудный знак 3 степени (зелёные камни)",
+      "desc": "За стабильную работу и вклад в общие результаты отдела",
+      "color": "#34d399",
+      "glyph": "🎖️",
+      "image": "assets/img/awards/znak-3.png",
+      "degree": 3,
+      "manual": true,
+      "motiv": "",
+      "holders": [
+        {
+          "id": "yakovlev",
+          "slug": "",
+          "fullName": "Яковлев Евгений Евгеньевич",
+          "shortName": "Яковлев Е.",
+          "role": "Руководитель ОТП"
+        },
+        {
+          "id": "frolov",
+          "slug": "5414335d1bd0",
+          "fullName": "Фролов Павел Александрович",
+          "shortName": "Павел"
+        },
+        {
+          "id": "melnikov",
+          "slug": "3def188ccc72",
+          "fullName": "Мельников Алексей Сергеевич",
+          "shortName": "Алексей"
+        },
+        {
+          "id": "pospelova",
+          "slug": "d2b44b366961",
+          "fullName": "Поспелова Екатерина Алексеевна",
+          "shortName": "Екатерина"
+        }
+      ]
+    },
+    {
+      "id": "znak2",
+      "icon": "ph-medal",
+      "title": "Признание: Нагрудный знак 2 степени (синие камни)",
+      "desc": "За весомый вклад в развитие направления и помощь коллегам",
+      "color": "#60a5fa",
+      "glyph": "🎖️",
+      "image": "assets/img/awards/znak-2.png",
+      "degree": 2,
+      "manual": true,
+      "motiv": "",
+      "holders": [
+        {
+          "id": "yakovlev",
+          "slug": "",
+          "fullName": "Яковлев Евгений Евгеньевич",
+          "shortName": "Яковлев Е.",
+          "role": "Руководитель ОТП"
+        },
+        {
+          "id": "pospelova",
+          "slug": "d2b44b366961",
+          "fullName": "Поспелова Екатерина Алексеевна",
+          "shortName": "Екатерина"
+        }
+      ]
+    },
+    {
+      "id": "znak1",
+      "icon": "ph-medal",
+      "title": "Признание: Нагрудный знак 1 степени (красные камни)",
+      "desc": "Высшая степень признания: за системный вклад, который меняет работу отдела",
+      "color": "#fb7185",
+      "glyph": "🎖️",
+      "image": "assets/img/awards/znak-1.png",
+      "degree": 1,
+      "manual": true,
+      "motiv": "",
+      "holders": [
+        {
+          "id": "yakovlev",
+          "slug": "",
+          "fullName": "Яковлев Евгений Евгеньевич",
+          "shortName": "Яковлев Е.",
+          "role": "Руководитель ОТП"
+        }
+      ]
+    }
+  ]
 };

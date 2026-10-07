@@ -348,7 +348,28 @@ AWARDS_CATALOG = [
     {"id": "changer",   "icon": "ph-sparkle",        "title": "Меняет мир!",        "desc": "Больше всех изменений в работе или отделе за месяц", "color": "#c084fc", "glyph": "🕶️"},
     {"id": "seller",    "icon": "ph-hand-coins",     "title": "Продавец месяца",   "desc": "Сделал хотя бы одну продажу ИТ-оборудования за месяц", "color": "#2dd4bf", "glyph": "💰"},
     {"id": "budget",    "icon": "ph-piggy-bank",     "title": "Вне бюджета!",      "desc": "Сократил ежемесячный расход отдела", "color": "#38bdf8", "glyph": "📉"},
+    # --- Признание руководителя: нагрудные знаки трёх степеней (вручаются лично, не по метрикам) ---
+    {"id": "znak3", "icon": "ph-medal", "title": "Признание: Нагрудный знак 3 степени (зелёные камни)",
+     "desc": "За стабильную работу и вклад в общие результаты отдела", "color": "#34d399", "glyph": "🎖️",
+     "image": "assets/img/awards/znak-3.png", "degree": 3, "manual": True},
+    {"id": "znak2", "icon": "ph-medal", "title": "Признание: Нагрудный знак 2 степени (синие камни)",
+     "desc": "За весомый вклад в развитие направления и помощь коллегам", "color": "#60a5fa", "glyph": "🎖️",
+     "image": "assets/img/awards/znak-2.png", "degree": 2, "manual": True},
+    {"id": "znak1", "icon": "ph-medal", "title": "Признание: Нагрудный знак 1 степени (красные камни)",
+     "desc": "Высшая степень признания: за системный вклад, который меняет работу отдела", "color": "#fb7185", "glyph": "🎖️",
+     "image": "assets/img/awards/znak-1.png", "degree": 1, "manual": True},
 ]
+
+# Кто уже получил нагрудные знаки (вручает руководитель ОТП лично). Ключ — id сотрудника,
+# значение — степени; у руководителя нет страницы специалиста, он идёт как «yakovlev».
+RECOGNITION = {
+    "yakovlev":  [1, 2, 3],
+    "frolov":    [3],
+    "melnikov":  [3],
+    "pospelova": [3, 2],
+}
+RECOGNITION_NAMES = {"yakovlev": ("Яковлев Евгений Евгеньевич", "Руководитель ОТП")}
+
 CATALOG_BY_ID = {a["id"]: a for a in AWARDS_CATALOG}
 
 def _award_objects(ids):
@@ -847,6 +868,25 @@ def _endpoint():
         return ""
 
 
+def build_recognition(result):
+    """Кто получил нагрудные знаки «Признание» — сводка для дашборда (по степеням)."""
+    holders = {1: [], 2: [], 3: []}
+    for e in result:
+        for a in e.get("recognition") or []:
+            holders[a["degree"]].append({"id": e["id"], "slug": e["slug"],
+                                         "fullName": e["fullName"], "shortName": e["shortName"]})
+    for name, (full, role) in RECOGNITION_NAMES.items():
+        for d in RECOGNITION.get(name, []):
+            holders[d].insert(0, {"id": name, "slug": "", "fullName": full,
+                                  "shortName": full.split()[0] + " " + full.split()[1][0] + ".", "role": role})
+    out = []
+    for d in (3, 2, 1):
+        card = dict(CATALOG_BY_ID["znak%d" % d])
+        card["holders"] = holders[d]
+        out.append(card)
+    return out
+
+
 def load_roadmaps():
     """Дорожные карты развития (scripts/roadmaps.json → страница «Мой рост», раздел сотрудника)."""
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "roadmaps.json")
@@ -1016,6 +1056,9 @@ def build():
             "growth": latest.get("growth", []),
             "recommendations": latest.get("recommendations", []),
             "awards": accumulate_awards(history),
+            # нагрудные знаки «Признание» — вручаются лично руководителем (см. RECOGNITION)
+            "recognition": [CATALOG_BY_ID["znak%d" % d] for d in sorted(RECOGNITION.get(eid, []))]
+                           if eid in RECOGNITION else [],
         }
         result.append(emp)
 
@@ -1052,6 +1095,7 @@ def build():
         "leaderboard": build_leaderboard(result),
         "schedule": load_schedule(),
         "roadmaps": load_roadmaps(),
+        "recognition": build_recognition(result),
     }
     return data
 
