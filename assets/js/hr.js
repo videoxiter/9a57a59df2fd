@@ -190,6 +190,7 @@
     save2(list);
     if (CLOUD) CLOUD.upsert(r); else push(list);
     render();
+    if (typeof window.otpRefreshHours === "function") window.otpRefreshHours();
   }
 
   function refresh() { render(); pull().then(() => render()); }

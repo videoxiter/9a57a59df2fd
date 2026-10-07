@@ -68,6 +68,7 @@
   }
   const tdIcon = (k) => k === "shift" ? "ph-clock" : k === "vacation" ? "ph-airplane-tilt"
     : k === "leave" ? "ph-door-open" : k === "dayoff" ? "ph-calendar-minus" : "ph-moon";
+  window.otpRefreshHours = hydrateHours;      // чтобы блок согласования заявок обновил часы сразу после решения
 
   /* ---------- кто на какой линии и кто отсутствует (общее для дашборда) ---------- */
   const SCH = D.schedule || null;
