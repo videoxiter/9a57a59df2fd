@@ -439,10 +439,10 @@
   /* ================= РАЗДЕЛ: МОЙ РОСТ (дорожная карта развития) ================= */
   /* Путь до корня сайта (assets/ живут там) — вычисляем от текущего адреса страницы. */
   const SITE_ROOT = (() => {
-    const path = location.pathname;
-    const i = path.indexOf("/team/");
-    if (i > 0) return path.slice(0, i + 1);
-    return path.slice(0, path.lastIndexOf("/", path.length - 2) + 1);
+    const parts = location.pathname.split("/").filter(Boolean);
+    const t = parts.indexOf("team");
+    if (t > 0) return "/" + parts.slice(0, t).join("/") + "/";
+    return parts.length > 1 ? "/" + parts[0] + "/" : "/";
   })();
   const imgUrl = (rel) => SITE_ROOT + String(rel || "").replace(/^\/+/, "");
 

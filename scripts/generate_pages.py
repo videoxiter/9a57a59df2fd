@@ -114,7 +114,7 @@ TEMPLATE = """<!DOCTYPE html>
 </html>
 """
 
-V = "64"
+V = "65"
 
 
 def secnav_html(rel, active):
