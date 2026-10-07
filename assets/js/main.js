@@ -80,7 +80,12 @@
   }
   function shiftOf(fio, dt) {
     const m = monthOf(dt);
-    const days = m && m.shifts ? m.shifts[fio] : null;
+    if (!m || !m.shifts) return null;
+    let days = m.shifts[fio];
+    if (!days) {                                // в графике ФИО может отличаться написанием — ищем по фамилии
+      const key = Object.keys(m.shifts).find((k) => samePerson(k, fio));
+      days = key ? m.shifts[key] : null;
+    }
     return days ? days[String(dt.getDate())] || null : null;
   }
   function lineOf(fio, dt) {
