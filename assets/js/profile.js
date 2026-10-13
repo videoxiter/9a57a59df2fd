@@ -1269,6 +1269,8 @@
           f.innerHTML = `<input type="text" placeholder="Почему отменяешь? (увидит руководитель)" />
             <button class="btn btn-ghost" type="button">Отменить заявку</button>`;
           rowEl.insertAdjacentElement("afterend", f);
+      const focusIt = () => { const i2 = f.querySelector("input"); if (i2) { i2.focus(); f.scrollIntoView({ block: "nearest", behavior: "smooth" }); } };
+      setTimeout(focusIt, 60);
           f.querySelector("button").addEventListener("click", () => cancelReq(b2.dataset.cancel, f.querySelector("input").value.trim()));
         }));
       }

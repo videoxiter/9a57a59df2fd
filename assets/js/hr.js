@@ -210,6 +210,8 @@
       f.innerHTML = `<input type="text" placeholder="Причина отмены — её увидит сотрудник" />
         <button class="btn btn-ghost" type="button">Отменить заявку</button>`;
       rowEl.insertAdjacentElement("afterend", f);
+      const focusIt = () => { const i2 = f.querySelector("input"); if (i2) { i2.focus(); f.scrollIntoView({ block: "nearest", behavior: "smooth" }); } };
+      setTimeout(focusIt, 60);
       f.querySelector("button").addEventListener("click", () => cancelReq(id, f.querySelector("input").value.trim()));
     }));
     box.querySelectorAll("[data-no]").forEach((b) => b.addEventListener("click", () => {
