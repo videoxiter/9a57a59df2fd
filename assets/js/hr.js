@@ -145,12 +145,12 @@
     const cancels = all.filter((r) => r.status === "cancelled" &&
         Date.parse(r.cancelledAt || r.decided || r.created || 0) >= weekAgo)
       .sort((x, y) => String(y.cancelledAt || y.decided || "").localeCompare(String(x.cancelledAt || x.decided || "")))
-      .slice(0, 6);
+      .slice(0, 8);
     // подтверждённые за последние 7 дней — их тоже можно отменить (например, заменив на отгул)
     const approved = all.filter((r) => r.status === "approved" &&
         Date.parse(r.decided || r.created || 0) >= weekAgo)
       .sort((x, y) => String(y.decided || "").localeCompare(String(x.decided || "")))
-      .slice(0, 5);
+      .slice(0, 8);
     if (!active.length && !cancels.length && !approved.length) {   // ничего не происходит — блока нет
       sec.style.display = "none";
       box.innerHTML = "";
