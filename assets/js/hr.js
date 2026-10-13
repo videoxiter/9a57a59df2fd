@@ -133,24 +133,27 @@
     </div>`;
   }
 
+  /* Заявки показываем по дате и времени: сверху — самые поздние, ниже — более ранние. */
+  const reqSortKey = (r) => `${r.date || ""} ${r.type === "dayoff" ? "00:00" : (r.from || "00:00")}`;
+  const byDateDesc = (a, b) => reqSortKey(b).localeCompare(reqSortKey(a));
+
   function render() {
     const box = document.getElementById("hr-requests");
     if (!box) return;
     const sec = box.closest("section") || box;
     const all = load2();
-    const active = all.filter((r) => r.status === "pending")
-      .sort((x, y) => (y.created || "").localeCompare(x.created || ""));
+    const active = all.filter((r) => r.status === "pending").sort(byDateDesc);
     // отменённые за последние 7 дней — чтобы отмена не потерялась
     const weekAgo = Date.now() - 7 * 24 * 3600 * 1000;
     const cancels = all.filter((r) => r.status === "cancelled" &&
         Date.parse(r.cancelledAt || r.decided || r.created || 0) >= weekAgo)
-      .sort((x, y) => String(y.cancelledAt || y.decided || "").localeCompare(String(x.cancelledAt || x.decided || "")))
+      .sort(byDateDesc)
       .slice(0, 8);
     // подтверждённые за последние 7 дней — их тоже можно отменить (например, заменив на отгул)
     const yday = new Date(); yday.setDate(yday.getDate() - 1);
     const minIso = yday.toISOString().slice(0, 10);
     const approved = all.filter((r) => r.status === "approved" && String(r.date || "") >= minIso)
-      .sort((x, y) => String(x.date || "").localeCompare(String(y.date || "")))
+      .sort(byDateDesc)
       .slice(0, 8);
     if (!active.length && !cancels.length && !approved.length) {   // ничего не происходит — блока нет
       sec.style.display = "none";

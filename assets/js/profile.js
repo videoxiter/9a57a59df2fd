@@ -878,8 +878,10 @@
     return Math.max(0, Math.round((b - a) * 10) / 10);
   }
   function myRequests() {
-    return loadReqs().filter((r) => r.empSlug === ME_SLUG && r.status !== "cancelled")
-      .sort((a, b) => (b.created || "").localeCompare(a.created || ""));
+    // показываем и отменённые — сотрудник должен видеть, что заявку сняли (и почему)
+    const key = (r) => `${r.date || ""} ${r.type === "dayoff" ? "00:00" : (r.from || "00:00")}`;
+    return loadReqs().filter((r) => r.empSlug === ME_SLUG)
+      .sort((a, b) => key(b).localeCompare(key(a)));   // сверху — поздние даты, ниже — ранние
   }
   const HR_RULES = (D && D.hrRules) || { noDeductAvg: 8, leaveMaxHours: 4, queueFromLvl: 2 };
   const NO_DEDUCT = !!emp.no_deduct;                       // средний ≥ 9.0 и ни один показатель ниже 8
