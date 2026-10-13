@@ -146,7 +146,12 @@
         Date.parse(r.cancelledAt || r.decided || r.created || 0) >= weekAgo)
       .sort((x, y) => String(y.cancelledAt || y.decided || "").localeCompare(String(x.cancelledAt || x.decided || "")))
       .slice(0, 6);
-    if (!active.length && !cancels.length) {   // ничего не происходит — блока нет
+    // подтверждённые за последние 7 дней — их тоже можно отменить (например, заменив на отгул)
+    const approved = all.filter((r) => r.status === "approved" &&
+        Date.parse(r.decided || r.created || 0) >= weekAgo)
+      .sort((x, y) => String(y.decided || "").localeCompare(String(x.decided || "")))
+      .slice(0, 5);
+    if (!active.length && !cancels.length && !approved.length) {   // ничего не происходит — блока нет
       sec.style.display = "none";
       box.innerHTML = "";
       return;
@@ -158,6 +163,10 @@
         <span class="hr-stat"><b>${active.length}</b> ${active.length === 1 ? "активная заявка" : "активных заявок"}${cancels.length ? ` · отменено за неделю: ${cancels.length}` : ""}</span>
       </div>
       ${active.length ? `<div class="hr-pending">${active.map((r) => row(r)).join("")}</div>` : '<p class="muted" style="margin:0 0 14px">Активных заявок нет — всё согласовано.</p>'}
+      ${approved.length ? `<div class="hr-cancels">
+        <div class="hr-cancels-h ok"><i class="ph-bold ph-check-circle"></i> Подтверждённые за последнюю неделю</div>
+        ${approved.map((r) => row(r, true)).join("")}
+      </div>` : ""}
       ${cancels.length ? `<div class="hr-cancels">
         <div class="hr-cancels-h"><i class="ph-bold ph-prohibit"></i> Отменённые за последнюю неделю</div>
         ${cancels.map((r) => row(r, true)).join("")}

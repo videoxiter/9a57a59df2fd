@@ -1596,3 +1596,5 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
 .hr-cancels-h { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; letter-spacing: .3px;
   color: #fcd34d; text-transform: uppercase; margin-bottom: 10px; }
 .hr-cancels .hr-row { opacity: .92; }
+
+.hr-cancels-h.ok { color: #86efac; }
