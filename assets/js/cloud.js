@@ -35,26 +35,30 @@ window.OTP_CLOUD = (function () {
                 "reason", "status", "reject", "created", "decided", "noDeduct", "forceDeduct"];
   const slim = (r) => { const o = {}; for (const k of COLS) if (r[k] !== undefined && r[k] !== null) o[k] = r[k]; return o; };
   let noDeductCol = true;                      // колонки появятся после ALTER; до этого шлём без них
-  const MARK = "[[OTP-FLAGS:";                 // служебный маркер флагов решения, пока колонок нет
-  const OLD_MARK = "[[NO-DEDUCT]]";            // старый маркер (совместимость)
+  const MARK = "[[OTP-FLAGS:";                 // старый маркер флагов (совместимость)
+  const META_MARK = "[[OTP-META:";             // служебные поля решения, пока в таблице нет колонок
+  const OLD_MARK = "[[NO-DEDUCT]]";
+  const EXTRA = ["noDeduct", "forceDeduct", "cancelledBy", "cancelReason", "cancelledAt"];
 
-  /** Запись к отправке: если колонок нет — прячем флаги решения в поле reject. */
+  /** Запись к отправке: если колонок нет — прячем служебные поля решения в поле reject. */
   function encodeRow(r) {
     const o = slim(r);
     if (!noDeductCol) {
-      const flags = [];
-      if (o.noDeduct) flags.push("noDeduct");
-      if (o.forceDeduct) flags.push("forceDeduct");
-      delete o.noDeduct;
-      delete o.forceDeduct;
-      if (flags.length) o.reject = MARK + flags.join(",") + "]]" + (o.reject || "");
+      const meta = {};
+      for (const k of EXTRA) if (r[k]) meta[k] = r[k];
+      for (const k of EXTRA) delete o[k];
+      if (Object.keys(meta).length) o.reject = META_MARK + JSON.stringify(meta) + "]]" + (o.reject || "");
     }
     return o;
   }
-  /** Запись из базы: вытаскиваем флаги решения обратно. */
+  /** Запись из базы: вытаскиваем служебные поля решения обратно. */
   function decodeRow(r) {
     const s = String((r && r.reject) || "");
-    if (s.indexOf(MARK) === 0) {
+    if (s.indexOf(META_MARK) === 0) {
+      const end = s.indexOf("]]");
+      try { Object.assign(r, JSON.parse(s.slice(META_MARK.length, end))); } catch (e) {}
+      r.reject = s.slice(end + 2);
+    } else if (s.indexOf(MARK) === 0) {
       const end = s.indexOf("]]");
       const flags = s.slice(MARK.length, end).split(",");
       if (flags.indexOf("noDeduct") >= 0) r.noDeduct = true;
