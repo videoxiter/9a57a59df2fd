@@ -209,7 +209,7 @@
       f.className = "hr-cancel-form";
       f.innerHTML = `<input type="text" placeholder="Причина отмены — её увидит сотрудник" />
         <button class="btn btn-ghost" type="button">Отменить заявку</button>`;
-      rowEl.appendChild(f);
+      rowEl.insertAdjacentElement("afterend", f);
       f.querySelector("button").addEventListener("click", () => cancelReq(id, f.querySelector("input").value.trim()));
     }));
     box.querySelectorAll("[data-no]").forEach((b) => b.addEventListener("click", () => {
