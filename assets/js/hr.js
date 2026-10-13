@@ -112,6 +112,7 @@
         ${r.forceDeduct ? '<span class="hr-forced"><i class="ph-bold ph-scissors"></i> списано по решению руководителя</span>' : ""}
         ${clashNote(r)}
         ${r.status === "rejected" && r.reject ? `<em class="rej">Отказ: ${r.reject}</em>` : ""}
+        ${r.status === "cancelled" ? `<em class="rej">Отменена${r.cancelledBy === "emp" ? " сотрудником" : " руководителем"}${r.cancelReason ? ": " + r.cancelReason : ""}</em>` : ""}
       </span>
       ${r.status === "pending" && !decided
         ? `<span class="hr-actions">
@@ -121,10 +122,14 @@
                <input type="checkbox" data-force="${r.id}"> <span>всё равно списать</span></label>` : ""}
              <button class="hr-ok" data-ok="${r.id}" title="Одобрить"><i class="ph-bold ph-check"></i></button>
              <button class="hr-no" data-no="${r.id}" title="Отказать"><i class="ph-bold ph-x"></i></button>
+             <button class="hr-cancel" data-cancel="${r.id}" title="Отменить заявку (например, если сотрудник передумал)"><i class="ph-bold ph-prohibit"></i></button>
            </span>`
         : r.status === "approved"
-          ? `<span class="req-st ok"><i class="ph-bold ph-check-circle"></i> подтверждено${r.noDeduct ? " · без списания" : ""}</span>`
-          : '<span class="req-st no"><i class="ph-bold ph-x-circle"></i> отказано</span>'}
+          ? `<span class="hr-done"><span class="req-st ok"><i class="ph-bold ph-check-circle"></i> подтверждено${r.forceDeduct ? " · списано" : r.noDeduct ? " · без списания" : ""}</span>
+               <button class="hr-cancel" data-cancel="${r.id}" title="Отменить подтверждённую заявку"><i class="ph-bold ph-prohibit"></i></button></span>`
+          : r.status === "cancelled"
+            ? `<span class="req-st cancel"><i class="ph-bold ph-prohibit"></i> отменено${r.cancelledBy === "emp" ? " сотрудником" : ""}</span>`
+            : '<span class="req-st no"><i class="ph-bold ph-x-circle"></i> отказано</span>'}
     </div>`;
   }
 
@@ -132,9 +137,16 @@
     const box = document.getElementById("hr-requests");
     if (!box) return;
     const sec = box.closest("section") || box;
-    const active = load2().filter((r) => r.status === "pending")
+    const all = load2();
+    const active = all.filter((r) => r.status === "pending")
       .sort((x, y) => (y.created || "").localeCompare(x.created || ""));
-    if (!active.length) {                       // нет активных заявок — блока на странице нет
+    // отменённые за последние 7 дней — чтобы отмена не потерялась
+    const weekAgo = Date.now() - 7 * 24 * 3600 * 1000;
+    const cancels = all.filter((r) => r.status === "cancelled" &&
+        Date.parse(r.cancelledAt || r.decided || r.created || 0) >= weekAgo)
+      .sort((x, y) => String(y.cancelledAt || y.decided || "").localeCompare(String(x.cancelledAt || x.decided || "")))
+      .slice(0, 6);
+    if (!active.length && !cancels.length) {   // ничего не происходит — блока нет
       sec.style.display = "none";
       box.innerHTML = "";
       return;
@@ -143,9 +155,13 @@
     box.innerHTML = `
       <div class="hr-head">
         <h2><i class="ph-bold ph-clipboard-text"></i> Заявки сотрудников</h2>
-        <span class="hr-stat"><b>${active.length}</b> ${active.length === 1 ? "активная заявка" : "активных заявок"}</span>
+        <span class="hr-stat"><b>${active.length}</b> ${active.length === 1 ? "активная заявка" : "активных заявок"}${cancels.length ? ` · отменено за неделю: ${cancels.length}` : ""}</span>
       </div>
-      <div class="hr-pending">${active.map((r) => row(r)).join("")}</div>`;
+      ${active.length ? `<div class="hr-pending">${active.map((r) => row(r)).join("")}</div>` : '<p class="muted" style="margin:0 0 14px">Активных заявок нет — всё согласовано.</p>'}
+      ${cancels.length ? `<div class="hr-cancels">
+        <div class="hr-cancels-h"><i class="ph-bold ph-prohibit"></i> Отменённые за последнюю неделю</div>
+        ${cancels.map((r) => row(r, true)).join("")}
+      </div>` : ""}`;
 
     box.querySelectorAll("[data-ok]").forEach((b) => b.addEventListener("click", () => {
       const id = b.dataset.ok;
@@ -160,6 +176,31 @@
     box.querySelectorAll("[data-force]").forEach((c) => c.addEventListener("change", () => {
       const n = box.querySelector(`[data-nodeduct="${c.dataset.force}"]`);
       if (c.checked && n) n.checked = false;
+    }));
+    const cancelReq = (id, reason) => {
+      const list = load2();
+      const rec = list.find((x) => x.id === id);
+      if (!rec) return;
+      rec.status = "cancelled";
+      rec.cancelledBy = "boss";
+      rec.cancelReason = reason || "";
+      rec.cancelledAt = new Date().toISOString();
+      rec.decided = rec.cancelledAt;
+      save2(list);
+      if (CLOUD) CLOUD.upsert(rec); else push(list);
+      render();
+      if (typeof window.otpRefreshHours === "function") window.otpRefreshHours();
+    };
+    box.querySelectorAll("[data-cancel]").forEach((b) => b.addEventListener("click", () => {
+      const id = b.dataset.cancel;
+      const rowEl = box.querySelector(`.hr-row[data-id="${id}"]`) || b.closest(".hr-row");
+      if (!rowEl || rowEl.querySelector(".hr-cancel-form")) return;
+      const f = document.createElement("div");
+      f.className = "hr-cancel-form";
+      f.innerHTML = `<input type="text" placeholder="Причина отмены — её увидит сотрудник" />
+        <button class="btn btn-ghost" type="button">Отменить заявку</button>`;
+      rowEl.appendChild(f);
+      f.querySelector("button").addEventListener("click", () => cancelReq(id, f.querySelector("input").value.trim()));
     }));
     box.querySelectorAll("[data-no]").forEach((b) => b.addEventListener("click", () => {
       const id = b.dataset.no;

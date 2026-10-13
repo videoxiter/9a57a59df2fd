@@ -911,6 +911,7 @@
   const statusChip = (r) => {
     if (r.status === "approved") return `<span class="req-st ok"><i class="ph-bold ph-check-circle"></i> подтверждено${r.forceDeduct ? " · списано по решению руководителя" : r.noDeduct ? " · без списания" : ""}</span>`;
     if (r.status === "rejected") return `<span class="req-st no"><i class="ph-bold ph-x-circle"></i> отказано</span>`;
+    if (r.status === "cancelled") return `<span class="req-st cancel"><i class="ph-bold ph-prohibit"></i> отменено${r.cancelledBy === "boss" ? " руководителем" : r.cancelledBy === "emp" ? " тобой" : ""}</span>`;
     return `<span class="req-st wait"><i class="ph-bold ph-hourglass-medium"></i> на согласовании</span>`;
   };
 
@@ -1221,11 +1222,13 @@
               <i>${r.type === "dayoff" ? `отгул ${r.date} · за смену ${r.date2 || "—"}` : `${r.date} · ${r.from}–${r.to} (${fmtH(hoursOf(r))})`}</i>
               ${r.reason ? `<em>${r.reason}</em>` : ""}
               ${r.status === "rejected" && r.reject ? `<em class="rej">Причина отказа: ${r.reject}</em>` : ""}
+              ${r.status === "cancelled" ? `<em class="rej">Отменена${r.cancelledBy === "boss" ? " руководителем" : ""}${r.cancelReason ? ": " + r.cancelReason : ""}</em>` : ""}
             </span>
             ${statusChip(r)}
             <span class="req-tools">
               <button class="req-copy" data-copy="${r.id}" title="Скопировать заявку — можно отправить руководителю в мессенджере"><i class="ph-bold ph-copy"></i></button>
-              ${r.status === "pending" ? `<button class="req-del" data-del="${r.id}" title="Отозвать"><i class="ph-bold ph-trash"></i></button>` : ""}
+              ${r.status === "pending" ? `<button class="req-del" data-del="${r.id}" title="Отозвать заявку"><i class="ph-bold ph-trash"></i></button>` : ""}
+              ${r.status === "approved" ? `<button class="req-del" data-cancel="${r.id}" title="Отменить подтверждённую заявку"><i class="ph-bold ph-prohibit"></i></button>` : ""}
             </span>
           </div>`;
         }).join("") : '<p class="muted">Заявок пока нет. Оформи первую — она появится на странице руководителя.</p>';
@@ -1241,12 +1244,32 @@
           b2.innerHTML = '<i class="ph-bold ph-check"></i>';
           setTimeout(() => { b2.innerHTML = '<i class="ph-bold ph-copy"></i>'; }, 1500);
         }));
-        hist.querySelectorAll("[data-del]").forEach((b2) => b2.addEventListener("click", () => {
-          // отзыв = мягкое удаление: иначе облачная копия вернёт заявку при синхронизации
-          const rec = myRequests().find((x) => x.id === b2.dataset.del);
-          if (rec) { rec.status = "cancelled"; rec.decided = new Date().toISOString(); if (CLOUD) CLOUD.upsert(rec); }
+        const cancelReq = (id, reason) => {
+          // отмена = мягкое удаление (status=cancelled): иначе облачная копия вернула бы заявку
+          const rec = myRequests().find((x) => x.id === id);
+          if (!rec) return;
+          rec.status = "cancelled";
+          rec.cancelledBy = "emp";
+          rec.cancelReason = reason || "";
+          rec.cancelledAt = new Date().toISOString();
+          rec.decided = rec.cancelledAt;
+          if (CLOUD) CLOUD.upsert(rec);
           renderHours();
-          const cnt = document.getElementById("gs-req-count"); if (cnt) cnt.textContent = `· ${myRequests().length}`;
+          const cnt = document.getElementById("gs-req-count");
+          if (cnt) cnt.textContent = `· ${myRequests().length}`;
+        };
+        hist.querySelectorAll("[data-del]").forEach((b2) => b2.addEventListener("click", () => {
+          cancelReq(b2.dataset.del, "");
+        }));
+        hist.querySelectorAll("[data-cancel]").forEach((b2) => b2.addEventListener("click", () => {
+          const rowEl = b2.closest(".req-row");
+          if (!rowEl || rowEl.querySelector(".req-cancel-form")) return;
+          const f = document.createElement("div");
+          f.className = "req-cancel-form";
+          f.innerHTML = `<input type="text" placeholder="Почему отменяешь? (увидит руководитель)" />
+            <button class="btn btn-ghost" type="button">Отменить заявку</button>`;
+          rowEl.appendChild(f);
+          f.querySelector("button").addEventListener("click", () => cancelReq(b2.dataset.cancel, f.querySelector("input").value.trim()));
         }));
       }
       const cnt = document.getElementById("gs-req-count");
