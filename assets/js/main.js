@@ -12,6 +12,15 @@
   const D = window.OTP_DATA;
   if (!D) return console.error("OTP_DATA не загружен");
   const bySlug = (s) => (D.employees || []).find((e) => e.slug === s) || null;
+  /* Корень сайта (там лежит assets/): путь до /team/ либо первый сегмент адреса.
+     Страницы дашборда лежат на уровень глубже корня — нельзя резать по последнему слэшу. */
+  const SITE_ROOT = (() => {
+    const parts = location.pathname.split("/").filter(Boolean);
+    const t = parts.indexOf("team");
+    if (t > 0) return "/" + parts.slice(0, t).join("/") + "/";
+    return parts.length > 1 ? "/" + parts[0] + "/" : "/";
+  })();
+
   const bySurname = (fio) => (D.employees || []).find((e) => (e.fullName || "").split(" ")[0] === String(fio).split(" ")[0]) || null;
   const MKEYS = ["quality", "learnability", "initiative", "engagement", "discipline"];
   const ACTIVE = D.employees.filter((e) => e.status !== "left");   // уволенных не показываем
@@ -175,7 +184,7 @@
     const novices = D.employees.filter((e) => e.status === "adaptation");
     adaptBox.innerHTML = novices.length
       ? `<span class="adapt-strip-h"><i class="ph-bold ph-graduation-cap"></i> На обучении / адаптации:</span>
-         ${novices.map((e) => `<span class="adapt-chip">${e.shortName} ${e.fullName.split(" ")[0] || ""}<small>${e.role.replace(/\s*\(.*\)$/, "")}</small></span>`).join("")}`
+         ${novices.map((e) => `<a class="adapt-chip" href="${SITE_ROOT}team/${e.slug}/index.html" title="Открыть страницу сотрудника">${e.shortName} ${e.fullName.split(" ")[0] || ""}<small>${e.role.replace(/\s*\(.*\)$/, "")}</small></a>`).join("")}`
       : "";
   }
   if ($("#meta-month")) $("#meta-month").textContent = D.meta.updated;
@@ -201,7 +210,7 @@
         <div class="bc-who">
           <span class="bc-avatar">${initials(leader.fullName)}</span>
           <div>
-            <a class="bc-name" href="../team/${leader.slug}/index.html">${leader.fullName}</a>
+            <a class="bc-name" href="${SITE_ROOT}team/${leader.slug}/index.html">${leader.fullName}</a>
             <div class="bc-role">${leader.role}</div>
           </div>
         </div>
@@ -211,7 +220,7 @@
         <div class="bc-avg">${leader.avg.toFixed(1)}</div>
         <div class="bc-avg-l">средний KPI · <span class="bc-trend ${t.dir}">${arrow} ${t.delta > 0 ? "+" + t.delta : t.delta}</span></div>
         <div class="bc-badges"><span class="bc-badge">LVL ${leader.lvl} · ${leader.stars_in_level}/10</span>${awards}</div>
-        <a class="btn btn-primary" href="../team/${leader.slug}/index.html"><i class="ph ph-user"></i> Страница специалиста</a>
+        <a class="btn btn-primary" href="${SITE_ROOT}team/${leader.slug}/index.html"><i class="ph ph-user"></i> Страница специалиста</a>
       </div>`;
   } else if (bestCard) {
     bestCard.remove();
@@ -233,7 +242,7 @@
       ? `<span class="lb-trend ${cls}">${arrow} ${t.delta > 0 ? "+" + t.delta : t.delta}</span>`
       : '<span class="badge" style="font-size:.68rem"><i class="ph ph-crown"></i> руководитель</span>';
     return `
-      <a class="lb-row" href="../team/${e.slug}/index.html" data-reveal>
+      <a class="lb-row" href="${SITE_ROOT}team/${e.slug}/index.html" data-reveal>
         <span class="lb-rank ${rankCls}">${medal}</span>
         <span class="lb-name">${e.fullName} ${leftBadge} ${stars}<small>${e.role}</small>
           <span class="lb-hours" data-hours="${e.slug}"></span>
@@ -258,7 +267,7 @@
     const awardTop = (e.awards && e.awards[0]) ? `<span class="badge" style="font-size:.66rem;color:${e.awards[0].color};border-color:${otp.hexA(e.awards[0].color,0.3)}"><i class="${e.awards[0].icon}"></i> ${e.awards[0].title}</span>` : "";
     const stars = hasKpi ? `<span style="color:var(--warn);font-size:.75rem;font-weight:600"><i class="ph-fill ph-star"></i> LVL ${e.lvl} · ${e.stars_in_level}/10</span>` : "";
     return `
-      <a class="card emp-card" href="../team/${e.slug}/index.html" data-reveal>
+      <a class="card emp-card" href="${SITE_ROOT}team/${e.slug}/index.html" data-reveal>
         <div class="top">
           <div style="display:flex;gap:12px;align-items:center">
             <span class="avatar">${initials(e.fullName)}</span>
@@ -278,14 +287,7 @@
       </a>`;
   }).join("");
 
-  /* Корень сайта (там лежит assets/): путь до /team/ либо первый сегмент адреса.
-     Страницы дашборда лежат на уровень глубже корня — нельзя резать по последнему слэшу. */
-  const SITE_ROOT = (() => {
-    const parts = location.pathname.split("/").filter(Boolean);
-    const t = parts.indexOf("team");
-    if (t > 0) return "/" + parts.slice(0, t).join("/") + "/";
-    return parts.length > 1 ? "/" + parts[0] + "/" : "/";
-  })();
+
 
   /* ---------- мои награды (руководитель): знаки признания + похвалы ИТ-директора ---------- */
   const maBox = $("#my-awards");
