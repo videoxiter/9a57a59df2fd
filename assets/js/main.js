@@ -175,7 +175,7 @@
     const novices = D.employees.filter((e) => e.status === "adaptation");
     adaptBox.innerHTML = novices.length
       ? `<span class="adapt-strip-h"><i class="ph-bold ph-graduation-cap"></i> На обучении / адаптации:</span>
-         ${novices.map((e) => `<span class="adapt-chip">${e.shortName} ${e.fullName.split(" ")[1] || ""}<small>${e.role.replace(/\s*\(.*\)$/, "")}</small></span>`).join("")}`
+         ${novices.map((e) => `<span class="adapt-chip">${e.shortName} ${e.fullName.split(" ")[0] || ""}<small>${e.role.replace(/\s*\(.*\)$/, "")}</small></span>`).join("")}`
       : "";
   }
   if ($("#meta-month")) $("#meta-month").textContent = D.meta.updated;
