@@ -168,7 +168,16 @@
   const lastBonus = D.employees.reduce((s, e) => s + (e.history[e.history.length - 1].bonus || 0), 0);
 
   /* ---------- шапка / подвал ---------- */
-  if ($("#meta-count")) $("#meta-count").textContent = D.employees.length;
+  if ($("#meta-count")) $("#meta-count").textContent = ACTIVE.length;   // без уволенных
+  /* Кто сейчас на обучении/адаптации — чтобы новички были видны сразу на главной */
+  const adaptBox = $("#adapt-strip");
+  if (adaptBox) {
+    const novices = D.employees.filter((e) => e.status === "adaptation");
+    adaptBox.innerHTML = novices.length
+      ? `<span class="adapt-strip-h"><i class="ph-bold ph-graduation-cap"></i> На обучении / адаптации:</span>
+         ${novices.map((e) => `<span class="adapt-chip">${e.shortName} ${e.fullName.split(" ")[1] || ""}<small>${e.role.replace(/\s*\(.*\)$/, "")}</small></span>`).join("")}`
+      : "";
+  }
   if ($("#meta-month")) $("#meta-month").textContent = D.meta.updated;
   if ($("#stat-avg")) $("#stat-avg").textContent = teamAvgNow.toFixed(1);
   if ($("#stat-top")) $("#stat-top").textContent = leader.shortName;
