@@ -236,7 +236,7 @@
 
   /* ---------- карточки специалистов ---------- */
   const grid = $("#emp-grid");
-  if (grid) grid.innerHTML = D.employees.map((e) => {
+  if (grid) grid.innerHTML = ACTIVE.map((e) => {
     const hasKpi = e.avg != null;
     const mini = hasKpi
       ? MKEYS.map((k) => {
