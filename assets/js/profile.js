@@ -376,6 +376,25 @@
     const book = awardsCatalog.map((g) => bookCard(g, !!earnedIds.has(g.id), (empAwards.find((a) => a.id === g.id) || {}).months)).join("");
     const accumulated = empAwards.map((a) => bookCard(a, true, a.months)).join("");
 
+    const praises = emp.praise || [];
+    const praiseBlock = praises.length ? `
+      <div class="rec-block praise" data-reveal>
+        <div class="rec-head">
+          <h3><i class="ph-bold ph-megaphone"></i> Похвала от ИТ Директора</h3>
+          <span class="rec-hint">вручается лично, с индивидуальной формулировкой «за что»</span>
+        </div>
+        <div class="rec-list">
+          ${praises.map((x) => `<div class="rec-card" style="--rc:${x.color || "#f59e0b"}">
+            <span class="rec-medal">${x.glyph || "🏅"}</span>
+            <div class="rec-body">
+              <div class="rec-degree">${escHtml(x.month || "")}</div>
+              <div class="rec-title">${escHtml(x.title || "Похвала от ИТ Директора")}</div>
+              <div class="rec-desc"><b>За что:</b> ${escHtml(x.reason || "")}</div>
+            </div>
+          </div>`).join("")}
+        </div>
+      </div>` : "";
+
     const rec = emp.recognition || [];
     const recBlock = rec.length ? `
       <div class="rec-block" data-reveal>
@@ -397,6 +416,7 @@
 
     return `
     <section class="p-sec" data-reveal>
+      ${praiseBlock}
       ${recBlock}
       <div class="awards-counter" data-reveal>
         <div class="ac-left">

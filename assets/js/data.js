@@ -198,6 +198,16 @@ window.OTP_DATA = {
       "motiv": "Найди способ сократить расходы отдела — экономия тоже победа."
     },
     {
+      "id": "praise",
+      "icon": "ph-megaphone",
+      "title": "Похвала от ИТ Директора",
+      "desc": "Вручается лично ИТ-директором за особые заслуги — основание указывается индивидуально",
+      "color": "#f59e0b",
+      "glyph": "🏅",
+      "manual": true,
+      "motiv": ""
+    },
+    {
       "id": "znak3",
       "icon": "ph-medal",
       "title": "Признание: Нагрудный знак 3 степени (зелёные камни)",
@@ -1727,6 +1737,7 @@ window.OTP_DATA = {
         }
       ],
       "recognition": [],
+      "praise": [],
       "rank": null
     },
     {
@@ -3301,6 +3312,7 @@ window.OTP_DATA = {
           "motiv": ""
         }
       ],
+      "praise": [],
       "rank": 2
     },
     {
@@ -4792,6 +4804,7 @@ window.OTP_DATA = {
           "motiv": ""
         }
       ],
+      "praise": [],
       "rank": 6
     },
     {
@@ -6047,6 +6060,7 @@ window.OTP_DATA = {
         }
       ],
       "recognition": [],
+      "praise": [],
       "rank": 8
     },
     {
@@ -7417,6 +7431,7 @@ window.OTP_DATA = {
         }
       ],
       "recognition": [],
+      "praise": [],
       "rank": 3
     },
     {
@@ -8738,6 +8753,7 @@ window.OTP_DATA = {
         }
       ],
       "recognition": [],
+      "praise": [],
       "rank": 9
     },
     {
@@ -9931,6 +9947,7 @@ window.OTP_DATA = {
         }
       ],
       "recognition": [],
+      "praise": [],
       "rank": 7
     },
     {
@@ -11513,6 +11530,7 @@ window.OTP_DATA = {
         }
       ],
       "recognition": [],
+      "praise": [],
       "rank": 4
     },
     {
@@ -12901,6 +12919,7 @@ window.OTP_DATA = {
         }
       ],
       "recognition": [],
+      "praise": [],
       "rank": 5
     },
     {
@@ -14378,6 +14397,7 @@ window.OTP_DATA = {
           "motiv": ""
         }
       ],
+      "praise": [],
       "rank": 1
     }
   ],

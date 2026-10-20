@@ -348,6 +348,11 @@ AWARDS_CATALOG = [
     {"id": "changer",   "icon": "ph-sparkle",        "title": "Меняет мир!",        "desc": "Больше всех изменений в работе или отделе за месяц", "color": "#c084fc", "glyph": "🕶️"},
     {"id": "seller",    "icon": "ph-hand-coins",     "title": "Продавец месяца",   "desc": "Сделал хотя бы одну продажу ИТ-оборудования за месяц", "color": "#2dd4bf", "glyph": "💰"},
     {"id": "budget",    "icon": "ph-piggy-bank",     "title": "Вне бюджета!",      "desc": "Сократил ежемесячный расход отдела", "color": "#38bdf8", "glyph": "📉"},
+    # --- Похвала от ИТ Директора: вручается лично, причина пишется индивидуально ---
+    {"id": "praise", "icon": "ph-megaphone", "title": "Похвала от ИТ Директора",
+     "desc": "Вручается лично ИТ-директором за особые заслуги — основание указывается индивидуально",
+     "color": "#f59e0b", "glyph": "🏅", "manual": True},
+
     # --- Признание руководителя: нагрудные знаки трёх степеней (вручаются лично, не по метрикам) ---
     {"id": "znak3", "icon": "ph-medal", "title": "Признание: Нагрудный знак 3 степени (зелёные камни)",
      "desc": "Образцовое и высокопрофессиональное выполнение трудовых обязанностей", "color": "#34d399", "glyph": "🎖️",
@@ -369,6 +374,13 @@ RECOGNITION = {
     "pospelova": [3, 2],
 }
 RECOGNITION_NAMES = {"yakovlev": ("Яковлев Евгений Евгеньевич", "Руководитель ОТП")}
+
+# Похвала от ИТ Директора: назначает лично ИТ-директор, с формулировкой «за что».
+# Формат: {"frolov": [{"month": "Окт 2026", "reason": "за …"}]}
+PRAISE = {
+    # пример заполнения:
+    # "frolov": [{"month": "Окт 2026", "reason": "за оперативный разбор аварии на площадке"}],
+}
 
 CATALOG_BY_ID = {a["id"]: a for a in AWARDS_CATALOG}
 
@@ -1059,6 +1071,8 @@ def build():
             # нагрудные знаки «Признание» — вручаются лично руководителем (см. RECOGNITION)
             "recognition": [CATALOG_BY_ID["znak%d" % d] for d in sorted(RECOGNITION.get(eid, []))]
                            if eid in RECOGNITION else [],
+            "praise": [dict(p, title=CATALOG_BY_ID["praise"]["title"], glyph=CATALOG_BY_ID["praise"]["glyph"],
+                            color=CATALOG_BY_ID["praise"]["color"]) for p in PRAISE.get(eid, [])],
         }
         result.append(emp)
 
