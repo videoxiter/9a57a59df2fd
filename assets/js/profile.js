@@ -137,7 +137,9 @@
         : "";
     const statusBadge = emp.status === "left"
       ? `<span class="badge badge-left"><i class="ph ph-archive"></i> ${emp.statusNote || "выбыл"}</span>`
-      : '<span class="badge badge-good"><i class="ph ph-check"></i> в команде</span>';
+      : emp.status === "adaptation"
+        ? '<span class="badge badge-adapt"><i class="ph ph-graduation-cap"></i> на обучении / адаптации</span>'
+        : '<span class="badge badge-good"><i class="ph ph-check"></i> в команде</span>';
     return `
     <section class="p-hero" data-reveal>
       <span class="avatar-xl">${otp.initials(emp.fullName)}</span>
@@ -145,6 +147,9 @@
         <span class="kicker">${emp.siteTitle}</span>
         <h1 class="p-hero-name">${emp.fullName}</h1>
         <div class="muted" style="font-size:.9rem">${emp.role} · <span class="p-sec-now">${SECTION_TITLES[SECTION] || ""}</span></div>
+        ${emp.status === "adaptation" ? `<div class="adapt-note"><i class="ph-bold ph-info"></i>
+          Пока идёт обучение и адаптация: KPI, звёзды, уровень и награды начнут считаться после её завершения.
+          Заявки — отгулы, увольнительные, переработки — работают уже сейчас.</div>` : ""}
         <div class="p-hero-badges">
           ${statusBadge}${deltaBadge}
           ${hasKpi ? `<span class="badge"><i class="ph ph-${trendIcon}"></i> тренд ${trend.delta > 0 ? "+" + trend.delta : trend.delta} за период</span>` : ""}

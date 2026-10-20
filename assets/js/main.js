@@ -14,7 +14,7 @@
   const bySlug = (s) => (D.employees || []).find((e) => e.slug === s) || null;
   const bySurname = (fio) => (D.employees || []).find((e) => (e.fullName || "").split(" ")[0] === String(fio).split(" ")[0]) || null;
   const MKEYS = ["quality", "learnability", "initiative", "engagement", "discipline"];
-  const ACTIVE = D.employees.filter((e) => e.status === "active");
+  const ACTIVE = D.employees.filter((e) => e.status !== "left");   // уволенных не показываем
   const $ = (s) => document.querySelector(s);
   const WD_SHORT = ["вс", "пн", "вт", "ср", "чт", "пт", "сб"];
   const WD_FULL = ["воскресенье", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота"];
@@ -214,7 +214,8 @@
     const cls = t.dir === "up" ? "up" : t.dir === "down" ? "down" : "flat";
     const rankCls = i === 0 ? "top1" : i === 1 ? "top2" : i === 2 ? "top3" : "";
     const medal = hasKpi ? (i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1) : "👑";
-    const leftBadge = e.status === "left" ? '<span class="badge badge-left">выбыл</span>' : "";
+    const leftBadge = e.status === "left" ? '<span class="badge badge-left">выбыл</span>'
+      : e.status === "adaptation" ? '<span class="badge badge-adapt">адаптация</span>' : "";
     const stars = hasKpi ? `<span class="lb-trend up" title="уровень">LVL ${e.lvl}</span>` : "";
     const trendCell = hasKpi
       ? `<span class="lb-trend ${cls}">${arrow} ${t.delta > 0 ? "+" + t.delta : t.delta}</span>`
@@ -240,7 +241,8 @@
           return `<div class="mm"><span style="font-size:1.15rem;line-height:1">${m.emoji || ""}</span><div class="v">${e.current[k]}</div><div class="l">${m.label.split(" ")[0]}</div></div>`;
         }).join("")
       : '<div class="mm" style="grid-column:1/-1;color:var(--muted);padding:12px"><i class="ph ph-crown"></i> KPI не ведётся — руководитель</div>';
-    const leftTag = e.status === "left" ? '<span class="badge badge-left" style="font-size:.68rem">выбыл</span>' : "";
+    const leftTag = e.status === "left" ? '<span class="badge badge-left" style="font-size:.68rem">выбыл</span>'
+      : e.status === "adaptation" ? '<span class="badge badge-adapt" style="font-size:.68rem">адаптация</span>' : "";
     const awardTop = (e.awards && e.awards[0]) ? `<span class="badge" style="font-size:.66rem;color:${e.awards[0].color};border-color:${otp.hexA(e.awards[0].color,0.3)}"><i class="${e.awards[0].icon}"></i> ${e.awards[0].title}</span>` : "";
     const stars = hasKpi ? `<span style="color:var(--warn);font-size:.75rem;font-weight:600"><i class="ph-fill ph-star"></i> LVL ${e.lvl} · ${e.stars_in_level}/10</span>` : "";
     return `
@@ -331,6 +333,8 @@
     const dayList = (dt) => {
       const out = [];
       for (const [fio, days] of Object.entries((month && month.shifts) || {})) {
+        const person = bySurname(fio);
+        if (person && person.status === "left") continue;      // уволенных в графике отдела нет
         const sh = days[String(dt.getDate())];
         if (!sh) continue;
         out.push({ fio, sh, ln: lineOf(fio, dt) });

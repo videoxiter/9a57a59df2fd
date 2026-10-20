@@ -114,7 +114,7 @@ TEMPLATE = """<!DOCTYPE html>
 </html>
 """
 
-V = "76"
+V = "77"
 
 
 def secnav_html(rel, active):
@@ -131,6 +131,9 @@ def main():
     os.makedirs(TEAM_DIR, exist_ok=True)
     n = 0
     for e in data["employees"]:
+        if e.get("status") == "left":
+            print(f"  - {e['fullName']}: уволен, страницы не генерируются")
+            continue
         emp = copy.deepcopy(e)
         # «Учебные материалы» убраны со страниц — не тащим их в payload
         emp.pop("literature", None)

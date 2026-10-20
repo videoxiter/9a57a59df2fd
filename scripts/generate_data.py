@@ -44,6 +44,7 @@ MKEYS = list(METRICS.keys())
 CONTENT = {
     "yakovlenkov": {
         "shortName": "Владислав", "fullName": "Яковленков Владислав Юрьевич",
+        "status": "left",
         "role": "Главный специалист ТП (руководитель специалистов, заместитель руководителя)",
         "siteTitle": "Штурманская рубка",
         "tagline": "Держит курс команды: распределение, контроль, развитие. KPI по нему не ведётся — он руководитель.",
@@ -66,9 +67,9 @@ CONTENT = {
     },
     "frolov": {
         "shortName": "Павел", "fullName": "Фролов Павел Александрович",
-        "role": "Ведущий специалист ТП (корп. связь, обслуживание ЦО, склады)",
+        "role": "Главный специалист ТП (корп. связь, обслуживание ЦО, склады)",
         "siteTitle": "Мастер связи",
-        "tagline": "Корпоративная связь, ЦО и склады — его стихия.",
+        "tagline": "Главный специалист отдела: корпоративная связь, ЦО и склады — его стихия.",
         "personal": "Ты — фундамент связи. Переведи экспертизу из головы в регламенты и автоматизацию — и станешь незаменим без перегрузки.",
         "literature": [
             {"title": "The Phoenix Project", "author": "Джин Ким", "type": "Книга", "why": "Как IT-процессы влияют на бизнес", "url": "https://itrevolution.com/product/the-phoenix-project/"},
@@ -167,7 +168,7 @@ CONTENT = {
     },
     "bolgov": {
         "shortName": "Андрей", "fullName": "Болгов Андрей Владимирович",
-        "role": "Специалист ТП (ребрендинг офисов)",
+        "role": "Ведущий специалист ТП (ребрендинг офисов)",
         "siteTitle": "Мастер ребрендинга",
         "tagline": "Превращает офисы в новые без сбоев.",
         "personal": "Ты двигатель перемен. Закрепляй успех в чек-листах и БЗ, и твой опыт будет работать даже без тебя.",
@@ -214,6 +215,38 @@ CONTENT = {
             {"label": "Регламенты связи", "url": "#", "icon": "ph-phone"},
             {"label": "Дашборд инцидентов", "url": "#", "icon": "ph-chart-line"},
             {"label": "Чат команды", "url": "#", "icon": "ph-chat-circle-text"},
+        ],
+    },
+    "safronov": {
+        "shortName": "Валерий", "fullName": "Сафронов Валерий Александрович",
+        "status": "adaptation",
+        "role": "Специалист технической поддержки (обучение/адаптация)",
+        "siteTitle": "Первые шаги",
+        "tagline": "На обучении и адаптации: KPI, звёзды и награды начнут считаться после её завершения.",
+        "personal": "Ты только входишь в ОТП. Сейчас главное — освоить процессы, инструменты и стандарты отдела. Прогресс, KPI и награды стартуют после завершения адаптации.",
+        "literature": [
+            {"title": "ITIL 4 Foundation", "author": "Axelos", "type": "Сертификация", "why": "Базовый язык сервис-менеджмента", "url": "https://www.axelos.com/certifications/itil-4-foundation"},
+            {"title": "Атомные привычки", "author": "Джеймс Клир", "type": "Книга", "why": "Системная работа с первых недель", "url": "https://www.litres.ru/book/dzheyms-klir/atomnye-privychki-40480030/"},
+        ],
+        "links": [
+            {"label": "База знаний отдела", "url": "#", "icon": "ph-books"},
+            {"label": "Регламенты ОТП", "url": "#", "icon": "ph-clipboard-text"},
+        ],
+    },
+    "agarov": {
+        "shortName": "Владимир", "fullName": "Агарков Владимир Сергеевич",
+        "status": "adaptation",
+        "role": "Специалист технической поддержки (обучение/адаптация)",
+        "siteTitle": "Первые шаги",
+        "tagline": "На обучении и адаптации: KPI, звёзды и награды начнут считаться после её завершения.",
+        "personal": "Ты только входишь в ОТП. Сейчас главное — освоить процессы, инструменты и стандарты отдела. Прогресс, KPI и награды стартуют после завершения адаптации.",
+        "literature": [
+            {"title": "ITIL 4 Foundation", "author": "Axelos", "type": "Сертификация", "why": "Базовый язык сервис-менеджмента", "url": "https://www.axelos.com/certifications/itil-4-foundation"},
+            {"title": "Драйв", "author": "Дэниел Пинк", "type": "Книга", "why": "Мотивация и вовлечённость", "url": "https://www.litres.ru/book/deniel-pink/drayv-10142213/"},
+        ],
+        "links": [
+            {"label": "База знаний отдела", "url": "#", "icon": "ph-books"},
+            {"label": "Регламенты ОТП", "url": "#", "icon": "ph-clipboard-text"},
         ],
     },
 }
@@ -571,6 +604,7 @@ SLUGS = {
     "khasanov": "114778baa83f", "pestovsky": "9f4f056f3e64", "eliseev": "f20f3afe5d45",
     "zavyalov": "a9cb0e50ea70", "bolgov": "e5d35a6fc921", "yuryev": "8b36020d00c7",
     "pospelova": "d2b44b366961",
+    "safronov": "85cd9d818ae3", "agarov": "f3da30046c28",
 }
 
 # ---------- ручные награды (заполняет руководитель ежемесячно) ----------
@@ -1063,7 +1097,7 @@ def build():
             "tagline": content["tagline"], "personal": content["personal"],
             "literature": content["literature"],
             "resources": resources_for(latest.get("negatives", [])),
-            "status": "active",
+            "status": content.get("status", "active"),
             "history": history,
             "current": current, "avg": avg, "growth_delta": growth_delta,
             "hours_base": HOURS_BASE.get(eid, 0),
