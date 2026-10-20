@@ -160,7 +160,10 @@
 
   const rated = D.employees.filter((e) => e.avg != null);
   const teamAvgNow = rated.length ? +(rated.reduce((s, e) => s + e.avg, 0) / rated.length).toFixed(2) : 0;
-  const ranked = [...D.employees].sort((a, b) => (b.avg ?? -1) - (a.avg ?? -1));
+  // в рейтинг по KPI попадают только действующие сотрудники с оценкой:
+  // уволенные и новички на адаптации (KPI ещё не ведётся) сюда не входят
+  const ranked = D.employees.filter((e) => e.status === "active" && e.avg != null)
+    .sort((a, b) => (b.avg ?? -1) - (a.avg ?? -1));
   const leader = ranked[0];
   const lastBonus = D.employees.reduce((s, e) => s + (e.history[e.history.length - 1].bonus || 0), 0);
 
