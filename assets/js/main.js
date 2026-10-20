@@ -264,7 +264,6 @@
       </a>`;
   }).join("");
 
-  /* ---------- признание: нагрудные знаки (вручает руководитель лично) ---------- */
   /* Корень сайта (там лежит assets/): путь до /team/ либо первый сегмент адреса.
      Страницы дашборда лежат на уровень глубже корня — нельзя резать по последнему слэшу. */
   const SITE_ROOT = (() => {
@@ -273,6 +272,31 @@
     if (t > 0) return "/" + parts.slice(0, t).join("/") + "/";
     return parts.length > 1 ? "/" + parts[0] + "/" : "/";
   })();
+
+  /* ---------- мои награды (руководитель): знаки признания + похвалы ИТ-директора ---------- */
+  const maBox = $("#my-awards");
+  const boss = D.bossAwards;
+  if (maBox && boss && ((boss.recognition || []).length || (boss.praise || []).length)) {
+    const esc = (s) => String(s || "").replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
+    maBox.innerHTML = `
+      <div class="my-awards-h">
+        <h3><i class="ph-bold ph-medal"></i> Мои награды</h3>
+        <span>признание компании и похвалы ИТ-директора</span>
+      </div>
+      <div class="my-awards-list">
+        ${(boss.recognition || []).map((a) => `<div class="my-award">
+          <img src="${SITE_ROOT}${String(a.image || "").replace(/^\/+/, "")}" alt="${esc(a.title)}" loading="lazy">
+          <div class="my-award-body"><b>${a.degree} степень</b><span>${esc(String(a.title || "").replace(/^Признание:\s*/, ""))}</span></div>
+        </div>`).join("")}
+        ${(boss.praise || []).map((p) => `<div class="my-award praise">
+          <span class="my-award-glyph">${p.glyph || "🏅"}</span>
+          <div class="my-award-body"><b>${esc(p.month || "")}</b><span>${esc(p.title || "Похвала от ИТ Директора")} — за что: ${esc(p.reason || "")}</span></div>
+        </div>`).join("")}
+      </div>`;
+  }
+
+  /* ---------- признание: нагрудные знаки (вручает руководитель лично) ---------- */
+
   const recBox = $("#recognition-board");
   if (recBox && (D.recognition || []).length) {
     const rm = (s) => String(s || "").replace(/^Признание:\s*/, "");

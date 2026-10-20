@@ -880,6 +880,16 @@ def _endpoint():
         return ""
 
 
+def build_boss_awards():
+    """Личные награды руководителя (у него нет страницы специалиста): знаки + похвалы ИТ-директора."""
+    degrees = sorted(RECOGNITION.get("yakovlev", []), reverse=True)
+    recs = [dict(CATALOG_BY_ID["znak%d" % d]) for d in degrees]
+    pr = CATALOG_BY_ID["praise"]
+    praise = [dict(p, title=pr["title"], glyph=pr["glyph"], color=pr["color"])
+              for p in PRAISE.get("yakovlev", [])]
+    return {"recognition": recs, "praise": praise}
+
+
 def build_recognition(result):
     """Кто получил нагрудные знаки «Признание» — сводка для дашборда (по степеням)."""
     holders = {1: [], 2: [], 3: []}
@@ -1110,6 +1120,7 @@ def build():
         "schedule": load_schedule(),
         "roadmaps": load_roadmaps(),
         "recognition": build_recognition(result),
+        "bossAwards": build_boss_awards(),
     }
     return data
 
