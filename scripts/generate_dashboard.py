@@ -17,7 +17,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DASH = os.path.join(ROOT, "1bceb335668c")
 SRC = os.path.join(DASH, "index.html")
 SOURCE = os.path.join(ROOT, "scripts", "dashboard_source.html")   # неизменный исходник секций
-V = "82"
+V = "83"
 
 PAGES = [
     ("", "Моя команда", "team", ["top", "best", "hr-sec", "rating"]),
@@ -126,7 +126,13 @@ def build_pages():
             if sid in sections:
                 body.append(sections[sid])
         body.append("  " + footer)
-        # скрипты
+        # скрипты: сначала библиотеки (без них графики и анимации не работают),
+        # затем собственные модули
+        for cdn in ("https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js",
+                    "https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js",
+                    "https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js",
+                    "https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"):
+            body.append(f'  <script src="{cdn}"></script>')
         for js in ("data.js", "common.js", "cloud.js", "hr.js", "main.js"):
             body.append(f'  <script src="{prefix}assets/js/{js}?v={V}"></script>')
         body.append("</body>\n</html>\n")
