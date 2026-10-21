@@ -123,7 +123,9 @@
       const labels = info.labels || [];
       const weeks = info.weeks || [];
       for (let i = 0; i < weeks.length; i++) {
-        if (!samePerson(weeks[i], fio)) continue;
+        // в ячейке может быть несколько человек — приходит массивом
+        const names = Array.isArray(weeks[i]) ? weeks[i] : [weeks[i]];
+        if (!names.some((n) => samePerson(n, fio))) continue;
         const mm = /^(\d{2})\.(\d{2})\s*-\s*(\d{2})\.(\d{2})$/.exec(String(labels[i] || "").trim());
         if (!mm) continue;
         const y = dt.getFullYear();

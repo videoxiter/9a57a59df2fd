@@ -169,7 +169,12 @@ def parse_month(client: Client, html: str, iso: str):
                 lid, lname = (m.group(1), m.group(2)) if m else (line, line)
                 weeks = []
                 for c in r[1:]:
-                    weeks.append(client.user(c["keys"][0]) if c["keys"] else (c["t"] or "—"))
+                    # в ячейке может быть НЕСКОЛЬКО человек (например, «Сафронов В.А. · Завьялов М.В.»)
+                    names = [client.user(k) for k in (c["keys"] or []) if k]
+                    names = [n for n in names if n]
+                    if not names and (c["t"] or "").strip():
+                        names = [c["t"].strip()]
+                    weeks.append(names if names else ["—"])
                 lines[lid] = {"title": lname.strip(), "weeks": weeks, "labels": week_labels}
 
     shifts = {}

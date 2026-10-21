@@ -829,22 +829,28 @@
     if (dt.getDay() === 0 || dt.getDay() === 6) return null;
     const M = SCHED && SCHED.months && SCHED.months[isoOf(dt)];
     if (!M || !M.lines) return null;
+    const d0 = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+    const found = [];
     for (const [lid, info] of Object.entries(M.lines)) {
       const labels = info.labels || [];
+      const weeks = info.weeks || [];
       for (let i = 0; i < labels.length; i++) {
-        const who = (info.weeks || [])[i];
-        if (!samePerson(who, fio)) continue;
+        // в ячейке линии может быть несколько человек — приходит массивом
+        const cell = weeks[i];
+        const names = Array.isArray(cell) ? cell : [cell];
+        if (!names.some((n) => samePerson(n, fio))) continue;
         const m = /^(\d{2})\.(\d{2})\s*-\s*(\d{2})\.(\d{2})$/.exec(String(labels[i]).trim());
         if (!m) continue;
         const y = dt.getFullYear();
         const from = new Date(y, +m[2] - 1, +m[1]);
         let to = new Date(y, +m[4] - 1, +m[3]);
         if (to < from) to = new Date(y + 1, +m[4] - 1, +m[3]);
-        const d0 = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
-        if (d0 >= from && d0 <= to) return { id: lid, title: info.title };
+        if (d0 >= from && d0 <= to) { found.push({ id: lid, title: info.title }); break; }
       }
     }
-    return null;
+    if (!found.length) return null;
+    // человек может стоять в нескольких линиях одной недели — показываем все
+    return { id: found.map((f) => f.id).join(" + "), title: found[0].title, all: found };
   }
   const shiftBadge = (sh, opts = {}) => {
     if (!sh) return `<span class="gs-none">нет данных</span>`;
