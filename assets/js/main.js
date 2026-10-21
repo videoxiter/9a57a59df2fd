@@ -368,7 +368,13 @@
         </div></div>`;
     };
     const year = String(today.getFullYear());
-    const vac = S.vacations && S.vacations[year] ? S.vacations[year] : {};
+    const vacAll = S.vacations && S.vacations[year] ? S.vacations[year] : {};
+    // в отпусках отдела — только действующие сотрудники команды (без уволенных и посторонних)
+    const vac = {};
+    for (const [fio, list] of Object.entries(vacAll)) {
+      const person = bySurname(fio);
+      if (person && person.status !== "left") vac[fio] = list;
+    }
     let showPast = false;                       // по умолчанию прошедшие отпуска скрыты
     const today0 = new Date(); today0.setHours(0, 0, 0, 0);
     const fmt = (p) => {
