@@ -111,33 +111,41 @@
     }
     return days ? days[String(dt.getDate())] || null : null;
   }
-  /* Все линии, где человек указан в графике месяца: он может быть в нескольких
-     (например, L0 + L3). Линия текущей недели идёт первой. */
+  /* Линии человека: все, где он указан на ТЕКУЩЕЙ неделе (может быть в нескольких,
+     например L0 + L3). Если на этой неделе его в линиях нет — берём ближайшую неделю,
+     где он есть, и помечаем её датой начала. */
   function linesOf(fio, dt) {
     const m = monthOf(dt);
     if (!m || !m.lines) return [];
-    const out = [];
+    const d0 = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+    const found = [];
     for (const [lid, info] of Object.entries(m.lines)) {
       const labels = info.labels || [];
       const weeks = info.weeks || [];
-      let any = false, current = false;
       for (let i = 0; i < weeks.length; i++) {
         if (!samePerson(weeks[i], fio)) continue;
-        any = true;
         const mm = /^(\d{2})\.(\d{2})\s*-\s*(\d{2})\.(\d{2})$/.exec(String(labels[i] || "").trim());
         if (!mm) continue;
         const y = dt.getFullYear();
         const from = new Date(y, +mm[2] - 1, +mm[1]);
         let to = new Date(y, +mm[4] - 1, +mm[3]);
         if (to < from) to = new Date(y + 1, +mm[4] - 1, +mm[3]);
-        const d0 = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
-        if (d0 >= from && d0 <= to) current = true;
+        found.push({ id: lid, title: info.title, from, to });
       }
-      if (any) out.push({ id: lid, title: info.title, current });
     }
-    return out.sort((a, b) => (b.current ? 1 : 0) - (a.current ? 1 : 0));
+    if (!found.length) return [];
+    const cur = found.filter((f) => d0 >= f.from && d0 <= f.to);
+    if (cur.length) return cur.map((f) => ({ ...f, current: true }));
+    const dist = (f) => Math.min(Math.abs(f.from - d0), Math.abs(f.to - d0));
+    const best = Math.min(...found.map(dist));
+    return found.filter((f) => dist(f) === best).map((f) => ({ ...f, current: false }));
   }
-  const lineLabel = (list) => (list && list.length ? list.map((l) => l.id).join(" + ") + " · " + list[0].title : "");
+  const lineLabel = (list) => {
+    if (!list || !list.length) return "";
+    const f = list[0];
+    const since = f.current ? "" : " · с " + String(f.from.getDate()).padStart(2, "0") + "." + String(f.from.getMonth() + 1).padStart(2, "0");
+    return list.map((l) => l.id).join(" + ") + " · " + f.title + since;
+  };
   function vacationOf(fio, dt) {
     if (!SCH || !SCH.vacations) return null;
     const y = String(dt.getFullYear());
