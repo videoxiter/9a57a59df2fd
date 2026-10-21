@@ -14,7 +14,7 @@
   const filledMonths = history.map((h, i) => (monthHasData(h) ? i : -1)).filter((i) => i >= 0);
   let selected = filledMonths.length ? filledMonths[filledMonths.length - 1] : Math.max(0, history.length - 1);
 
-  const SECTION_TITLES = { bonus: "Бонусы", lvl: "Мой LVL", awards: "Награды", growth: "Мой рост", stats: "Статистика", rules: "Правила" };
+  const SECTION_TITLES = { bonus: "Бонусы", income: "Карта доходов", lvl: "Мой LVL", awards: "Награды", growth: "Мой рост", stats: "Статистика", rules: "Правила" };
   document.title = `Мои результаты · ${SECTION_TITLES[SECTION] || ""} · ${emp.shortName}`;
 
   /* ---------- общие данные ---------- */
@@ -166,6 +166,7 @@
   /* ---------- переходы по разделам (нижние «робо-кнопки») ---------- */
   const SECTION_DEFS = [
     { key: "bonus", label: "Бонусы", icon: "ph-wallet", note: "KPI и денежная часть" },
+    { key: "income", label: "Карта доходов", icon: "ph-coins", note: "из чего складывается доход" },
     { key: "lvl", label: "Мой LVL", icon: "ph-medal", note: "уровень и звёзды" },
     { key: "awards", label: "Награды", icon: "ph-trophy", note: "полученные и справочник" },
     { key: "growth", label: "Мой рост", icon: "ph-rocket-launch", note: "план развития" },
@@ -1411,7 +1412,300 @@
     if (st) openStage(st);
   });
 
-  const RENDER = { bonus: sectionBonus, lvl: sectionLvl, awards: sectionAwards, growth: sectionGrowth, graph: sectionGraph, stats: sectionStats, rules: sectionRules };
+
+  /* ---------- Карта доходов ---------- */
+  function sectionIncome() {
+    const inc = D.employee.income || {};
+    const R = D.incomeRules || {};
+    const fixed = inc.fixed || 0;
+    const salary = inc.salary || 0;
+    const premium = inc.premium || 0;
+    const pct = inc.premiumPct || 25;
+    const noWeekend = !!inc.noWeekend;
+    const rub = (n) => (n < 0 ? "−" : "") + Math.abs(Math.round(n)).toLocaleString("ru-RU") + " ₽";
+    const kpiMap = R.kpi || {};
+    const crit = R.premiumCriteria || [];
+    const noWeekendNote = noWeekend ? '<span class="inc-tag">кроме Поспеловой</span>' : "";
+
+    const bonuses = [
+      { n: 1, icon: "ph-calendar-star", title: "Выходная смена", sum: noWeekend ? "не начисляется" : rub(R.weekendShift || 4000),
+        text: "Выход на смену в выходной или праздничный день — за каждую смену.", hide: false, off: noWeekend },
+      { n: 2, icon: "ph-gauge", title: "Индивидуальный KPI", sum: "1 000 – 5 000 ₽",
+        text: "Считается по среднему KPI за месяц: 10 → 5 000 ₽, 9 → 4 000 ₽, 8 → 3 000 ₽, 7 → 2 000 ₽, 6 → 1 000 ₽, 5 → 0. Ниже 5 — штраф (4 → −500 ₽, 3 → −2 500 ₽, 2 и 1 → −5 000 ₽)." },
+      { n: 3, icon: "ph-users-three", title: "Командный KPI (SLA)", sum: "500 – 2 000 ₽",
+        text: "80–84% → 500 ₽, 85–89% → 1 000 ₽, 90–97% → 1 500 ₽, 98–100% → 2 000 ₽." },
+      { n: 4, icon: "ph-desktop-tower", title: "Продажа устаревшего ИТ-оборудования", sum: "10% от суммы",
+        text: "10% от суммы продажи. Если продал вместе с менеджером — 5% тебе и 5% менеджеру. В среднем 1 500–2 000 ₽/мес, максимум был 42 000 ₽." },
+      { n: 5, icon: "ph-buildings", title: "Задачи ООО МКК «Тания»", sum: "от 100 ₽ за задачу",
+        text: "Обслуживание и инциденты «Тании»: от 100 ₽ за задачу (от 5 минут). Ориентир — около 1 000 ₽ за час работы, в месяц до 3 500 ₽." },
+      { n: 6, icon: "ph-sparkle", title: "Применение ИИ-инструментов", sum: "до 2 000 ₽",
+        text: "Компенсация оплаты нейросети при чеке — если виден эффект в работе." },
+      { n: 7, icon: "ph-truck", title: "Транспортные расходы", sum: rub(R.transport || 2000),
+        text: "Доставка оборудования и документов между ЦО и офисом в Архангельске." },
+      { n: 8, icon: "ph-flow-arrow", title: "Автоматизация и оптимизация", sum: "от 500 до 10 000 ₽",
+        text: "JIRA-процесс — от 500 ₽; небольшой бизнес-процесс — от 1 000 ₽; комплексная автоматизация (в т.ч. с ИИ) — от 3 000 ₽. Итог — по объёму и эффекту." },
+      { n: 9, icon: "ph-piggy-bank", title: "Экономия расходов", sum: "25% от экономии",
+        text: "25% от суммы, на которую сократился ежемесячный расход. Сократил с 200 000 до 100 000 ₽ — разово 25 000 ₽." },
+      { n: 10, icon: "ph-moon-stars", title: "Работа в нерабочее время", sum: rub(R.offHours || 1500),
+        text: "По просьбе руководителя — за инцидент или проблему." },
+      { n: 11, icon: "ph-star", title: "По усмотрению руководителя", sum: "от 2 000 ₽",
+        text: "Героические действия, сильные переработки, сокращение ресурсных затрат от 20%, иные достижения." },
+    ];
+
+    const critHtml = crit.map((c) => `
+      <div class="inc-crit-row">
+        <div class="inc-crit-t"><b>${escHtml(c.label)}</b><span>${c.pct}%</span></div>
+        <div class="inc-bar"><i style="width:${c.pct}%"></i></div>
+      </div>`).join("");
+
+    const cardHtml = bonuses.map((b) => `
+      <article class="inc-card${b.off ? " is-off" : ""}">
+        <div class="inc-card-h"><span class="inc-ic"><i class="ph-bold ${b.icon}"></i></span>
+          <span class="inc-n">${b.n}</span></div>
+        <h4>${escHtml(b.title)}</h4>
+        <div class="inc-sum">${b.sum}</div>
+        <p>${escHtml(b.text)}</p>
+      </article>`).join("");
+
+    const example = noWeekend ? [
+      ["Индивидуальный KPI 10", 5000],
+      ["SLA 90%", 1500],
+      ["Продажа моноблока за 5 000 ₽", 500],
+      ["Экономия на корп. связи 10 000 ₽ × 25%", 2500],
+    ] : [
+      ["4 выходные смены", 16000],
+      ["Индивидуальный KPI 10", 5000],
+      ["SLA 90%", 1500],
+      ["Продажа оборудования на 10 000 ₽", 1000],
+      ["Агент ИИ (комплексная автоматизация)", 3000],
+      ["Компенсация нейросети (Claude Code)", 2000],
+      ["«Тания», 2 часа работы", 2000],
+      ["Сложная заявка (решение руководителя)", 2000],
+    ];
+    const exampleSum = example.reduce((s, x) => s + x[1], 0);
+
+    return `
+    <div class="inc-wrap">
+      <section class="inc-hero" data-reveal>
+        <div class="inc-hero-l">
+          <div class="inc-eyebrow"><i class="ph-bold ph-coins"></i> Карта доходов</div>
+          <h2>Из чего складывается доход<br>и где можно заработать больше</h2>
+          <p>Фиксированная оплата за должностные обязанности плюс бонусная часть — она зависит от KPI, смен, инициатив и автоматизации.</p>
+          <div class="inc-hero-sum">
+            <div><b>${rub(fixed)}</b><span>фиксированная оплата / мес</span></div>
+            <div class="inc-eq">+</div>
+            <div><b>${rub(exampleSum)}</b><span>бонус в примере ниже</span></div>
+          </div>
+        </div>
+        <div class="inc-hero-r" aria-hidden="true">
+          <svg viewBox="0 0 260 200" class="inc-art">
+            <defs>
+              <linearGradient id="incg1" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#fbbf24"/><stop offset="1" stop-color="#f97316"/>
+              </linearGradient>
+            </defs>
+            <circle cx="130" cy="100" r="78" fill="none" stroke="rgba(251,191,36,.22)" stroke-width="1.5"/>
+            <circle cx="130" cy="100" r="58" fill="none" stroke="rgba(251,191,36,.14)" stroke-width="1.5"/>
+            <g class="inc-coin c1"><circle cx="78" cy="128" r="22" fill="url(#incg1)" opacity=".95"/><text x="78" y="135" text-anchor="middle" font-size="18" font-weight="700" fill="#3b2604">₽</text></g>
+            <g class="inc-coin c2"><circle cx="132" cy="86" r="27" fill="url(#incg1)"/><text x="132" y="95" text-anchor="middle" font-size="22" font-weight="700" fill="#3b2604">₽</text></g>
+            <g class="inc-coin c3"><circle cx="186" cy="122" r="19" fill="url(#incg1)" opacity=".85"/><text x="186" y="129" text-anchor="middle" font-size="15" font-weight="700" fill="#3b2604">₽</text></g>
+            <path d="M60 60 L96 44 L138 52 L176 30" fill="none" stroke="#34d399" stroke-width="3" stroke-linecap="round" class="inc-line"/>
+          </svg>
+        </div>
+      </section>
+
+      <section class="inc-block" data-reveal>
+        <div class="inc-h"><span class="inc-num">I</span><h3>Фиксированная оплата труда</h3>
+          <span class="inc-badge">${rub(fixed)}</span></div>
+        <p class="inc-sub">Выплачивается за выполнение должностных обязанностей в течение рабочего месяца. У каждого свой размер.</p>
+        <div class="inc-split">
+          <div class="inc-part"><span>Оклад</span><b>${rub(salary)}</b></div>
+          <div class="inc-part"><span>Премия ${pct}%</span><b>${rub(premium)}</b></div>
+        </div>
+        <div class="inc-crit">
+          <div class="inc-crit-h">Премия складывается из 100%:</div>
+          ${critHtml}
+        </div>
+      </section>
+
+      <section class="inc-block" data-reveal>
+        <div class="inc-h"><span class="inc-num">II</span><h3>Бонусная часть</h3>
+          <span class="inc-badge inc-badge-soft">динамическая · может быть в минусе</span></div>
+        <p class="inc-sub">Складывается из пунктов ниже. Отрицательные значения вычитаются из премии.</p>
+        <div class="inc-cards">${cardHtml}</div>
+        ${noWeekend ? '<p class="inc-note">Для Поспеловой пункт 1 (оплата выходной смены) не применяется.</p>' : ""}
+      </section>
+
+      <section class="inc-example" data-reveal>
+        <div class="inc-h"><span class="inc-num">★</span><h3>Что можно получить в среднем</h3>
+          <span class="inc-badge inc-badge-green">${rub(exampleSum)}</span></div>
+        <p class="inc-sub">${noWeekend ? "Пример для Поспеловой — без выходных смен." : "Пример для всех, кроме Поспеловой — 4 выходные смены и активная работа по инициативам."}</p>
+        <div class="inc-ex-list">
+          ${example.map(([t, v]) => `<div class="inc-ex-row"><span>${escHtml(t)}</span><b>${rub(v)}</b></div>`).join("")}
+          <div class="inc-ex-row total"><span>Итого бонусная часть</span><b>${rub(exampleSum)}</b></div>
+        </div>
+      </section>
+
+      <section class="inc-calc" data-reveal id="inc-calc">
+        <div class="inc-h"><span class="inc-num">Σ</span><h3>Калькулятор дохода</h3>
+          <span class="inc-badge inc-badge-soft">считает и запоминает</span></div>
+        <p class="inc-sub">Подставь свои цифры — сумма посчитается сразу и сохранится в этом браузере. «Запомнить» добавит расчёт в историю.</p>
+        <div class="inc-calc-grid">
+          <div class="inc-fields">
+            ${noWeekend ? "" : `<label class="inc-f"><span>Выходные смены, шт</span><input type="number" min="0" max="20" id="inc-weekend" value="0"></label>`}
+            <label class="inc-f"><span>Индивидуальный KPI</span>
+              <select id="inc-kpi">${[10,9,8,7,6,5,4,3,2,1].map((k) => `<option value="${k}">${k} — ${rub(kpiMap[String(k)] || 0)}</option>`).join("")}</select></label>
+            <label class="inc-f"><span>Командный KPI (SLA)</span>
+              <select id="inc-sla"><option value="0">нет данных</option>
+                ${(R.sla || []).map((s) => `<option value="${s.sum}">${s.from}–${s.to}% — ${rub(s.sum)}</option>`).join("")}
+              </select></label>
+            <label class="inc-f"><span>Продажа оборудования, ₽</span><input type="number" min="0" step="100" id="inc-sale" value="0"></label>
+            <label class="inc-chk"><input type="checkbox" id="inc-mgr"><span>продал вместе с менеджером (5%)</span></label>
+            <label class="inc-f"><span>«Тания», ₽</span><input type="number" min="0" step="100" id="inc-tania" value="0"></label>
+            <label class="inc-f"><span>Компенсация нейросети, ₽ (до ${(R.aiCompMax||2000).toLocaleString("ru-RU")})</span><input type="number" min="0" step="100" id="inc-ai" value="0"></label>
+            <label class="inc-chk"><input type="checkbox" id="inc-transport"><span>транспортные расходы (${rub(R.transport||2000)})</span></label>
+            <label class="inc-f"><span>Автоматизация, ₽</span>
+              <select id="inc-auto"><option value="0">нет</option>
+                ${(R.automation || []).map((a) => `<option value="${a.from}">${escHtml(a.label)} — от ${a.from.toLocaleString("ru-RU")} ₽</option>`).join("")}
+              </select></label>
+            <label class="inc-f"><span>Экономия расходов в месяц, ₽</span><input type="number" min="0" step="1000" id="inc-saving" value="0"></label>
+            <label class="inc-f"><span>Работа в нерабочее время, раз</span><input type="number" min="0" max="10" id="inc-off" value="0"></label>
+            <label class="inc-f"><span>По решению руководителя, ₽</span><input type="number" min="0" step="500" id="inc-boss" value="0"></label>
+          </div>
+          <aside class="inc-result">
+            <div class="inc-res-lbl">Твой доход за месяц</div>
+            <div class="inc-res-total" id="inc-total">0 ₽</div>
+            <div class="inc-res-rows">
+              <div><span>Фиксированная оплата</span><b>${rub(fixed)}</b></div>
+              <div><span>Бонусная часть</span><b id="inc-bonus">0 ₽</b></div>
+            </div>
+            <div class="inc-res-actions">
+              <button class="inc-btn ghost" id="inc-reset">Сброс</button>
+              <button class="inc-btn" id="inc-remember">Запомнить</button>
+            </div>
+            <div class="inc-hist" id="inc-hist"></div>
+          </aside>
+        </div>
+      </section>
+    </div>`;
+  }
+
+  function initIncome() {
+    const R = D.incomeRules || {};
+    const inc = D.employee.income || {};
+    const fixed = inc.fixed || 0;
+    const key = "otp_income_" + (D.employee.slug || D.employee.id);
+    const hkey = key + "_hist";
+    const $i = (id) => document.getElementById(id);
+    const num = (id) => { const el = $i(id); return el ? Math.max(0, +el.value || 0) : 0; };
+    const rub = (n) => (n < 0 ? "−" : "") + Math.abs(Math.round(n)).toLocaleString("ru-RU") + " ₽";
+    const kpiMap = R.kpi || {};
+    const fields = ["inc-weekend", "inc-kpi", "inc-sla", "inc-sale", "inc-mgr", "inc-tania", "inc-ai",
+                    "inc-transport", "inc-auto", "inc-saving", "inc-off", "inc-boss"];
+
+    const read = () => {
+      const weekend = num("inc-weekend");
+      const kpi = $i("inc-kpi") ? +$i("inc-kpi").value : 5;
+      const sla = $i("inc-sla") ? +$i("inc-sla").value : 0;
+      const sale = num("inc-sale");
+      const mgr = !!( $i("inc-mgr") && $i("inc-mgr").checked );
+      const tania = num("inc-tania");
+      const ai = Math.min(num("inc-ai"), R.aiCompMax || 2000);
+      const transport = ($i("inc-transport") && $i("inc-transport").checked) ? (R.transport || 2000) : 0;
+      const auto = $i("inc-auto") ? +$i("inc-auto").value : 0;
+      const saving = num("inc-saving");
+      const off = num("inc-off");
+      const boss = num("inc-boss");
+      const salePct = mgr ? (R.saleWithManagerPct || 5) : (R.salePct || 10);
+      const bonus = weekend * (R.weekendShift || 4000)
+        + (kpiMap[String(kpi)] || 0)
+        + sla
+        + Math.round(sale * salePct / 100)
+        + tania + ai + transport + auto
+        + Math.round(saving * (R.savingPct || 25) / 100)
+        + off * (R.offHours || 1500)
+        + boss;
+      return { weekend, kpi, sla, sale, mgr, tania, ai, transport, auto, saving, off, boss, bonus };
+    };
+
+    const paint = () => {
+      const v = read();
+      const total = fixed + v.bonus;
+      const tEl = $i("inc-total"), bEl = $i("inc-bonus");
+      if (bEl) { bEl.textContent = rub(v.bonus); bEl.className = v.bonus < 0 ? "neg" : "pos"; }
+      if (tEl) {
+        const from = +String(tEl.dataset.v || 0);
+        tEl.dataset.v = total;
+        const t0 = performance.now(), dur = 420;
+        const step = (now) => {
+          const p = Math.min(1, (now - t0) / dur);
+          const val = from + (total - from) * (1 - Math.pow(1 - p, 3));
+          tEl.textContent = rub(val);
+          if (p < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+        tEl.classList.toggle("neg", total < 0);
+      }
+      try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) {}
+    };
+
+    const restore = () => {
+      let saved = null;
+      try { saved = JSON.parse(localStorage.getItem(key) || "null"); } catch (e) {}
+      if (!saved) return;
+      if ($i("inc-weekend")) $i("inc-weekend").value = saved.weekend || 0;
+      if ($i("inc-kpi")) $i("inc-kpi").value = saved.kpi ?? 5;
+      if ($i("inc-sla")) $i("inc-sla").value = saved.sla || 0;
+      if ($i("inc-sale")) $i("inc-sale").value = saved.sale || 0;
+      if ($i("inc-mgr")) $i("inc-mgr").checked = !!saved.mgr;
+      if ($i("inc-tania")) $i("inc-tania").value = saved.tania || 0;
+      if ($i("inc-ai")) $i("inc-ai").value = saved.ai || 0;
+      if ($i("inc-transport")) $i("inc-transport").checked = !!saved.transport;
+      if ($i("inc-auto")) $i("inc-auto").value = saved.auto || 0;
+      if ($i("inc-saving")) $i("inc-saving").value = saved.saving || 0;
+      if ($i("inc-off")) $i("inc-off").value = saved.off || 0;
+      if ($i("inc-boss")) $i("inc-boss").value = saved.boss || 0;
+    };
+
+    const drawHist = () => {
+      const box = $i("inc-hist");
+      if (!box) return;
+      let hist = [];
+      try { hist = JSON.parse(localStorage.getItem(hkey) || "[]"); } catch (e) {}
+      box.innerHTML = hist.length
+        ? `<div class="inc-hist-h">Мои расчёты</div>` + hist.map((h) => {
+            const d = new Date(h.ts);
+            return `<div class="inc-hist-row"><span>${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}</span><b>${rub(h.total)}</b></div>`;
+          }).join("")
+        : "";
+    };
+
+    fields.forEach((id) => { const el = $i(id); if (el) el.addEventListener("input", paint); });
+    restore(); paint(); drawHist();
+
+    const reset = $i("inc-reset");
+    if (reset) reset.addEventListener("click", () => {
+      try { localStorage.removeItem(key); } catch (e) {}
+      fields.forEach((id) => { const el = $i(id); if (!el) return; if (el.type === "checkbox") el.checked = false; else el.value = el.id === "inc-kpi" ? 5 : 0; });
+      paint();
+    });
+
+    const rem = $i("inc-remember");
+    if (rem) rem.addEventListener("click", () => {
+      const v = read();
+      const total = fixed + v.bonus;
+      let hist = [];
+      try { hist = JSON.parse(localStorage.getItem(hkey) || "[]"); } catch (e) {}
+      hist.unshift({ ts: Date.now(), total });
+      hist = hist.slice(0, 6);
+      try { localStorage.setItem(hkey, JSON.stringify(hist)); } catch (e) {}
+      drawHist();
+      rem.textContent = "Запомнено ✓";
+      setTimeout(() => { rem.textContent = "Запомнить"; }, 1400);
+    });
+  }
+
+  const RENDER = { bonus: sectionBonus, income: sectionIncome, lvl: sectionLvl, awards: sectionAwards, growth: sectionGrowth, graph: sectionGraph, stats: sectionStats, rules: sectionRules };
   root.innerHTML = heroHtml() + (RENDER[SECTION] || sectionBonus)();
 
   /* ---------- общие обработчики ---------- */
@@ -1602,6 +1896,7 @@
   }
 
   /* ---------- раздел «Мой LVL»: график накопления звёзд ---------- */
+  if (SECTION === "income") initIncome();
   if (SECTION === "lvl") { renderLvlTips(); initTips(); }
   if (SECTION === "graph") graphInit();
 

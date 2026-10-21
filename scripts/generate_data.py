@@ -1024,6 +1024,50 @@ NO_DEDUCT_HARD_MAX = 6
 NO_DEDUCT_LOW_LIMIT = 2
 
 
+# ── Карта доходов ──────────────────────────────────────────────────────────────
+# Фиксированная оплата = оклад + премия (проценты премии считаются от оклада).
+# Оклад вычисляется из фиксированной суммы, чтобы цифры в карте сходились.
+INCOME = {
+    "frolov":    {"fixed": 90000, "premiumPct": 30},
+    "bolgov":    {"fixed": 70000, "premiumPct": 30},
+    "melnikov":  {"fixed": 55000, "premiumPct": 25},
+    "khasanov":  {"fixed": 55000, "premiumPct": 25},
+    "pestovsky": {"fixed": 55000, "premiumPct": 25},
+    "eliseev":   {"fixed": 55000, "premiumPct": 25},
+    "zavyalov":  {"fixed": 55000, "premiumPct": 25},
+    "yuryev":    {"fixed": 55000, "premiumPct": 25},
+    "pospelova": {"fixed": 53500, "premiumPct": 25, "noWeekend": True},
+    "safronov":  {"fixed": 55000, "premiumPct": 25},
+    "agarov":    {"fixed": 55000, "premiumPct": 25},
+}
+
+INCOME_RULES = {
+    "weekendShift": 4000,          # одна выходная/праздничная смена
+    "kpi": {"10": 5000, "9": 4000, "8": 3000, "7": 2000, "6": 1000,
+            "5": 0, "4": -500, "3": -2500, "2": -5000, "1": -5000},
+    "sla": [{"from": 80, "to": 84, "sum": 500}, {"from": 85, "to": 89, "sum": 1000},
+            {"from": 90, "to": 97, "sum": 1500}, {"from": 98, "to": 100, "sum": 2000}],
+    "salePct": 10,                 # продажа оборудования самому
+    "saleWithManagerPct": 5,       # если продал вместе с менеджером
+    "taniaPerHour": 1000,          # задачи ООО МКК «Тания», ориентир за час
+    "taniaMin": 100,
+    "aiCompMax": 2000,             # компенсация оплаты нейросети (по чеку)
+    "transport": 2000,             # доставка оборудования/документов ЦО ↔ Архангельск
+    "automation": [{"label": "JIRA-процесс", "from": 500},
+                   {"label": "Небольшой бизнес-процесс", "from": 1000},
+                   {"label": "Комплексная автоматизация", "from": 3000}],
+    "automationMax": 10000,
+    "savingPct": 25,               # 25% от сокращённого ежемесячного расхода
+    "offHours": 1500,              # работа в нерабочее время по просьбе руководителя
+    "bossFrom": 2000,              # по усмотрению руководителя
+    "premiumCriteria": [
+        {"label": "Стандарты и регламенты", "pct": 25},
+        {"label": "Закрыто или передано на другие линии не менее 80% заявок", "pct": 25},
+        {"label": "Задача завершена в срок заказчика", "pct": 10},
+        {"label": "Нет денежных, репутационных и регуляторных потерь", "pct": 40},
+    ],
+}
+
 NO_AUTO_NOTES = set()  # сотрудники, которым не генерируются плюсы/зоны автоматически
 
 
@@ -1159,7 +1203,17 @@ def build():
         "roadmaps": load_roadmaps(),
         "recognition": build_recognition(result),
         "bossAwards": build_boss_awards(),
+        "incomeRules": INCOME_RULES,
     }
+    for e in result:
+        inc = INCOME.get(e["id"])
+        if not inc:
+            continue
+        fixed = inc["fixed"]
+        pct = inc.get("premiumPct", 25)
+        salary = int(round(fixed / (1 + pct / 100.0)))
+        e["income"] = {"fixed": fixed, "salary": salary, "premium": fixed - salary,
+                       "premiumPct": pct, "noWeekend": bool(inc.get("noWeekend"))}
     return data
 
 def main():

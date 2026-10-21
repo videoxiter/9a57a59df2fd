@@ -21,6 +21,7 @@ TEAM_DIR = os.path.join(ROOT, "team")
 
 SECTIONS = [
     ("bonus", "Бонусы", "ph-wallet", "KPI и денежная часть"),
+    ("income", "Карта доходов", "ph-coins", "из чего складывается доход"),
     ("lvl", "Мой LVL", "ph-medal", "уровень и звёзды"),
     ("awards", "Награды", "ph-trophy", "полученные и справочник"),
     ("growth", "Мой рост", "ph-rocket-launch", "план развития"),
@@ -114,7 +115,7 @@ TEMPLATE = """<!DOCTYPE html>
 </html>
 """
 
-V = "88"
+V = "89"
 
 
 def secnav_html(rel, active):
@@ -152,6 +153,7 @@ def main():
             "leaderboard": data.get("leaderboard", []) if e["id"] == "yakovlenkov" else [],
             "employee": emp,
             "hrRules": data.get("hrRules", {}),
+            "incomeRules": data.get("incomeRules", {}),
             "schedule": _schedule_for(emp, data.get("schedule")),
             # дорожная карта развития — только своя (соседние на страницу не попадают)
             "roadmap": (data.get("roadmaps") or {}).get(e.get("slug", e["id"])),

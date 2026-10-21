@@ -3313,7 +3313,14 @@ window.OTP_DATA = {
         }
       ],
       "praise": [],
-      "rank": 2
+      "rank": 2,
+      "income": {
+        "fixed": 90000,
+        "salary": 69231,
+        "premium": 20769,
+        "premiumPct": 30,
+        "noWeekend": false
+      }
     },
     {
       "id": "melnikov",
@@ -4805,7 +4812,14 @@ window.OTP_DATA = {
         }
       ],
       "praise": [],
-      "rank": 6
+      "rank": 6,
+      "income": {
+        "fixed": 55000,
+        "salary": 44000,
+        "premium": 11000,
+        "premiumPct": 25,
+        "noWeekend": false
+      }
     },
     {
       "id": "khasanov",
@@ -6061,7 +6075,14 @@ window.OTP_DATA = {
       ],
       "recognition": [],
       "praise": [],
-      "rank": 8
+      "rank": 8,
+      "income": {
+        "fixed": 55000,
+        "salary": 44000,
+        "premium": 11000,
+        "premiumPct": 25,
+        "noWeekend": false
+      }
     },
     {
       "id": "pestovsky",
@@ -7432,7 +7453,14 @@ window.OTP_DATA = {
       ],
       "recognition": [],
       "praise": [],
-      "rank": 3
+      "rank": 3,
+      "income": {
+        "fixed": 55000,
+        "salary": 44000,
+        "premium": 11000,
+        "premiumPct": 25,
+        "noWeekend": false
+      }
     },
     {
       "id": "eliseev",
@@ -8754,7 +8782,14 @@ window.OTP_DATA = {
       ],
       "recognition": [],
       "praise": [],
-      "rank": 9
+      "rank": 9,
+      "income": {
+        "fixed": 55000,
+        "salary": 44000,
+        "premium": 11000,
+        "premiumPct": 25,
+        "noWeekend": false
+      }
     },
     {
       "id": "zavyalov",
@@ -9948,7 +9983,14 @@ window.OTP_DATA = {
       ],
       "recognition": [],
       "praise": [],
-      "rank": 7
+      "rank": 7,
+      "income": {
+        "fixed": 55000,
+        "salary": 44000,
+        "premium": 11000,
+        "premiumPct": 25,
+        "noWeekend": false
+      }
     },
     {
       "id": "bolgov",
@@ -11531,7 +11573,14 @@ window.OTP_DATA = {
       ],
       "recognition": [],
       "praise": [],
-      "rank": 4
+      "rank": 4,
+      "income": {
+        "fixed": 70000,
+        "salary": 53846,
+        "premium": 16154,
+        "premiumPct": 30,
+        "noWeekend": false
+      }
     },
     {
       "id": "yuryev",
@@ -12920,7 +12969,14 @@ window.OTP_DATA = {
       ],
       "recognition": [],
       "praise": [],
-      "rank": 5
+      "rank": 5,
+      "income": {
+        "fixed": 55000,
+        "salary": 44000,
+        "premium": 11000,
+        "premiumPct": 25,
+        "noWeekend": false
+      }
     },
     {
       "id": "pospelova",
@@ -14398,7 +14454,14 @@ window.OTP_DATA = {
         }
       ],
       "praise": [],
-      "rank": 1
+      "rank": 1,
+      "income": {
+        "fixed": 53500,
+        "salary": 42800,
+        "premium": 10700,
+        "premiumPct": 25,
+        "noWeekend": true
+      }
     },
     {
       "id": "safronov",
@@ -14633,7 +14696,14 @@ window.OTP_DATA = {
       "awards": [],
       "recognition": [],
       "praise": [],
-      "rank": null
+      "rank": null,
+      "income": {
+        "fixed": 55000,
+        "salary": 44000,
+        "premium": 11000,
+        "premiumPct": 25,
+        "noWeekend": false
+      }
     },
     {
       "id": "agarov",
@@ -14868,7 +14938,14 @@ window.OTP_DATA = {
       "awards": [],
       "recognition": [],
       "praise": [],
-      "rank": null
+      "rank": null,
+      "income": {
+        "fixed": 55000,
+        "salary": 44000,
+        "premium": 11000,
+        "premiumPct": 25,
+        "noWeekend": false
+      }
     }
   ],
   "team": {
@@ -20525,6 +20602,85 @@ window.OTP_DATA = {
         "title": "Похвала от ИТ Директора",
         "glyph": "🏅",
         "color": "#f59e0b"
+      }
+    ]
+  },
+  "incomeRules": {
+    "weekendShift": 4000,
+    "kpi": {
+      "10": 5000,
+      "9": 4000,
+      "8": 3000,
+      "7": 2000,
+      "6": 1000,
+      "5": 0,
+      "4": -500,
+      "3": -2500,
+      "2": -5000,
+      "1": -5000
+    },
+    "sla": [
+      {
+        "from": 80,
+        "to": 84,
+        "sum": 500
+      },
+      {
+        "from": 85,
+        "to": 89,
+        "sum": 1000
+      },
+      {
+        "from": 90,
+        "to": 97,
+        "sum": 1500
+      },
+      {
+        "from": 98,
+        "to": 100,
+        "sum": 2000
+      }
+    ],
+    "salePct": 10,
+    "saleWithManagerPct": 5,
+    "taniaPerHour": 1000,
+    "taniaMin": 100,
+    "aiCompMax": 2000,
+    "transport": 2000,
+    "automation": [
+      {
+        "label": "JIRA-процесс",
+        "from": 500
+      },
+      {
+        "label": "Небольшой бизнес-процесс",
+        "from": 1000
+      },
+      {
+        "label": "Комплексная автоматизация",
+        "from": 3000
+      }
+    ],
+    "automationMax": 10000,
+    "savingPct": 25,
+    "offHours": 1500,
+    "bossFrom": 2000,
+    "premiumCriteria": [
+      {
+        "label": "Стандарты и регламенты",
+        "pct": 25
+      },
+      {
+        "label": "Закрыто или передано на другие линии не менее 80% заявок",
+        "pct": 25
+      },
+      {
+        "label": "Задача завершена в срок заказчика",
+        "pct": 10
+      },
+      {
+        "label": "Нет денежных, репутационных и регуляторных потерь",
+        "pct": 40
       }
     ]
   }
