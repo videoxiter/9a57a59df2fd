@@ -111,25 +111,33 @@
     }
     return days ? days[String(dt.getDate())] || null : null;
   }
-  function lineOf(fio, dt) {
+  /* Все линии, где человек указан в графике месяца: он может быть в нескольких
+     (например, L0 + L3). Линия текущей недели идёт первой. */
+  function linesOf(fio, dt) {
     const m = monthOf(dt);
-    if (!m || !m.lines || dt.getDay() === 0 || dt.getDay() === 6) return null;
+    if (!m || !m.lines) return [];
+    const out = [];
     for (const [lid, info] of Object.entries(m.lines)) {
       const labels = info.labels || [];
-      for (let i = 0; i < labels.length; i++) {
-        if (!samePerson((info.weeks || [])[i], fio)) continue;
-        const mm = /^(\d{2})\.(\d{2})\s*-\s*(\d{2})\.(\d{2})$/.exec(String(labels[i]).trim());
+      const weeks = info.weeks || [];
+      let any = false, current = false;
+      for (let i = 0; i < weeks.length; i++) {
+        if (!samePerson(weeks[i], fio)) continue;
+        any = true;
+        const mm = /^(\d{2})\.(\d{2})\s*-\s*(\d{2})\.(\d{2})$/.exec(String(labels[i] || "").trim());
         if (!mm) continue;
         const y = dt.getFullYear();
         const from = new Date(y, +mm[2] - 1, +mm[1]);
         let to = new Date(y, +mm[4] - 1, +mm[3]);
         if (to < from) to = new Date(y + 1, +mm[4] - 1, +mm[3]);
         const d0 = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
-        if (d0 >= from && d0 <= to) return { id: lid, title: info.title };
+        if (d0 >= from && d0 <= to) current = true;
       }
+      if (any) out.push({ id: lid, title: info.title, current });
     }
-    return null;
+    return out.sort((a, b) => (b.current ? 1 : 0) - (a.current ? 1 : 0));
   }
+  const lineLabel = (list) => (list && list.length ? list.map((l) => l.id).join(" + ") + " · " + list[0].title : "");
   function vacationOf(fio, dt) {
     if (!SCH || !SCH.vacations) return null;
     const y = String(dt.getFullYear());
@@ -156,10 +164,10 @@
     }
     const sh = shiftOf(emp.fullName, dt);
     if (!sh) return null;
-    const ln = lineOf(emp.fullName, dt);
+    const lns = linesOf(emp.fullName, dt);
     const work = ["shift", "weekend", "duty", "extra"].includes(sh.kind);
     if (!work) return { kind: "off", text: sh.kind === "dayoff" ? sh.title : "Выходной" };
-    return { kind: "shift", text: [ln ? ln.id : "", sh.title, sh.time || ""].filter(Boolean).join(" · "), sym: sh.sym };
+    return { kind: "shift", text: [lineLabel(lns), sh.title, sh.time || ""].filter(Boolean).join(" · "), sym: sh.sym };
   }
 
   function initials(name) {
@@ -351,7 +359,7 @@
         if (person && person.status === "left") continue;      // уволенных в графике отдела нет
         const sh = days[String(dt.getDate())];
         if (!sh) continue;
-        out.push({ fio, sh, ln: lineOf(fio, dt) });
+        out.push({ fio, sh, ln: linesOf(fio, dt) });
       }
       out.sort((a, b) => timeRank(a.sh) - timeRank(b.sh) || a.fio.localeCompare(b.fio));
       return out;
@@ -363,7 +371,7 @@
       return `<div class="dt-day">
         <div class="dt-day-h"><b>${label}</b><span>${WD_FULL[dt.getDay()]}, ${dt.getDate()} ${MON_GEN[dt.getMonth()]}</span><i>${work.length} на смене · ${off.length} отдыхают</i></div>
         <div class="dt-rows">
-          ${work.map((x) => `<div class="dt-row"><span class="gs-sym k-${x.sh.kind}">${x.sh.sym}</span><span class="dt-fio">${x.fio} <span class="dt-hours" data-hoursfio="${x.fio}"></span></span><span class="dt-time">${x.sh.time || ""}</span><span class="dt-ln">${x.ln ? x.ln.id + " · " + x.ln.title : ""}</span></div>`).join("")}
+          ${work.map((x) => `<div class="dt-row"><span class="gs-sym k-${x.sh.kind}">${x.sh.sym}</span><span class="dt-fio">${x.fio} <span class="dt-hours" data-hoursfio="${x.fio}"></span></span><span class="dt-time">${x.sh.time || ""}</span><span class="dt-ln">${x.ln.length ? lineLabel(x.ln) : '<span class="dt-ln-none">вне линий</span>'}</span></div>`).join("")}
           ${off.map((x) => `<div class="dt-row off"><span class="gs-sym k-${x.sh.kind}">${x.sh.sym}</span><span class="dt-fio">${x.fio}</span><span class="dt-time">${x.sh.title}</span></div>`).join("")}
         </div></div>`;
     };
