@@ -1554,7 +1554,7 @@
           <div class="inc-fields">
             ${noWeekend ? "" : `<label class="inc-f"><span>Выходные смены, шт</span><input type="number" min="0" max="20" id="inc-weekend" value="0"></label>`}
             <label class="inc-f"><span>Индивидуальный KPI</span>
-              <select id="inc-kpi">${[10,9,8,7,6,5,4,3,2,1].map((k) => `<option value="${k}">${k} — ${rub(kpiMap[String(k)] || 0)}</option>`).join("")}</select></label>
+              <select id="inc-kpi">${[10,9,8,7,6,5,4,3,2,1].map((k) => `<option value="${k}"${k === 5 ? " selected" : ""}>${k} — ${rub(kpiMap[String(k)] || 0)}</option>`).join("")}</select></label>
             <label class="inc-f"><span>Командный KPI (SLA)</span>
               <select id="inc-sla"><option value="0">нет данных</option>
                 ${(R.sla || []).map((s) => `<option value="${s.sum}">${s.from}–${s.to}% — ${rub(s.sum)}</option>`).join("")}
