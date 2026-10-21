@@ -34,7 +34,9 @@ window.OTP_CLOUD = (function () {
   const COLS = ["id", "empSlug", "empName", "type", "date", "date2", "from", "to", "hours",
                 "reason", "status", "reject", "created", "decided", "noDeduct", "forceDeduct"];
   const slim = (r) => { const o = {}; for (const k of COLS) if (r[k] !== undefined && r[k] !== null) o[k] = r[k]; return o; };
-  let noDeductCol = true;                      // колонки появятся после ALTER; до этого шлём без них
+  // В таблице otp_requests нет колонок для служебных полей — всегда упаковываем их в маркер reject.
+  // (true ломал запись: PostgREST отвечал 400 на несуществующие колонки)
+  let noDeductCol = false;
   const MARK = "[[OTP-FLAGS:";                 // старый маркер флагов (совместимость)
   const META_MARK = "[[OTP-META:";             // служебные поля решения, пока в таблице нет колонок
   const OLD_MARK = "[[NO-DEDUCT]]";
