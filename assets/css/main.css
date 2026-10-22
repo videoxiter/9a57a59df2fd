@@ -1810,3 +1810,17 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
 .inc-kpi-row b.pos { color: #4ade80; }
 .inc-kpi-row b.neg { color: #f87171; }
 .inc-kpi-row b.zero { color: #94a3b8; font-weight: 500; }
+
+.inc-kpi-row i { flex: 0 0 auto; width: 14px; font-size: 12px; color: #64748b; }
+.inc-kpi-row > span { flex: 1; }
+.inc-kpi-sub { margin: -2px 0 8px; font-size: 11px; color: #6b7686; }
+.inc-note-rows .inc-kpi-row { align-items: flex-start; padding: 7px 0; }
+.inc-note-rows .inc-kpi-row i { margin-top: 2px; color: #fbbf24; }
+.inc-note-rows .inc-kpi-row span { font-size: 12.5px; line-height: 1.5; color: #a8b3c2; }
+.inc-group-h { grid-column: span 2; display: flex; align-items: center; gap: 8px; margin: 6px 0 1px;
+  font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: #7f8a99; }
+.inc-group-h i { color: #fbbf24; }
+.inc-group-h:first-child { margin-top: 0; }
+.inc-crit-t i { margin-right: 7px; font-size: 12.5px; color: #fbbf24; }
+.inc-part span i { margin-right: 6px; font-size: 12.5px; color: #94a3b8; }
+.inc-kpi-row b:empty { display: none; }

@@ -1437,49 +1437,66 @@
     const kpiMap = R.kpi || {};
     const crit = R.premiumCriteria || [];
 
-    const critHtml = crit.map((c) => `
+    const critIcons = ["ph-shield-check", "ph-clipboard-text", "ph-clock-countdown", "ph-warning-octagon"];
+    const critHtml = crit.map((c, i) => `
       <div class="inc-crit-row">
-        <div class="inc-crit-t"><b>${escHtml(c.label)}</b><span>${c.pct}%</span></div>
+        <div class="inc-crit-t"><i class="ph-bold ${critIcons[i] || "ph-check"}"></i><b>${escHtml(c.label)}</b><span>${c.pct}%</span></div>
         <div class="inc-bar"><i style="width:${c.pct}%"></i></div>
       </div>`).join("");
 
     const bonuses = [
       { n: 1, icon: "ph-calendar-star", title: "Выходная смена", sum: noWeekend ? "не начисляется" : "4 000 ₽ за смену",
-        text: "Выход на смену в выходной или праздничный день.", off: noWeekend },
+        off: noWeekend,
+        rows: noWeekend ? [["ph-x", "для этой должности не применяется", ""]]
+                        : [["ph-calendar-star", "смена в выходной или праздник", "+4 000 ₽"]] },
       { n: 2, icon: "ph-gauge", title: "Индивидуальный KPI", sum: "от −5 000 до +5 000 ₽",
-        text: "По среднему KPI за месяц. Ниже 5 — штраф, он вычитается из премии.",
+        text: "по среднему KPI за месяц",
         rows: [[10, 5000], [9, 4000], [8, 3000], [7, 2000], [6, 1000], [5, 0], [4, -500], [3, -2500], [2, -5000], [1, -5000]] },
       { n: 3, icon: "ph-users-three", title: "Командный KPI (SLA)", sum: "500 – 2 000 ₽",
-        text: "Зависит от успешности SLA отдела за месяц.",
+        text: "по успешности SLA отдела за месяц",
         rows: [["80–84%", 500], ["85–89%", 1000], ["90–97%", 1500], ["98–100%", 2000]] },
-      { n: 4, icon: "ph-desktop-tower", title: "Продажа устаревшего ИТ-оборудования", sum: "10% от суммы",
-        text: "10% от суммы продажи. Если продал вместе с менеджером — 5% тебе и 5% менеджеру." },
-      { n: 5, icon: "ph-buildings", title: "Задачи ООО МКК «Тания»", sum: "от 100 ₽ за задачу",
-        text: "Обслуживание и инциденты «Тании»: от 100 ₽ за задачу (от 5 минут), ориентир — около 1 000 ₽ за час работы." },
-      { n: 6, icon: "ph-sparkle", title: "Применение ИИ-инструментов", sum: "до 2 000 ₽",
-        text: "Компенсация оплаты нейросети при чеке — если виден эффект в работе." },
+      { n: 4, icon: "ph-desktop-tower", title: "Продажа оборудования", sum: "10% от суммы",
+        rows: [["ph-user", "продал сам", "10%"], ["ph-users", "вместе с менеджером", "5% + 5% менеджеру"],
+               ["ph-chart-line-up", "обычно в месяц", "1 500–2 000 ₽"]] },
+      { n: 5, icon: "ph-buildings", title: "Задачи «Тания»", sum: "от 100 ₽ за задачу",
+        rows: [["ph-check-circle", "за задачу (от 5 минут)", "от 100 ₽"], ["ph-clock", "ориентир за час", "≈ 1 000 ₽"],
+               ["ph-calendar-check", "в месяц", "до 3 500 ₽"]] },
+      { n: 6, icon: "ph-sparkle", title: "ИИ-инструменты", sum: "до 2 000 ₽",
+        rows: [["ph-sparkle", "компенсация оплаты", "до 2 000 ₽"], ["ph-receipt", "условие", "чек + эффект в работе"]] },
       { n: 7, icon: "ph-truck", title: "Транспортные расходы", sum: rub(R.transport || 2000),
-        text: "Доставка оборудования и документов между ЦО и офисом в Архангельске." },
-      { n: 8, icon: "ph-flow-arrow", title: "Автоматизация и оптимизация", sum: "от 500 до 10 000 ₽",
-        text: "JIRA-процесс — от 500 ₽; небольшой бизнес-процесс — от 1 000 ₽; комплексная автоматизация (в т.ч. с ИИ) — от 3 000 ₽. Итог — по объёму и эффекту." },
+        rows: [["ph-truck", "за доставку", rub(R.transport || 2000)], ["ph-map-pin", "маршрут", "ЦО ↔ Архангельск"]] },
+      { n: 8, icon: "ph-flow-arrow", title: "Автоматизация", sum: "от 500 до 10 000 ₽",
+        rows: [["ph-kanban", "JIRA-процесс", "от 500 ₽"], ["ph-flow-arrow", "небольшой процесс", "от 1 000 ₽"],
+               ["ph-cpu", "комплексная (в т.ч. с ИИ)", "от 3 000 ₽"], ["ph-trophy", "максимум", "10 000 ₽"]] },
       { n: 9, icon: "ph-piggy-bank", title: "Экономия расходов", sum: "25% от экономии",
-        text: "25% от суммы, на которую сократился ежемесячный расход компании." },
-      { n: 10, icon: "ph-moon-stars", title: "Работа в нерабочее время", sum: rub(R.offHours || 1500),
-        text: "По просьбе руководителя — за инцидент или проблему." },
-      { n: 11, icon: "ph-star", title: "По усмотрению руководителя", sum: "от 2 000 ₽",
-        text: "Героические действия, сильные переработки, сокращение ресурсных затрат от 20%, иные достижения." },
+        rows: [["ph-percent", "от сокращения расхода", "25%"], ["ph-arrow-down-right", "экономия 100 000 ₽", "25 000 ₽ разово"]] },
+      { n: 10, icon: "ph-moon-stars", title: "Нерабочее время", sum: rub(R.offHours || 1500),
+        rows: [["ph-moon-stars", "за вызов", rub(R.offHours || 1500)], ["ph-user-circle", "основание", "просьба руководителя"]] },
+      { n: 11, icon: "ph-star", title: "По решению руководителя", sum: "от 2 000 ₽",
+        rows: [["ph-star", "минимум", "от 2 000 ₽"], ["ph-medal", "за что", "героика, переработки, экономия от 20%"]] },
     ];
 
-    const cardHtml = bonuses.map((b) => `
-      <article class="inc-card${b.off ? " is-off" : ""}">
+    const cardHtml = bonuses.map((b) => {
+      let body;
+      if (b.rows && typeof b.rows[0][0] === "string" && b.rows[0].length === 3) {
+        // формат [иконка, пояснение, значение]
+        body = `<div class="inc-kpi-rows">${b.rows.map(([ic, l, v]) => `
+          <div class="inc-kpi-row"><i class="ph-bold ${ic}"></i><span>${escHtml(l)}</span><b>${escHtml(v || "")}</b></div>`).join("")}</div>`;
+      } else if (b.rows) {
+        body = `<div class="inc-kpi-rows">${b.rows.map(([l, v]) => `
+          <div class="inc-kpi-row"><i class="ph-bold ph-caret-right"></i><span>${escHtml(String(l))}</span><b class="${v > 0 ? "pos" : v < 0 ? "neg" : "zero"}">${v > 0 ? "+" : ""}${rub(v)}</b></div>`).join("")}</div>`;
+      } else {
+        body = `<p>${escHtml(b.text || "")}</p>`;
+      }
+      return `<article class="inc-card${b.off ? " is-off" : ""}">
         <div class="inc-card-h"><span class="inc-ic"><i class="ph-bold ${b.icon}"></i></span>
           <span class="inc-n">${b.n}</span></div>
         <h4>${escHtml(b.title)}</h4>
         <div class="inc-sum">${b.sum}</div>
-        ${b.rows ? `<div class="inc-kpi-rows">${b.rows.map(([l, v]) => `
-          <div class="inc-kpi-row"><span>${escHtml(String(l))}</span><b class="${v > 0 ? "pos" : v < 0 ? "neg" : "zero"}">${v > 0 ? "+" : ""}${rub(v)}</b></div>`).join("")}</div>`
-          : `<p>${escHtml(b.text)}</p>`}
-      </article>`).join("");
+        ${b.text && b.rows ? `<div class="inc-kpi-sub">${escHtml(b.text)}</div>` : ""}
+        ${body}
+      </article>`;
+    }).join("");
 
     const scen = noWeekend ? [
       { title: "Месяц Поспеловой", tag: "пример", tone: "good", items: [
@@ -1555,8 +1572,8 @@
           <span class="inc-badge">${rub(fixed)}</span></div>
         <p class="inc-sub">Выплачивается за выполнение должностных обязанностей в течение рабочего месяца. У каждого свой размер.</p>
         <div class="inc-split">
-          <div class="inc-part"><span>Оклад</span><b>${rub(salary)}</b></div>
-          <div class="inc-part"><span>Премия ${pct}%</span><b>${rub(premium)}</b></div>
+          <div class="inc-part"><span><i class="ph-bold ph-wallet"></i> Оклад</span><b>${rub(salary)}</b></div>
+          <div class="inc-part"><span><i class="ph-bold ph-percent"></i> Премия ${pct}%</span><b>${rub(premium)}</b></div>
         </div>
         <div class="inc-crit">
           <div class="inc-crit-h">Премия складывается из 100%:</div>
@@ -1589,6 +1606,7 @@
         <p class="inc-sub">Подставь свои цифры — сумма посчитается сразу и сохранится в этом браузере. «Запомнить» добавит расчёт в историю.</p>
         <div class="inc-calc-grid">
           <div class="inc-fields">
+            <div class="inc-group-h"><i class="ph-bold ph-calendar-check"></i> Смены и KPI</div>
             ${noWeekend ? "" : `<label class="inc-f"><span>Выходные смены, шт</span><input type="number" min="0" max="20" id="inc-weekend" value="0"></label>`}
             <label class="inc-f"><span>Индивидуальный KPI</span>
               <select id="inc-kpi">${[10,9,8,7,6,5,4,3,2,1].map((k) => `<option value="${k}"${k === 5 ? " selected" : ""}>${k} — ${rub(kpiMap[String(k)] || 0)}</option>`).join("")}</select></label>
@@ -1596,6 +1614,7 @@
               <select id="inc-sla"><option value="0">нет данных</option>
                 ${(R.sla || []).map((s) => `<option value="${s.sum}">${s.from}–${s.to}% — ${rub(s.sum)}</option>`).join("")}
               </select></label>
+            <div class="inc-group-h"><i class="ph-bold ph-shopping-cart"></i> Продажи, задачи, инициативы</div>
             <label class="inc-f"><span>Продажа оборудования, ₽</span><input type="number" min="0" step="100" id="inc-sale" value="0"></label>
             <label class="inc-chk"><input type="checkbox" id="inc-mgr"><span>продал вместе с менеджером (5%)</span></label>
             <label class="inc-f"><span>«Тания», ₽</span><input type="number" min="0" step="100" id="inc-tania" value="0"></label>
@@ -1605,6 +1624,7 @@
               <select id="inc-auto"><option value="0">нет</option>
                 ${(R.automation || []).map((a) => `<option value="${a.from}">${escHtml(a.label)} — от ${a.from.toLocaleString("ru-RU")} ₽</option>`).join("")}
               </select></label>
+            <div class="inc-group-h"><i class="ph-bold ph-chart-line-up"></i> Эффективность и особые случаи</div>
             <label class="inc-f"><span>Экономия расходов в месяц, ₽</span><input type="number" min="0" step="1000" id="inc-saving" value="0"></label>
             <label class="inc-f"><span>Работа в нерабочее время, раз</span><input type="number" min="0" max="10" id="inc-off" value="0"></label>
             <label class="inc-f"><span>По решению руководителя, ₽</span><input type="number" min="0" step="500" id="inc-boss" value="0"></label>
@@ -1627,12 +1647,12 @@
 
       <section class="inc-block inc-note-block" data-reveal>
         <div class="inc-h"><span class="inc-num">!</span><h3>Что важно понимать</h3></div>
-        <ul class="inc-list">
-          <li>Фиксированная оплата — это то, на что можно рассчитывать при выполнении должностных обязанностей; премия в её составе зависит от четырёх критериев выше.</li>
-          <li>Бонусная часть не гарантирована: она считается по итогам месяца и зависит от фактических результатов — KPI, смен, проданной техники, задач «Тании», инициатив.</li>
-          <li>Бонус может уйти в минус: при KPI ниже 5 штраф вычитается из премии.</li>
-          <li>Суммы в карточках — это правила начисления. Реальный доход считается индивидуально, для этого ниже есть калькулятор.</li>
-        </ul>
+        <div class="inc-kpi-rows inc-note-rows">
+          <div class="inc-kpi-row"><i class="ph-bold ph-lock-simple"></i><span>Фиксированная оплата — то, на что можно рассчитывать при выполнении обязанностей; премия в её составе зависит от четырёх критериев выше.</span></div>
+          <div class="inc-kpi-row"><i class="ph-bold ph-trend-up"></i><span>Бонус не гарантирован: считается по итогам месяца — от KPI, смен, продаж, задач «Тании», инициатив.</span></div>
+          <div class="inc-kpi-row"><i class="ph-bold ph-warning-circle"></i><span>Бонус может уйти в минус: при KPI ниже 5 штраф вычитается из премии.</span></div>
+          <div class="inc-kpi-row"><i class="ph-bold ph-calculator"></i><span>Суммы в карточках — правила начисления; свой вариант посчитай в калькуляторе ниже.</span></div>
+        </div>
       </section>
     </div>`;
   }
