@@ -1623,7 +1623,7 @@
                 ${(R.sla || []).map((s) => `<option value="${s.sum}">${s.from}–${s.to}% — ${rub(s.sum)}</option>`).join("")}
               </select></label>
             <div class="inc-group-h"><i class="ph-bold ph-shopping-cart"></i> Продажи, задачи, инициативы</div>
-            <label class="inc-f"><span>Продажа оборудования, ₽</span><input type="number" min="0" step="100" id="inc-sale" value="0"></label>
+            <label class="inc-f"><span>Сумма продажи ИТ-оборудования, ₽</span><input type="number" min="0" step="100" id="inc-sale" value="0" placeholder="реальная сумма продажи"><small class="inc-hint">Внеси фактическую сумму, за которую продали технику: бонус = 10% от неё (или 5% при продаже с менеджером).</small></label>
             <label class="inc-chk"><input type="checkbox" id="inc-mgr"><span>продал вместе с менеджером (5%)</span></label>
             <label class="inc-f"><span>«Тания», ₽</span><input type="number" min="0" step="100" id="inc-tania" value="0"></label>
             <label class="inc-f"><span>Компенсация нейросети, ₽ (макс. ${(R.aiCompMax||2000).toLocaleString("ru-RU")})</span><input type="number" min="0" max="${R.aiCompMax||2000}" step="100" id="inc-ai" value="0"></label>
