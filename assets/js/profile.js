@@ -1477,6 +1477,43 @@
         <p>${escHtml(b.text)}</p>
       </article>`).join("");
 
+    const scen = noWeekend ? [
+      { title: "Месяц Поспеловой", tag: "пример", tone: "good", items: [
+        ["Индивидуальный KPI 10", 5000], ["SLA 90%", 1500],
+        ["Продажа моноблока за 5 000 ₽", 500], ["Экономия на корп. связи 10 000 ₽ × 25%", 2500]] },
+      { title: "Спокойный месяц", tag: "без инициатив", tone: "calm", items: [
+        ["Индивидуальный KPI 8", 3000], ["SLA 85–89%", 1000], ["Выходных смен нет", 0]] },
+      { title: "Сильная инициатива", tag: "автоматизация", tone: "good", items: [
+        ["Индивидуальный KPI 9", 4000], ["SLA 90–97%", 1500],
+        ["Комплексная автоматизация", 5000], ["Экономия расходов 20 000 ₽ × 25%", 5000]] },
+      { title: "Провал по KPI", tag: "минус", tone: "bad", items: [
+        ["Индивидуальный KPI 3", -2500], ["SLA 80–84%", 500], ["Бонусов нет", 0]] },
+    ] : [
+      { title: "Активный месяц", tag: "пример руководителя", tone: "good", items: [
+        ["4 выходные смены × 4 000 ₽", 16000], ["Индивидуальный KPI 10", 5000], ["SLA 90%", 1500],
+        ["Продажа оборудования на 10 000 ₽", 1000], ["Агент ИИ (комплексная автоматизация)", 3000],
+        ["Компенсация нейросети (Claude Code)", 2000], ["«Тания», 2 часа работы", 2000],
+        ["Сложная заявка (решение руководителя)", 2000]] },
+      { title: "Спокойный месяц", tag: "без инициатив", tone: "calm", items: [
+        ["Индивидуальный KPI 8", 3000], ["SLA 85–89%", 1000], ["Выходных смен нет", 0]] },
+      { title: "Сильная инициатива", tag: "автоматизация", tone: "good", items: [
+        ["Индивидуальный KPI 9", 4000], ["SLA 90–97%", 1500],
+        ["Комплексная автоматизация", 5000], ["Экономия расходов 20 000 ₽ × 25%", 5000]] },
+      { title: "Провал по KPI", tag: "минус", tone: "bad", items: [
+        ["Индивидуальный KPI 3", -2500], ["SLA 80–84%", 500], ["Бонусов нет", 0]] },
+    ];
+    const toneCls = { good: "t-good", calm: "t-calm", bad: "t-bad" };
+    const scenHtml = scen.map((s) => {
+      const sum = s.items.reduce((a, x) => a + x[1], 0);
+      return `<article class="inc-ex ${toneCls[s.tone] || ""}">
+        <div class="inc-ex-h"><h4>${escHtml(s.title)}</h4><span class="inc-ex-tag">${escHtml(s.tag)}</span></div>
+        <div class="inc-ex-list">
+          ${s.items.map(([l, v]) => `<div class="inc-ex-row"><span>${escHtml(l)}</span><b class="${v < 0 ? "neg" : ""}">${v ? rub(v) : "—"}</b></div>`).join("")}
+        </div>
+        <div class="inc-ex-total"><span>Бонусная часть</span><b class="${sum < 0 ? "neg" : ""}">${rub(sum)}</b></div>
+      </article>`;
+    }).join("");
+
     return `
     <div class="inc-wrap">
       <section class="inc-hero" data-reveal>
@@ -1532,6 +1569,13 @@
         <div class="inc-cards">${cardHtml}</div>
         ${noWeekend ? '<p class="inc-note">Для Поспеловой пункт 1 (оплата выходной смены) не применяется.</p>' : ""}
       </section>
+      <section class="inc-examples" data-reveal>
+        <div class="inc-h"><span class="inc-num">★</span><h3>Примеры</h3>
+          <span class="inc-badge inc-badge-soft">как это складывается на практике</span></div>
+        <p class="inc-sub">Это иллюстрации, а не гарантия: каждая сумма — раскладка по правилам выше на конкретный месяц.</p>
+        <div class="inc-ex-grid">${scenHtml}</div>
+      </section>
+
       <div class="inc-link inc-link-eq" aria-hidden="true"><i class="inc-rail"></i><span class="inc-badge-ic"><i class="ph-bold ph-equals"></i></span><i class="inc-rail"></i>
         <small class="inc-link-lbl">твой доход за месяц</small></div>
 
