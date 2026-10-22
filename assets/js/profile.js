@@ -1454,8 +1454,8 @@
       </div>`).join("");
 
     const bonuses = [
-      { n: 1, icon: "ph-calendar-star", title: "Выходная смена", sum: noWeekend ? "не начисляется" : "4 000 ₽ за смену",
-        off: noWeekend,
+      { n: 1, icon: "ph-calendar-star", title: "Выходная смена", sum: "4 000 ₽ за смену",
+        off: noWeekend, hide: noWeekend,
         rows: noWeekend ? [["ph-x", "для этой должности не применяется", ""]]
                         : [["ph-calendar-star", "смена в выходной или праздник", "+4 000 ₽"]] },
       { n: 2, icon: "ph-gauge", title: "Индивидуальный KPI", sum: "от −5 000 до +5 000 ₽",
@@ -1478,11 +1478,11 @@
         rows: [["ph-kanban", "JIRA-процесс", "от 500 ₽"], ["ph-flow-arrow", "небольшой процесс", "от 1 000 ₽"],
                ["ph-cpu", "комплексная (в т.ч. с ИИ)", "от 3 000 ₽"], ["ph-trophy", "максимум", "10 000 ₽"]] },
       { n: 9, icon: "ph-piggy-bank", title: "Экономия расходов", sum: "25% от экономии",
-        rows: [["ph-percent", "от сокращения расхода", "25%"], ["ph-arrow-down-right", "экономия 100 000 ₽", "25 000 ₽ разово"]] },
+        rows: [["ph-percent", "от сокращения расхода", "25%"], ["ph-arrow-down-right", "пример: экономия 100 тыс. ₽", "+25 000 ₽"]] },
       { n: 10, icon: "ph-moon-stars", title: "Нерабочее время", sum: rub(R.offHours || 1500),
         rows: [["ph-moon-stars", "за вызов", rub(R.offHours || 1500)], ["ph-user-circle", "основание", "просьба руководителя"]] },
       { n: 11, icon: "ph-star", title: "По решению руководителя", sum: "от 2 000 ₽",
-        rows: [["ph-star", "минимум", "от 2 000 ₽"], ["ph-medal", "за что", "героика, переработки, экономия от 20%"]] },
+        rows: [["ph-star", "минимум", "от 2 000 ₽"], ["ph-medal", "за особые достижения", "переработки, экономия от 20%"]] },
     ];
 
     const cardHtml = bonuses.filter((b) => !b.hide).map((b) => {
