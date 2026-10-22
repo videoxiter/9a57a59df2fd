@@ -3319,7 +3319,9 @@ window.OTP_DATA = {
         "salary": 69231,
         "premium": 20769,
         "premiumPct": 30,
-        "noWeekend": false
+        "noWeekend": false,
+        "noTania": false,
+        "noTransport": false
       }
     },
     {
@@ -4818,7 +4820,9 @@ window.OTP_DATA = {
         "salary": 44000,
         "premium": 11000,
         "premiumPct": 25,
-        "noWeekend": false
+        "noWeekend": false,
+        "noTania": false,
+        "noTransport": false
       }
     },
     {
@@ -6081,7 +6085,9 @@ window.OTP_DATA = {
         "salary": 44000,
         "premium": 11000,
         "premiumPct": 25,
-        "noWeekend": false
+        "noWeekend": false,
+        "noTania": false,
+        "noTransport": false
       }
     },
     {
@@ -7459,7 +7465,9 @@ window.OTP_DATA = {
         "salary": 44000,
         "premium": 11000,
         "premiumPct": 25,
-        "noWeekend": false
+        "noWeekend": false,
+        "noTania": false,
+        "noTransport": false
       }
     },
     {
@@ -8788,7 +8796,9 @@ window.OTP_DATA = {
         "salary": 44000,
         "premium": 11000,
         "premiumPct": 25,
-        "noWeekend": false
+        "noWeekend": false,
+        "noTania": false,
+        "noTransport": false
       }
     },
     {
@@ -9989,7 +9999,9 @@ window.OTP_DATA = {
         "salary": 44000,
         "premium": 11000,
         "premiumPct": 25,
-        "noWeekend": false
+        "noWeekend": false,
+        "noTania": false,
+        "noTransport": false
       }
     },
     {
@@ -11579,7 +11591,9 @@ window.OTP_DATA = {
         "salary": 53846,
         "premium": 16154,
         "premiumPct": 30,
-        "noWeekend": false
+        "noWeekend": false,
+        "noTania": false,
+        "noTransport": false
       }
     },
     {
@@ -12975,7 +12989,9 @@ window.OTP_DATA = {
         "salary": 44000,
         "premium": 11000,
         "premiumPct": 25,
-        "noWeekend": false
+        "noWeekend": false,
+        "noTania": false,
+        "noTransport": false
       }
     },
     {
@@ -14460,7 +14476,9 @@ window.OTP_DATA = {
         "salary": 42800,
         "premium": 10700,
         "premiumPct": 25,
-        "noWeekend": true
+        "noWeekend": true,
+        "noTania": true,
+        "noTransport": true
       }
     },
     {
@@ -14702,7 +14720,9 @@ window.OTP_DATA = {
         "salary": 44000,
         "premium": 11000,
         "premiumPct": 25,
-        "noWeekend": false
+        "noWeekend": false,
+        "noTania": false,
+        "noTransport": false
       }
     },
     {
@@ -14944,7 +14964,9 @@ window.OTP_DATA = {
         "salary": 44000,
         "premium": 11000,
         "premiumPct": 25,
-        "noWeekend": false
+        "noWeekend": false,
+        "noTania": false,
+        "noTransport": false
       }
     }
   ],

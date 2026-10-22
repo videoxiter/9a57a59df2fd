@@ -1036,7 +1036,7 @@ INCOME = {
     "eliseev":   {"fixed": 55000, "premiumPct": 25},
     "zavyalov":  {"fixed": 55000, "premiumPct": 25},
     "yuryev":    {"fixed": 55000, "premiumPct": 25},
-    "pospelova": {"fixed": 53500, "premiumPct": 25, "noWeekend": True},
+    "pospelova": {"fixed": 53500, "premiumPct": 25, "noWeekend": True, "noTania": True, "noTransport": True},
     "safronov":  {"fixed": 55000, "premiumPct": 25},
     "agarov":    {"fixed": 55000, "premiumPct": 25},
 }
@@ -1213,7 +1213,8 @@ def build():
         pct = inc.get("premiumPct", 25)
         salary = int(round(fixed / (1 + pct / 100.0)))
         e["income"] = {"fixed": fixed, "salary": salary, "premium": fixed - salary,
-                       "premiumPct": pct, "noWeekend": bool(inc.get("noWeekend"))}
+                       "premiumPct": pct, "noWeekend": bool(inc.get("noWeekend")),
+                       "noTania": bool(inc.get("noTania")), "noTransport": bool(inc.get("noTransport"))}
     return data
 
 def main():

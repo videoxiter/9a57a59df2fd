@@ -1433,6 +1433,7 @@
     const premium = inc.premium || 0;
     const pct = inc.premiumPct || 25;
     const noWeekend = !!inc.noWeekend;
+    const noTania = !!inc.noTania, noTransport = !!inc.noTransport;
     const rub = (n) => (n < 0 ? "−" : "") + Math.abs(Math.round(n)).toLocaleString("ru-RU") + " ₽";
     const kpiMap = R.kpi || {};
     const crit = R.premiumCriteria || [];
@@ -1466,12 +1467,12 @@
       { n: 4, icon: "ph-desktop-tower", title: "Продажа оборудования", sum: "10% от суммы",
         rows: [["ph-user", "продал сам", "10%"], ["ph-users", "вместе с менеджером", "5% + 5% менеджеру"],
                ["ph-chart-line-up", "обычно в месяц", "1 500–2 000 ₽"]] },
-      { n: 5, icon: "ph-buildings", title: "Задачи «Тания»", sum: "от 100 ₽ за задачу",
+      { n: 5, icon: "ph-buildings", title: "Задачи «Тания»", hide: noTania, sum: "от 100 ₽ за задачу",
         rows: [["ph-check-circle", "за задачу (от 5 минут)", "от 100 ₽"], ["ph-clock", "ориентир за час", "≈ 1 000 ₽"],
                ["ph-calendar-check", "в месяц", "до 3 500 ₽"]] },
       { n: 6, icon: "ph-sparkle", title: "ИИ-инструменты", sum: "до 2 000 ₽",
         rows: [["ph-sparkle", "компенсация оплаты", "до 2 000 ₽"], ["ph-receipt", "условие", "чек + эффект в работе"]] },
-      { n: 7, icon: "ph-truck", title: "Транспортные расходы", sum: rub(R.transport || 2000),
+      { n: 7, icon: "ph-truck", title: "Транспортные расходы", hide: noTransport, sum: rub(R.transport || 2000),
         rows: [["ph-truck", "за доставку", rub(R.transport || 2000)], ["ph-map-pin", "маршрут", "ЦО ↔ Архангельск"]] },
       { n: 8, icon: "ph-flow-arrow", title: "Автоматизация", sum: "от 500 до 10 000 ₽",
         rows: [["ph-kanban", "JIRA-процесс", "от 500 ₽"], ["ph-flow-arrow", "небольшой процесс", "от 1 000 ₽"],
@@ -1484,7 +1485,7 @@
         rows: [["ph-star", "минимум", "от 2 000 ₽"], ["ph-medal", "за что", "героика, переработки, экономия от 20%"]] },
     ];
 
-    const cardHtml = bonuses.map((b) => {
+    const cardHtml = bonuses.filter((b) => !b.hide).map((b) => {
       let body;
       if (b.rows && typeof b.rows[0][0] === "string" && b.rows[0].length === 3) {
         // формат [иконка, пояснение, значение]
@@ -1507,7 +1508,7 @@
     }).join("");
 
     const scen = noWeekend ? [
-      { title: "Месяц Поспеловой", tag: "пример", tone: "good", items: [
+      { title: "Отличный месяц", tag: "пример", tone: "good", items: [
         ["Индивидуальный KPI 10", 5000], ["SLA 90%", 1500],
         ["Продажа моноблока за 5 000 ₽", 500], ["Экономия на корп. связи 10 000 ₽ × 25%", 2500]] },
       { title: "Спокойный месяц", tag: "без инициатив", tone: "calm", items: [
@@ -1518,7 +1519,7 @@
       { title: "Провал по KPI", tag: "минус", tone: "bad", items: [
         ["Индивидуальный KPI 3", -2500], ["SLA 80–84%", 500], ["Бонусов нет", 0]] },
     ] : [
-      { title: "Активный месяц", tag: "пример руководителя", tone: "good", items: [
+      { title: "Отличный месяц", tag: "пример", tone: "good", items: [
         ["4 выходные смены × 4 000 ₽", 16000], ["Индивидуальный KPI 10", 5000], ["SLA 90%", 1500],
         ["Продажа оборудования на 10 000 ₽", 1000], ["Агент ИИ (комплексная автоматизация)", 3000],
         ["Компенсация нейросети (Claude Code)", 2000], ["«Тания», 2 часа работы", 2000],
@@ -1626,9 +1627,9 @@
             <div class="inc-group-h"><i class="ph-bold ph-shopping-cart"></i> Продажи, задачи, инициативы</div>
             <label class="inc-f"><span>Сумма продажи ИТ-оборудования, ₽</span><input type="number" min="0" step="100" id="inc-sale" value="0" placeholder="реальная сумма продажи"><small class="inc-hint">Внеси фактическую сумму, за которую продали технику: бонус = 10% от неё (или 5% при продаже с менеджером).</small></label>
             <label class="inc-chk"><input type="checkbox" id="inc-mgr"><span>продал вместе с менеджером (5%)</span></label>
-            <label class="inc-f"><span>«Тания», ₽</span><input type="number" min="0" step="100" id="inc-tania" value="0"></label>
+            ${noTania ? "" : `<label class="inc-f"><span>«Тания», ₽</span><input type="number" min="0" step="100" id="inc-tania" value="0"></label>`}
             <label class="inc-f"><span>Компенсация нейросети, ₽ (макс. ${(R.aiCompMax||2000).toLocaleString("ru-RU")})</span><input type="number" min="0" max="${R.aiCompMax||2000}" step="100" id="inc-ai" value="0"></label>
-            <label class="inc-chk"><input type="checkbox" id="inc-transport"><span>транспортные расходы (${rub(R.transport||2000)})</span></label>
+            ${noTransport ? "" : `<label class="inc-chk"><input type="checkbox" id="inc-transport"><span>транспортные расходы (${rub(R.transport||2000)})</span></label>`}
             <label class="inc-f"><span>Автоматизация, ₽</span>
               <select id="inc-auto"><option value="0">нет</option>
                 ${(R.automation || []).map((a) => `<option value="${a.from}">${escHtml(a.label)} — от ${a.from.toLocaleString("ru-RU")} ₽</option>`).join("")}
@@ -1718,9 +1719,9 @@
       const sla = $i("inc-sla") ? +$i("inc-sla").value : 0;
       const sale = num("inc-sale");
       const mgr = !!( $i("inc-mgr") && $i("inc-mgr").checked );
-      const tania = num("inc-tania");
+      const tania = inc.noTania ? 0 : num("inc-tania");
       const ai = Math.min(num("inc-ai"), R.aiCompMax || 2000);
-      const transport = ($i("inc-transport") && $i("inc-transport").checked) ? (R.transport || 2000) : 0;
+      const transport = (!inc.noTransport && $i("inc-transport") && $i("inc-transport").checked) ? (R.transport || 2000) : 0;
       const autoSel = $i("inc-auto") ? $i("inc-auto").value : "0";
       const auto = autoSel === "other" ? num("inc-auto-other") : +autoSel || 0;
       const saving = num("inc-saving");
