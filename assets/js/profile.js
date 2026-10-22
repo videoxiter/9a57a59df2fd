@@ -1436,6 +1436,14 @@
     const rub = (n) => (n < 0 ? "−" : "") + Math.abs(Math.round(n)).toLocaleString("ru-RU") + " ₽";
     const kpiMap = R.kpi || {};
     const crit = R.premiumCriteria || [];
+    const nowM = new Date();
+    const daysInMonth = new Date(nowM.getFullYear(), nowM.getMonth() + 1, 0).getDate();
+    let maxWeekends = 0;
+    for (let d = 1; d <= daysInMonth; d++) {
+      const wd = new Date(nowM.getFullYear(), nowM.getMonth(), d).getDay();
+      if (wd === 0 || wd === 6) maxWeekends++;
+    }
+
 
     const critIcons = ["ph-shield-check", "ph-clipboard-text", "ph-clock-countdown", "ph-warning-octagon"];
     const critHtml = crit.map((c, i) => `
@@ -1607,7 +1615,7 @@
         <div class="inc-calc-grid">
           <div class="inc-fields">
             <div class="inc-group-h"><i class="ph-bold ph-calendar-check"></i> Смены и KPI</div>
-            ${noWeekend ? "" : `<label class="inc-f"><span>Выходные смены, шт</span><input type="number" min="0" max="20" id="inc-weekend" value="0"></label>`}
+            ${noWeekend ? "" : `<label class="inc-f"><span>Выходные смены, шт (макс. ${maxWeekends} в этом месяце)</span><input type="number" min="0" max="${maxWeekends}" id="inc-weekend" value="0"></label>`}
             <label class="inc-f"><span>Индивидуальный KPI</span>
               <select id="inc-kpi">${[10,9,8,7,6,5,4,3,2,1].map((k) => `<option value="${k}"${k === 5 ? " selected" : ""}>${k} — ${rub(kpiMap[String(k)] || 0)}</option>`).join("")}</select></label>
             <label class="inc-f"><span>Командный KPI (SLA)</span>
@@ -1618,15 +1626,17 @@
             <label class="inc-f"><span>Продажа оборудования, ₽</span><input type="number" min="0" step="100" id="inc-sale" value="0"></label>
             <label class="inc-chk"><input type="checkbox" id="inc-mgr"><span>продал вместе с менеджером (5%)</span></label>
             <label class="inc-f"><span>«Тания», ₽</span><input type="number" min="0" step="100" id="inc-tania" value="0"></label>
-            <label class="inc-f"><span>Компенсация нейросети, ₽ (до ${(R.aiCompMax||2000).toLocaleString("ru-RU")})</span><input type="number" min="0" step="100" id="inc-ai" value="0"></label>
+            <label class="inc-f"><span>Компенсация нейросети, ₽ (макс. ${(R.aiCompMax||2000).toLocaleString("ru-RU")})</span><input type="number" min="0" max="${R.aiCompMax||2000}" step="100" id="inc-ai" value="0"></label>
             <label class="inc-chk"><input type="checkbox" id="inc-transport"><span>транспортные расходы (${rub(R.transport||2000)})</span></label>
             <label class="inc-f"><span>Автоматизация, ₽</span>
               <select id="inc-auto"><option value="0">нет</option>
                 ${(R.automation || []).map((a) => `<option value="${a.from}">${escHtml(a.label)} — от ${a.from.toLocaleString("ru-RU")} ₽</option>`).join("")}
+                <option value="other">Другое — своя сумма</option>
               </select></label>
+            <label class="inc-f inc-auto-other" id="inc-auto-other-wrap" hidden><span>Своя сумма за автоматизацию, ₽</span><input type="number" min="0" step="500" id="inc-auto-other" value="0"></label>
             <div class="inc-group-h"><i class="ph-bold ph-chart-line-up"></i> Эффективность и особые случаи</div>
             <label class="inc-f"><span>Экономия расходов в месяц, ₽</span><input type="number" min="0" step="1000" id="inc-saving" value="0"></label>
-            <label class="inc-f"><span>Работа в нерабочее время, раз</span><input type="number" min="0" max="10" id="inc-off" value="0"></label>
+            <label class="inc-chk"><input type="checkbox" id="inc-off"><span>Работа в нерабочее время (по звонку Руководителя) — +${(R.offHours||1500).toLocaleString("ru-RU")} ₽</span></label>
             <label class="inc-f"><span>По решению руководителя, ₽</span><input type="number" min="0" step="500" id="inc-boss" value="0"></label>
           </div>
           <aside class="inc-result">
@@ -1667,11 +1677,18 @@
     const num = (id) => { const el = $i(id); return el ? Math.max(0, +el.value || 0) : 0; };
     const rub = (n) => (n < 0 ? "−" : "") + Math.abs(Math.round(n)).toLocaleString("ru-RU") + " ₽";
     const kpiMap = R.kpi || {};
+    const nowM = new Date();
+    const daysInMonth = new Date(nowM.getFullYear(), nowM.getMonth() + 1, 0).getDate();
+    let maxWeekends = 0;
+    for (let d = 1; d <= daysInMonth; d++) {
+      const wd = new Date(nowM.getFullYear(), nowM.getMonth(), d).getDay();
+      if (wd === 0 || wd === 6) maxWeekends++;
+    }
     const fields = ["inc-weekend", "inc-kpi", "inc-sla", "inc-sale", "inc-mgr", "inc-tania", "inc-ai",
-                    "inc-transport", "inc-auto", "inc-saving", "inc-off", "inc-boss"];
+                    "inc-transport", "inc-auto", "inc-auto-other", "inc-saving", "inc-off", "inc-boss"];
 
     const read = () => {
-      const weekend = num("inc-weekend");
+      const weekend = Math.min(num("inc-weekend"), maxWeekends);
       const kpi = $i("inc-kpi") ? +$i("inc-kpi").value : 5;
       const sla = $i("inc-sla") ? +$i("inc-sla").value : 0;
       const sale = num("inc-sale");
@@ -1679,9 +1696,10 @@
       const tania = num("inc-tania");
       const ai = Math.min(num("inc-ai"), R.aiCompMax || 2000);
       const transport = ($i("inc-transport") && $i("inc-transport").checked) ? (R.transport || 2000) : 0;
-      const auto = $i("inc-auto") ? +$i("inc-auto").value : 0;
+      const autoSel = $i("inc-auto") ? $i("inc-auto").value : "0";
+      const auto = autoSel === "other" ? num("inc-auto-other") : +autoSel || 0;
       const saving = num("inc-saving");
-      const off = num("inc-off");
+      const off = ($i("inc-off") && $i("inc-off").checked) ? 1 : 0;
       const boss = num("inc-boss");
       const salePct = mgr ? (R.saleWithManagerPct || 5) : (R.salePct || 10);
       const bonus = weekend * (R.weekendShift || 4000)
@@ -1692,7 +1710,8 @@
         + Math.round(saving * (R.savingPct || 25) / 100)
         + off * (R.offHours || 1500)
         + boss;
-      return { weekend, kpi, sla, sale, mgr, tania, ai, transport, auto, saving, off, boss, bonus };
+      return { weekend, kpi, sla, sale, mgr, tania, ai, transport, auto, autoOther: num("inc-auto-other"),
+               autoSel, saving, off: !!off, boss, bonus };
     };
 
     const paint = () => {
@@ -1728,9 +1747,13 @@
       if ($i("inc-tania")) $i("inc-tania").value = saved.tania || 0;
       if ($i("inc-ai")) $i("inc-ai").value = saved.ai || 0;
       if ($i("inc-transport")) $i("inc-transport").checked = !!saved.transport;
-      if ($i("inc-auto")) $i("inc-auto").value = saved.auto || 0;
+      if ($i("inc-auto")) {
+        $i("inc-auto").value = saved.autoSel || (saved.auto ? String(saved.auto) : "0");
+        if ($i("inc-auto-other")) $i("inc-auto-other").value = saved.autoOther || 0;
+        toggleAutoOther();
+      }
       if ($i("inc-saving")) $i("inc-saving").value = saved.saving || 0;
-      if ($i("inc-off")) $i("inc-off").value = saved.off || 0;
+      if ($i("inc-off")) $i("inc-off").checked = !!saved.off;
       if ($i("inc-boss")) $i("inc-boss").value = saved.boss || 0;
     };
 
@@ -1747,6 +1770,24 @@
         : "";
     };
 
+    function toggleAutoOther() {
+      const sel = $i("inc-auto"), wrap = $i("inc-auto-other-wrap");
+      if (!sel || !wrap) return;
+      wrap.hidden = sel.value !== "other";
+    }
+    const autoSelEl = $i("inc-auto");
+    if (autoSelEl) autoSelEl.addEventListener("change", () => { toggleAutoOther(); paint(); });
+    // ограничиваем ввод: нейросеть — до лимита, выходные — по числу выходных в месяце
+    const aiEl = $i("inc-ai");
+    if (aiEl) aiEl.addEventListener("input", () => {
+      const lim = R.aiCompMax || 2000;
+      if (+aiEl.value > lim) aiEl.value = lim;
+    });
+    const wkEl = $i("inc-weekend");
+    if (wkEl) wkEl.addEventListener("input", () => {
+      if (+wkEl.value > maxWeekends) wkEl.value = maxWeekends;
+      if (+wkEl.value < 0) wkEl.value = 0;
+    });
     fields.forEach((id) => { const el = $i(id); if (el) el.addEventListener("input", paint); });
     restore(); paint(); drawHist();
 
@@ -1754,6 +1795,7 @@
     if (reset) reset.addEventListener("click", () => {
       try { localStorage.removeItem(key); } catch (e) {}
       fields.forEach((id) => { const el = $i(id); if (!el) return; if (el.type === "checkbox") el.checked = false; else el.value = el.id === "inc-kpi" ? 5 : 0; });
+      toggleAutoOther();
       paint();
     });
 
