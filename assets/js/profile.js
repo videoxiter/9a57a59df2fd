@@ -1506,7 +1506,8 @@
           </svg>
         </div>
       </section>
-      <div class="inc-link inc-link-down" aria-hidden="true"><i class="inc-rail"></i><span class="inc-badge-ic"><i class="ph-bold ph-arrow-down"></i></span><i class="inc-rail"></i></div>
+      <div class="inc-link inc-link-down" aria-hidden="true"><i class="inc-rail"></i><span class="inc-badge-ic"><i class="ph-bold ph-arrow-down"></i></span><i class="inc-rail"></i>
+        <small class="inc-link-lbl">разберём, из чего состоит</small></div>
 
       <section class="inc-block" data-reveal>
         <div class="inc-h"><span class="inc-num">I</span><h3>Фиксированная оплата труда</h3>
@@ -1521,7 +1522,8 @@
           ${critHtml}
         </div>
       </section>
-      <div class="inc-link inc-link-plus" aria-hidden="true"><i class="inc-rail"></i><span class="inc-badge-ic"><i class="ph-bold ph-plus"></i></span><i class="inc-rail"></i></div>
+      <div class="inc-link inc-link-plus" aria-hidden="true"><i class="inc-rail"></i><span class="inc-badge-ic"><i class="ph-bold ph-plus"></i></span><i class="inc-rail"></i>
+        <small class="inc-link-lbl">фиксированная оплата <b>+</b> бонусная часть</small></div>
 
       <section class="inc-block" data-reveal>
         <div class="inc-h"><span class="inc-num">II</span><h3>Бонусная часть</h3>
@@ -1530,7 +1532,8 @@
         <div class="inc-cards">${cardHtml}</div>
         ${noWeekend ? '<p class="inc-note">Для Поспеловой пункт 1 (оплата выходной смены) не применяется.</p>' : ""}
       </section>
-      <div class="inc-link inc-link-eq" aria-hidden="true"><i class="inc-rail"></i><span class="inc-badge-ic"><i class="ph-bold ph-equals"></i></span><i class="inc-rail"></i></div>
+      <div class="inc-link inc-link-eq" aria-hidden="true"><i class="inc-rail"></i><span class="inc-badge-ic"><i class="ph-bold ph-equals"></i></span><i class="inc-rail"></i>
+        <small class="inc-link-lbl">твой доход за месяц</small></div>
 
       <section class="inc-calc" data-reveal id="inc-calc">
         <div class="inc-h"><span class="inc-num">Σ</span><h3>Калькулятор дохода</h3>
