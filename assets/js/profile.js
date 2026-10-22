@@ -1686,20 +1686,27 @@
       const wd = new Date(nowM.getFullYear(), nowM.getMonth(), d).getDay();
       if (wd === 0 || wd === 6) maxWeekends++;
     }
-    // рабочие смены месяца по графику (только смены и дежурства; выходные и доп. смены не считаем)
+    /* Рабочие дни для расчёта оклада:
+       • всего рабочих дней в месяце — из графика Confluence («Всего в этом месяце 22 рабочих дня…»);
+       • отработано — смены сотрудника по графику за месяц (смены и дежурства),
+         выходные смены (I/II/III) и отпуска не считаем. */
     const calcDays = () => {
       const now = new Date();
       const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-      const days = schedFor(ME_FIO, iso);
-      if (!days) return { plan: 0, done: 0 };
-      const last = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-      let plan = 0, done = 0;
-      for (let d = 1; d <= last; d++) {
-        const sh = days[String(d)];
-        if (!sh || !["shift", "duty"].includes(sh.kind)) continue;
-        plan++;
-        if (d <= now.getDate()) done++;
+      const M = SCHED && SCHED.months && SCHED.months[iso];
+      if (!M) return { plan: 0, done: 0 };
+      let plan = 0;
+      for (const f of (M.facts || [])) {
+        const m = /Всего в этом месяце\s+(\d+)\s+рабоч/i.exec(String(f));
+        if (m) { plan = +m[1]; break; }
       }
+      const last = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      let done = 0;
+      for (let d = 1; d <= last; d++) {
+        const sh = shiftOn(ME_FIO, new Date(now.getFullYear(), now.getMonth(), d));
+        if (sh && ["shift", "duty"].includes(sh.kind)) done++;
+      }
+      if (!plan) plan = last;
       return { plan, done };
     };
     const fields = ["inc-weekend", "inc-kpi", "inc-sla", "inc-sale", "inc-mgr", "inc-tania", "inc-ai",
