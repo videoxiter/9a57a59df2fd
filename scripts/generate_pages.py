@@ -21,12 +21,12 @@ TEAM_DIR = os.path.join(ROOT, "team")
 
 SECTIONS = [
     ("bonus", "Бонусы", "ph-wallet", "KPI и денежная часть"),
-    ("income", "Карта доходов", "ph-coins", "из чего складывается доход"),
     ("lvl", "Мой LVL", "ph-medal", "уровень и звёзды"),
     ("awards", "Награды", "ph-trophy", "полученные и справочник"),
     ("growth", "Мой рост", "ph-rocket-launch", "план развития"),
     ("graph", "Мой график", "ph-calendar-check", "смены, отпуска, часы"),
     ("stats", "Статистика", "ph-chart-line", "динамика и детализация"),
+    ("income", "Карта доходов", "ph-coins", "из чего складывается доход"),
     ("rules", "Правила", "ph-book-open", "как всё устроено"),
 ]
 
@@ -115,7 +115,7 @@ TEMPLATE = """<!DOCTYPE html>
 </html>
 """
 
-V = "90"
+V = "91"
 
 
 def secnav_html(rel, active):
