@@ -1615,6 +1615,7 @@
         <div class="inc-calc-grid">
           <div class="inc-fields">
             <div class="inc-group-h"><i class="ph-bold ph-calendar-check"></i> Смены и KPI</div>
+            <label class="inc-chk inc-days-chk"><input type="checkbox" id="inc-days"><span>Учесть количество отработанных дней в этом месяце</span></label>
             ${noWeekend ? "" : `<label class="inc-f"><span>Выходные смены, шт (макс. ${maxWeekends} в этом месяце)</span><input type="number" min="0" max="${maxWeekends}" id="inc-weekend" value="0"></label>`}
             <label class="inc-f"><span>Индивидуальный KPI</span>
               <select id="inc-kpi">${[10,9,8,7,6,5,4,3,2,1].map((k) => `<option value="${k}"${k === 5 ? " selected" : ""}>${k} — ${rub(kpiMap[String(k)] || 0)}</option>`).join("")}</select></label>
@@ -1643,7 +1644,8 @@
             <div class="inc-res-lbl">Твой доход за месяц</div>
             <div class="inc-res-total" id="inc-total">0 ₽</div>
             <div class="inc-res-rows">
-              <div><span>Фиксированная оплата</span><b>${rub(fixed)}</b></div>
+              <div><span>Фиксированная оплата</span><b id="inc-fixed">${rub(fixed)}</b></div>
+              <div id="inc-days-row" hidden><span>Отработано дней</span><b id="inc-days-val">—</b></div>
               <div><span>Бонусная часть</span><b id="inc-bonus">0 ₽</b></div>
             </div>
             <div class="inc-res-actions">
@@ -1684,8 +1686,24 @@
       const wd = new Date(nowM.getFullYear(), nowM.getMonth(), d).getDay();
       if (wd === 0 || wd === 6) maxWeekends++;
     }
+    // рабочие смены месяца по графику (только смены и дежурства; выходные и доп. смены не считаем)
+    const calcDays = () => {
+      const now = new Date();
+      const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+      const days = schedFor(ME_FIO, iso);
+      if (!days) return { plan: 0, done: 0 };
+      const last = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      let plan = 0, done = 0;
+      for (let d = 1; d <= last; d++) {
+        const sh = days[String(d)];
+        if (!sh || !["shift", "duty"].includes(sh.kind)) continue;
+        plan++;
+        if (d <= now.getDate()) done++;
+      }
+      return { plan, done };
+    };
     const fields = ["inc-weekend", "inc-kpi", "inc-sla", "inc-sale", "inc-mgr", "inc-tania", "inc-ai",
-                    "inc-transport", "inc-auto", "inc-auto-other", "inc-saving", "inc-off", "inc-boss"];
+                    "inc-transport", "inc-auto", "inc-auto-other", "inc-saving", "inc-off", "inc-boss", "inc-days"];
 
     const read = () => {
       const weekend = Math.min(num("inc-weekend"), maxWeekends);
@@ -1711,12 +1729,21 @@
         + off * (R.offHours || 1500)
         + boss;
       return { weekend, kpi, sla, sale, mgr, tania, ai, transport, auto, autoOther: num("inc-auto-other"),
-               autoSel, saving, off: !!off, boss, bonus };
+               autoSel, saving, off: !!off, days: !!($i("inc-days") && $i("inc-days").checked), boss, bonus };
     };
 
     const paint = () => {
       const v = read();
-      const total = fixed + v.bonus;
+      const useDays = !!($i("inc-days") && $i("inc-days").checked);
+      const dd = useDays ? calcDays() : null;
+      const ratio = useDays && dd && dd.plan ? dd.done / dd.plan : 1;
+      const fixedEff = Math.round(fixed * ratio);
+      const total = fixedEff + v.bonus;
+      const fEl = $i("inc-fixed");
+      if (fEl) fEl.textContent = rub(fixedEff);
+      const dRow = $i("inc-days-row"), dVal = $i("inc-days-val");
+      if (dRow) dRow.hidden = !useDays;
+      if (dVal) dVal.textContent = dd && dd.plan ? `${dd.done} из ${dd.plan}` : "нет данных";
       const tEl = $i("inc-total"), bEl = $i("inc-bonus");
       if (bEl) { bEl.textContent = rub(v.bonus); bEl.className = v.bonus < 0 ? "neg" : "pos"; }
       if (tEl) {
@@ -1754,6 +1781,7 @@
       }
       if ($i("inc-saving")) $i("inc-saving").value = saved.saving || 0;
       if ($i("inc-off")) $i("inc-off").checked = !!saved.off;
+      if ($i("inc-days")) $i("inc-days").checked = !!saved.days;
       if ($i("inc-boss")) $i("inc-boss").value = saved.boss || 0;
     };
 
