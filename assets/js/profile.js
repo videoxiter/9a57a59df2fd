@@ -1506,6 +1506,7 @@
           </svg>
         </div>
       </section>
+      <div class="inc-link inc-link-down" aria-hidden="true"><i class="inc-rail"></i><span class="inc-badge-ic"><i class="ph-bold ph-arrow-down"></i></span><i class="inc-rail"></i></div>
 
       <section class="inc-block" data-reveal>
         <div class="inc-h"><span class="inc-num">I</span><h3>Фиксированная оплата труда</h3>
@@ -1520,6 +1521,7 @@
           ${critHtml}
         </div>
       </section>
+      <div class="inc-link inc-link-plus" aria-hidden="true"><i class="inc-rail"></i><span class="inc-badge-ic"><i class="ph-bold ph-plus"></i></span><i class="inc-rail"></i></div>
 
       <section class="inc-block" data-reveal>
         <div class="inc-h"><span class="inc-num">II</span><h3>Бонусная часть</h3>
@@ -1528,16 +1530,7 @@
         <div class="inc-cards">${cardHtml}</div>
         ${noWeekend ? '<p class="inc-note">Для Поспеловой пункт 1 (оплата выходной смены) не применяется.</p>' : ""}
       </section>
-
-      <section class="inc-block inc-note-block" data-reveal>
-        <div class="inc-h"><span class="inc-num">!</span><h3>Что важно понимать</h3></div>
-        <ul class="inc-list">
-          <li>Фиксированная оплата — это то, на что можно рассчитывать при выполнении должностных обязанностей; премия в её составе зависит от четырёх критериев выше.</li>
-          <li>Бонусная часть не гарантирована: она считается по итогам месяца и зависит от фактических результатов — KPI, смен, проданной техники, задач «Тании», инициатив.</li>
-          <li>Бонус может уйти в минус: при KPI ниже 5 штраф вычитается из премии.</li>
-          <li>Суммы в карточках — это правила начисления. Реальный доход считается индивидуально, для этого ниже есть калькулятор.</li>
-        </ul>
-      </section>
+      <div class="inc-link inc-link-eq" aria-hidden="true"><i class="inc-rail"></i><span class="inc-badge-ic"><i class="ph-bold ph-equals"></i></span><i class="inc-rail"></i></div>
 
       <section class="inc-calc" data-reveal id="inc-calc">
         <div class="inc-h"><span class="inc-num">Σ</span><h3>Калькулятор дохода</h3>
@@ -1579,6 +1572,16 @@
             <div class="inc-hist" id="inc-hist"></div>
           </aside>
         </div>
+      </section>
+
+      <section class="inc-block inc-note-block" data-reveal>
+        <div class="inc-h"><span class="inc-num">!</span><h3>Что важно понимать</h3></div>
+        <ul class="inc-list">
+          <li>Фиксированная оплата — это то, на что можно рассчитывать при выполнении должностных обязанностей; премия в её составе зависит от четырёх критериев выше.</li>
+          <li>Бонусная часть не гарантирована: она считается по итогам месяца и зависит от фактических результатов — KPI, смен, проданной техники, задач «Тании», инициатив.</li>
+          <li>Бонус может уйти в минус: при KPI ниже 5 штраф вычитается из премии.</li>
+          <li>Суммы в карточках — это правила начисления. Реальный доход считается индивидуально, для этого ниже есть калькулятор.</li>
+        </ul>
       </section>
     </div>`;
   }
