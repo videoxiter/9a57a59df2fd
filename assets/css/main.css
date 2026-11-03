@@ -2254,3 +2254,26 @@ html[data-theme="light"] .wrap { color: #16202f; }
 html[data-theme="light"] .bg-grid, html[data-theme="light"] .bg-stage { opacity: .18; }
 html[data-theme="light"] .nav a { color: #16202f !important; }
 html[data-theme="light"] .nav a.is-now { color: #b45309 !important; }
+
+html[data-theme="light"] .p-lvl-t, html[data-theme="light"] .p-lvl-t *,
+html[data-theme="light"] .metric-tile, html[data-theme="light"] .metric-tile *,
+html[data-theme="light"] .metric-tile b, html[data-theme="light"] .metric-tile span,
+html[data-theme="light"] .rb-tx, html[data-theme="light"] .rb-tx b, html[data-theme="light"] .rb-tx i,
+html[data-theme="light"] .gs-vac-table th, html[data-theme="light"] .gs-vac-table td,
+html[data-theme="light"] .gs-vac-table span, html[data-theme="light"] .gs-vac-table b,
+html[data-theme="light"] .gs-team-h, html[data-theme="light"] .gs-team-h i,
+html[data-theme="light"] .gs-row, html[data-theme="light"] .gs-row span,
+html[data-theme="light"] .gd-card, html[data-theme="light"] .gd-card *,
+html[data-theme="light"] .bk-tr, html[data-theme="light"] .bk-tr span,
+html[data-theme="light"] .bk-lvl, html[data-theme="light"] .bk-lvl b,
+html[data-theme="light"] .rec-title, html[data-theme="light"] .rec-desc,
+html[data-theme="light"] .a-t, html[data-theme="light"] .a-r, html[data-theme="light"] .a-m,
+html[data-theme="light"] .hr-row, html[data-theme="light"] .hr-row b,
+html[data-theme="light"] .req-main, html[data-theme="light"] .req-main b,
+html[data-theme="light"] .inc-sum, html[data-theme="light"] .inc-kpi-row span,
+html[data-theme="light"] .inc-kpi-row b, html[data-theme="light"] .inc-ex-row span,
+html[data-theme="light"] .inc-ex-total b, html[data-theme="light"] .hx-n, html[data-theme="light"] .hx-r { color: #16202f !important; }
+html[data-theme="light"] .inc-kpi-row b.pos, html[data-theme="light"] .hx-h.pos,
+html[data-theme="light"] .inc-ex-total b { color: #15803d !important; }
+html[data-theme="light"] .inc-kpi-row b.neg, html[data-theme="light"] .hx-h.neg { color: #b91c1c !important; }
+html[data-theme="light"] .otp-modal-box { background: #fff; color: #16202f; }
