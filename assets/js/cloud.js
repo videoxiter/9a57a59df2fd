@@ -13,6 +13,7 @@
 window.OTP_CLOUD = (function () {
   "use strict";
   const KEY = "otp_hr_requests_v1";
+  const SYNC_KEY = "otp_requests_sync_at";   // время последней успешной синхронизации
   const cfg = () =>
     (window.OTP_EMP && window.OTP_EMP.hrRules && window.OTP_EMP.hrRules.cloud) ||
     (window.OTP_DATA && window.OTP_DATA.hrRules && window.OTP_DATA.hrRules.cloud) ||
