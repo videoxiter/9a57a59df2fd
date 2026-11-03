@@ -38,3 +38,9 @@
 | `fig-matrix-1.gif` | File:Matrix Digital rain banner.gif |
 
 Лицензии и авторы — на страницах файлов в Commons (CC BY / CC BY-SA / Public Domain).
+
+## Иконки-фигуры разделов (Twemoji)
+
+`fig3-*.svg` и `fig4-*.svg` — эмодзи-графика **Twemoji** (twitter/twemoji, теперь jdecked/twemoji),
+лицензия **CC BY 4.0** (графика), источник CDN: `cdn.jsdelivr.net/gh/jdecked/twemoji`.
+Используются как фоновые фигуры: на каждом из 9 разделов страницы сотрудника — своя.
