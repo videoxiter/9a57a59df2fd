@@ -178,13 +178,23 @@
   const NAV = window.OTP_NAV || {};
   const navHref = (key) => NAV[key] || (key === "bonus" ? "./" : key + "/");
 
-  function robotMenuHtml() {
+  const THEME_SEC_IDX = { bonus: 0, income: 1, lvl: 2, awards: 3, growth: 4, stats: 5, rules: 6, settings: 7, graph: 8 };
+const THEME_FILES = { robots: "robots", matrix: "matrix", minecraft: "minecraft", mk: "mk", skyrim: "skyrim",
+  anime: "anime", cs16: "cs16", synthwave: "synthwave", cyberpunk: "cyberpunk", space: "space", winter: "winter", ocean: "ocean" };
+function themeIcon(key) {
+  const th = document.documentElement.getAttribute("data-theme") || "classic";
+  const id = THEME_FILES[th];
+  const idx = THEME_SEC_IDX[key];
+  if (!id || idx === undefined) return null;
+  return SITE_ROOT + "assets/img/themes/fig4-" + id + "-" + (idx + 1) + ".svg";
+}
+function robotMenuHtml() {
     return `<div class="robot-menu" data-reveal>
       <div class="robot-menu-title"><i class="ph-bold ph-robot"></i> Разделы</div>
       <div class="robot-grid">
         ${SECTION_DEFS.map((s) => `<a class="rb-btn${s.key === SECTION ? " is-now" : ""}" href="${navHref(s.key)}" title="${s.label} · ${s.note}">
             <span class="rb-corner tl"></span><span class="rb-corner tr"></span><span class="rb-corner bl"></span><span class="rb-corner br"></span>
-            <span class="rb-ic"><i class="ph-bold ${s.icon}"></i></span>
+            <span class="rb-ic">${themeIcon(s.key) ? `<img class="rb-ic-img" src="${themeIcon(s.key)}" alt="" loading="lazy">` : `<i class="ph-bold ${s.icon}"></i>`}</span>
             <span class="rb-tx"><b>${s.label}</b><i>${s.key === SECTION ? "вы здесь" : s.note}</i></span>
             <span class="rb-scan"></span>
           </a>`).join("")}

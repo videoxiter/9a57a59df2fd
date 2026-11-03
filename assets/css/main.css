@@ -2295,3 +2295,24 @@ html[data-theme="matrix"] #otp-theme-figure { opacity: .24; }
 html[data-theme="robots"] #otp-theme-figure,
 html[data-theme="cyberpunk"] #otp-theme-figure { opacity: .40; }
 @media (max-width: 900px) { #otp-theme-figure { height: 26vh; max-height: 220px; opacity: .22; right: 6px; bottom: 8px; } }
+
+/* Тематические иконки разделов */
+.rb-ic-img { width: 26px; height: 26px; object-fit: contain; display: block;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.45)); }
+/* Тематическая подложка медальонов наград */
+html[data-theme="robots"] .award-tile .medal,
+html[data-theme="matrix"] .award-tile .medal,
+html[data-theme="minecraft"] .award-tile .medal,
+html[data-theme="mk"] .award-tile .medal,
+html[data-theme="skyrim"] .award-tile .medal,
+html[data-theme="anime"] .award-tile .medal,
+html[data-theme="cs16"] .award-tile .medal,
+html[data-theme="synthwave"] .award-tile .medal,
+html[data-theme="cyberpunk"] .award-tile .medal,
+html[data-theme="space"] .award-tile .medal,
+html[data-theme="winter"] .award-tile .medal,
+html[data-theme="ocean"] .award-tile .medal {
+  background: radial-gradient(circle at 32% 26%, color-mix(in srgb, var(--accent) 34%, transparent), color-mix(in srgb, var(--ac) 16%, transparent) 72%);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--accent) 55%, transparent), inset 0 0 12px color-mix(in srgb, var(--accent) 18%, transparent);
+}
