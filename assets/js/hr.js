@@ -141,7 +141,7 @@
     const box = document.getElementById("hr-requests");
     if (!box) return;
     const sec = box.closest("section") || box;
-    const all = load2();
+    const all = load2().filter((r) => r.type !== "adjust");   // корректировки часов — отдельным блоком
     const active = all.filter((r) => r.status === "pending").sort(byDateDesc);
     // отменённые за последние 7 дней — чтобы отмена не потерялась
     const weekAgo = Date.now() - 7 * 24 * 3600 * 1000;

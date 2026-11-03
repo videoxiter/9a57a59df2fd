@@ -35,6 +35,7 @@
 
   /* ---------- накопленные часы ---------- */
   function hoursOfReq(r) {
+    if (r.type === "adjust") return +r.hours || 0;      // начисление (+) или списание (−) часов
     if (r.type === "dayoff") return r.hours || 8;
     const p = (x) => { const m = /^(\d{1,2}):(\d{2})$/.exec(x || ""); return m ? +m[1] + +m[2] / 60 : null; };
     const a = p(r.from), b = p(r.to);
@@ -46,7 +47,8 @@
     for (const r of reqs) {
       if (r.empSlug !== emp.slug || r.status !== "approved") continue;
       const h = hoursOfReq(r);
-      if (r.type === "overtime") plus += h;
+      if (r.type === "adjust") { if (h >= 0) plus += h; else minus += -h; }
+      else if (r.type === "overtime") plus += h;
       else if (r.type === "leave" || r.type === "dayoff") {
         const forced = !!r.forceDeduct;                                  // решение руководителя сильнее правила
         const plain = r.type === "leave" && !r.noDeduct && !emp.no_deduct;
@@ -81,14 +83,78 @@
       });
     };
     try {
-      paint(window.OTP_CLOUD ? window.OTP_CLOUD.loadLocal() || [] : []);
+      const local = window.OTP_CLOUD ? window.OTP_CLOUD.loadLocal() || [] : [];
+      window.OTP_REQS = local;
+      paint(local);
+      renderHoursAdmin(local);
     } catch (e) { /* локальные данные могли быть битыми — не критично */ }
     try {
       const list = window.OTP_CLOUD ? await window.OTP_CLOUD.all() : null;
-      if (list) paint(list);
+      if (list) { window.OTP_REQS = list; paint(list); renderHoursAdmin(list); }
     } catch (e) { /* нет сети — остаются локальные значения */ }
     hydrating = false;
   }
+  /* ---------- Часы: начисление/списание от руководителя ---------- */
+  const escT = (s) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  function renderHoursAdmin(reqs) {
+    const box = $("#hours-admin");
+    if (!box) return;
+    const list = (reqs || []).filter((r) => r.type === "adjust")
+      .sort((a, b) => String(b.created || "").localeCompare(String(a.created || ""))).slice(0, 40);
+    const emps = ACTIVE.filter((e) => e.slug && e.status !== "left");
+    const row = (r) => {
+      const h = +r.hours || 0;
+      const d = String(r.date || (r.created || "").slice(0, 10));
+      return `<div class="hx-row">
+        <span class="hx-d">${escT(d)}</span>
+        <span class="hx-n">${escT(r.empName || "")}</span>
+        <b class="hx-h ${h >= 0 ? "pos" : "neg"}">${h >= 0 ? "+" : "−"}${fmtH(Math.abs(h))}</b>
+        <span class="hx-r">${escT(r.reason || "")}</span>
+      </div>`;
+    };
+    box.innerHTML = `<div class="hx-wrap">
+      <div class="hx-head">
+        <h3><i class="ph-bold ph-hourglass-high"></i> Часы: начислить или списать</h3>
+        <span class="hx-note">решение руководителя · история видна всем сотрудникам</span>
+      </div>
+      <form class="hx-form" id="hx-form" autocomplete="off">
+        <select id="hx-emp">${emps.map((e) => `<option value="${e.slug}">${escT(e.fullName)}</option>`).join("")}</select>
+        <input id="hx-hours" type="number" step="0.5" inputmode="decimal" placeholder="часы: +2 или −1,5" required>
+        <input id="hx-reason" type="text" maxlength="160" placeholder="Причина (обязательно)" required>
+        <button type="submit" class="hx-btn"><i class="ph-bold ph-check"></i> Применить</button>
+      </form>
+      <div class="hx-log">
+        <div class="hx-log-h">История начислений и списаний <span>${list.length}</span></div>
+        ${list.length ? list.map(row).join("") : `<div class="hx-empty">Пока нет записей.</div>`}
+      </div>
+    </div>`;
+    const form = $("#hx-form");
+    if (!form) return;
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const emp = bySlug($("#hx-emp").value);
+      const h = parseFloat(String($("#hx-hours").value).replace(",", "."));
+      const reason = $("#hx-reason").value.trim();
+      if (!emp || !isFinite(h) || h === 0 || reason.length < 3) {
+        form.classList.add("is-err");
+        setTimeout(() => form.classList.remove("is-err"), 1200);
+        return;
+      }
+      const nowIso = new Date().toISOString();
+      const rec = {
+        id: "adj-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
+        empSlug: emp.slug, empName: emp.fullName, type: "adjust",
+        date: isoDate(new Date()), from: "", to: "", hours: h, reason,
+        status: "approved", created: nowIso, decided: nowIso, decidedBy: "Яковлев Е.Е.",
+      };
+      try { if (window.OTP_CLOUD) await window.OTP_CLOUD.upsert(rec); } catch (err) {}
+      $("#hx-hours").value = "";
+      $("#hx-reason").value = "";
+      await hydrateHours();
+      renderHoursAdmin(window.OTP_REQS || []);
+    });
+  }
+
   const tdIcon = (k) => k === "shift" ? "ph-clock" : k === "vacation" ? "ph-airplane-tilt"
     : k === "leave" ? "ph-door-open" : k === "dayoff" ? "ph-calendar-minus" : "ph-moon";
   window.otpRefreshHours = hydrateHours;      // чтобы блок согласования заявок обновил часы сразу после решения

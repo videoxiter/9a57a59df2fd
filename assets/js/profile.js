@@ -914,6 +914,7 @@
     dayoff: { label: "Отгул за вых. смену", icon: "ph-calendar-minus", accent: "info" },
   };
   function hoursOf(r) {
+    if (r.type === "adjust") return +r.hours || 0;      // начисление (+) или списание (−)
     if (r.type === "dayoff") return r.hours || 8;
     const p = (t) => { const m = /^(\d{1,2}):(\d{2})$/.exec(t || ""); return m ? +m[1] + (+m[2]) / 60 : null; };
     const a = p(r.from), b = p(r.to);
@@ -940,7 +941,8 @@
     for (const r of myRequests()) {
       if (r.status !== "approved") continue;
       const h = hoursOf(r);
-      if (r.type === "overtime") plus += h;
+      if (r.type === "adjust") { if (h >= 0) plus += h; else minus += -h; }
+      else if (r.type === "overtime") plus += h;
       else if (r.type === "leave" || r.type === "dayoff") {
         // forceDeduct — руководитель решил списать часы вопреки правилу «показатели позволяют»
         if (r.forceDeduct || (r.type === "leave" && !NO_DEDUCT && !r.noDeduct)) minus += h;
@@ -1039,6 +1041,7 @@
       <details class="gs-hist">
         <summary><i class="ph-bold ph-clock-counter-clockwise"></i> История заявок <span class="muted" id="gs-req-count"></span><i class="ph-bold ph-caret-down gs-hist-ar"></i></summary>
         <div id="gs-history"></div>
+        <div id="gs-adj"></div>
       </details>
     </section>
 
@@ -1277,6 +1280,26 @@
             </span>
           </div>`;
         }).join("") : '<p class="muted">Заявок пока нет. Оформи первую — она появится на странице руководителя.</p>';
+        /* Начисления и списания часов руководителем — историю видят все сотрудники */
+        const adjBox = document.getElementById("gs-adj");
+        if (adjBox) {
+          const adj = loadReqs().filter((r) => r.type === "adjust" && r.status === "approved")
+            .sort((a, b) => String(b.created || "").localeCompare(String(a.created || ""))).slice(0, 30);
+          const escA = (s) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          adjBox.innerHTML = `<div class="gs-adj-block">
+            <div class="gs-adj-h"><i class="ph-bold ph-receipt"></i> Часы: начисления и списания руководителя
+              <span>видно всем сотрудникам</span></div>
+            ${adj.length ? adj.map((r) => {
+              const h = +r.hours || 0;
+              return `<div class="gs-adj-row">
+                <span class="gs-adj-d">${escA(r.date || (r.created || "").slice(0, 10))}</span>
+                <span class="gs-adj-n">${escA(r.empName || "")}</span>
+                <b class="gs-adj-h2 ${h >= 0 ? "pos" : "neg"}">${h >= 0 ? "+" : "−"}${fmtH(Math.abs(h))}</b>
+                <span class="gs-adj-r">${escA(r.reason || "")}</span>
+              </div>`;
+            }).join("") : `<div class="gs-adj-empty">Пока нет начислений или списаний.</div>`}
+          </div>`;
+        }
         hist.querySelectorAll("[data-copy]").forEach((b2) => b2.addEventListener("click", () => {
           const r = myRequests().find((x) => x.id === b2.dataset.copy);
           if (!r) return;

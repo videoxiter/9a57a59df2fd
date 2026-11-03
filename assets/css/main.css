@@ -1831,3 +1831,47 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
 
 .inc-kpi-row > span { min-width: 0; }
 .inc-kpi-row b { white-space: nowrap; }
+
+/* ── Часы: начисление/списание (главная) ───────────────────────────────────── */
+.hx-wrap { display: flex; flex-direction: column; gap: 14px; padding: 22px 24px; border-radius: 18px;
+  background: linear-gradient(180deg, rgba(21,25,34,.94), rgba(15,18,25,.94));
+  border: 1px solid rgba(148,163,184,.18); }
+.hx-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.hx-head h3 { margin: 0; font-size: 17px; color: #e8edf5; display: flex; align-items: center; gap: 9px; }
+.hx-head h3 i { color: #fbbf24; }
+.hx-note { font-size: 11.5px; color: #7f8a99; }
+.hx-form { display: grid; grid-template-columns: 1.1fr .55fr 1.7fr auto; gap: 9px; align-items: stretch; }
+.hx-form select, .hx-form input { padding: 10px 12px; border-radius: 10px; font-size: 13.5px; color: #e8edf5;
+  background: rgba(9,12,18,.75); border: 1px solid rgba(148,163,184,.22); outline: none; }
+.hx-form select:focus, .hx-form input:focus { border-color: rgba(251,191,36,.55); box-shadow: 0 0 0 3px rgba(251,191,36,.12); }
+.hx-form.is-err { animation: hxShake .35s ease; }
+@keyframes hxShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+.hx-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 10px; border: 0;
+  font-size: 13px; font-weight: 650; color: #0b1220; cursor: pointer; background: linear-gradient(140deg, #fde68a, #f59e0b); }
+.hx-btn:hover { filter: brightness(1.05); }
+.hx-log { display: flex; flex-direction: column; }
+.hx-log-h { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: #7f8a99; margin: 4px 0 6px; }
+.hx-log-h span { color: #fbbf24; margin-left: 6px; }
+.hx-row { display: grid; grid-template-columns: 92px 1.1fr 84px 1.8fr; gap: 10px; align-items: baseline;
+  padding: 8px 0; border-bottom: 1px dashed rgba(148,163,184,.13); font-size: 12.5px; color: #a8b3c2; }
+.hx-d { color: #6b7686; font-variant-numeric: tabular-nums; }
+.hx-n { color: #e2e8f0; }
+.hx-h { font-variant-numeric: tabular-nums; font-weight: 700; }
+.hx-h.pos { color: #4ade80; } .hx-h.neg { color: #f87171; }
+.hx-empty { font-size: 12.5px; color: #6b7686; padding: 6px 0; }
+@media (max-width: 920px) { .hx-form { grid-template-columns: 1fr; } .hx-row { grid-template-columns: 80px 1fr 70px; } .hx-r { grid-column: 1 / -1; } }
+
+/* ── История корректировок в личном кабинете ─────────────────────────────── */
+.gs-adj-block { margin-top: 14px; padding: 16px 18px; border-radius: 14px; background: rgba(148,163,184,.05);
+  border: 1px solid rgba(148,163,184,.14); }
+.gs-adj-h { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #e2e8f0; margin-bottom: 8px; }
+.gs-adj-h i { color: #fbbf24; }
+.gs-adj-h span { margin-left: auto; font-size: 10.5px; color: #6b7686; }
+.gs-adj-row { display: grid; grid-template-columns: 82px 1.1fr 76px 1.8fr; gap: 9px; align-items: baseline;
+  padding: 6px 0; border-bottom: 1px dashed rgba(148,163,184,.12); font-size: 12px; color: #a8b3c2; }
+.gs-adj-d { color: #6b7686; font-variant-numeric: tabular-nums; }
+.gs-adj-n { color: #e2e8f0; }
+.gs-adj-h2 { font-variant-numeric: tabular-nums; }
+.gs-adj-h2.pos { color: #4ade80; } .gs-adj-h2.neg { color: #f87171; }
+.gs-adj-empty { font-size: 12px; color: #6b7686; }
+@media (max-width: 760px) { .gs-adj-row { grid-template-columns: 74px 1fr 66px; } .gs-adj-r { grid-column: 1 / -1; } }
