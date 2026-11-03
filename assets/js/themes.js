@@ -67,10 +67,10 @@ window.OTP_THEME = (function () {
   function seed() {
     parts = [];
     if (!type) return;
-    const n = type === "matrix" ? Math.ceil(w / 13) : type === "stars" ? 190 : type === "snow" ? 150 : 70;
+    const n = type === "matrix" ? Math.ceil(w / 8) : type === "stars" ? 190 : type === "snow" ? 150 : 70;
     for (let i = 0; i < n; i++) {
       const c = { x: rnd(0, w), y: rnd(0, h) };
-      if (type === "matrix") parts.push({ x: Math.floor(rnd(0, w / 13)) * 13, y: rnd(-h, h), v: rnd(1.6, 6), ch: Math.random() * 70 });
+      if (type === "matrix") parts.push({ x: Math.floor(rnd(0, w / 8)) * 8, y: rnd(-h, h), v: rnd(2.2, 9), ch: Math.random() * 70 });
       else if (type === "blocks") parts.push({ ...c, s: rnd(12, 30), v: rnd(.5, 1.8), rot: rnd(0, 6.28), vr: rnd(-.012, .012) });
       else if (type === "fire") parts.push({ ...c, r: rnd(.8, 2.6), vx: rnd(-.5, .5), vy: rnd(-2.4, -.6), life: rnd(.3, 1) });
       else if (type === "snow") parts.push({ ...c, y: rnd(-h, h), r: rnd(1, 3.4), vx: rnd(-.5, .5), vy: rnd(.5, 1.8), ph: rnd(0, 6.28) });
@@ -102,13 +102,19 @@ window.OTP_THEME = (function () {
   }
 
   function drawMatrix(dt) {
-    ctx.font = "15px 'JetBrains Mono', monospace";
+    // шлейф: не стираем кадр полностью, а заливаем полупрозрачной «тьмой» — символы тянутся вниз
+    ctx.fillStyle = type === "matrix" ? "rgba(1,7,4,.14)" : "rgba(0,0,0,0)";
+    if (type === "matrix") ctx.fillRect(0, 0, w, h);
+    ctx.font = "17px 'JetBrains Mono', monospace";
     for (const o of parts) {
       o.y += o.v * (dt / 16);
-      if (o.y > h + 24) { o.y = -24; o.x = Math.floor(rnd(0, w / 13)) * 13; o.v = rnd(1.6, 6); }
-      const a = Math.min(.8, .16 + (o.y / h) * .75);
-      ctx.fillStyle = `rgba(34,197,94,${a})`;
-      ctx.fillText(String.fromCharCode(0x30A0 + Math.floor((o.ch + o.y * .1) % 96)), o.x, o.y);
+      if (o.y > h + 26) { o.y = -26; o.x = Math.floor(rnd(0, w / 8)) * 8; o.v = rnd(2.2, 9); }
+      const a = Math.min(.95, .22 + (o.y / h) * .85);
+      ctx.fillStyle = `rgba(52,211,153,${a})`;
+      ctx.fillText(String.fromCharCode(0x30A0 + Math.floor((o.ch + o.y * .12) % 96)), o.x, o.y);
+      // яркая «голова» потока
+      ctx.fillStyle = `rgba(220,255,235,${Math.min(.9, a)})`;
+      ctx.fillText(String.fromCharCode(0x30A0 + Math.floor((o.ch + o.y * .12 + 3) % 96)), o.x, o.y + 17);
     }
   }
 
@@ -215,7 +221,7 @@ window.OTP_THEME = (function () {
   function frame(ts) {
     if (!ctx) return;
     const dt = Math.min(48, ts - (lastTs || ts)); lastTs = ts;
-    ctx.clearRect(0, 0, w, h);
+    if (type !== "matrix") ctx.clearRect(0, 0, w, h);
     switch (type) {
       case "robots": drawRobots(dt); break;
       case "matrix": drawMatrix(dt); break;
