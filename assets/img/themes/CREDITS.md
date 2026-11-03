@@ -6,7 +6,7 @@
 | Тема | Файл | Лицензия | Автор | Страница |
 |---|---|---|---|---|
 | minecraft | `theme-minecraft.png` | Public domain | User:MCGAMER YOUTUBE (page does not exist) | https://commons.wikimedia.org/wiki/File:Minecraft-creeper-face.svg |
-| skyrim | `theme-skyrim.png` | CC BY 4.0 | Celina A. Suarez​, Joseph Frederickson, Richard L. Cifelli,  | https://commons.wikimedia.org/wiki/File:Paarthurnax.jpg |
+| skyrim | `theme-skyrim.png` | см. страницу файла | The Elder Scrolls V: Skyrim logo | https://commons.wikimedia.org/wiki/File:Skyrim_logo.png |
 | cs16 | `theme-cs16.png` | Public domain | Valve Corperation | https://commons.wikimedia.org/wiki/File:Counter-Strike_CS_logo.svg |
 | anime | `theme-anime.png` | CC BY 3.0 | User:Niabot | https://commons.wikimedia.org/wiki/File:Anime_Girl.svg |
 | synthwave | `theme-synthwave.png` | CC BY-SA 3.0 | <a rel="nofollow" class="external text" href="https://web.ar | https://commons.wikimedia.org/wiki/File:Synthwave_cyberspace_sunset_(low_res).jpg |
