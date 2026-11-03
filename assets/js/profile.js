@@ -1902,7 +1902,7 @@
         <p class="set-sub">Тема меняет фон, элементы, иконки и эмблему, а также свою анимацию. Выбор персональный — у коллег останутся их настройки.</p>
         <div class="set-grid set-grid-themes" id="set-themes">
           ${themes.map((x) => `<button class="set-opt set-theme-card${st.theme === x.id ? " is-on" : ""}" data-theme-id="${x.id}">
-            <span class="set-thumb th-${x.id}">${x.emblem ? `<img src="${T.img(x.emblem)}" alt="">` : `<span class="set-thumb-fx"></span>`}</span>
+            <span class="set-thumb th-${x.id}">${(x.figures && x.figures[0]) ? `<img src="${T.img(x.figures[0])}" alt="">` : `<span class="set-thumb-fx"></span>`}</span>
             <b>${x.label}</b><i>${x.hint}</i>
             <i class="ph-bold ph-check-circle set-tick"></i></button>`).join("")}
         </div>

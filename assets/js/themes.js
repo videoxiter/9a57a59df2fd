@@ -16,18 +16,18 @@ window.OTP_THEME = (function () {
     { id: "classic",   label: "Классическая",  hint: "как сейчас",              anim: null,     accent: "#fbbf24" },
     { id: "light",     label: "Светлая",       hint: "белый фон, тёмный текст", anim: null,     accent: "#b45309" },
     { id: "dark",      label: "Тёмная",        hint: "глубокий космос",         anim: "stars",  accent: "#a5b4fc" },
-    { id: "robots",    label: "Роботы",        hint: "дроиды и искры",          anim: "robots", accent: "#67e8f9", emblem: "theme-robots.png" },
-    { id: "matrix",    label: "Матрица",       hint: "видео-заставка",          anim: null, video: "matrix.mp4", accent: "#22c55e" },
-    { id: "minecraft", label: "Minecraft",     hint: "блоки и крипер",          anim: "blocks", accent: "#4ade80", emblem: "theme-minecraft.png" },
-    { id: "mk",        label: "Mortal Kombat", hint: "арена и дракон",          anim: "fire",   accent: "#f97316", emblem: "mk-dragon.png" },
-    { id: "skyrim",    label: "TES Skyrim",    hint: "снег и руны",             anim: "snow",   accent: "#93c5fd", emblem: "theme-skyrim.png" },
-    { id: "anime",     label: "Аниме",         hint: "сакура и чиби",           anim: "petals", accent: "#f9a8d4", emblem: "theme-anime.png" },
-    { id: "cs16",      label: "CS 1.6",        hint: "dust и прицел",           anim: "tracer", accent: "#facc15", emblem: "theme-cs16.png" },
-    { id: "synthwave", label: "Synthwave",     hint: "сетка и закат",           anim: "grid",   accent: "#f472b6", emblem: "theme-synthwave.png" },
-    { id: "cyberpunk", label: "Cyberpunk",     hint: "неон и дождь",            anim: "neon",   accent: "#22d3ee", emblem: "theme-cyberpunk.png" },
-    { id: "space",     label: "Космос",        hint: "звёзды и туманности",     anim: "stars",  accent: "#c4b5fd", emblem: "theme-space.png" },
-    { id: "winter",    label: "Зима",          hint: "снегопад",                anim: "snow",   accent: "#bae6fd", emblem: "theme-winter.png" },
-    { id: "ocean",     label: "Океан",         hint: "волны и блики",           anim: "waves",  accent: "#38bdf8", emblem: "theme-ocean.png" },
+    { id: "robots",    label: "Роботы",        hint: "дроиды и искры",          anim: "robots", accent: "#67e8f9", figures: ["fig-robots-1.png", "fig-robots-2.png", "fig-robots-3.png"] },
+    { id: "matrix",    label: "Матрица",       hint: "видео-заставка",          anim: null, video: "matrix.mp4", accent: "#22c55e", figures: ["fig-matrix-1.gif"] },
+    { id: "minecraft", label: "Minecraft",     hint: "блоки и крипер",          anim: "blocks", accent: "#4ade80", figures: ["theme-minecraft.png"] },
+    { id: "mk",        label: "Mortal Kombat", hint: "арена и дракон",          anim: "fire",   accent: "#f97316", figures: ["mk-dragon.png"] },
+    { id: "skyrim",    label: "TES Skyrim",    hint: "снег и руны",             anim: "snow",   accent: "#93c5fd", figures: ["theme-skyrim.png"] },
+    { id: "anime",     label: "Аниме",         hint: "сакура и чиби",           anim: "petals", accent: "#f9a8d4", figures: ["fig-anime-1.png", "fig-anime-2.svg", "fig-anime-3.svg", "theme-anime.png"] },
+    { id: "cs16",      label: "CS 1.6",        hint: "dust и прицел",           anim: "tracer", accent: "#facc15", figures: ["theme-cs16.png"] },
+    { id: "synthwave", label: "Synthwave",     hint: "сетка и закат",           anim: "grid",   accent: "#f472b6", figures: ["theme-synthwave.png"] },
+    { id: "cyberpunk", label: "Cyberpunk",     hint: "неон и дождь",            anim: "neon",   accent: "#22d3ee", figures: ["theme-cyberpunk.png"] },
+    { id: "space",     label: "Космос",        hint: "звёзды и туманности",     anim: "stars",  accent: "#c4b5fd", figures: ["theme-space.png"] },
+    { id: "winter",    label: "Зима",          hint: "снегопад",                anim: "snow",   accent: "#bae6fd", figures: ["theme-winter.png"] },
+    { id: "ocean",     label: "Океан",         hint: "волны и блики",           anim: "waves",  accent: "#38bdf8", figures: ["theme-ocean.png"] },
   ];
 
   const get = () => {
@@ -199,7 +199,7 @@ window.OTP_THEME = (function () {
     for (const o of parts) {
       const y = o.y + Math.sin(t * o.sp + o.ph) * o.amp;
       const g = ctx.createLinearGradient(0, y - 40, 0, y + 40);
-      g.addColorStop(0, "rgba(56,189,248,0)"); g.addColorStop(.5, "rgba(56,189,248,.10)"); g.addColorStop(1, "rgba(14,116,144,0)");
+      g.addColorStop(0, "rgba(56,189,248,0)"); g.addColorStop(.5, "rgba(56,189,248,.045)"); g.addColorStop(1, "rgba(14,116,144,0)");
       ctx.fillStyle = g; ctx.fillRect(0, y - 40, w, 80);
     }
   }
@@ -273,19 +273,29 @@ window.OTP_THEME = (function () {
     }
   }
 
+  /* Фигура темы на фоне: на каждой странице — своя (выбор по адресу страницы) */
+  function figureFor(th) {
+    const list = th.figures || [];
+    if (!list.length) return null;
+    const pth = location.pathname + location.search;
+    let h = 0;
+    for (let i = 0; i < pth.length; i++) h = (h * 31 + pth.charCodeAt(i)) % 100000;
+    return list[h % list.length];
+  }
   function setEmblem(th) {
-    let el = document.getElementById("otp-theme-emblem");
-    if (th.emblem) {
-      if (!el) {
-        el = document.createElement("img");
-        el.id = "otp-theme-emblem";
-        el.setAttribute("aria-hidden", "true");
-        el.alt = "";
-        document.body.appendChild(el);
-      }
-      el.src = IMG(th.emblem);
-      el.dataset.theme = th.id;
-    } else if (el) el.remove();
+    let el = document.getElementById("otp-theme-figure");
+    const file = figureFor(th);
+    if (!file) { if (el) el.remove(); return; }
+    if (!el) {
+      el = document.createElement("img");
+      el.id = "otp-theme-figure";
+      el.setAttribute("aria-hidden", "true");
+      el.alt = "";
+      document.body.appendChild(el);
+    }
+    const src = IMG(file);
+    if (el.dataset.src !== src) { el.src = src; el.dataset.src = src; }
+    el.dataset.theme = th.id;
   }
 
   function apply(next) {
