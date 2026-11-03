@@ -186,7 +186,8 @@ function themeIcon(key) {
   const id = THEME_FILES[th];
   const idx = THEME_SEC_IDX[key];
   if (!id || idx === undefined) return null;
-  return SITE_ROOT + "assets/img/themes/fig4-" + id + "-" + (idx + 1) + ".svg";
+  const base = location.pathname.replace(/team\/[^/]+\/([a-z]+\/)?$/, "");
+  return base + "assets/img/themes/fig4-" + id + "-" + (idx + 1) + ".svg";
 }
 function robotMenuHtml() {
     return `<div class="robot-menu" data-reveal>
