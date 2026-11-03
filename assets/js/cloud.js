@@ -124,7 +124,15 @@ window.OTP_CLOUD = (function () {
       }
       if (c.provider === "supabase" && c.url && c.key) {
         const t = c.table || "otp_requests";
-        const rows = list.map(encodeRow);
+        // PostgREST требует одинаковый набор ключей во всех объектах пачки —
+        // иначе 400 PGRST102 «All object keys must match» (например, когда есть корректировки часов без from/to)
+        const norm = (arr) => {
+          const rows0 = arr.map(encodeRow);
+          const keys = new Set();
+          rows0.forEach((r) => Object.keys(r).forEach((k) => keys.add(k)));
+          return rows0.map((r) => { const o = {}; keys.forEach((k) => { o[k] = r[k] === undefined ? null : r[k]; }); return o; });
+        };
+        const rows = norm(list);
         let resp = await fetch(`${c.url.replace(/\/$/, "")}/rest/v1/${t}`, {
           method: "POST",
           headers: { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json",
@@ -137,7 +145,7 @@ window.OTP_CLOUD = (function () {
             method: "POST",
             headers: { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json",
                        Prefer: "resolution=merge-duplicates,return=minimal" },
-            body: JSON.stringify(list.map(encodeRow)),
+            body: JSON.stringify(norm(list)),
           });
         }
         return resp.ok;
