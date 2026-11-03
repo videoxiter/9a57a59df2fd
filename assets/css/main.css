@@ -2277,3 +2277,9 @@ html[data-theme="light"] .inc-kpi-row b.pos, html[data-theme="light"] .hx-h.pos,
 html[data-theme="light"] .inc-ex-total b { color: #15803d !important; }
 html[data-theme="light"] .inc-kpi-row b.neg, html[data-theme="light"] .hx-h.neg { color: #b91c1c !important; }
 html[data-theme="light"] .otp-modal-box { background: #fff; color: #16202f; }
+
+html[data-theme="light"] .rb-btn, html[data-theme="light"] .rb-btn *, html[data-theme="light"] .rb-tx,
+html[data-theme="light"] .rb-tx b, html[data-theme="light"] .rb-tx i { color: #16202f !important; }
+html[data-theme="light"] th, html[data-theme="light"] th span, html[data-theme="light"] thead span,
+html[data-theme="light"] .gs-vac-table thead, html[data-theme="light"] .gs-vac-table thead * { color: #5b6779 !important; }
+html[data-theme="light"] .rb-btn.is-now, html[data-theme="light"] .rb-btn.is-now * { color: #b45309 !important; }
