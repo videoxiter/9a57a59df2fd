@@ -28,6 +28,7 @@ SECTIONS = [
     ("stats", "Статистика", "ph-chart-line", "динамика и детализация"),
     ("income", "Карта доходов", "ph-coins", "из чего складывается доход"),
     ("rules", "Правила", "ph-book-open", "как всё устроено"),
+    ("links", "Ссылки", "ph-link", "сервисы и инструменты"),
     ("settings", "Настройки", "ph-sliders", "тема, фон и анимация"),
 ]
 
@@ -117,7 +118,7 @@ TEMPLATE = """<!DOCTYPE html>
 </html>
 """
 
-V = "136"
+V = "137"
 
 
 def secnav_html(rel, active):

@@ -173,12 +173,13 @@
     { key: "stats", label: "Статистика", icon: "ph-chart-line", note: "динамика и детализация" },
     { key: "income", label: "Карта доходов", icon: "ph-coins", note: "из чего складывается доход" },
     { key: "rules", label: "Правила", icon: "ph-book-open", note: "как всё устроено" },
+    { key: "links", label: "Ссылки", icon: "ph-link", note: "сервисы и инструменты" },
     { key: "settings", label: "Настройки", icon: "ph-sliders", note: "тема, фон и анимация" },
   ];
   const NAV = window.OTP_NAV || {};
   const navHref = (key) => NAV[key] || (key === "bonus" ? "./" : key + "/");
 
-  const THEME_SEC_IDX = { bonus: 0, income: 1, lvl: 2, awards: 3, growth: 4, stats: 5, rules: 6, settings: 7, graph: 8 };
+  const THEME_SEC_IDX = { bonus: 0, income: 1, lvl: 2, awards: 3, growth: 4, stats: 5, rules: 6, links: 7, settings: 8, graph: 9 };
 const THEME_FILES = { robots: "robots", matrix: "matrix", minecraft: "minecraft", mk: "mk", skyrim: "skyrim",
   anime: "anime", cs16: "cs16", synthwave: "synthwave", cyberpunk: "cyberpunk", space: "space", winter: "winter", ocean: "ocean" };
 
@@ -1914,6 +1915,37 @@ function robotMenuHtml() {
 
 
   /* ---------- Настройки: тема + анимация ---------- */
+
+  function sectionLinks() {
+    const L = D.links || [];
+    if (!L.length) return `<section class="p-sec"><p class="muted">Список ссылок ещё не заполнен.</p></section>`;
+    const groups = [];
+    L.forEach((x) => {
+      let g = groups.find((y) => y.name === x.group);
+      if (!g) { g = { name: x.group, items: [] }; groups.push(g); }
+      g.items.push(x);
+    });
+    const card = (x) => `<a class="link-card" href="${x.url}" target="_blank" rel="noopener noreferrer" title="${escHtml(x.desc)}">
+        <span class="link-ic"><img src="${imgUrl("assets/img/links/" + x.icon + ".svg")}" alt="" loading="lazy" width="44" height="44"></span>
+        <span class="link-tx">
+          <b class="link-title">${escHtml(x.title)}</b>
+          <span class="link-desc">${escHtml(x.desc)}</span>
+          <span class="link-host">${escHtml(new URL(x.url).hostname)}</span>
+        </span>
+        <span class="link-go"><i class="ph-bold ph-arrow-up-right"></i></span>
+      </a>`;
+    const groupsHtml = groups.map((g) => `<div class="link-group" data-reveal>
+        <h3 class="link-group-h"><i class="ph-bold ph-folder-open"></i> ${escHtml(g.name)}</h3>
+        <div class="link-grid">${g.items.map(card).join("")}</div>
+      </div>`).join("");
+    return `<section class="p-sec">
+      <div class="p-sec-head"><h2><i class="ph-bold ph-link"></i> Ссылки</h2>
+        <span class="p-sec-hint">${L.length} сервисов · открываются в новой вкладке</span></div>
+      <p class="muted" style="margin:-6px 0 18px">Рабочие ресурсы отдела: заявки, знания, мониторинг, доступы, ИИ и личные сервисы.</p>
+      ${groupsHtml}
+    </section>`;
+  }
+
   function sectionSettings() {
     const T = window.OTP_THEME;
     const st = T ? T.get() : { theme: "classic", animOn: true };
@@ -1978,7 +2010,7 @@ function robotMenuHtml() {
     });
   }
 
-  const RENDER = { bonus: sectionBonus, income: sectionIncome, lvl: sectionLvl, awards: sectionAwards, growth: sectionGrowth, graph: sectionGraph, stats: sectionStats, rules: sectionRules, settings: sectionSettings };
+  const RENDER = { bonus: sectionBonus, income: sectionIncome, lvl: sectionLvl, awards: sectionAwards, growth: sectionGrowth, graph: sectionGraph, stats: sectionStats, rules: sectionRules, links: sectionLinks, settings: sectionSettings };
   root.innerHTML = heroHtml() + (RENDER[SECTION] || sectionBonus)();
 
   /* ---------- общие обработчики ---------- */

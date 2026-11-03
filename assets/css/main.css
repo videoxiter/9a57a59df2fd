@@ -2316,3 +2316,25 @@ html[data-theme="ocean"] .award-tile .medal {
   border-color: color-mix(in srgb, var(--accent) 55%, transparent);
   box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--accent) 55%, transparent), inset 0 0 12px color-mix(in srgb, var(--accent) 18%, transparent);
 }
+
+/* Раздел «Ссылки» */
+.link-group { margin-bottom: 26px; }
+.link-group-h { display: flex; align-items: center; gap: 8px; font-size: .86rem; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--muted); margin: 0 0 12px; }
+.link-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+.link-card { display: flex; align-items: flex-start; gap: 14px; padding: 16px;
+  border-radius: 16px; border: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--card-2), var(--card));
+  text-decoration: none; color: inherit; position: relative;
+  transition: transform .2s var(--ease), border-color .2s, box-shadow .2s; }
+.link-card:hover { transform: translateY(-3px); border-color: var(--accent-dim);
+  box-shadow: 0 12px 30px -18px rgba(0,0,0,.8); }
+.link-ic { flex: 0 0 44px; }
+.link-ic img { width: 44px; height: 44px; display: block; border-radius: 12px; }
+.link-tx { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.link-title { font-size: .92rem; font-weight: 650; color: var(--text); }
+.link-card:hover .link-title { color: var(--accent); }
+.link-desc { font-size: .74rem; line-height: 1.35; color: var(--muted); }
+.link-host { font-family: var(--font-mono); font-size: .66rem; color: var(--accent-dim); opacity: .85; }
+.link-go { position: absolute; top: 12px; right: 12px; color: var(--muted); opacity: .6; font-size: .9rem; }
+.link-card:hover .link-go { color: var(--accent); opacity: 1; }
