@@ -379,7 +379,19 @@
           <div class="a-when">${months && months.length ? "Получена: " + months.join(", ") : "Ещё не получена"}</div>
         </div>
       </div>`;
-    const book = awardsCatalog.map((g) => bookCard(g, !!earnedIds.has(g.id), (empAwards.find((a) => a.id === g.id) || {}).months)).join("");
+    /* «Хранитель времени» — автоматическая награда по итогам года:
+       нет подтверждённых увольнительных и отгулов + есть накопленные часы. */
+    const yearNow = String(new Date().getFullYear());
+    const hasAbsence = myRequests().some((r) => r.status === "approved" &&
+      (r.type === "leave" || r.type === "dayoff") && String(r.date || "").startsWith(yearNow));
+    const balNow = hoursBalance();
+    const timeKeeper = !hasAbsence && balNow.balance > 0;
+    if (timeKeeper) earnedIds.add("time_keeper");
+    const monthsOf = (g) => {
+      if (g.id === "time_keeper" && timeKeeper) return [`итоги ${yearNow} года`];
+      return (empAwards.find((a) => a.id === g.id) || {}).months;
+    };
+    const book = awardsCatalog.map((g) => bookCard(g, !!earnedIds.has(g.id), monthsOf(g))).join("");
     const accumulated = empAwards.map((a) => bookCard(a, true, a.months)).join("");
 
     const praises = emp.praise || [];
@@ -731,7 +743,7 @@
     const cat = (id) => award(awardsCatalog.find((a) => a.id === id));
     const autoAwards = ["legend", "pro", "growing", "starter"].map(cat).join("");
     const metricAwards = ["top", "perfect", "quality", "learning", "initiative", "engagement", "discipline"].map(cat).join("");
-    const manualAwards = ["breakthrough", "stability", "hero", "changer", "seller", "budget"].map(cat).join("");
+    const manualAwards = ["breakthrough", "stability", "hero", "changer", "seller", "budget", "ai_leader"].map(cat).join("");
 
     return [
       {
@@ -788,7 +800,8 @@
       },
       { chapter: "Глава 11", title: "Награды за KPI месяца", html: `<p>Эти четыре награды приходят автоматически по среднему KPI месяца — они же дают звёзды за новые награды.</p>${autoAwards}` },
       { chapter: "Глава 12", title: "Награды за метрики и лидерство", html: `<p>Эти награды отмечают результат по конкретным метрикам и место в рейтинге месяца.</p>${metricAwards}` },
-      { chapter: "Глава 13", title: "Награды за поступки и пользу отделу", html: `<p>Эти награды не считаются по формулам — их отмечает руководитель за конкретные дела месяца.</p>${manualAwards}` },
+      { chapter: "Глава 13", title: "Награды за поступки и пользу отделу", html: `<p>Эти награды не считаются по формулам — их отмечает руководитель за конкретные дела месяца.</p>${manualAwards}
+        <p class="bk-note">Отдельно по итогам: <b>«Хранитель времени»</b> — автоматическая награда тем, у кого за год нет увольнительных и отгулов и при этом есть накопленные часы; <b>«Лидер ИИ»</b> — тем, кто применяет ИИ в работе с ощутимым эффектом.</p>` },
       {
         chapter: "Глава 14", title: "Как заработать больше звёзд",
         html: `<ol class="bk-list">

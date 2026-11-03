@@ -198,6 +198,26 @@ window.OTP_DATA = {
       "motiv": "Найди способ сократить расходы отдела — экономия тоже победа."
     },
     {
+      "id": "ai_leader",
+      "icon": "ph-brain",
+      "title": "Лидер ИИ",
+      "desc": "Применяет искусственный интеллект в работе, и есть эффект в результате",
+      "color": "#c084fc",
+      "glyph": "🤖",
+      "manual": true,
+      "motiv": ""
+    },
+    {
+      "id": "time_keeper",
+      "icon": "ph-hourglass-high",
+      "title": "Хранитель времени",
+      "desc": "Год без увольнительных и отгулов, при этом есть накопленные часы",
+      "color": "#38bdf8",
+      "glyph": "⏳",
+      "auto": true,
+      "motiv": ""
+    },
+    {
       "id": "praise",
       "icon": "ph-megaphone",
       "title": "Похвала от ИТ Директора",
