@@ -93,7 +93,7 @@ RE_AWARDS_OT = re.compile(
     r"^\s*награды[^\n:]*?:\s*(?P<list>.+)$", re.I)
 # денежные строки: «▸ 3 000 руб. — текст», «+5240 - текст», «▸ 100 руб. - текст»
 RE_MONEY_ANY = re.compile(
-    r"^\s*(?:▸|•|\+|—|-)?\s*(?P<amt>\d[\d\s\u00a0]{0,12})\s*(?:руб|₽)?\s*[—–-]\s*(?P<txt>.+)$", re.I)
+    r"^\s*(?:▸|•|·)?\s*(?P<amt>[+\-−]?\s*\d[\d\s\u00a0]{0,12})\s*(?:руб\.?|₽)?\s*[—–-]\s*(?P<txt>.+)$", re.I)
 
 SEC_STRENGTH = re.compile(
     r"^\s*(?:(?:✅|💪|🔥)\s*что\s+(?:получилось|получается)\s+круто|!\s*достоинства и сильные стороны\s*!|достоинства и сильные стороны)",
@@ -393,20 +393,48 @@ def parse_block(block):
         if key not in seen_money:
             seen_money.add(key)
             out["money"].append({"amount": num(amt), "text": txt.strip().rstrip(";")})
-    # строки детализации без «руб» (например «+5240 - Замещение …») — только если в них нет «/10»
-    if len(out["money"]) < 3:
-        for line in block.split("\n"):
-            head = line.strip()
-            if not head or "/10" in head or "Звёзд от" in head:
-                continue
-            mm = RE_MONEY_ANY.match(head)
-            if mm:
-                amt = num(mm.group("amt"))
-                txt = mm.group("txt").strip().rstrip(";")
-                key = (amt, txt[:40])
-                if amt >= 50 and key not in seen_money:
-                    seen_money.add(key)
-                    out["money"].append({"amount": amt, "text": txt})
+    # строки детализации без «руб» (например «+5240 - Замещение …») — собираем ВСЕГДА:
+    # старый лимит «< 3» терял бонусы вида «+2000 - компенсация ИИ» и суммы по «Тании»
+    container_amt = None
+    children = []
+    for line in block.split("\n"):
+        head = line.strip()
+        if not head or "/10" in head or "Звёзд от" in head:
+            continue
+        low = head.lower()
+        if low.startswith(("kpi", "бонусы за", "итоги за")):
+            continue
+        mm = RE_MONEY_ANY.match(head)
+        if not mm:
+            continue
+        amt = num(mm.group("amt"))
+        txt = mm.group("txt").strip().rstrip(";")
+        key = (amt, txt[:40])
+        if amt < 50:
+            continue
+        is_child = head.startswith("•")
+        if is_child and container_amt is not None:
+            # подпункт внутри «N руб. — Точечные решения:» — не суммируем отдельно
+            children.append((amt, txt, key))
+            continue
+        if not is_child:
+            if children:
+                # закрываем предыдущий контейнер: если подпункты в сумме = контейнеру — они лишь расшифровка
+                if sum(c[0] for c in children) != container_amt:
+                    for c_amt, c_txt, c_key in children:
+                        if c_key not in seen_money:
+                            seen_money.add(c_key)
+                            out["money"].append({"amount": c_amt, "text": c_txt})
+                children = []
+            container_amt = amt if txt.endswith(":") else None
+        if key not in seen_money:
+            seen_money.add(key)
+            out["money"].append({"amount": amt, "text": txt})
+    if children and sum(c[0] for c in children) != container_amt:
+        for c_amt, c_txt, c_key in children:
+            if c_key not in seen_money:
+                seen_money.add(c_key)
+                out["money"].append({"amount": c_amt, "text": c_txt})
 
     # чистим: не отдаём пустые поля, чтобы мёрж не затирал уже собранные данные
     cleaned = {}

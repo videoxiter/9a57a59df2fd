@@ -229,9 +229,21 @@ function robotMenuHtml() {
   function monthAt(key) { return history.findIndex((h) => h.key === key); }
 
   /* ================= РАЗДЕЛ: БОНУСЫ ================= */
+
+  // Строки бонусов + «Прочее», если сумма детализации не сходится с итогом месяца
+  function moneyRows(cur) {
+    const items = ((cur && cur.money) || []).slice();
+    const sum = items.reduce((s, b) => s + (b.amount || 0), 0);
+    const total = cur && cur.bonus;
+    if (total != null && Math.abs(total - sum) >= 1) {
+      items.push({ amount: total - sum, text: "Прочее — в итогах не расписано отдельной строкой", other: true });
+    }
+    return items;
+  }
+
   function sectionBonus() {
     const cur = history[selected] || {};
-    const money = cur.money || [];
+    const money = moneyRows(cur);
     const bonus = cur.bonus;
     const strengths = cur.strengths || [];
     const growth = cur.growth || [];
@@ -1035,6 +1047,7 @@ function robotMenuHtml() {
       ["today", "Сегодня", "ph-calendar-check"],
       ["tomorrow", "На завтра", "ph-calendar-plus"],
       ["week", "На неделю", "ph-calendar-dots"],
+      ["prev", "Прошлый месяц", "ph-calendar-minus"],
       ["month", "Текущий месяц", "ph-calendar-blank"],
       ["next", "Следующий месяц", "ph-calendar-star"],
     ];
@@ -1102,6 +1115,7 @@ function robotMenuHtml() {
     const today = new Date();
     const isoMonthOf = (period) => {
       if (period === "next") { const d = new Date(today.getFullYear(), today.getMonth() + 1, 1); return isoOf(d); }
+      if (period === "prev") { const d = new Date(today.getFullYear(), today.getMonth() - 1, 1); return isoOf(d); }
       return isoOf(today);
     };
 
@@ -2059,7 +2073,7 @@ function robotMenuHtml() {
 
     renderTips(cur);
 
-    const money = cur.money || [];
+    const money = moneyRows(cur);
     const it = document.getElementById("bonus-items");
     if (it) it.innerHTML = money.length
       ? money.map((b) => `<div class="bonus-item"><span class="amt">+${otp.fmt(b.amount)} ₽</span><div><div class="d">${b.text}</div>${tickets(b.text).length ? `<div class="v">${tLinks(b.text)}</div>` : ""}</div></div>`).join("")
@@ -2327,8 +2341,8 @@ function robotMenuHtml() {
         radar.update();
       }
       const dm = document.getElementById("detail-money");
-      if (dm) dm.innerHTML = (cur.money || []).length
-        ? (cur.money || []).map((b) => `<div class="bonus-item"><span class="amt">+${otp.fmt(b.amount)} ₽</span><div><div class="d">${b.text}</div>${tickets(b.text).length ? `<div class="v">${tLinks(b.text)}</div>` : ""}</div></div>`).join("") + `<div class="dm-total">Итого: <b>${cur.bonus != null ? otp.rub(cur.bonus) : "—"}</b></div>`
+      if (dm) dm.innerHTML = moneyRows(cur).length
+        ? moneyRows(cur).map((b) => `<div class="bonus-item"><span class="amt">+${otp.fmt(b.amount)} ₽</span><div><div class="d">${b.text}</div>${tickets(b.text).length ? `<div class="v">${tLinks(b.text)}</div>` : ""}</div></div>`).join("") + `<div class="dm-total">Итого: <b>${cur.bonus != null ? otp.rub(cur.bonus) : "—"}</b></div>`
         : `<p class="muted">Детализация за ${cur.month} — в процессе разработки.</p>`;
       const da = document.getElementById("detail-awards");
       if (da) da.innerHTML = (cur.awards || []).length ? (cur.awards || []).map((x) => awardTile(x)).join("") : '<p class="muted">Наград за этот месяц нет.</p>';
