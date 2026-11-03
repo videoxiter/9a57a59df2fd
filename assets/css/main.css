@@ -2030,3 +2030,10 @@ html[data-theme="cyberpunk"] .p-sec-head h2 { text-shadow: 0 0 22px var(--th-acc
 .th-winter::after { background-image: radial-gradient(rgba(255,255,255,.7) 1px, transparent 1.4px); background-size: 15px 15px; opacity: .45; }
 .th-ocean { background: linear-gradient(180deg, #0a3d55, #03121c 65%, #01070b); }
 .th-ocean::after { background: repeating-radial-gradient(circle at 50% 120%, rgba(56,189,248,.25) 0 2px, transparent 2px 18px); }
+
+/* видео-фон темы (Матрица) */
+#otp-bg-video { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  z-index: 1; pointer-events: none; opacity: .55; filter: saturate(1.15) contrast(1.05);
+  transition: opacity .5s ease; }
+html[data-theme="matrix"] header.nav, html[data-theme="matrix"] main { background-color: transparent; }
+html[data-theme="matrix"] body { background: #010604; }

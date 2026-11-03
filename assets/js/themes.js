@@ -17,7 +17,7 @@ window.OTP_THEME = (function () {
     { id: "light",     label: "Светлая",       hint: "белый фон, тёмный текст", anim: null,     accent: "#b45309" },
     { id: "dark",      label: "Тёмная",        hint: "глубокий космос",         anim: "stars",  accent: "#a5b4fc" },
     { id: "robots",    label: "Роботы",        hint: "дроиды и искры",          anim: "robots", accent: "#67e8f9" },
-    { id: "matrix",    label: "Матрица",       hint: "пелена цифр",             anim: "matrix", accent: "#22c55e" },
+    { id: "matrix",    label: "Матрица",       hint: "видео-заставка",          anim: null, video: "matrix.mp4", accent: "#22c55e" },
     { id: "minecraft", label: "Minecraft",     hint: "блоки и крипер",          anim: "blocks", accent: "#4ade80", emblem: "minecraft-creeper.svg" },
     { id: "mk",        label: "Mortal Kombat", hint: "арена и дракон",          anim: "fire",   accent: "#f97316", emblem: "mk-dragon.svg" },
     { id: "skyrim",    label: "TES Skyrim",    hint: "снег и руны",             anim: "snow",   accent: "#93c5fd", emblem: "skyrim-seal.svg" },
@@ -252,6 +252,27 @@ window.OTP_THEME = (function () {
     if (canvas) { canvas.remove(); canvas = null; ctx = null; }
   }
 
+  /* видео-фон для темы (лежит в assets/video/) */
+  function setVideo(name) {
+    let v = document.getElementById("otp-bg-video");
+    if (name) {
+      if (!v) {
+        v = document.createElement("video");
+        v.id = "otp-bg-video";
+        v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true;
+        v.setAttribute("aria-hidden", "true");
+        document.body.appendChild(v);
+      }
+      const src = IMG(name).replace("assets/img/themes/", "assets/video/");
+      if (v.dataset.src !== src) { v.src = src; v.dataset.src = src; }
+      v.play().catch(() => {});
+      document.documentElement.classList.add("otp-video-on");
+    } else if (v) {
+      v.pause(); v.remove();
+      document.documentElement.classList.remove("otp-video-on");
+    }
+  }
+
   function setEmblem(th) {
     let el = document.getElementById("otp-theme-emblem");
     if (th.emblem) {
@@ -275,8 +296,12 @@ window.OTP_THEME = (function () {
     document.body.dataset.theme = th.id;
     document.documentElement.style.setProperty("--th-accent", th.accent || "#fbbf24");
     setEmblem(th);
-    if (state.animOn && th.anim) startAnim(th.anim);
-    else stopAnim();
+    if (state.animOn && th.video) { setVideo(th.video); stopAnim(); }
+    else {
+      setVideo(null);
+      if (state.animOn && th.anim) startAnim(th.anim);
+      else stopAnim();
+    }
     window.dispatchEvent(new CustomEvent("otp-theme", { detail: state }));
     return state;
   }
