@@ -163,12 +163,20 @@ window.OTP_CLOUD = (function () {
     // считается удалённым и больше не воскрешается (иначе удалённые заявки висят вечно).
     const FRESH_MS = 15 * 60 * 1000;
     const now = Date.now();
+    // Запись, созданная ДО последней успешной синхронизации, но отсутствующая в облаке,
+    // считается удалённой. Это закрывает лазейку «воскрешения»: раньше удалённая запись
+    // могла вернуться, если браузер успевал залить её обратно в течение 15 минут.
+    const lastSync = +(localStorage.getItem(SYNC_KEY) || 0);
     const remoteIds = new Set((remote || []).map((r) => r.id));
-    const local = loadLocal().filter((r) => remoteIds.has(r.id) ||
-      (now - Date.parse(r.created || 0) < FRESH_MS));
+    const local = loadLocal().filter((r) => {
+      if (remoteIds.has(r.id)) return true;
+      const born = Date.parse(r.created || 0) || 0;
+      return lastSync ? born > lastSync : (now - born < FRESH_MS);
+    });
     const merged = merge(local, remote);
     saveLocal(merged);
     await put(merged);
+    try { localStorage.setItem(SYNC_KEY, String(Date.now())); } catch (e) {}
     return { online: true, list: merged };
   }
 
