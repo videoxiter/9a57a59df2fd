@@ -118,7 +118,7 @@ TEMPLATE = """<!DOCTYPE html>
 </html>
 """
 
-V = "138"
+V = "139"
 
 
 def secnav_html(rel, active):
@@ -148,6 +148,7 @@ def main():
             "awardsCatalog": data["awardsCatalog"],
             "rules": data.get("rules", {}),
             "bonusRules": data.get("bonusRules", []),
+            "links": data.get("links", []),
             "months": data["months"],
             "totalEmployees": len(data["employees"]),
             "team": data.get("team", {}),
