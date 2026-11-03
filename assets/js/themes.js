@@ -19,7 +19,7 @@ window.OTP_THEME = (function () {
     { id: "robots",    label: "Роботы",        hint: "дроиды и искры",          anim: "robots", accent: "#67e8f9" },
     { id: "matrix",    label: "Матрица",       hint: "видео-заставка",          anim: null, video: "matrix.mp4", accent: "#22c55e" },
     { id: "minecraft", label: "Minecraft",     hint: "блоки и крипер",          anim: "blocks", accent: "#4ade80", emblem: "minecraft-creeper.svg" },
-    { id: "mk",        label: "Mortal Kombat", hint: "арена и дракон",          anim: "fire",   accent: "#f97316", emblem: "mk-dragon.svg" },
+    { id: "mk",        label: "Mortal Kombat", hint: "арена и дракон",          anim: "fire",   accent: "#f97316", emblem: "mk-dragon.png" },
     { id: "skyrim",    label: "TES Skyrim",    hint: "снег и руны",             anim: "snow",   accent: "#93c5fd", emblem: "skyrim-seal.svg" },
     { id: "anime",     label: "Аниме",         hint: "сакура и чиби",           anim: "petals", accent: "#f9a8d4", emblem: "anime-chan.svg" },
     { id: "cs16",      label: "CS 1.6",        hint: "dust и прицел",           anim: "tracer", accent: "#facc15", emblem: "cs-crosshair.svg" },
