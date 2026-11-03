@@ -24,3 +24,17 @@
 ## Видео
 
 `assets/video/matrix.mp4` — сгенерировано скриптом `scripts/generate_matrix_video.py` (без сторонних материалов).
+
+## Фигуры на фоне (прозрачный PNG/SVG)
+
+| Файл | Источник (Wikimedia Commons) |
+|---|---|
+| `fig-robots-1.png` | File:ARCMate100iB transparent.png |
+| `fig-robots-2.png` | File:Robot animation yellow front view.png |
+| `fig-robots-3.png` | File:Rocket bot yellow robot animation left side.png |
+| `fig-anime-1.png` | File:AnimeGirlXzit.png |
+| `fig-anime-2.svg` | File:Colored Figure in Manga style by Steven (Transparent).svg |
+| `fig-anime-3.svg` | File:Chibi anime child.svg |
+| `fig-matrix-1.gif` | File:Matrix Digital rain banner.gif |
+
+Лицензии и авторы — на страницах файлов в Commons (CC BY / CC BY-SA / Public Domain).
