@@ -1283,12 +1283,12 @@
         /* Начисления и списания часов руководителем — историю видят все сотрудники */
         const adjBox = document.getElementById("gs-adj");
         if (adjBox) {
-          const adj = loadReqs().filter((r) => r.type === "adjust" && r.status === "approved")
+          const adj = loadReqs().filter((r) => r.type === "adjust" && r.status === "approved" && r.empSlug === ME_SLUG)
             .sort((a, b) => String(b.created || "").localeCompare(String(a.created || ""))).slice(0, 30);
           const escA = (s) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
           adjBox.innerHTML = `<div class="gs-adj-block">
-            <div class="gs-adj-h"><i class="ph-bold ph-receipt"></i> Часы: начисления и списания руководителя
-              <span>видно всем сотрудникам</span></div>
+            <div class="gs-adj-h"><i class="ph-bold ph-receipt"></i> Начисления и списания часов
+              <span>только по тебе</span></div>
             ${adj.length ? adj.map((r) => {
               const h = +r.hours || 0;
               return `<div class="gs-adj-row">
@@ -1297,7 +1297,7 @@
                 <b class="gs-adj-h2 ${h >= 0 ? "pos" : "neg"}">${h >= 0 ? "+" : "−"}${fmtH(Math.abs(h))}</b>
                 <span class="gs-adj-r">${escA(r.reason || "")}</span>
               </div>`;
-            }).join("") : `<div class="gs-adj-empty">Пока нет начислений или списаний.</div>`}
+            }).join("") : `<div class="gs-adj-empty">По тебе пока нет начислений или списаний.</div>`}
           </div>`;
         }
         hist.querySelectorAll("[data-copy]").forEach((b2) => b2.addEventListener("click", () => {
