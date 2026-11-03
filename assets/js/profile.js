@@ -183,6 +183,7 @@ const THEME_FILES = { robots: "robots", matrix: "matrix", minecraft: "minecraft"
   anime: "anime", cs16: "cs16", synthwave: "synthwave", cyberpunk: "cyberpunk", space: "space", winter: "winter", ocean: "ocean" };
 function themeIcon(key) {
   const th = document.documentElement.getAttribute("data-theme") || "classic";
+  if (window.__DBG_ICON !== false) { window.__DBG_ICON = false; console.log("ICONDBG", th, key); }
   const id = THEME_FILES[th];
   const idx = THEME_SEC_IDX[key];
   if (!id || idx === undefined) return null;
