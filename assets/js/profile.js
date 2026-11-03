@@ -1041,8 +1041,8 @@
       <details class="gs-hist">
         <summary><i class="ph-bold ph-clock-counter-clockwise"></i> История заявок <span class="muted" id="gs-req-count"></span><i class="ph-bold ph-caret-down gs-hist-ar"></i></summary>
         <div id="gs-history"></div>
-        <div id="gs-adj"></div>
       </details>
+      <div id="gs-adj"></div>
     </section>
 
     <div class="otp-modal" id="gs-modal" hidden>
