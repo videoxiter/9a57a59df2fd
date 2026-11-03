@@ -274,7 +274,7 @@ window.OTP_THEME = (function () {
   }
 
   /* Фигура темы на фоне: на каждой странице — своя (выбор по адресу страницы) */
-  const SECTIONS = ["", "bonus", "income", "lvl", "awards", "growth", "stats", "rules", "settings", "graph"];
+  const SECTIONS = ["", "income", "lvl", "awards", "growth", "stats", "rules", "settings", "graph"];
   function figureFor(th) {
     const list = th.figures || [];
     if (!list.length) return null;
