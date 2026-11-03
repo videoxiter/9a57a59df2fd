@@ -580,55 +580,51 @@
   }
 
 
-  /* ---------- Настройки (для страницы /settings/) ---------- */
+  /* ---------- Настройки (страница /settings/) ---------- */
   function renderSettings() {
     const box = $("#settings-panel");
     const T = window.OTP_THEME;
     if (!box || !T) return;
     const st = T.get();
-    const opt = (x, on, attr) => `<button class="set-opt${on ? " is-on" : ""}" data-${attr}="${x.id}">
-      <i class="ph-bold ph-check-circle set-tick"></i><b>${x.label}</b><i>${x.hint}</i></button>`;
+    const cur = T.themeOf(st.theme);
     box.innerHTML = `<div class="set-wrap">
       <section class="set-block">
         <div class="set-h"><i class="ph-bold ph-palette"></i><h3>Тема оформления</h3></div>
-        <p class="set-sub">Персонально для твоего браузера — у сотрудников останутся их настройки.</p>
-        <div class="set-grid" id="set-themes">${T.themes.map((x) => opt(x, st.theme === x.id, "theme-id")).join("")}</div>
+        <p class="set-sub">Тема меняет фон, элементы, иконки, эмблему и включает свою анимацию. Настройка личная — у сотрудников свои темы.</p>
+        <div class="set-grid set-grid-themes" id="set-themes">
+          ${T.themes.map((x) => `<button class="set-opt set-theme-card${st.theme === x.id ? " is-on" : ""}" data-theme-id="${x.id}">
+            <span class="set-thumb th-${x.id}">${x.emblem ? `<img src="${T.img(x.emblem)}" alt="">` : `<span class="set-thumb-fx"></span>`}</span>
+            <b>${x.label}</b><i>${x.hint}</i>
+            <i class="ph-bold ph-check-circle set-tick"></i></button>`).join("")}
+        </div>
       </section>
       <section class="set-block">
-        <div class="set-h"><i class="ph-bold ph-sparkle"></i><h3>Анимация и фон</h3></div>
-        <p class="set-sub">Живой фон: роботы, матрица, игры или световые эффекты.</p>
-        <label class="set-row"><input type="checkbox" id="set-anim-on"${st.animOn ? " checked" : ""}><span>Включить анимацию фона</span></label>
-        <div class="set-grid" id="set-anims">${T.anims.map((x) => opt(x, st.animType === x.id && st.animOn, "anim-id")).join("")}</div>
+        <div class="set-h"><i class="ph-bold ph-sparkle"></i><h3>Анимация</h3></div>
+        <p class="set-sub">У каждой темы своя постоянная анимация на фоне — она не перекрывает текст.</p>
+        <label class="set-row"><input type="checkbox" id="set-anim-on"${st.animOn ? " checked" : ""}>
+          <span>Включить анимацию фона${cur && cur.anim ? " — " + cur.label : ""}</span></label>
         <div class="set-foot"><button class="set-btn ghost" id="set-reset"><i class="ph-bold ph-arrow-counter-clockwise"></i> Сбросить к классической</button></div>
       </section>
     </div>`;
-    const mark = (sel, attr, val) => {
-      document.querySelectorAll(sel + " .set-opt").forEach((b) => b.classList.remove("is-on"));
-      const on = document.querySelector(`${sel} .set-opt[data-${attr}="${val}"]`);
-      if (on) on.classList.add("is-on");
-    };
     document.querySelectorAll("#set-themes .set-opt").forEach((b) =>
-      b.addEventListener("click", () => { T.setTheme(b.dataset.themeId); mark("#set-themes", "theme-id", b.dataset.themeId); }));
-    const chk = $("#set-anim-on");
-    document.querySelectorAll("#set-anims .set-opt").forEach((b) =>
       b.addEventListener("click", () => {
-        T.setAnim(true, b.dataset.animId);
-        if (chk) chk.checked = true;
-        mark("#set-anims", "anim-id", b.dataset.animId);
+        T.setTheme(b.dataset.themeId);
+        document.querySelectorAll("#set-themes .set-opt").forEach((x) => x.classList.remove("is-on"));
+        b.classList.add("is-on");
+        const th = T.themeOf(b.dataset.themeId);
+        const lbl = document.querySelector("#set-anim-on + span");
+        if (lbl) lbl.textContent = "Включить анимацию фона" + (th.anim ? " — " + th.label : "");
+        const chk = $("#set-anim-on"); if (chk) chk.checked = T.get().animOn;
       }));
-    if (chk) chk.addEventListener("change", () => {
-      const s2 = T.get();
-      T.setAnim(chk.checked, s2.animType);
-      document.querySelectorAll("#set-anims .set-opt").forEach((x) => x.classList.toggle("is-dim", !chk.checked));
-      if (chk.checked) mark("#set-anims", "anim-id", s2.animType);
-    });
+    const chk = $("#set-anim-on");
+    if (chk) chk.addEventListener("change", () => T.setAnim(chk.checked));
     const reset = $("#set-reset");
     if (reset) reset.addEventListener("click", () => {
-      T.apply({ theme: "classic", animOn: true, animType: "aurora" });
-      mark("#set-themes", "theme-id", "classic");
-      mark("#set-anims", "anim-id", "aurora");
+      T.apply({ theme: "classic", animOn: true });
+      document.querySelectorAll("#set-themes .set-opt").forEach((x) => x.classList.remove("is-on"));
+      const c = document.querySelector('#set-themes .set-opt[data-theme-id="classic"]');
+      if (c) c.classList.add("is-on");
       if (chk) chk.checked = true;
-      document.querySelectorAll("#set-anims .set-opt").forEach((x) => x.classList.remove("is-dim"));
     });
   }
 

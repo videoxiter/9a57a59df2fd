@@ -1889,41 +1889,39 @@
   }
 
 
-  /* ---------- Настройки: тема, фон, анимация ---------- */
+  /* ---------- Настройки: тема + анимация ---------- */
   function sectionSettings() {
     const T = window.OTP_THEME;
-    const st = T ? T.get() : { theme: "classic", animOn: true, animType: "aurora" };
+    const st = T ? T.get() : { theme: "classic", animOn: true };
     const themes = (T && T.themes) || [];
-    const anims = (T && T.anims) || [];
+    const cur = T ? T.themeOf(st.theme) : null;
     return `
     <div class="set-wrap">
       <section class="set-block" data-reveal>
         <div class="set-h"><i class="ph-bold ph-palette"></i><h3>Тема оформления</h3></div>
-        <p class="set-sub">Выбирается персонально и сохраняется в этом браузере. Влияет только на твой кабинет.</p>
-        <div class="set-grid" id="set-themes">
-          ${themes.map((x) => `<button class="set-opt${st.theme === x.id ? " is-on" : ""}" data-theme-id="${x.id}">
-            <i class="ph-bold ph-check-circle set-tick"></i><b>${x.label}</b><i>${x.hint}</i></button>`).join("")}
+        <p class="set-sub">Тема меняет фон, элементы, иконки и эмблему, а также свою анимацию. Выбор персональный — у коллег останутся их настройки.</p>
+        <div class="set-grid set-grid-themes" id="set-themes">
+          ${themes.map((x) => `<button class="set-opt set-theme-card${st.theme === x.id ? " is-on" : ""}" data-theme-id="${x.id}">
+            <span class="set-thumb th-${x.id}">${x.emblem ? `<img src="${T.img(x.emblem)}" alt="">` : `<span class="set-thumb-fx"></span>`}</span>
+            <b>${x.label}</b><i>${x.hint}</i>
+            <i class="ph-bold ph-check-circle set-tick"></i></button>`).join("")}
         </div>
       </section>
 
       <section class="set-block" data-reveal>
-        <div class="set-h"><i class="ph-bold ph-sparkle"></i><h3>Анимация и фон</h3></div>
-        <p class="set-sub">Живой фон с частицами, роботами или тематикой игры. Можно выключить в любой момент.</p>
+        <div class="set-h"><i class="ph-bold ph-sparkle"></i><h3>Анимация</h3></div>
+        <p class="set-sub">У каждой темы своя постоянная анимация на фоне. Она не перекрывает текст и элементы.</p>
         <label class="set-row"><input type="checkbox" id="set-anim-on"${st.animOn ? " checked" : ""}>
-          <span>Включить анимацию фона</span></label>
-        <div class="set-grid" id="set-anims">
-          ${anims.map((x) => `<button class="set-opt${st.animType === x.id && st.animOn ? " is-on" : ""}${st.animOn ? "" : " is-dim"}" data-anim-id="${x.id}">
-            <i class="ph-bold ph-check-circle set-tick"></i><b>${x.label}</b><i>${x.hint}</i></button>`).join("")}
-        </div>
+          <span>Включить анимацию фона${cur && cur.anim ? " — " + cur.label : ""}</span></label>
         <div class="set-foot"><button class="set-btn ghost" id="set-reset"><i class="ph-bold ph-arrow-counter-clockwise"></i> Сбросить к классической</button></div>
       </section>
 
       <section class="set-block" data-reveal>
         <div class="set-h"><i class="ph-bold ph-info"></i><h3>Как это работает</h3></div>
         <ul class="inc-list">
-          <li>Настройки хранятся в твоём браузере — у коллег останутся свои.</li>
-          <li>Темы меняют фон и акценты, а анимация рисуется поверх фона и не мешает читать текст.</li>
-          <li>Если устройство слабое — выключи анимацию, интерфейс останется прежним.</li>
+          <li>Настройки хранятся в браузере — у каждого сотрудника свои.</li>
+          <li>Темы: классическая, светлая, тёмная и 12 тематических с эмблемами и анимацией.</li>
+          <li>Анимация рисуется позади интерфейса. На слабом устройстве её можно выключить.</li>
         </ul>
       </section>
     </div>`;
@@ -1932,38 +1930,27 @@
   function initSettings() {
     const T = window.OTP_THEME;
     if (!T) return;
-    const mark = (sel, attr, val) => {
-      document.querySelectorAll(sel + " .set-opt").forEach((b) => b.classList.remove("is-on"));
-      const on = document.querySelector(`${sel} .set-opt[data-${attr}="${val}"]`);
-      if (on) on.classList.add("is-on");
-    };
     document.querySelectorAll("#set-themes .set-opt").forEach((b) => {
-      b.addEventListener("click", () => { T.setTheme(b.dataset.themeId); mark("#set-themes", "theme-id", b.dataset.themeId); });
-    });
-    const chk = document.getElementById("set-anim-on");
-    document.querySelectorAll("#set-anims .set-opt").forEach((b) => {
       b.addEventListener("click", () => {
-        const st = T.get();
-        T.setAnim(true, b.dataset.animId);
-        if (chk) chk.checked = true;
-        mark("#set-anims", "anim-id", b.dataset.animId);
-        document.querySelectorAll("#set-anims .set-opt").forEach((x) => x.classList.remove("is-dim"));
+        T.setTheme(b.dataset.themeId);
+        document.querySelectorAll("#set-themes .set-opt").forEach((x) => x.classList.remove("is-on"));
+        b.classList.add("is-on");
+        const chk = document.getElementById("set-anim-on");
+        if (chk) chk.checked = T.get().animOn;
+        const th = T.themeOf(b.dataset.themeId);
+        const lbl = document.querySelector("#set-anim-on + span");
+        if (lbl) lbl.textContent = "Включить анимацию фона" + (th.anim ? " — " + th.label : "");
       });
     });
-    if (chk) chk.addEventListener("change", () => {
-      const st = T.get();
-      T.setAnim(chk.checked, st.animType);
-      document.querySelectorAll("#set-anims .set-opt").forEach((x) => x.classList.toggle("is-dim", !chk.checked));
-      if (!chk.checked) document.querySelectorAll("#set-anims .set-opt").forEach((x) => x.classList.remove("is-on"));
-      else mark("#set-anims", "anim-id", st.animType);
-    });
+    const chk = document.getElementById("set-anim-on");
+    if (chk) chk.addEventListener("change", () => T.setAnim(chk.checked));
     const reset = document.getElementById("set-reset");
     if (reset) reset.addEventListener("click", () => {
-      T.apply({ theme: "classic", animOn: true, animType: "aurora" });
-      mark("#set-themes", "theme-id", "classic");
-      mark("#set-anims", "anim-id", "aurora");
+      T.apply({ theme: "classic", animOn: true });
+      document.querySelectorAll("#set-themes .set-opt").forEach((x) => x.classList.remove("is-on"));
+      const c = document.querySelector('#set-themes .set-opt[data-theme-id="classic"]');
+      if (c) c.classList.add("is-on");
       if (chk) chk.checked = true;
-      document.querySelectorAll("#set-anims .set-opt").forEach((x) => x.classList.remove("is-dim"));
     });
   }
 

@@ -17,7 +17,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DASH = os.path.join(ROOT, "1bceb335668c")
 SRC = os.path.join(DASH, "index.html")
 SOURCE = os.path.join(ROOT, "scripts", "dashboard_source.html")   # неизменный исходник секций
-V = "115"
+V = "116"
 
 PAGES = [
     ("", "Моя команда", "team", ["top", "best", "hr-sec", "hours", "rating"]),
@@ -134,7 +134,7 @@ def build_pages():
                     "https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js",
                     "https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"):
             body.append(f'  <script src="{cdn}"></script>')
-        for js in ("theme.js", "data.js", "common.js", "cloud.js", "hr.js", "main.js"):
+        for js in ("themes.js", "data.js", "common.js", "cloud.js", "hr.js", "main.js"):
             body.append(f'  <script src="{prefix}assets/js/{js}?v={V}"></script>')
         body.append("</body>\n</html>\n")
 

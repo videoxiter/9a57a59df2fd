@@ -111,13 +111,13 @@ TEMPLATE = """<!DOCTYPE html>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="__PREFIX__assets/js/common.js?v=__V__"></script>
   <script src="__PREFIX__assets/js/cloud.js?v=__V__"></script>
-  <script src="__PREFIX__assets/js/theme.js?v=__V__"></script>
+  <script src="__PREFIX__assets/js/themes.js?v=__V__"></script>
   <script src="__PREFIX__assets/js/profile.js?v=__V__"></script>
 </body>
 </html>
 """
 
-V = "115"
+V = "116"
 
 
 def secnav_html(rel, active):

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <g stroke="#facc15" stroke-width="3" fill="none" stroke-linecap="round">
+    <circle cx="100" cy="100" r="58" opacity=".55"/>
+    <path d="M100 26v34M100 140v34M26 100h34M140 100h34"/>
+    <path d="M64 64l14 14M136 64l-14 14M64 136l14-14M136 136l-14-14" opacity=".5"/>
+  </g>
+  <circle cx="100" cy="100" r="4" fill="#facc15"/>
+  <g fill="#facc15" opacity=".85" font-family="monospace" font-size="14">
+    <text x="16" y="30">CS 1.6</text>
+  </g>
+</svg>

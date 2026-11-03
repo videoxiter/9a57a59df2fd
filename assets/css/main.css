@@ -1966,3 +1966,64 @@ html[data-theme="cs16"] .inc-hero, html[data-theme="cs16"] .inc-result { border-
   color: #0b1220; background: linear-gradient(140deg, #fde68a, #f59e0b); }
 .set-btn.ghost { background: rgba(148,163,184,.12); color: var(--th-text, #cbd5e1); border: 1px solid rgba(148,163,184,.24); }
 @media (max-width: 720px) { .set-grid { grid-template-columns: 1fr 1fr; } }
+
+/* ── Темы v2: эмблемы, превью, акценты ───────────────────────────────────── */
+#otp-theme-emblem { position: fixed; right: 18px; bottom: 18px; width: 240px; height: 240px; object-fit: contain;
+  opacity: .11; z-index: 0; pointer-events: none; }
+@media (max-width: 900px) { #otp-theme-emblem { width: 150px; height: 150px; opacity: .09; } }
+
+/* фоны тем */
+html[data-theme="robots"] body { background: radial-gradient(120% 100% at 50% 0%, #04141c 0%, #030a10 60%, #010508 100%); }
+html[data-theme="cyberpunk"] body { background: radial-gradient(110% 100% at 80% 0%, #08131f 0%, #06101a 55%, #03070c 100%); }
+html[data-theme="space"] body { background: radial-gradient(120% 120% at 30% 10%, #0b0a1f 0%, #06050f 55%, #020106 100%); }
+html[data-theme="winter"] body { background: linear-gradient(180deg, #0b1a2a 0%, #0a1420 55%, #050a10 100%); }
+html[data-theme="ocean"] body { background: linear-gradient(180deg, #041a26 0%, #03121c 55%, #01070b 100%); }
+html[data-theme="synthwave"] body { background: linear-gradient(180deg, #1a0620 0%, #12061f 45%, #070310 100%); }
+
+/* акценты элементов по теме */
+html[data-theme] .sec-chip i, html[data-theme] .p-sec-head h2 i, html[data-theme] .inc-eyebrow i,
+html[data-theme] .set-h i, html[data-theme] .rb-btn i, html[data-theme] .card .ic i,
+html[data-theme] .award-tile .a-t i, html[data-theme] .nav-logo .dot i { color: var(--th-accent, #fbbf24); }
+html[data-theme] .sec-chip.is-now { border-color: var(--th-accent, #fbbf24) !important;
+  box-shadow: 0 0 20px -6px var(--th-accent, #fbbf24); }
+html[data-theme] .sec-chip:hover { border-color: var(--th-accent, #fbbf24); }
+html[data-theme] .p-sec-head h2 { text-shadow: 0 0 26px rgba(0,0,0,.35); }
+html[data-theme="matrix"] .p-sec-head h2, html[data-theme="mk"] .p-sec-head h2,
+html[data-theme="cyberpunk"] .p-sec-head h2 { text-shadow: 0 0 22px var(--th-accent); }
+
+/* карточки тем с превью */
+.set-grid-themes { grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); }
+.set-theme-card { padding: 0 12px 12px; overflow: hidden; }
+.set-thumb { position: relative; display: block; height: 88px; margin: 0 -12px 10px; overflow: hidden;
+  border-bottom: 1px solid rgba(148,163,184,.18); }
+.set-thumb img { position: absolute; right: 10px; bottom: 6px; height: 70px; width: 70px; object-fit: contain; }
+.set-thumb-fx { position: absolute; inset: 0; }
+.set-thumb::after { content: ""; position: absolute; inset: 0; pointer-events: none; }
+.th-classic { background: linear-gradient(160deg, #141a26, #070a10); }
+.th-light { background: linear-gradient(160deg, #ffffff, #e8eef7); }
+.th-dark { background: radial-gradient(120% 120% at 30% 0%, #101329, #04050a); }
+.th-robots { background: radial-gradient(120% 120% at 50% 0%, #06202a, #010a0f); }
+.th-matrix { background: linear-gradient(180deg, #04170c, #010604); }
+.th-matrix::after { background: repeating-linear-gradient(90deg, rgba(34,197,94,.22) 0 1px, transparent 1px 8px),
+  repeating-linear-gradient(180deg, rgba(34,197,94,.10) 0 1px, transparent 1px 12px); }
+.th-minecraft { background: linear-gradient(160deg, #2f9e44 0 40%, #123a1f 40%, #0a1c10 100%); }
+.th-minecraft::after { background-image:
+  linear-gradient(90deg, rgba(0,0,0,.18) 1px, transparent 1px), linear-gradient(0deg, rgba(0,0,0,.18) 1px, transparent 1px);
+  background-size: 16px 16px; }
+.th-mk { background: radial-gradient(120% 120% at 50% 120%, #7c2d12 0%, #2a0a06 60%, #0b0202 100%); }
+.th-skyrim { background: linear-gradient(180deg, #0d1d31, #06101c 70%, #030811); }
+.th-skyrim::after { background-image: radial-gradient(rgba(255,255,255,.5) .8px, transparent 1px); background-size: 11px 11px; opacity: .5; }
+.th-anime { background: linear-gradient(160deg, #f9a8d4 0%, #7c3a68 55%, #2a1230 100%); }
+.th-cs16 { background: linear-gradient(160deg, #3f3212 0%, #241a0c 55%, #0e0a06 100%); }
+.th-synthwave { background: linear-gradient(180deg, #2a0a3a 0%, #6b1d5c 45%, #f472b6 100%); }
+.th-synthwave::after { background-image: linear-gradient(90deg, rgba(255,255,255,.25) 1px, transparent 1px),
+  linear-gradient(0deg, rgba(255,255,255,.25) 1px, transparent 1px); background-size: 14px 14px;
+  mask-image: linear-gradient(180deg, transparent 30%, #000 100%); }
+.th-cyberpunk { background: linear-gradient(160deg, #062a35, #04121a 60%, #010609); }
+.th-cyberpunk::after { background: repeating-linear-gradient(0deg, rgba(34,211,238,.22) 0 1px, transparent 1px 6px); }
+.th-space { background: radial-gradient(120% 120% at 30% 20%, #171436, #05040f 65%, #010106); }
+.th-space::after { background-image: radial-gradient(#fff 1px, transparent 1px); background-size: 24px 24px; opacity: .35; }
+.th-winter { background: linear-gradient(180deg, #16324a, #0a1420 70%, #050a10); }
+.th-winter::after { background-image: radial-gradient(rgba(255,255,255,.7) 1px, transparent 1.4px); background-size: 15px 15px; opacity: .45; }
+.th-ocean { background: linear-gradient(180deg, #0a3d55, #03121c 65%, #01070b); }
+.th-ocean::after { background: repeating-radial-gradient(circle at 50% 120%, rgba(56,189,248,.25) 0 2px, transparent 2px 18px); }
