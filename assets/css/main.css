@@ -2037,3 +2037,24 @@ html[data-theme="cyberpunk"] .p-sec-head h2 { text-shadow: 0 0 22px var(--th-acc
   transition: opacity .5s ease; }
 html[data-theme="matrix"] header.nav, html[data-theme="matrix"] main { background-color: transparent; }
 html[data-theme="matrix"] body { background: #010604; }
+
+/* Читаемость поверх анимации/видео: панели плотнее, фон видео приглушён */
+html[data-theme="matrix"] #otp-bg-video { opacity: .30; filter: brightness(.72) contrast(1.12); }
+html[data-theme="matrix"] main { background: rgba(1, 7, 4, .30); }
+html[data-anim] .card, html[data-anim] .p-sec, html[data-anim] .inc-block, html[data-anim] .inc-hero,
+html[data-anim] .inc-card, html[data-anim] .inc-calc, html[data-anim] .award-tile, html[data-anim] .req-row,
+html[data-anim] .gs-h-card, html[data-anim] .book-frame, html[data-anim] .set-block, html[data-anim] .hx-wrap,
+html[data-anim] .hero, html[data-anim] .my-awards, html[data-anim] .rec-card, html[data-anim] .inc-ex {
+  backdrop-filter: blur(5px) saturate(.92); -webkit-backdrop-filter: blur(5px) saturate(.92);
+}
+html[data-theme="matrix"] .hero, html[data-theme="matrix"] .card, html[data-theme="matrix"] .p-sec,
+html[data-theme="matrix"] .inc-block, html[data-theme="matrix"] .inc-hero, html[data-theme="matrix"] .inc-card,
+html[data-theme="matrix"] .inc-calc, html[data-theme="matrix"] .inc-result, html[data-theme="matrix"] .award-tile,
+html[data-theme="matrix"] .req-row, html[data-theme="matrix"] .gs-hours, html[data-theme="matrix"] .gs-h-card,
+html[data-theme="matrix"] .book-frame, html[data-theme="matrix"] .set-block, html[data-theme="matrix"] .hx-wrap,
+html[data-theme="matrix"] .my-awards, html[data-theme="matrix"] .rec-card, html[data-theme="matrix"] .inc-ex,
+html[data-theme="matrix"] .gs-adj-block, html[data-theme="matrix"] .hot-block, html[data-theme="matrix"] .lb-row {
+  background: rgba(2, 13, 8, .92) !important;
+  border-color: rgba(34, 197, 94, .22) !important;
+}
+html[data-theme="matrix"] .p-nav { background: rgba(2, 13, 8, .95) !important; }
