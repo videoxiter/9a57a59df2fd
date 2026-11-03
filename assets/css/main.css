@@ -2287,9 +2287,10 @@ html[data-theme="light"] .rb-btn.is-now, html[data-theme="light"] .rb-btn.is-now
 
 /* Фигура темы на фоне (крупная, справа, прозрачный PNG) */
 #otp-theme-figure { position: fixed; right: 0; bottom: 0; height: 66vh; max-height: 640px;
-  width: auto; max-width: 60vw; object-fit: contain; z-index: 1; pointer-events: none;
-  opacity: .30; filter: drop-shadow(0 18px 40px rgba(0,0,0,.55)) brightness(1.18) contrast(1.05); transition: opacity .4s ease; }
-html[data-theme="light"] #otp-theme-figure { opacity: .26; }
+  width: auto; max-width: 60vw; object-fit: contain; z-index: 3; pointer-events: none;
+  opacity: .13; mix-blend-mode: screen;
+  filter: drop-shadow(0 18px 40px rgba(0,0,0,.55)) brightness(1.25) contrast(1.05); transition: opacity .4s ease; }
+html[data-theme="light"] #otp-theme-figure { opacity: .14; mix-blend-mode: multiply; filter: none; }
 html[data-theme="matrix"] #otp-theme-figure { opacity: .10; height: 78vh; right: -30px; }
-html[data-theme="robots"] #otp-theme-figure, html[data-theme="cyberpunk"] #otp-theme-figure { height: 70vh; opacity: .38; filter: drop-shadow(0 18px 40px rgba(0,0,0,.6)) brightness(1.35) saturate(1.1); }
+html[data-theme="robots"] #otp-theme-figure, html[data-theme="cyberpunk"] #otp-theme-figure { height: 70vh; opacity: .17; filter: drop-shadow(0 18px 40px rgba(0,0,0,.6)) brightness(1.4) saturate(1.15); }
 @media (max-width: 900px) { #otp-theme-figure { height: 42vh; opacity: .14; right: -50px; } }
