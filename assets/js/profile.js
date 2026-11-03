@@ -2034,6 +2034,7 @@ function robotMenuHtml() {
 
   function renderMonth(i) {
     const cur = history[i];
+    console.log("RMDBG", i, "len", history.length, "cur", !!cur, "awards", cur && (cur.awards || []).length, "el", !!document.getElementById("month-awards"));
     if (!cur) return;
     selected = i;
     const hasMk = MKEYS.every((k) => cur[k] != null);
