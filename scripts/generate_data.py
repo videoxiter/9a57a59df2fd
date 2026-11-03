@@ -1052,6 +1052,11 @@ def load_schedule():
             shifts[fio] = rec
         months[iso] = {"shifts": shifts, "lines": mm.get("lines", {}), "facts": mm.get("facts", [])}
 
+    # уволенные не должны попадать в график (остаются только в текстах Confluence)
+    left_surnames = {_surname(c["fullName"]) for _id, c in CONTENT.items() if c.get("status") == "left"}
+    for _iso, _mm in months.items():
+        _mm["shifts"] = {f: d for f, d in (_mm.get("shifts") or {}).items() if _surname(f) not in left_surnames}
+
     # действующие сотрудники — те, у кого есть смены в загруженных графиках;
     # уволенные (Лузянин и т.п.) остаются в графике отпусков Confluence, но нам не нужны
     active = set()
@@ -1071,6 +1076,8 @@ def load_schedule():
     vac_people = {_clean(f) for f in vac_people}
     people = []
     for fio in sorted(set(list((raw.get("months", {}).get("2026-10", {}).get("shifts") or {})) + list(vac_people))):
+        if _surname(fio) in left_surnames:
+            continue
         people.append({"fio": fio, "slug": to_slug(fio), "surname": _surname(fio)})
     return {"generated": raw.get("generated"), "legend": raw["legend"], "months": months,
             "vacations": raw.get("vacations", {}), "vacationYears": raw.get("vacationYears", []),
