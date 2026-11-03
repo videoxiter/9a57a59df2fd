@@ -66,6 +66,17 @@
           scrollTrigger: { trigger: el, start: "top 88%", once: true },
         });
     });
+    // страховка: элементы в первом экране показываем сразу, затем анимация на скролле
+    if (window.ScrollTrigger) ScrollTrigger.refresh();
+    setTimeout(() => {
+      gsap.utils.toArray("[data-reveal]", scope).forEach((el) => {
+        if (parseFloat(getComputedStyle(el).opacity) < 0.05
+            && el.getBoundingClientRect().top < window.innerHeight) {
+          el._revealed = true;
+          gsap.set(el, { opacity: 1, y: 0 });
+        }
+      });
+    }, 900);
   }
 
   /* ---------- nav ---------- */
