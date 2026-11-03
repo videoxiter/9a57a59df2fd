@@ -2225,6 +2225,8 @@ function robotMenuHtml() {
       if (!s.online) return;
       window.__reqsSynced = true;
       root.innerHTML = heroHtml() + sectionAwards();
+      initMonthTabs();
+      if (window.otp && otp.reveal) otp.reveal(document);
     });
   }
   if (SECTION === "lvl") { renderLvlTips(); initTips(); }
@@ -2447,13 +2449,17 @@ function robotMenuHtml() {
     el.innerHTML = `<div class="lb-podium-wrap">${podium}</div><div class="lb-list">${list}</div>${hint}${sub}`;
   }
 
-  renderMonth(selected);
-  // табы месяцев: навешиваем на любой странице, где они есть (раньше работали только на «Бонусах»)
-  const tabsBox = document.getElementById("month-tabs");
-  if (tabsBox) {
-    tabsBox.querySelectorAll(".month-tab").forEach((btn, i) =>
-      btn.addEventListener("click", () => { selected = i; renderMonth(i); }));
+  function initMonthTabs() {
+    renderMonth(selected);
+    const tabsBox = document.getElementById("month-tabs");
+    if (!tabsBox) return;
+    tabsBox.querySelectorAll(".month-tab").forEach((btn, i) => {
+      if (btn.dataset.bound) return;
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", () => { selected = i; renderMonth(i); });
+    });
   }
+  initMonthTabs();
   setTimeout(refreshSectionIcons, 60);
   setTimeout(refreshSectionIcons, 600);
   if (SECTION === "bonus") initTips();
