@@ -2448,6 +2448,12 @@ function robotMenuHtml() {
   }
 
   renderMonth(selected);
+  // табы месяцев: навешиваем на любой странице, где они есть (раньше работали только на «Бонусах»)
+  const tabsBox = document.getElementById("month-tabs");
+  if (tabsBox) {
+    tabsBox.querySelectorAll(".month-tab").forEach((btn, i) =>
+      btn.addEventListener("click", () => { selected = i; renderMonth(i); }));
+  }
   setTimeout(refreshSectionIcons, 60);
   setTimeout(refreshSectionIcons, 600);
   if (SECTION === "bonus") initTips();
