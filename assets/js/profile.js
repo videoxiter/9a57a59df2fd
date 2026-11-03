@@ -385,7 +385,8 @@
     const hasAbsence = myRequests().some((r) => r.status === "approved" &&
       (r.type === "leave" || r.type === "dayoff") && String(r.date || "").startsWith(yearNow));
     const balNow = hoursBalance();
-    const timeKeeper = !hasAbsence && balNow.balance > 0;
+    // без загруженных заявок судить нельзя: до синхронизации награду не показываем
+    const timeKeeper = !!window.__reqsSynced && !hasAbsence && balNow.balance > 0;
     if (timeKeeper) earnedIds.add("time_keeper");
     const monthsOf = (g) => {
       if (g.id === "time_keeper" && timeKeeper) return [`итоги ${yearNow} года`];
@@ -2078,6 +2079,13 @@
 
   /* ---------- раздел «Мой LVL»: график накопления звёзд ---------- */
   if (SECTION === "income") initIncome();
+  if (SECTION === "awards") {
+    syncReqs().then((s) => {
+      if (!s.online) return;
+      window.__reqsSynced = true;
+      root.innerHTML = heroHtml() + sectionAwards();
+    });
+  }
   if (SECTION === "lvl") { renderLvlTips(); initTips(); }
   if (SECTION === "graph") graphInit();
 
