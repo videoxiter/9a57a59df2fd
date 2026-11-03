@@ -68,15 +68,22 @@
     });
     // страховка: элементы в первом экране показываем сразу, затем анимация на скролле
     if (window.ScrollTrigger) ScrollTrigger.refresh();
-    setTimeout(() => {
+    // watchdog: любой блок, попавший в экран, показываем принудительно —
+    // иначе при неудачном ScrollTrigger блок остаётся прозрачным навсегда
+    const forceShow = () => {
       gsap.utils.toArray("[data-reveal]", scope).forEach((el) => {
-        if (parseFloat(getComputedStyle(el).opacity) < 0.05
-            && el.getBoundingClientRect().top < window.innerHeight) {
+        if (parseFloat(getComputedStyle(el).opacity) >= 0.05) return;
+        const r = el.getBoundingClientRect();
+        if (r.top < window.innerHeight - 20 && r.bottom > 0) {
           el._revealed = true;
           gsap.set(el, { opacity: 1, y: 0 });
         }
       });
-    }, 900);
+    };
+    window.addEventListener("scroll", forceShow, { passive: true });
+    setTimeout(forceShow, 900);
+    clearInterval(window.__otpRevealWatch);
+    window.__otpRevealWatch = setInterval(forceShow, 700);
   }
 
   /* ---------- nav ---------- */
