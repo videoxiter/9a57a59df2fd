@@ -2033,8 +2033,10 @@ function robotMenuHtml() {
   function onPickMonth(i) { selected = i; renderMonth(i); }
 
   function renderMonth(i) {
+    try { renderMonthInner(i); } catch (e) { console.error("RMERR", i, String(e && e.stack || e).slice(0, 400)); }
+  }
+  function renderMonthInner(i) {
     const cur = history[i];
-    console.log("RMDBG", i, "len", history.length, "cur", !!cur, "awards", cur && (cur.awards || []).length, "el", !!document.getElementById("month-awards"));
     if (!cur) return;
     selected = i;
     const hasMk = MKEYS.every((k) => cur[k] != null);
