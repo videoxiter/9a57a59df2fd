@@ -579,5 +579,60 @@
     drawRadar();
   }
 
+
+  /* ---------- Настройки (для страницы /settings/) ---------- */
+  function renderSettings() {
+    const box = $("#settings-panel");
+    const T = window.OTP_THEME;
+    if (!box || !T) return;
+    const st = T.get();
+    const opt = (x, on, attr) => `<button class="set-opt${on ? " is-on" : ""}" data-${attr}="${x.id}">
+      <i class="ph-bold ph-check-circle set-tick"></i><b>${x.label}</b><i>${x.hint}</i></button>`;
+    box.innerHTML = `<div class="set-wrap">
+      <section class="set-block">
+        <div class="set-h"><i class="ph-bold ph-palette"></i><h3>Тема оформления</h3></div>
+        <p class="set-sub">Персонально для твоего браузера — у сотрудников останутся их настройки.</p>
+        <div class="set-grid" id="set-themes">${T.themes.map((x) => opt(x, st.theme === x.id, "theme-id")).join("")}</div>
+      </section>
+      <section class="set-block">
+        <div class="set-h"><i class="ph-bold ph-sparkle"></i><h3>Анимация и фон</h3></div>
+        <p class="set-sub">Живой фон: роботы, матрица, игры или световые эффекты.</p>
+        <label class="set-row"><input type="checkbox" id="set-anim-on"${st.animOn ? " checked" : ""}><span>Включить анимацию фона</span></label>
+        <div class="set-grid" id="set-anims">${T.anims.map((x) => opt(x, st.animType === x.id && st.animOn, "anim-id")).join("")}</div>
+        <div class="set-foot"><button class="set-btn ghost" id="set-reset"><i class="ph-bold ph-arrow-counter-clockwise"></i> Сбросить к классической</button></div>
+      </section>
+    </div>`;
+    const mark = (sel, attr, val) => {
+      document.querySelectorAll(sel + " .set-opt").forEach((b) => b.classList.remove("is-on"));
+      const on = document.querySelector(`${sel} .set-opt[data-${attr}="${val}"]`);
+      if (on) on.classList.add("is-on");
+    };
+    document.querySelectorAll("#set-themes .set-opt").forEach((b) =>
+      b.addEventListener("click", () => { T.setTheme(b.dataset.themeId); mark("#set-themes", "theme-id", b.dataset.themeId); }));
+    const chk = $("#set-anim-on");
+    document.querySelectorAll("#set-anims .set-opt").forEach((b) =>
+      b.addEventListener("click", () => {
+        T.setAnim(true, b.dataset.animId);
+        if (chk) chk.checked = true;
+        mark("#set-anims", "anim-id", b.dataset.animId);
+      }));
+    if (chk) chk.addEventListener("change", () => {
+      const s2 = T.get();
+      T.setAnim(chk.checked, s2.animType);
+      document.querySelectorAll("#set-anims .set-opt").forEach((x) => x.classList.toggle("is-dim", !chk.checked));
+      if (chk.checked) mark("#set-anims", "anim-id", s2.animType);
+    });
+    const reset = $("#set-reset");
+    if (reset) reset.addEventListener("click", () => {
+      T.apply({ theme: "classic", animOn: true, animType: "aurora" });
+      mark("#set-themes", "theme-id", "classic");
+      mark("#set-anims", "anim-id", "aurora");
+      if (chk) chk.checked = true;
+      document.querySelectorAll("#set-anims .set-opt").forEach((x) => x.classList.remove("is-dim"));
+    });
+  }
+
+  renderSettings();
+
   otp.reveal(document);
 })();

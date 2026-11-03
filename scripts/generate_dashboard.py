@@ -17,7 +17,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DASH = os.path.join(ROOT, "1bceb335668c")
 SRC = os.path.join(DASH, "index.html")
 SOURCE = os.path.join(ROOT, "scripts", "dashboard_source.html")   # неизменный исходник секций
-V = "114"
+V = "115"
 
 PAGES = [
     ("", "Моя команда", "team", ["top", "best", "hr-sec", "hours", "rating"]),
@@ -25,9 +25,10 @@ PAGES = [
     ("people", "Специалисты", "users-three", ["team"]),
     ("duties", "График отдела", "calendar-check", ["duties"]),
     ("development", "Развитие отдела", "rocket-launch", ["grow"]),
+    ("settings", "Настройки", "sliders", ["settings"]),
 ]
 NAV_LABEL = {"": "Моя команда", "dynamics": "Динамика", "people": "Специалисты",
-             "duties": "График отдела", "development": "Развитие"}
+             "duties": "График отдела", "development": "Развитие", "settings": "Настройки"}
 
 BEST_SECTION = '''  <!-- ===== КТО ЛУЧШЕ ===== -->
   <section class="section" id="best" style="padding-top:8px">
@@ -133,7 +134,7 @@ def build_pages():
                     "https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js",
                     "https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"):
             body.append(f'  <script src="{cdn}"></script>')
-        for js in ("data.js", "common.js", "cloud.js", "hr.js", "main.js"):
+        for js in ("theme.js", "data.js", "common.js", "cloud.js", "hr.js", "main.js"):
             body.append(f'  <script src="{prefix}assets/js/{js}?v={V}"></script>')
         body.append("</body>\n</html>\n")
 

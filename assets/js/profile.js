@@ -14,7 +14,7 @@
   const filledMonths = history.map((h, i) => (monthHasData(h) ? i : -1)).filter((i) => i >= 0);
   let selected = filledMonths.length ? filledMonths[filledMonths.length - 1] : Math.max(0, history.length - 1);
 
-  const SECTION_TITLES = { bonus: "Бонусы", income: "Карта доходов", lvl: "Мой LVL", awards: "Награды", growth: "Мой рост", stats: "Статистика", rules: "Правила" };
+  const SECTION_TITLES = { bonus: "Бонусы", income: "Карта доходов", settings: "Настройки", lvl: "Мой LVL", awards: "Награды", growth: "Мой рост", stats: "Статистика", rules: "Правила" };
   document.title = `Мои результаты · ${SECTION_TITLES[SECTION] || ""} · ${emp.shortName}`;
 
   /* ---------- общие данные ---------- */
@@ -173,6 +173,7 @@
     { key: "stats", label: "Статистика", icon: "ph-chart-line", note: "динамика и детализация" },
     { key: "income", label: "Карта доходов", icon: "ph-coins", note: "из чего складывается доход" },
     { key: "rules", label: "Правила", icon: "ph-book-open", note: "как всё устроено" },
+    { key: "settings", label: "Настройки", icon: "ph-sliders", note: "тема, фон и анимация" },
   ];
   const NAV = window.OTP_NAV || {};
   const navHref = (key) => NAV[key] || (key === "bonus" ? "./" : key + "/");
@@ -1887,7 +1888,86 @@
     });
   }
 
-  const RENDER = { bonus: sectionBonus, income: sectionIncome, lvl: sectionLvl, awards: sectionAwards, growth: sectionGrowth, graph: sectionGraph, stats: sectionStats, rules: sectionRules };
+
+  /* ---------- Настройки: тема, фон, анимация ---------- */
+  function sectionSettings() {
+    const T = window.OTP_THEME;
+    const st = T ? T.get() : { theme: "classic", animOn: true, animType: "aurora" };
+    const themes = (T && T.themes) || [];
+    const anims = (T && T.anims) || [];
+    return `
+    <div class="set-wrap">
+      <section class="set-block" data-reveal>
+        <div class="set-h"><i class="ph-bold ph-palette"></i><h3>Тема оформления</h3></div>
+        <p class="set-sub">Выбирается персонально и сохраняется в этом браузере. Влияет только на твой кабинет.</p>
+        <div class="set-grid" id="set-themes">
+          ${themes.map((x) => `<button class="set-opt${st.theme === x.id ? " is-on" : ""}" data-theme-id="${x.id}">
+            <i class="ph-bold ph-check-circle set-tick"></i><b>${x.label}</b><i>${x.hint}</i></button>`).join("")}
+        </div>
+      </section>
+
+      <section class="set-block" data-reveal>
+        <div class="set-h"><i class="ph-bold ph-sparkle"></i><h3>Анимация и фон</h3></div>
+        <p class="set-sub">Живой фон с частицами, роботами или тематикой игры. Можно выключить в любой момент.</p>
+        <label class="set-row"><input type="checkbox" id="set-anim-on"${st.animOn ? " checked" : ""}>
+          <span>Включить анимацию фона</span></label>
+        <div class="set-grid" id="set-anims">
+          ${anims.map((x) => `<button class="set-opt${st.animType === x.id && st.animOn ? " is-on" : ""}${st.animOn ? "" : " is-dim"}" data-anim-id="${x.id}">
+            <i class="ph-bold ph-check-circle set-tick"></i><b>${x.label}</b><i>${x.hint}</i></button>`).join("")}
+        </div>
+        <div class="set-foot"><button class="set-btn ghost" id="set-reset"><i class="ph-bold ph-arrow-counter-clockwise"></i> Сбросить к классической</button></div>
+      </section>
+
+      <section class="set-block" data-reveal>
+        <div class="set-h"><i class="ph-bold ph-info"></i><h3>Как это работает</h3></div>
+        <ul class="inc-list">
+          <li>Настройки хранятся в твоём браузере — у коллег останутся свои.</li>
+          <li>Темы меняют фон и акценты, а анимация рисуется поверх фона и не мешает читать текст.</li>
+          <li>Если устройство слабое — выключи анимацию, интерфейс останется прежним.</li>
+        </ul>
+      </section>
+    </div>`;
+  }
+
+  function initSettings() {
+    const T = window.OTP_THEME;
+    if (!T) return;
+    const mark = (sel, attr, val) => {
+      document.querySelectorAll(sel + " .set-opt").forEach((b) => b.classList.remove("is-on"));
+      const on = document.querySelector(`${sel} .set-opt[data-${attr}="${val}"]`);
+      if (on) on.classList.add("is-on");
+    };
+    document.querySelectorAll("#set-themes .set-opt").forEach((b) => {
+      b.addEventListener("click", () => { T.setTheme(b.dataset.themeId); mark("#set-themes", "theme-id", b.dataset.themeId); });
+    });
+    const chk = document.getElementById("set-anim-on");
+    document.querySelectorAll("#set-anims .set-opt").forEach((b) => {
+      b.addEventListener("click", () => {
+        const st = T.get();
+        T.setAnim(true, b.dataset.animId);
+        if (chk) chk.checked = true;
+        mark("#set-anims", "anim-id", b.dataset.animId);
+        document.querySelectorAll("#set-anims .set-opt").forEach((x) => x.classList.remove("is-dim"));
+      });
+    });
+    if (chk) chk.addEventListener("change", () => {
+      const st = T.get();
+      T.setAnim(chk.checked, st.animType);
+      document.querySelectorAll("#set-anims .set-opt").forEach((x) => x.classList.toggle("is-dim", !chk.checked));
+      if (!chk.checked) document.querySelectorAll("#set-anims .set-opt").forEach((x) => x.classList.remove("is-on"));
+      else mark("#set-anims", "anim-id", st.animType);
+    });
+    const reset = document.getElementById("set-reset");
+    if (reset) reset.addEventListener("click", () => {
+      T.apply({ theme: "classic", animOn: true, animType: "aurora" });
+      mark("#set-themes", "theme-id", "classic");
+      mark("#set-anims", "anim-id", "aurora");
+      if (chk) chk.checked = true;
+      document.querySelectorAll("#set-anims .set-opt").forEach((x) => x.classList.remove("is-dim"));
+    });
+  }
+
+  const RENDER = { bonus: sectionBonus, income: sectionIncome, lvl: sectionLvl, awards: sectionAwards, growth: sectionGrowth, graph: sectionGraph, stats: sectionStats, rules: sectionRules, settings: sectionSettings };
   root.innerHTML = heroHtml() + (RENDER[SECTION] || sectionBonus)();
 
   /* ---------- общие обработчики ---------- */
@@ -2079,6 +2159,7 @@
 
   /* ---------- раздел «Мой LVL»: график накопления звёзд ---------- */
   if (SECTION === "income") initIncome();
+  if (SECTION === "settings") initSettings();
   if (SECTION === "awards") {
     syncReqs().then((s) => {
       if (!s.online) return;
