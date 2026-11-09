@@ -208,7 +208,7 @@ function robotMenuHtml() {
     return `<div class="robot-menu" data-reveal>
       <div class="robot-menu-title"><i class="ph-bold ph-robot"></i> Разделы</div>
       <div class="robot-grid">
-        ${SECTION_DEFS.map((s) => `<a class="rb-btn${s.key === SECTION ? " is-now" : ""}" data-sec="${s.key}" href="${navHref(s.key)}" title="${s.label} · ${s.note}">
+        ${SECTION_DEFS.filter((s) => s.key !== "hours" || emp.canManage).map((s) => `<a class="rb-btn${s.key === SECTION ? " is-now" : ""}" data-sec="${s.key}" href="${navHref(s.key)}" title="${s.label} · ${s.note}">
             <span class="rb-corner tl"></span><span class="rb-corner tr"></span><span class="rb-corner bl"></span><span class="rb-corner br"></span>
             <span class="rb-ic">${themeIcon(s.key) ? `<img class="rb-ic-img" src="${themeIcon(s.key)}" alt="" loading="lazy">` : `<i class="ph-bold ${s.icon}"></i>`}</span>
             <span class="rb-tx"><b>${s.label}</b><i>${s.key === SECTION ? "вы здесь" : s.note}</i></span>
@@ -1459,7 +1459,7 @@ function robotMenuHtml() {
         if (type === "dayoff" && !fd.date2) { err.textContent = "Укажи дату выходной смены."; return; }
         const rec = { id: "r" + Date.now().toString(36), empSlug: ME_SLUG, empName: emp.fullName || ME_FIO,
                       type, date: fd.date, date2: fd.date2 || "", from: fd.from || "", to: fd.to || "",
-                      hours, reason: fd.reason || "", status: "pending", reject: "", created: new Date().toISOString() };
+                      hours, reason: fd.reason || "", status: "pending", reject: "", created: new Date().toISOString(), _local: true };
         const list = loadReqs(); list.push(rec); saveReqs(list);
         modal.hidden = true;
         renderHours();

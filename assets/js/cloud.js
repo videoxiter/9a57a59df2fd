@@ -171,12 +171,14 @@ window.OTP_CLOUD = (function () {
     const remoteIds = new Set((remote || []).map((r) => r.id));
     const local = loadLocal().filter((r) => {
       if (remoteIds.has(r.id)) return true;
+      if (r._local) return true;                 // ещё не ушла в облако — не теряем
       const born = Date.parse(r.created || 0) || 0;
       return lastSync ? born > lastSync : (now - born < FRESH_MS);
     });
     const merged = merge(local, remote);
     saveLocal(merged);
-    await put(merged);
+    const sent = await put(merged);
+    if (sent) saveLocal(merged.map((r) => { const o = Object.assign({}, r); delete o._local; return o; }));
     try { localStorage.setItem(SYNC_KEY, String(Date.now())); } catch (e) {}
     return { online: true, list: merged };
   }

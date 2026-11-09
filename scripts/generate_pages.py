@@ -119,12 +119,12 @@ TEMPLATE = """<!DOCTYPE html>
 </html>
 """
 
-V = "151"
+V = "152"
 
 
-def secnav_html(rel, active):
+def secnav_html(rel, active, secs=None):
     out = []
-    for key, label, icon, title in SECTIONS:
+    for key, label, icon, title in (secs or SECTIONS):
         href = (rel or "./") if key == "bonus" else rel + key + "/"
         cls = "sec-chip" + (" is-now" if key == active else "")
         out.append(f'<a class="{cls}" href="{href}" title="{label} · {title}"><i class="ph-bold {icon}"></i><span>{label}</span></a>')
@@ -166,18 +166,20 @@ def main():
         payload = json.dumps(emp_data, ensure_ascii=False)
         slug = e.get("slug", e["id"])
         base = os.path.join(TEAM_DIR, slug)
-        for key, label, icon, _ in SECTIONS:
+        # «Журнал часов» — только у руководителя и главного специалиста
+        secs = [s for s in SECTIONS if s[0] != "hours" or emp.get("canManage")]
+        for key, label, icon, _ in secs:
             depth = 1 if key == "bonus" else 2
             prefix = "../../" if depth == 1 else "../../../"
             rel = "" if depth == 1 else "../"
             home = "./" if depth == 1 else "../"
-            nav = {k: ((rel or "./") if k == "bonus" else rel + k + "/") for k, _, _, _ in SECTIONS}
+            nav = {k: ((rel or "./") if k == "bonus" else rel + k + "/") for k, _, _, _ in secs}
             html = (TEMPLATE
                     .replace("__PREFIX__", prefix)
                     .replace("__V__", V)
                     .replace("__ID__", e["id"])
                     .replace("__SECTION__", key)
-                    .replace("__SECNAV__", secnav_html(rel, key))
+                    .replace("__SECNAV__", secnav_html(rel, key, secs))
                     .replace("__HOME__", home)
                     .replace("__OTP_EMP__", payload)
                     .replace("__OTP_NAV__", json.dumps(nav, ensure_ascii=False))
@@ -188,7 +190,7 @@ def main():
             with open(os.path.join(out_dir, "index.html"), "w", encoding="utf-8") as f:
                 f.write(html)
             n += 1
-        print(f"  OK team/{slug}/ + {len(SECTIONS) - 1} разделов")
+        print(f"  OK team/{slug}/ + {len(secs) - 1} разделов")
     print(f"\nГотово: {n} страниц ({len(data['employees'])} сотрудников × {len(SECTIONS)} разделов, изолированы, без ссылок на дашборд)")
 
 
