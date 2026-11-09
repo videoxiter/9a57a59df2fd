@@ -141,6 +141,7 @@
         ? '<span class="badge badge-adapt"><i class="ph ph-graduation-cap"></i> на обучении / адаптации</span>'
         : '<span class="badge badge-good"><i class="ph ph-check"></i> в команде</span>';
     return `
+    ${emp.canManage ? '<div id="pending-hours" class="pending-hours" hidden></div>' : ""}
     <section class="p-hero" data-reveal>
       <span class="avatar-xl">${otp.initials(emp.fullName)}</span>
       <div class="p-hero-main">
@@ -2571,6 +2572,44 @@ function robotMenuHtml() {
     });
   }
 
+
+  /* Плашка новых заявок на часы (для главного специалиста) — над LVL и бонусами */
+  function initPendingHours() {
+    const box = document.getElementById("pending-hours");
+    if (!box) return;
+    const list = allReqList().filter((r) => r.status === "pending" && r.type !== "adjust");
+    if (!list.length) { box.hidden = true; box.innerHTML = ""; return; }
+    const T = { overtime: "Переработка", leave: "Увольнительная", dayoff: "Отгул за вых. смену" };
+    const hrs = (r) => (r.type === "leave" ? "-" : "+") + otp.fmt(hoursOf(r));
+    box.hidden = false;
+    box.innerHTML = `<div class="ph-head"><i class="ph-bold ph-bell-ringing"></i>
+        <b>Новые заявки на часы: ${list.length}</b>
+        <a class="ph-all" href="${navHref("hours")}">журнал →</a></div>
+      <div class="ph-list">${list.map((r) => `<div class="ph-row" data-id="${r.id}">
+        <span class="ph-name">${escHtml(String(r.empName || r.empSlug || ""))}</span>
+        <span class="ph-type">${T[r.type] || r.type}</span>
+        <span class="ph-hours">${hrs(r)} ч</span>
+        <span class="ph-date">${escHtml(String(r.date || ""))}${r.from ? " · " + r.from + "–" + (r.to || "") : ""}</span>
+        <span class="ph-reason">${escHtml(String(r.reason || "").slice(0, 90))}</span>
+        <span class="ph-act">
+          <button class="btn btn-primary ph-ok" data-ok="${r.id}"><i class="ph-bold ph-check"></i> Одобрить</button>
+          <button class="btn btn-ghost ph-no" data-no="${r.id}"><i class="ph-bold ph-x"></i> Отклонить</button>
+        </span>
+      </div>`).join("")}</div>`;
+
+    box.querySelectorAll("button[data-ok], button[data-no]").forEach((b) => b.addEventListener("click", async () => {
+      const id = b.dataset.ok || b.dataset.no;
+      const r = allReqList().find((x) => x.id === id);
+      if (!r) return;
+      r.status = b.dataset.ok ? "approved" : "rejected";
+      r.decided = new Date().toISOString();
+      r.decidedBy = ME_FIO;
+      try { if (window.OTP_CLOUD) await window.OTP_CLOUD.upsert(r); } catch (e) {}
+      initPendingHours();
+      if (typeof renderHours === "function") { try { renderHours(); } catch (e) {} }
+    }));
+  }
+
   function initHoursJournal() {
     const empSel = document.getElementById("hj-emp");
     const body = document.getElementById("hj-body");
@@ -2663,6 +2702,7 @@ function robotMenuHtml() {
   initMonthTabs();
   setTimeout(refreshSectionIcons, 60);
   setTimeout(refreshSectionIcons, 600);
+  if (emp.canManage) { initPendingHours(); syncReqs().then(() => initPendingHours()).catch(() => {}); }
   if (SECTION === "hours") { initHoursJournal(); if (window.OTP_CLOUD && CLOUD) syncReqs().then(() => initHoursJournal()).catch(() => {}); }
   if (SECTION === "bonus") initTips();
   setTimeout(() => { fitStarSum(); if (SECTION === "bonus") initTips(); }, 150);

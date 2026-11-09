@@ -2388,3 +2388,22 @@ html[data-theme="ocean"] .award-tile .medal {
 .hj-form input, .hj-form select { background: var(--card-2); color: var(--text); border: 1px solid var(--border);
   border-radius: 10px; padding: 8px 10px; font-size: .8rem; }
 .hj-who { color: var(--accent); font-size: .72rem; white-space: nowrap; }
+
+/* Плашка новых заявок на часы (главный специалист) */
+.pending-hours { max-width: 1180px; margin: 18px auto 0; padding: 14px 16px; border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--border));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--warn) 10%, var(--card)), var(--card));
+  box-shadow: 0 10px 30px -20px rgba(0,0,0,.9); }
+.ph-head { display: flex; align-items: center; gap: 8px; font-size: .84rem; margin-bottom: 10px; color: var(--warn); }
+.ph-head b { color: var(--text); }
+.ph-all { margin-left: auto; font-size: .74rem; color: var(--accent); text-decoration: none; }
+.ph-list { display: flex; flex-direction: column; gap: 8px; }
+.ph-row { display: grid; grid-template-columns: 1.3fr .9fr .5fr .9fr 1.6fr auto; gap: 10px; align-items: center;
+  padding: 8px 10px; border-radius: 10px; background: var(--card-2); font-size: .78rem; }
+.ph-name { font-weight: 600; }
+.ph-type, .ph-date { color: var(--muted); font-size: .72rem; }
+.ph-hours { font-family: var(--font-mono); color: var(--accent); }
+.ph-reason { color: var(--muted); font-size: .72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ph-act { display: flex; gap: 6px; }
+.ph-act .btn { padding: 5px 9px; font-size: .72rem; }
+@media (max-width: 900px) { .ph-row { grid-template-columns: 1fr 1fr; } .ph-act { grid-column: span 2; } }
