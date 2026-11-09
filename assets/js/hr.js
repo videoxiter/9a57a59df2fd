@@ -98,7 +98,7 @@
       <i class="ph-bold ph-warning"></i> На ${dmy(r.date)} уже отсутствуют: ${names}</div>`;
   }
 
-  const isGone = (r) => r.empSlug === "deleted" || String(r.reason || "").startsWith("[удалено]");
+  const isGone = (r) => r.empSlug === "deleted" || /^\[(удалено|тест)\]/.test(String(r.reason || "")) || /^DIAG TEST/i.test(String(r.reason || ""));
   function row(r, decided) {
     const t = TYPES[r.type] || { label: r.type, icon: "ph-note" };
     return `<div class="hr-row st-${r.status}" data-id="${r.id}">

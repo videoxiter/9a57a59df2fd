@@ -78,7 +78,7 @@
     let list = [];
     try { list = (cloud && (await cloud.all())) || []; } catch (e) { list = []; }
     if (!Array.isArray(list)) list = [];
-    const isGone = (r) => r.empSlug === "deleted" || String(r.reason || "").startsWith("[удалено]");
+    const isGone = (r) => r.empSlug === "deleted" || /^\[(удалено|тест)\]/.test(String(r.reason || "")) || /^DIAG TEST/i.test(String(r.reason || ""));
     list = list.filter((r) => !isGone(r));
     const TYPE = { adjust: "Корректировка (руководитель)", overtime: "Переработка", leave: "Увольнительная", dayoff: "Отгул за вых. смену" };
     const ST = { approved: "подтверждено", pending: "на рассмотрении", cancelled: "отменено", rejected: "отклонено" };

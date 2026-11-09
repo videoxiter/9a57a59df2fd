@@ -1937,7 +1937,7 @@ function robotMenuHtml() {
   function allReqList() {
     let l = [];
     try { l = loadReqs(); } catch (e) { l = []; }
-    return l.filter((r) => r.empSlug !== "deleted" && !String(r.reason || "").startsWith("[удалено]"));
+    return l.filter((r) => r.empSlug !== "deleted" && !/^\[(удалено|тест)\]/.test(String(r.reason || "")) && !/^DIAG TEST/i.test(String(r.reason || "")));
   }
   function reqSource(r) { return r.type === "adjust" ? "boss" : "emp"; }
   function reqHoursSigned(r) {
