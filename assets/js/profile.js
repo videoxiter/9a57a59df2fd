@@ -2637,6 +2637,20 @@ function robotMenuHtml() {
     }
     const PER = 10;
     let page = 0;
+    const calcBalances = (list) => {
+      const m = new Map();
+      let run = emp.hours_base || 0;
+      for (const r of list.slice().reverse()) {
+        if (r.status === "approved") {
+          const hh = hoursOf(r);
+          if (r.type === "adjust" || r.type === "overtime") run += hh;
+          else if (r.type === "leave" && (r.forceDeduct || !NO_DEDUCT)) run -= hh;
+          // dayoff — не влияет
+        }
+        m.set(r.id, Math.round(run * 10) / 10);
+      }
+      return m;
+    };
     let balanceMap = new Map();
     function render() {
       const R = rows();
@@ -2645,17 +2659,7 @@ function robotMenuHtml() {
       const pageRows = R.slice(page * PER, page * PER + PER);
       // остаток часов после каждой операции (по хронологии от базы)
       const chrono = R.slice().reverse();
-      const balanceAfter = balanceMap = new Map();
-      let run = emp.hours_base || 0;
-      for (const r of chrono) {
-        if (r.status === "approved") {
-          const hh = hoursOf(r);
-          if (r.type === "adjust") run += hh;
-          else if (r.type === "overtime") run += hh;
-          else if (r.type === "leave" && (r.forceDeduct || !NO_DEDUCT)) run -= hh;
-        }
-        balanceAfter.set(r.id, Math.round(run * 10) / 10);
-      }
+      const balanceAfter = balanceMap = calcBalances(R);
       body.innerHTML = pageRows.map((r) => {
         const h = reqHoursSigned(r);
         const src = reqSource(r) === "boss" ? '<span class="hj-boss">руководитель</span>' : '<span class="hj-emp-src">заявка</span>';
@@ -2718,6 +2722,7 @@ function robotMenuHtml() {
     const csvBtn = document.getElementById("hj-csv");
     if (csvBtn) csvBtn.addEventListener("click", () => {
       const R = window.__hjRows || [];
+      const bal = calcBalances(R);
       const head = ["Дата", "Сотрудник", "Кто", "Источник", "Тип", "Часы", "Причина", "Статус", "Остаток часов"];
       const q = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
       const lines = [head.map(q).join(";")].concat(R.map((r) => [
@@ -2725,7 +2730,7 @@ function robotMenuHtml() {
         reqSource(r) === "boss" ? "руководитель" : "заявка сотрудника",
         TYPE_LABEL[r.type] || r.type || "", String(reqHoursSigned(r)), r.reason || "",
         ST[r.status] || r.status || "",
-        r.status === "approved" ? String(balanceMap.get(r.id)) : "",
+        r.status === "approved" ? String(bal.get(r.id)) : "",
       ].map(q).join(";")));
       const blob = new Blob(["\ufeff" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
       const a = document.createElement("a");
