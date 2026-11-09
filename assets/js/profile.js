@@ -1973,6 +1973,7 @@ function robotMenuHtml() {
         <th>Дата</th><th>Сотрудник</th><th>Кто</th><th>Источник</th><th>Тип</th><th class="num">Часы</th><th>Причина</th><th>Статус</th>
       </tr></thead><tbody id="hj-body"></tbody></table></div>
       <p class="muted" id="hj-empty" hidden>По выбранным фильтрам записей нет.</p>
+      <div class="hj-pager" id="hj-pager"></div>
     </section>${robotMenuHtml()}`;
   }
 
@@ -2632,9 +2633,14 @@ function robotMenuHtml() {
         return true;
       }).sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
     }
+    const PER = 10;
+    let page = 0;
     function render() {
       const R = rows();
-      body.innerHTML = R.map((r) => {
+      const pages = Math.max(1, Math.ceil(R.length / PER));
+      if (page > pages - 1) page = pages - 1;
+      const pageRows = R.slice(page * PER, page * PER + PER);
+      body.innerHTML = pageRows.map((r) => {
         const h = reqHoursSigned(r);
         const src = reqSource(r) === "boss" ? '<span class="hj-boss">руководитель</span>' : '<span class="hj-emp-src">заявка</span>';
         const st = `<span class="hj-st hj-${r.status || "pending"}">${ST[r.status] || r.status || "—"}</span>`;
@@ -2650,6 +2656,30 @@ function robotMenuHtml() {
         </tr>`;
       }).join("");
       document.getElementById("hj-empty").hidden = R.length > 0;
+      const pager = document.getElementById("hj-pager");
+      if (pager) {
+        if (pages <= 1) { pager.innerHTML = ""; }
+        else {
+          const nums = [];
+          for (let i = 0; i < pages; i++) {
+            if (pages > 7 && i > 0 && i < pages - 1 && Math.abs(i - page) > 1) {
+              if (nums[nums.length - 1] !== "…") nums.push("…");
+              continue;
+            }
+            nums.push(i);
+          }
+          pager.innerHTML = `<button class="hj-pg" data-pg="${page - 1}" ${page === 0 ? "disabled" : ""}>‹</button>`
+            + nums.map((n) => n === "…" ? '<span class="hj-pg-dots">…</span>'
+              : `<button class="hj-pg${n === page ? " on" : ""}" data-pg="${n}">${n + 1}</button>`).join("")
+            + `<button class="hj-pg" data-pg="${page + 1}" ${page >= pages - 1 ? "disabled" : ""}>›</button>`
+            + `<span class="hj-pg-info">${page * PER + 1}–${Math.min(R.length, (page + 1) * PER)} из ${R.length}</span>`;
+          pager.querySelectorAll("button[data-pg]").forEach((b) => b.addEventListener("click", () => {
+            const n = +b.dataset.pg;
+            if (n >= 0 && n < pages) { page = n; render(); const wrapEl = document.querySelector(".hj-table-wrap");
+            if (wrapEl) window.scrollTo({ top: wrapEl.getBoundingClientRect().top + window.scrollY - 120, behavior: "smooth" }); }
+          }));
+        }
+      }
       const ok = R.filter((r) => r.status === "approved");
       const plus = ok.reduce((s, r) => s + Math.max(0, reqHoursSigned(r)), 0);
       const minus = ok.reduce((s, r) => s + Math.min(0, reqHoursSigned(r)), 0);

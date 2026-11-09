@@ -105,8 +105,10 @@
       <div class="hj-sum" id="hjx-sum"></div>
       <div class="hj-table-wrap"><table class="hj-table"><thead><tr>
         <th>Дата</th><th>Сотрудник</th><th>Кто</th><th>Источник</th><th>Тип</th><th class="num">Часы</th><th>Причина</th><th>Статус</th>
-      </tr></thead><tbody id="hjx-body"></tbody></table></div>`;
+      </tr></thead><tbody id="hjx-body"></tbody></table></div>
+      <div class="hj-pager" id="hjx-pager"></div>`;
     const f = { emp: "", kind: "", src: "", year: "", status: "" };
+    let page = 0;
     let shown = [];
     function draw() {
       shown = list.filter((r) => {
@@ -119,7 +121,11 @@
         if (f.kind === "minus" && !(hh < 0)) return false;
         return true;
       }).sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
-      document.getElementById("hjx-body").innerHTML = shown.map((r) => {
+      const PER = 10;
+      const pages = Math.max(1, Math.ceil(shown.length / PER));
+      if (page > pages - 1) page = pages - 1;
+      const view = shown.slice(page * PER, page * PER + PER);
+      document.getElementById("hjx-body").innerHTML = view.map((r) => {
         const hh = signed(r);
         const who = r.decidedBy || (r.status === "approved" ? "руководитель (ранее)" : "—");
         return `<tr><td class="mono">${escJ(String(r.date || "—"))}</td><td>${escJ(String(r.empName || ""))}</td>
@@ -130,6 +136,29 @@
           <td class="hj-why">${escJ(String(r.reason || ""))}</td>
           <td><span class="hj-st hj-${r.status || "pending"}">${ST[r.status] || r.status || ""}</span></td></tr>`;
       }).join("");
+      const pager = document.getElementById("hjx-pager");
+      if (pager) {
+        if (pages <= 1) pager.innerHTML = "";
+        else {
+          const nums = [];
+          for (let i = 0; i < pages; i++) {
+            if (pages > 7 && i > 0 && i < pages - 1 && Math.abs(i - page) > 1) {
+              if (nums[nums.length - 1] !== "…") nums.push("…");
+              continue;
+            }
+            nums.push(i);
+          }
+          pager.innerHTML = `<button class="hj-pg" data-pg="${page - 1}" ${page === 0 ? "disabled" : ""}>‹</button>`
+            + nums.map((n) => n === "…" ? '<span class="hj-pg-dots">…</span>'
+              : `<button class="hj-pg${n === page ? " on" : ""}" data-pg="${n}">${n + 1}</button>`).join("")
+            + `<button class="hj-pg" data-pg="${page + 1}" ${page >= pages - 1 ? "disabled" : ""}>›</button>`
+            + `<span class="hj-pg-info">${page * PER + 1}–${Math.min(shown.length, (page + 1) * PER)} из ${shown.length}</span>`;
+          pager.querySelectorAll("button[data-pg]").forEach((b) => b.addEventListener("click", () => {
+            const n = +b.dataset.pg;
+            if (n >= 0 && n < pages) { page = n; draw(); }
+          }));
+        }
+      }
       const ok = shown.filter((r) => r.status === "approved");
       const plus = ok.reduce((s, r) => s + Math.max(0, signed(r)), 0);
       const minus = ok.reduce((s, r) => s + Math.min(0, signed(r)), 0);
@@ -140,7 +169,7 @@
     }
     [["hjx-emp", "emp"], ["hjx-kind", "kind"], ["hjx-src", "src"], ["hjx-year", "year"], ["hjx-status", "status"]].forEach(([id, key]) => {
       const el = document.getElementById(id);
-      if (el) el.addEventListener("change", () => { f[key] = el.value; draw(); });
+      if (el) el.addEventListener("change", () => { f[key] = el.value; page = 0; draw(); });
     });
     const csv = document.getElementById("hjx-csv");
     if (csv) csv.addEventListener("click", () => {
