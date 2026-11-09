@@ -98,6 +98,7 @@
       <i class="ph-bold ph-warning"></i> На ${dmy(r.date)} уже отсутствуют: ${names}</div>`;
   }
 
+  const isGone = (r) => r.empSlug === "deleted" || String(r.reason || "").startsWith("[удалено]");
   function row(r, decided) {
     const t = TYPES[r.type] || { label: r.type, icon: "ph-note" };
     return `<div class="hr-row st-${r.status}" data-id="${r.id}">
@@ -142,7 +143,7 @@
     const box = document.getElementById("hr-requests");
     if (!box) return;
     const sec = box.closest("section") || box;
-    const all = load2().filter((r) => r.type !== "adjust");   // корректировки часов — отдельным блоком
+    const all = load2().filter((r) => r.type !== "adjust" && !isGone(r));   // корректировки часов — отдельным блоком
     const active = all.filter((r) => r.status === "pending").sort(byDateDesc);
     // отменённые за последние 7 дней — чтобы отмена не потерялась
     const weekAgo = Date.now() - 7 * 24 * 3600 * 1000;

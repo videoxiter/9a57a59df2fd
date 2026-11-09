@@ -1935,7 +1935,9 @@ function robotMenuHtml() {
 
   /* ---------- Журнал часов: начисления/списания по всем сотрудникам ---------- */
   function allReqList() {
-    try { return loadReqs(); } catch (e) { return []; }
+    let l = [];
+    try { l = loadReqs(); } catch (e) { l = []; }
+    return l.filter((r) => r.empSlug !== "deleted" && !String(r.reason || "").startsWith("[удалено]"));
   }
   function reqSource(r) { return r.type === "adjust" ? "boss" : "emp"; }
   function reqHoursSigned(r) {

@@ -78,6 +78,8 @@
     let list = [];
     try { list = (cloud && (await cloud.all())) || []; } catch (e) { list = []; }
     if (!Array.isArray(list)) list = [];
+    const isGone = (r) => r.empSlug === "deleted" || String(r.reason || "").startsWith("[удалено]");
+    list = list.filter((r) => !isGone(r));
     const TYPE = { adjust: "Корректировка (руководитель)", overtime: "Переработка", leave: "Увольнительная", dayoff: "Отгул за вых. смену" };
     const ST = { approved: "подтверждено", pending: "на рассмотрении", cancelled: "отменено", rejected: "отклонено" };
     const signed = (r) => {
