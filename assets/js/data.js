@@ -709,6 +709,7 @@ window.OTP_DATA = {
       ],
       "resources": [],
       "status": "left",
+      "canManage": false,
       "history": [
         {
           "key": "2026-04",
@@ -1988,6 +1989,7 @@ window.OTP_DATA = {
         }
       ],
       "status": "active",
+      "canManage": true,
       "history": [
         {
           "key": "2026-04",
@@ -3743,6 +3745,7 @@ window.OTP_DATA = {
         }
       ],
       "status": "active",
+      "canManage": false,
       "history": [
         {
           "key": "2026-04",
@@ -5412,6 +5415,7 @@ window.OTP_DATA = {
         }
       ],
       "status": "active",
+      "canManage": false,
       "history": [
         {
           "key": "2026-04",
@@ -6814,6 +6818,7 @@ window.OTP_DATA = {
         }
       ],
       "status": "active",
+      "canManage": false,
       "history": [
         {
           "key": "2026-04",
@@ -8397,6 +8402,7 @@ window.OTP_DATA = {
         }
       ],
       "status": "active",
+      "canManage": false,
       "history": [
         {
           "key": "2026-04",
@@ -9910,6 +9916,7 @@ window.OTP_DATA = {
       ],
       "resources": [],
       "status": "active",
+      "canManage": false,
       "history": [
         {
           "key": "2026-04",
@@ -11207,6 +11214,7 @@ window.OTP_DATA = {
         }
       ],
       "status": "active",
+      "canManage": false,
       "history": [
         {
           "key": "2026-04",
@@ -13111,6 +13119,7 @@ window.OTP_DATA = {
         }
       ],
       "status": "active",
+      "canManage": false,
       "history": [
         {
           "key": "2026-04",
@@ -14664,6 +14673,7 @@ window.OTP_DATA = {
       ],
       "resources": [],
       "status": "active",
+      "canManage": false,
       "history": [
         {
           "key": "2026-04",
@@ -16308,6 +16318,7 @@ window.OTP_DATA = {
       ],
       "resources": [],
       "status": "left",
+      "canManage": false,
       "history": [
         {
           "key": "2026-04",
@@ -16583,6 +16594,7 @@ window.OTP_DATA = {
       ],
       "resources": [],
       "status": "adaptation",
+      "canManage": false,
       "history": [
         {
           "key": "2026-04",

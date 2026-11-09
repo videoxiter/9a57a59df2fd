@@ -1222,6 +1222,7 @@ def build():
             "literature": content["literature"],
             "resources": resources_for(latest.get("negatives", [])),
             "status": content.get("status", "active"),
+            "canManage": bool(content.get("canManage")),
             "history": history,
             "current": current, "avg": avg, "growth_delta": growth_delta,
             "hours_base": HOURS_BASE.get(eid, 0),
