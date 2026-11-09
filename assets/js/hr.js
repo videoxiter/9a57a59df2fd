@@ -111,6 +111,7 @@
         <span class="hr-hours-line">${hoursChip(r.empSlug)}${empHours(r.empSlug).noDeduct ? '<span class="hr-hours-note">показатели 7+ — часы не списываются</span>' : ""}</span>
         ${r.forceDeduct ? '<span class="hr-forced"><i class="ph-bold ph-scissors"></i> списано по решению руководителя</span>' : ""}
         ${clashNote(r)}
+        ${r.decidedBy ? `<em class="hr-by">решение: ${r.decidedBy}</em>` : ""}
         ${r.status === "rejected" && r.reject ? `<em class="rej">Отказ: ${r.reject}</em>` : ""}
         ${r.status === "cancelled" ? `<em class="rej">Отменена${r.cancelledBy === "emp" ? " сотрудником" : " руководителем"}${r.cancelReason ? ": " + r.cancelReason : ""}</em>` : ""}
       </span>

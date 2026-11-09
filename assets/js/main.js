@@ -67,6 +67,94 @@
   /* Часы и статусы: сначала рисуем по локальной копии (мгновенно), потом уточняем по облаку.
      Важно не блокировать отрисовку ожиданием сети — иначе страница остаётся пустой. */
   let hydrating = false;
+
+  /* ---------- Журнал часов: все сотрудники, кто поставил/одобрил + CSV ---------- */
+  async function renderHoursJournal() {
+    const box = $("#hours-journal");
+    if (!box || box.dataset.ready === "1") return;
+    box.dataset.ready = "1";
+    const escJ = (v) => String(v == null ? "" : v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    const cloud = window.OTP_CLOUD;
+    let list = [];
+    try { list = (cloud && (await cloud.all())) || []; } catch (e) { list = []; }
+    if (!Array.isArray(list)) list = [];
+    const TYPE = { adjust: "Корректировка (руководитель)", overtime: "Переработка", leave: "Увольнительная", dayoff: "Отгул за вых. смену" };
+    const ST = { approved: "подтверждено", pending: "на рассмотрении", cancelled: "отменено", rejected: "отклонено" };
+    const signed = (r) => {
+      if (r.type === "adjust") return +r.hours || 0;
+      const p = (x) => { const mm = /^(\d{1,2}):(\d{2})$/.exec(x || ""); return mm ? +mm[1] + +mm[2] / 60 : null; };
+      if (r.type === "dayoff") return +r.hours || 8;
+      const a = p(r.from), b = p(r.to);
+      const hh = a == null || b == null ? 0 : Math.max(0, Math.round((b - a) * 10) / 10);
+      return r.type === "leave" ? -hh : hh;
+    };
+    const names = [...new Set(list.map((r) => r.empName).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), "ru"));
+    const years = [...new Set(list.map((r) => String(r.date || "").slice(0, 4)).filter(Boolean))].sort().reverse();
+    box.innerHTML = `
+      <h3 class="hr-block-h"><i class="ph-bold ph-clock-counter-clockwise"></i> Журнал часов — все сотрудники</h3>
+      <div class="hj-filters">
+        <label class="hj-f"><span>Сотрудник</span><select id="hjx-emp"><option value="">Все</option>${names.map((n) => `<option value="${escJ(n)}">${n}</option>`).join("")}</select></label>
+        <label class="hj-f"><span>Операции</span><select id="hjx-kind"><option value="">Все</option><option value="plus">Начисления</option><option value="minus">Списания</option></select></label>
+        <label class="hj-f"><span>Источник</span><select id="hjx-src"><option value="">Все</option><option value="boss">Руководитель/главный</option><option value="emp">Заявка сотрудника</option></select></label>
+        <label class="hj-f"><span>Период</span><select id="hjx-year"><option value="">Всё время</option>${years.map((y) => `<option value="${y}">${y}</option>`).join("")}</select></label>
+        <label class="hj-f"><span>Статус</span><select id="hjx-status"><option value="">Все</option><option value="approved">Подтверждено</option><option value="pending">На рассмотрении</option><option value="cancelled">Отменено</option></select></label>
+        <button class="btn btn-primary" type="button" id="hjx-csv"><i class="ph-bold ph-download-simple"></i> Выгрузить CSV</button>
+      </div>
+      <div class="hj-sum" id="hjx-sum"></div>
+      <div class="hj-table-wrap"><table class="hj-table"><thead><tr>
+        <th>Дата</th><th>Сотрудник</th><th>Кто</th><th>Источник</th><th>Тип</th><th class="num">Часы</th><th>Причина</th><th>Статус</th>
+      </tr></thead><tbody id="hjx-body"></tbody></table></div>`;
+    const f = { emp: "", kind: "", src: "", year: "", status: "" };
+    let shown = [];
+    function draw() {
+      shown = list.filter((r) => {
+        if (f.emp && r.empName !== f.emp) return false;
+        if (f.src && (r.type === "adjust" ? "boss" : "emp") !== f.src) return false;
+        if (f.status && r.status !== f.status) return false;
+        if (f.year && String(r.date || "").slice(0, 4) !== f.year) return false;
+        const hh = signed(r);
+        if (f.kind === "plus" && !(hh > 0)) return false;
+        if (f.kind === "minus" && !(hh < 0)) return false;
+        return true;
+      }).sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+      document.getElementById("hjx-body").innerHTML = shown.map((r) => {
+        const hh = signed(r);
+        const who = r.decidedBy || (r.status === "approved" ? "руководитель (ранее)" : "—");
+        return `<tr><td class="mono">${escJ(String(r.date || "—"))}</td><td>${escJ(String(r.empName || ""))}</td>
+          <td class="hj-who">${escJ(String(who))}</td>
+          <td>${r.type === "adjust" ? '<span class="hj-boss">руководитель</span>' : '<span class="hj-emp-src">заявка</span>'}</td>
+          <td>${escJ(TYPE[r.type] || r.type || "")}</td>
+          <td class="num ${hh < 0 ? "neg" : "pos"}">${hh > 0 ? "+" : ""}${hh}</td>
+          <td class="hj-why">${escJ(String(r.reason || ""))}</td>
+          <td><span class="hj-st hj-${r.status || "pending"}">${ST[r.status] || r.status || ""}</span></td></tr>`;
+      }).join("");
+      const ok = shown.filter((r) => r.status === "approved");
+      const plus = ok.reduce((s, r) => s + Math.max(0, signed(r)), 0);
+      const minus = ok.reduce((s, r) => s + Math.min(0, signed(r)), 0);
+      document.getElementById("hjx-sum").innerHTML =
+        `<span class="hj-chip">записей: <b>${shown.length}</b></span>
+         <span class="hj-chip plus">начислено: <b>+${plus} ч</b></span>
+         <span class="hj-chip minus">списано: <b>${minus} ч</b></span>`;
+    }
+    [["hjx-emp", "emp"], ["hjx-kind", "kind"], ["hjx-src", "src"], ["hjx-year", "year"], ["hjx-status", "status"]].forEach(([id, key]) => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener("change", () => { f[key] = el.value; draw(); });
+    });
+    const csv = document.getElementById("hjx-csv");
+    if (csv) csv.addEventListener("click", () => {
+      const q = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
+      const head = ["Дата", "Сотрудник", "Кто", "Источник", "Тип", "Часы", "Причина", "Статус"];
+      const rows = [head.map(q).join(";")].concat(shown.map((r) => [r.date || "", r.empName || "", r.decidedBy || "", r.type === "adjust" ? "руководитель" : "заявка сотрудника", TYPE[r.type] || r.type || "", signed(r), r.reason || "", ST[r.status] || r.status || ""].map(q).join(";")));
+      const blob = new Blob(["\ufeff" + rows.join("\r\n")], { type: "text/csv;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "zhurnal-chasov-" + new Date().toISOString().slice(0, 10) + ".csv";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+    });
+    draw();
+  }
+
   async function hydrateHours() {
     if (hydrating) return;
     hydrating = true;
@@ -496,6 +584,7 @@
 
   otp.reveal(document);
   hydrateHours();
+  renderHoursJournal();
 
   /* ---------- графики (страница «Динамика») ---------- */
   if (!window.Chart) return;
