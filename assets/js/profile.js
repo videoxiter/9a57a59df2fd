@@ -173,13 +173,14 @@
     { key: "stats", label: "Статистика", icon: "ph-chart-line", note: "динамика и детализация" },
     { key: "income", label: "Карта доходов", icon: "ph-coins", note: "из чего складывается доход" },
     { key: "rules", label: "Правила", icon: "ph-book-open", note: "как всё устроено" },
+    { key: "hours", label: "Журнал часов", icon: "ph-clock-counter-clockwise", note: "начисления и списания" },
     { key: "links", label: "Ссылки", icon: "ph-link", note: "сервисы и инструменты" },
     { key: "settings", label: "Настройки", icon: "ph-sliders", note: "тема, фон и анимация" },
   ];
   const NAV = window.OTP_NAV || {};
   const navHref = (key) => NAV[key] || (key === "bonus" ? "./" : key + "/");
 
-  const THEME_SEC_IDX = { bonus: 0, income: 1, lvl: 2, awards: 3, growth: 4, stats: 5, rules: 6, links: 7, settings: 8, graph: 9 };
+  const THEME_SEC_IDX = { bonus: 0, income: 1, lvl: 2, awards: 3, growth: 4, stats: 5, rules: 6, hours: 7, links: 8, settings: 9, graph: 10 };
 const THEME_FILES = { robots: "robots", matrix: "matrix", minecraft: "minecraft", mk: "mk", skyrim: "skyrim",
   anime: "anime", cs16: "cs16", synthwave: "synthwave", cyberpunk: "cyberpunk", space: "space", winter: "winter", ocean: "ocean" };
 
@@ -1930,6 +1931,46 @@ function robotMenuHtml() {
 
   /* ---------- Настройки: тема + анимация ---------- */
 
+
+  /* ---------- Журнал часов: начисления/списания по всем сотрудникам ---------- */
+  function allReqList() {
+    try { return loadReqs(); } catch (e) { return []; }
+  }
+  function reqSource(r) { return r.type === "adjust" ? "boss" : "emp"; }
+  function reqHoursSigned(r) {
+    const h = hoursOf(r);
+    if (r.type === "adjust") return h;                       // знак уже в hours
+    if (r.type === "leave") return -h;                        // увольнительная — списание
+    if (r.type === "overtime" || r.type === "dayoff") return h;
+    return h;
+  }
+  function sectionHours() {
+    const list = allReqList();
+    const years = [...new Set(list.map((r) => (r.date || "").slice(0, 4)).filter(Boolean))].sort().reverse();
+    return `<section class="p-sec">
+      <div class="p-sec-head"><h2><i class="ph-bold ph-clock-counter-clockwise"></i> Журнал часов</h2>
+        <span class="p-sec-hint">начисления и списания · кто поставил и откуда</span></div>
+      <div class="hj-filters">
+        <label class="hj-f"><span>Сотрудник</span>
+          <select id="hj-emp"><option value="">Все сотрудники</option></select></label>
+        <label class="hj-f"><span>Операции</span>
+          <select id="hj-kind"><option value="">Все</option><option value="plus">Только начисления</option><option value="minus">Только списания</option></select></label>
+        <label class="hj-f"><span>Источник</span>
+          <select id="hj-src"><option value="">Все</option><option value="boss">Поставил руководитель</option><option value="emp">По заявке сотрудника</option></select></label>
+        <label class="hj-f"><span>Период</span>
+          <select id="hj-year"><option value="">Всё время</option>${years.map((y) => `<option value="${y}">${y}</option>`).join("")}</select></label>
+        <label class="hj-f"><span>Статус</span>
+          <select id="hj-status"><option value="">Все</option><option value="approved">Подтверждено</option><option value="pending">На рассмотрении</option><option value="cancelled">Отменено</option></select></label>
+        <button class="btn btn-primary" type="button" id="hj-csv"><i class="ph-bold ph-download-simple"></i> Выгрузить CSV</button>
+      </div>
+      <div class="hj-sum" id="hj-sum"></div>
+      <div class="hj-table-wrap"><table class="hj-table"><thead><tr>
+        <th>Дата</th><th>Сотрудник</th><th>Источник</th><th>Тип</th><th class="num">Часы</th><th>Причина</th><th>Статус</th>
+      </tr></thead><tbody id="hj-body"></tbody></table></div>
+      <p class="muted" id="hj-empty" hidden>По выбранным фильтрам записей нет.</p>
+    </section>${robotMenuHtml()}`;
+  }
+
   function sectionLinks() {
     const L = D.links || [];
     if (!L.length) return `<section class="p-sec"><p class="muted">Список ссылок ещё не заполнен.</p></section>`;
@@ -2024,7 +2065,7 @@ function robotMenuHtml() {
     });
   }
 
-  const RENDER = { bonus: sectionBonus, income: sectionIncome, lvl: sectionLvl, awards: sectionAwards, growth: sectionGrowth, graph: sectionGraph, stats: sectionStats, rules: sectionRules, links: sectionLinks, settings: sectionSettings };
+  const RENDER = { bonus: sectionBonus, income: sectionIncome, lvl: sectionLvl, awards: sectionAwards, growth: sectionGrowth, graph: sectionGraph, stats: sectionStats, rules: sectionRules, hours: sectionHours, links: sectionLinks, settings: sectionSettings };
   root.innerHTML = heroHtml() + (RENDER[SECTION] || sectionBonus)();
 
   /* ---------- общие обработчики ---------- */
@@ -2449,6 +2490,84 @@ function robotMenuHtml() {
     el.innerHTML = `<div class="lb-podium-wrap">${podium}</div><div class="lb-list">${list}</div>${hint}${sub}`;
   }
 
+
+  function initHoursJournal() {
+    const empSel = document.getElementById("hj-emp");
+    const body = document.getElementById("hj-body");
+    if (!empSel || !body) return;
+    const list = allReqList();
+    const names = [...new Set(list.map((r) => r.empName || r.empSlug).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), "ru"));
+    empSel.innerHTML = '<option value="">Все сотрудники</option>' + names.map((n) => `<option value="${escHtml(String(n))}">${escHtml(String(n))}</option>`).join("");
+    const f = { emp: "", kind: "", src: "", year: "", status: "" };
+    const TYPE_LABEL = Object.assign({ adjust: "Корректировка (руководитель)" }, REQ_TYPES && Object.fromEntries(Object.entries(REQ_TYPES).map(([k, v]) => [k, v.label])) || {});
+    const ST = { approved: "подтверждено", pending: "на рассмотрении", cancelled: "отменено", rejected: "отклонено" };
+    function rows() {
+      return list.filter((r) => {
+        if (f.emp && String(r.empName || r.empSlug) !== f.emp) return false;
+        if (f.src && reqSource(r) !== f.src) return false;
+        if (f.status && r.status !== f.status) return false;
+        if (f.year && String(r.date || "").slice(0, 4) !== f.year) return false;
+        const h = reqHoursSigned(r);
+        if (f.kind === "plus" && !(h > 0)) return false;
+        if (f.kind === "minus" && !(h < 0)) return false;
+        return true;
+      }).sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+    }
+    function render() {
+      const R = rows();
+      body.innerHTML = R.map((r) => {
+        const h = reqHoursSigned(r);
+        const src = reqSource(r) === "boss" ? '<span class="hj-boss">руководитель</span>' : '<span class="hj-emp-src">заявка</span>';
+        const st = `<span class="hj-st hj-${r.status || "pending"}">${ST[r.status] || r.status || "—"}</span>`;
+        return `<tr class="${h < 0 ? "neg" : "pos"}">
+          <td class="mono">${escHtml(String(r.date || "—"))}</td>
+          <td>${escHtml(String(r.empName || r.empSlug || "—"))}</td>
+          <td>${src}</td>
+          <td>${escHtml(TYPE_LABEL[r.type] || r.type || "—")}</td>
+          <td class="num ${h < 0 ? "neg" : "pos"}">${h > 0 ? "+" : ""}${otp.fmt(h)}</td>
+          <td class="hj-why">${escHtml(String(r.reason || r.reject || ""))}</td>
+          <td>${st}</td>
+        </tr>`;
+      }).join("");
+      document.getElementById("hj-empty").hidden = R.length > 0;
+      const ok = R.filter((r) => r.status === "approved");
+      const plus = ok.reduce((s, r) => s + Math.max(0, reqHoursSigned(r)), 0);
+      const minus = ok.reduce((s, r) => s + Math.min(0, reqHoursSigned(r)), 0);
+      const boss = ok.filter((r) => reqSource(r) === "boss").length;
+      const empq = ok.length - boss;
+      document.getElementById("hj-sum").innerHTML =
+        `<span class="hj-chip">записей: <b>${R.length}</b></span>
+         <span class="hj-chip plus">начислено: <b>+${otp.fmt(plus)} ч</b></span>
+         <span class="hj-chip minus">списано: <b>${otp.fmt(minus)} ч</b></span>
+         <span class="hj-chip">руководитель: <b>${boss}</b></span>
+         <span class="hj-chip">по заявкам: <b>${empq}</b></span>`;
+      window.__hjRows = R;
+    }
+    const bind = (id, key) => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener("change", () => { f[key] = el.value; render(); });
+    };
+    bind("hj-emp", "emp"); bind("hj-kind", "kind"); bind("hj-src", "src"); bind("hj-year", "year"); bind("hj-status", "status");
+    const csvBtn = document.getElementById("hj-csv");
+    if (csvBtn) csvBtn.addEventListener("click", () => {
+      const R = window.__hjRows || [];
+      const head = ["Дата", "Сотрудник", "Источник", "Тип", "Часы", "Причина", "Статус"];
+      const q = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
+      const lines = [head.map(q).join(";")].concat(R.map((r) => [
+        r.date || "", r.empName || r.empSlug || "", reqSource(r) === "boss" ? "руководитель" : "заявка сотрудника",
+        TYPE_LABEL[r.type] || r.type || "", String(reqHoursSigned(r)), r.reason || "",
+        ST[r.status] || r.status || "",
+      ].map(q).join(";")));
+      const blob = new Blob(["\ufeff" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "zhurnal-chasov-" + new Date().toISOString().slice(0, 10) + ".csv";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+    });
+    render();
+  }
+
   function initMonthTabs() {
     renderMonth(selected);
     const tabsBox = document.getElementById("month-tabs");
@@ -2462,6 +2581,7 @@ function robotMenuHtml() {
   initMonthTabs();
   setTimeout(refreshSectionIcons, 60);
   setTimeout(refreshSectionIcons, 600);
+  if (SECTION === "hours") { initHoursJournal(); if (window.OTP_CLOUD && CLOUD) syncReqs().then(() => initHoursJournal()).catch(() => {}); }
   if (SECTION === "bonus") initTips();
   setTimeout(() => { fitStarSum(); if (SECTION === "bonus") initTips(); }, 150);
   otp.reveal(document);
