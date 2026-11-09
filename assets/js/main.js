@@ -145,7 +145,7 @@
         id: "adj-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
         empSlug: emp.slug, empName: emp.fullName, type: "adjust",
         date: isoDate(new Date()), from: "", to: "", hours: h, reason,
-        status: "approved", created: nowIso, decided: nowIso, decidedBy: "Яковлев Е.Е.",
+        status: "approved", created: nowIso, decided: nowIso, decidedBy: window.OTP_ACTOR || "Яковлев Е.Е.",
       };
       try { if (window.OTP_CLOUD) await window.OTP_CLOUD.upsert(rec); } catch (err) {}
       $("#hx-hours").value = "";

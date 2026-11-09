@@ -243,6 +243,7 @@
     if (status === "approved" && typeof noDeduct === "boolean") r.noDeduct = noDeduct;
     if (status === "approved") r.forceDeduct = !!force;
     r.decided = new Date().toISOString();
+    r.decidedBy = window.OTP_ACTOR || "Яковлев Е.Е.";
     save2(list);
     if (CLOUD) CLOUD.upsert(r); else push(list);
     render();

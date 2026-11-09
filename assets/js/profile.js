@@ -861,6 +861,7 @@ function robotMenuHtml() {
   /* ================= РАЗДЕЛ: МОЙ ГРАФИК (смены, отпуска, часы) ================= */
   const SCHED = (D && D.schedule) || null;
   const ME_SLUG = emp.slug || emp.id;
+  if (emp.canManage) window.OTP_ACTOR = emp.fullName;
   const ME_FIO = (SCHED && SCHED.fio) || emp.fullName;
   const WD = ["воскресенье", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота"];
   const WD_SHORT = ["вс", "пн", "вт", "ср", "чт", "пт", "сб"];
@@ -1963,9 +1964,10 @@ function robotMenuHtml() {
           <select id="hj-status"><option value="">Все</option><option value="approved">Подтверждено</option><option value="pending">На рассмотрении</option><option value="cancelled">Отменено</option></select></label>
         <button class="btn btn-primary" type="button" id="hj-csv"><i class="ph-bold ph-download-simple"></i> Выгрузить CSV</button>
       </div>
+      ${emp.canManage ? '<div id="hj-manage"></div>' : ""}
       <div class="hj-sum" id="hj-sum"></div>
       <div class="hj-table-wrap"><table class="hj-table"><thead><tr>
-        <th>Дата</th><th>Сотрудник</th><th>Источник</th><th>Тип</th><th class="num">Часы</th><th>Причина</th><th>Статус</th>
+        <th>Дата</th><th>Сотрудник</th><th>Кто</th><th>Источник</th><th>Тип</th><th class="num">Часы</th><th>Причина</th><th>Статус</th>
       </tr></thead><tbody id="hj-body"></tbody></table></div>
       <p class="muted" id="hj-empty" hidden>По выбранным фильтрам записей нет.</p>
     </section>${robotMenuHtml()}`;
@@ -2491,6 +2493,82 @@ function robotMenuHtml() {
   }
 
 
+
+  function renderManageBlock() {
+    const box = document.getElementById("hj-manage");
+    if (!box) return;
+    const list = allReqList();
+    const pending = list.filter((r) => r.status === "pending")
+      .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+    const emps = [...new Set(list.map((r) => r.empName).filter(Boolean))]
+      .sort((a, b) => String(a).localeCompare(String(b), "ru"));
+    const typeLbl = (r) => (REQ_TYPES[r.type] && REQ_TYPES[r.type].label) || r.type || "—";
+    box.innerHTML = `
+      <div class="hj-manage-grid">
+        <div class="hj-panel">
+          <h3><i class="ph-bold ph-inbox"></i> Заявки сотрудников <span class="muted">· ожидают решения: ${pending.length}</span></h3>
+          ${pending.length ? pending.map((r) => `<div class="hj-req" data-id="${r.id}">
+              <div class="hj-req-h"><b>${escHtml(String(r.empName || r.empSlug || ""))}</b>
+                <span class="hj-req-type">${escHtml(typeLbl(r))}</span>
+                <span class="hj-req-hours">${reqHoursSigned(r) > 0 ? "+" : ""}${otp.fmt(reqHoursSigned(r))} ч</span></div>
+              <div class="hj-req-d">${escHtml(String(r.date || ""))}${r.date2 ? " — " + escHtml(String(r.date2)) : ""}${r.from ? " · " + escHtml(String(r.from)) + "–" + escHtml(String(r.to || "")) : ""}</div>
+              <div class="hj-req-r">${escHtml(String(r.reason || ""))}</div>
+              <div class="hj-req-a">
+                <button class="btn btn-primary" data-act="approve"><i class="ph-bold ph-check"></i> Одобрить</button>
+                <button class="btn btn-ghost" data-act="reject"><i class="ph-bold ph-x"></i> Отклонить</button>
+              </div>
+            </div>`).join("") : '<p class="muted">Активных заявок нет.</p>'}
+        </div>
+        <div class="hj-panel">
+          <h3><i class="ph-bold ph-plus-minus"></i> Начислить или списать часы</h3>
+          <form id="hj-adjust" class="hj-form">
+            <label>Сотрудник
+              <select id="hj-a-emp" required>
+                <option value="">— выбери —</option>
+                ${emps.map((n) => `<option value="${escHtml(n)}">${escHtml(n)}</option>`).join("")}
+              </select></label>
+            <label>Часы (минус — списание)
+              <input id="hj-a-hours" type="number" step="0.5" placeholder="например 2 или -1.5" required></label>
+            <label>Причина
+              <input id="hj-a-reason" type="text" placeholder="за что начисляем / почему списываем" required></label>
+            <button class="btn btn-primary" type="submit"><i class="ph-bold ph-check"></i> Записать</button>
+          </form>
+        </div>
+      </div>`;
+
+    box.querySelectorAll(".hj-req").forEach((el) => {
+      el.querySelectorAll("button[data-act]").forEach((b) => b.addEventListener("click", async () => {
+        const r = allReqList().find((x) => x.id === el.dataset.id);
+        if (!r) return;
+        r.status = b.dataset.act === "approve" ? "approved" : "rejected";
+        r.decided = new Date().toISOString();
+        r.decidedBy = ME_FIO;
+        try { if (window.OTP_CLOUD) await window.OTP_CLOUD.upsert(r); } catch (e) {}
+        renderManageBlock(); initHoursJournal();
+      }));
+    });
+
+    const form = document.getElementById("hj-adjust");
+    if (form) form.addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const name = document.getElementById("hj-a-emp").value;
+      const h = parseFloat(document.getElementById("hj-a-hours").value);
+      const reason = document.getElementById("hj-a-reason").value.trim();
+      if (!name || !Number.isFinite(h) || h === 0 || !reason) return;
+      const rec = allReqList().find((r) => r.empName === name) || {};
+      const nowIso = new Date().toISOString();
+      const row = {
+        id: "adj-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
+        empSlug: rec.empSlug || "", empName: name, type: "adjust",
+        date: nowIso.slice(0, 10), from: "", to: "", hours: h, reason,
+        status: "approved", created: nowIso, decided: nowIso, decidedBy: ME_FIO,
+      };
+      try { if (window.OTP_CLOUD) await window.OTP_CLOUD.upsert(row); } catch (e) {}
+      form.reset();
+      renderManageBlock(); initHoursJournal();
+    });
+  }
+
   function initHoursJournal() {
     const empSel = document.getElementById("hj-emp");
     const body = document.getElementById("hj-body");
@@ -2522,6 +2600,7 @@ function robotMenuHtml() {
         return `<tr class="${h < 0 ? "neg" : "pos"}">
           <td class="mono">${escHtml(String(r.date || "—"))}</td>
           <td>${escHtml(String(r.empName || r.empSlug || "—"))}</td>
+          <td class="hj-who">${escHtml(String(r.decidedBy || (r.type === "adjust" ? "—" : "—")))}</td>
           <td>${src}</td>
           <td>${escHtml(TYPE_LABEL[r.type] || r.type || "—")}</td>
           <td class="num ${h < 0 ? "neg" : "pos"}">${h > 0 ? "+" : ""}${otp.fmt(h)}</td>
@@ -2566,6 +2645,7 @@ function robotMenuHtml() {
       setTimeout(() => URL.revokeObjectURL(a.href), 3000);
     });
     render();
+    if (emp.canManage) renderManageBlock();
   }
 
   function initMonthTabs() {
