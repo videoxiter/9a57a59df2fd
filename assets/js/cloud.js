@@ -41,7 +41,7 @@ window.OTP_CLOUD = (function () {
   const MARK = "[[OTP-FLAGS:";                 // старый маркер флагов (совместимость)
   const META_MARK = "[[OTP-META:";             // служебные поля решения, пока в таблице нет колонок
   const OLD_MARK = "[[NO-DEDUCT]]";
-  const EXTRA = ["noDeduct", "forceDeduct", "cancelledBy", "cancelReason", "cancelledAt"];
+  const EXTRA = ["noDeduct", "forceDeduct", "cancelledBy", "cancelReason", "cancelledAt", "decidedBy"];
 
   /** Запись к отправке: если колонок нет — прячем служебные поля решения в поле reject. */
   function encodeRow(r) {
