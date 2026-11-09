@@ -2600,7 +2600,7 @@ function robotMenuHtml() {
         return `<tr class="${h < 0 ? "neg" : "pos"}">
           <td class="mono">${escHtml(String(r.date || "—"))}</td>
           <td>${escHtml(String(r.empName || r.empSlug || "—"))}</td>
-          <td class="hj-who">${escHtml(String(r.decidedBy || (r.type === "adjust" ? "—" : "—")))}</td>
+          <td class="hj-who">${escHtml(String(r.decidedBy || (r.status === "approved" ? "руководитель (ранее)" : "—")))}</td>
           <td>${src}</td>
           <td>${escHtml(TYPE_LABEL[r.type] || r.type || "—")}</td>
           <td class="num ${h < 0 ? "neg" : "pos"}">${h > 0 ? "+" : ""}${otp.fmt(h)}</td>
