@@ -49,7 +49,7 @@
       const h = hoursOfReq(r);
       if (r.type === "adjust") { if (h >= 0) plus += h; else minus += -h; }
       else if (r.type === "overtime") plus += h;
-      else if (r.type === "leave" || r.type === "dayoff") {
+      else if (r.type === "leave") {
         const forced = !!r.forceDeduct;                                  // решение руководителя сильнее правила
         const plain = r.type === "leave" && !r.noDeduct && !emp.no_deduct;
         if (forced || plain) minus += h;
@@ -88,7 +88,9 @@
       if (r.type === "dayoff") return +r.hours || 8;
       const a = p(r.from), b = p(r.to);
       const hh = a == null || b == null ? 0 : Math.max(0, Math.round((b - a) * 10) / 10);
-      return r.type === "leave" ? -hh : hh;
+      if (r.type === "leave") return -hh;
+      if (r.type === "dayoff") return 0;              // отгул за вых. смену — часы не двигает
+      return hh;
     };
     const names = [...new Set(list.map((r) => r.empName).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), "ru"));
     const years = [...new Set(list.map((r) => String(r.date || "").slice(0, 4)).filter(Boolean))].sort().reverse();
@@ -104,7 +106,7 @@
       </div>
       <div class="hj-sum" id="hjx-sum"></div>
       <div class="hj-table-wrap"><table class="hj-table"><thead><tr>
-        <th>Дата</th><th>Сотрудник</th><th>Кто</th><th>Источник</th><th>Тип</th><th class="num">Часы</th><th>Причина</th><th>Статус</th>
+        <th>Дата</th><th>Сотрудник</th><th>Кто</th><th>Источник</th><th>Тип</th><th class="num">Часы</th><th>Причина</th><th>Статус</th><th class="num">Остаток</th>
       </tr></thead><tbody id="hjx-body"></tbody></table></div>
       <div class="hj-pager" id="hjx-pager"></div>`;
     const f = { emp: "", kind: "", src: "", year: "", status: "" };
@@ -121,6 +123,18 @@
         if (f.kind === "minus" && !(hh < 0)) return false;
         return true;
       }).sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+      // остаток по хронологии
+      const balMap = new Map();
+      const baseBySlug = {};
+      ((window.OTP_DATA && OTP_DATA.employees) || []).forEach((e) => { baseBySlug[e.slug || e.id] = e.hours_base || 0; });
+      const byEmpBase = Object.assign({}, baseBySlug);
+      shown.slice().reverse().forEach((r) => {
+        if (r.status !== "approved") return;
+        const hh = signed(r);
+        byEmpBase[r.empSlug] = byEmpBase[r.empSlug] || 0;
+        byEmpBase[r.empSlug] += hh;
+        balMap.set(r.id, Math.round(byEmpBase[r.empSlug] * 10) / 10);
+      });
       const PER = 10;
       const pages = Math.max(1, Math.ceil(shown.length / PER));
       if (page > pages - 1) page = pages - 1;
@@ -134,7 +148,8 @@
           <td>${escJ(TYPE[r.type] || r.type || "")}</td>
           <td class="num ${hh < 0 ? "neg" : "pos"}">${hh > 0 ? "+" : ""}${hh}</td>
           <td class="hj-why">${escJ(String(r.reason || ""))}</td>
-          <td><span class="hj-st hj-${r.status || "pending"}">${ST[r.status] || r.status || ""}</span></td></tr>`;
+          <td><span class="hj-st hj-${r.status || "pending"}">${ST[r.status] || r.status || ""}</span></td>
+          <td class="num hj-left">${r.status === "approved" ? balMap.get(r.id) : "—"}</td></tr>`;
       }).join("");
       const pager = document.getElementById("hjx-pager");
       if (pager) {
@@ -174,8 +189,8 @@
     const csv = document.getElementById("hjx-csv");
     if (csv) csv.addEventListener("click", () => {
       const q = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
-      const head = ["Дата", "Сотрудник", "Кто", "Источник", "Тип", "Часы", "Причина", "Статус"];
-      const rows = [head.map(q).join(";")].concat(shown.map((r) => [r.date || "", r.empName || "", r.decidedBy || "", r.type === "adjust" ? "руководитель" : "заявка сотрудника", TYPE[r.type] || r.type || "", signed(r), r.reason || "", ST[r.status] || r.status || ""].map(q).join(";")));
+      const head = ["Дата", "Сотрудник", "Кто", "Источник", "Тип", "Часы", "Причина", "Статус", "Остаток часов"];
+      const rows = [head.map(q).join(";")].concat(shown.map((r) => [r.date || "", r.empName || "", r.decidedBy || "", r.type === "adjust" ? "руководитель" : "заявка сотрудника", TYPE[r.type] || r.type || "", signed(r), r.reason || "", ST[r.status] || r.status || "", r.status === "approved" ? String(balMap.get(r.id)) : ""].map(q).join(";")));
       const blob = new Blob(["\ufeff" + rows.join("\r\n")], { type: "text/csv;charset=utf-8" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);

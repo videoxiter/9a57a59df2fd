@@ -119,7 +119,7 @@ TEMPLATE = """<!DOCTYPE html>
 </html>
 """
 
-V = "160"
+V = "161"
 
 
 def secnav_html(rel, active, secs=None):
@@ -166,8 +166,8 @@ def main():
         payload = json.dumps(emp_data, ensure_ascii=False)
         slug = e.get("slug", e["id"])
         base = os.path.join(TEAM_DIR, slug)
-        # «Журнал часов» — только у руководителя и главного специалиста
-        secs = [s for s in SECTIONS if s[0] != "hours" or emp.get("canManage")]
+        # «Журнал часов» — у всех, но сотрудник видит только свои записи
+        secs = list(SECTIONS)
         for key, label, icon, _ in secs:
             depth = 1 if key == "bonus" else 2
             prefix = "../../" if depth == 1 else "../../../"

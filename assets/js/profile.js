@@ -998,11 +998,11 @@ function robotMenuHtml() {
       const h = hoursOf(r);
       if (r.type === "adjust") { if (h >= 0) plus += h; else minus += -h; }
       else if (r.type === "overtime") plus += h;
-      else if (r.type === "leave" || r.type === "dayoff") {
+      else if (r.type === "leave") {
         // forceDeduct — руководитель решил списать часы вопреки правилу «показатели позволяют»
-        if (r.forceDeduct || (r.type === "leave" && !NO_DEDUCT && !r.noDeduct)) minus += h;
+        if (r.forceDeduct || (!NO_DEDUCT && !r.noDeduct)) minus += h;
       }
-      else dayoffs += h;                                     // отгул — компенсация выходной смены, часы не двигает
+      else if (r.type === "dayoff") dayoffs += h;            // отгул за вых. смену — часы НЕ двигает никогда
     }
     const base = emp.hours_base || 0;
     return { base, plus: Math.round(plus * 10) / 10, minus: Math.round(minus * 10) / 10,
@@ -1970,7 +1970,7 @@ function robotMenuHtml() {
       ${emp.canManage ? '<div id="hj-manage"></div>' : ""}
       <div class="hj-sum" id="hj-sum"></div>
       <div class="hj-table-wrap"><table class="hj-table"><thead><tr>
-        <th>Дата</th><th>Сотрудник</th><th>Кто</th><th>Источник</th><th>Тип</th><th class="num">Часы</th><th>Причина</th><th>Статус</th>
+        <th>Дата</th><th>Сотрудник</th><th>Кто</th><th>Источник</th><th>Тип</th><th class="num">Часы</th><th>Причина</th><th>Статус</th><th class="num">Остаток</th>
       </tr></thead><tbody id="hj-body"></tbody></table></div>
       <p class="muted" id="hj-empty" hidden>По выбранным фильтрам записей нет.</p>
       <div class="hj-pager" id="hj-pager"></div>
@@ -2615,7 +2615,9 @@ function robotMenuHtml() {
     const empSel = document.getElementById("hj-emp");
     const body = document.getElementById("hj-body");
     if (!empSel || !body) return;
-    const list = allReqList();
+    const all = allReqList();
+    // сотрудник видит только свои записи, руководитель и главный специалист — всех
+    const list = emp.canManage ? all : all.filter((r) => r.empSlug === ME_SLUG);
     const names = [...new Set(list.map((r) => r.empName || r.empSlug).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), "ru"));
     empSel.innerHTML = '<option value="">Все сотрудники</option>' + names.map((n) => `<option value="${escHtml(String(n))}">${escHtml(String(n))}</option>`).join("");
     const f = { emp: "", kind: "", src: "", year: "", status: "" };
@@ -2635,11 +2637,25 @@ function robotMenuHtml() {
     }
     const PER = 10;
     let page = 0;
+    let balanceMap = new Map();
     function render() {
       const R = rows();
       const pages = Math.max(1, Math.ceil(R.length / PER));
       if (page > pages - 1) page = pages - 1;
       const pageRows = R.slice(page * PER, page * PER + PER);
+      // остаток часов после каждой операции (по хронологии от базы)
+      const chrono = R.slice().reverse();
+      const balanceAfter = balanceMap = new Map();
+      let run = emp.hours_base || 0;
+      for (const r of chrono) {
+        if (r.status === "approved") {
+          const hh = hoursOf(r);
+          if (r.type === "adjust") run += hh;
+          else if (r.type === "overtime") run += hh;
+          else if (r.type === "leave" && (r.forceDeduct || !NO_DEDUCT)) run -= hh;
+        }
+        balanceAfter.set(r.id, Math.round(run * 10) / 10);
+      }
       body.innerHTML = pageRows.map((r) => {
         const h = reqHoursSigned(r);
         const src = reqSource(r) === "boss" ? '<span class="hj-boss">руководитель</span>' : '<span class="hj-emp-src">заявка</span>';
@@ -2653,6 +2669,7 @@ function robotMenuHtml() {
           <td class="num ${h < 0 ? "neg" : "pos"}">${h > 0 ? "+" : ""}${otp.fmt(h)}</td>
           <td class="hj-why">${escHtml(String(r.reason || r.reject || ""))}</td>
           <td>${st}</td>
+          <td class="num hj-left">${r.status === "approved" ? otp.fmt(balanceAfter.get(r.id)) : "—"}</td>
         </tr>`;
       }).join("");
       document.getElementById("hj-empty").hidden = R.length > 0;
@@ -2701,12 +2718,14 @@ function robotMenuHtml() {
     const csvBtn = document.getElementById("hj-csv");
     if (csvBtn) csvBtn.addEventListener("click", () => {
       const R = window.__hjRows || [];
-      const head = ["Дата", "Сотрудник", "Источник", "Тип", "Часы", "Причина", "Статус"];
+      const head = ["Дата", "Сотрудник", "Кто", "Источник", "Тип", "Часы", "Причина", "Статус", "Остаток часов"];
       const q = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
       const lines = [head.map(q).join(";")].concat(R.map((r) => [
-        r.date || "", r.empName || r.empSlug || "", reqSource(r) === "boss" ? "руководитель" : "заявка сотрудника",
+        r.date || "", r.empName || r.empSlug || "", r.decidedBy || "",
+        reqSource(r) === "boss" ? "руководитель" : "заявка сотрудника",
         TYPE_LABEL[r.type] || r.type || "", String(reqHoursSigned(r)), r.reason || "",
         ST[r.status] || r.status || "",
+        r.status === "approved" ? String(balanceMap.get(r.id)) : "",
       ].map(q).join(";")));
       const blob = new Blob(["\ufeff" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
       const a = document.createElement("a");
