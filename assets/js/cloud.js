@@ -107,6 +107,8 @@ window.OTP_CLOUD = (function () {
   /* --- запись (полный список) --- */
   async function put(list) {
     const c = cfg();
+    // служебные/тестовые записи никогда не уходят в облако (иначе браузеры воскрешают удалённые)
+    list = (list || []).filter((r) => !/^test-/i.test(String(r && r.id || "")));
     try {
       if (c.provider === "http" && c.url) {
         await fetch(c.url.replace(/\/$/, "") + "/requests", {
