@@ -20,6 +20,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEAM_DIR = os.path.join(ROOT, "team")
 
 SECTIONS = [
+    ("start", "Стартовая", "ph-play-circle", "смена, перерывы, время"),
     ("bonus", "Бонусы", "ph-wallet", "KPI и денежная часть"),
     ("lvl", "Мой LVL", "ph-medal", "уровень и звёзды"),
     ("awards", "Награды", "ph-trophy", "полученные и справочник"),
@@ -119,7 +120,7 @@ TEMPLATE = """<!DOCTYPE html>
 </html>
 """
 
-V = "169"
+V = "170"
 
 # Турнирная таблица команды (данные коллег) отдаётся только этим сотрудникам.
 # У остальных в payload её нет вовсе — ни в разметке, ни в исходнике страницы.
@@ -169,6 +170,9 @@ def main():
             # видит журнал всего отдела (canManage), иначе колонка «Остаток» смешала бы людей
             "hoursBaseInfo": {e2.get("slug", e2["id"]): {"base": e2.get("hours_base", 0)}
                               for e2 in data["employees"]} if e.get("canManage") else {},
+            # кому доступен отчёт по рабочему времени (руководитель и главный специалист)
+            "employeesList": [{"slug": e2.get("slug", e2["id"]), "name": e2["fullName"]}
+                              for e2 in data["employees"] if e2.get("status") != "left"] if e.get("canManage") else [],
             "schedule": _schedule_for(emp, data.get("schedule")),
             # дорожная карта развития — только своя (соседние на страницу не попадают)
             "roadmap": (data.get("roadmaps") or {}).get(e.get("slug", e["id"])),

@@ -1275,6 +1275,13 @@ def main():
     with open(OUT, "w", encoding="utf-8") as f:
         f.write(js)
     print(f"OK -> {OUT}")
+    # публичный JSON с графиком и линиями — его можно запрашивать по HTTP напрямую
+    sched_out = os.path.join(ROOT, "assets", "data", "schedule.json")
+    os.makedirs(os.path.dirname(sched_out), exist_ok=True)
+    with open(sched_out, "w", encoding="utf-8") as f:
+        json.dump({"generated": data.get("meta", {}).get("updated"),
+                   "schedule": data.get("schedule")}, f, ensure_ascii=False)
+    print(f"OK -> {sched_out}")
     for e in data["employees"]:
         kpi = e["current"]
         ks = " ".join(str(kpi[k]) for k in MKEYS) if kpi else "(нет KPI)"

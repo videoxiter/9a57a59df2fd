@@ -14,7 +14,7 @@
   const filledMonths = history.map((h, i) => (monthHasData(h) ? i : -1)).filter((i) => i >= 0);
   let selected = filledMonths.length ? filledMonths[filledMonths.length - 1] : Math.max(0, history.length - 1);
 
-  const SECTION_TITLES = { bonus: "Бонусы", income: "Карта доходов", settings: "Настройки", lvl: "Мой LVL", awards: "Награды", growth: "Мой рост", stats: "Статистика", rules: "Правила" };
+  const SECTION_TITLES = { start: "Стартовая", bonus: "Бонусы", income: "Карта доходов", settings: "Настройки", lvl: "Мой LVL", awards: "Награды", growth: "Мой рост", stats: "Статистика", rules: "Правила", graph: "Мой график", hours: "Журнал часов", links: "Ссылки" };
   document.title = `Мои результаты · ${SECTION_TITLES[SECTION] || ""} · ${emp.shortName}`;
 
   /* ---------- общие данные ---------- */
@@ -1963,6 +1963,426 @@ function robotMenuHtml() {
     </section>${robotMenuHtml()}`;
   }
 
+  /* ============================ СТАРТОВАЯ ============================
+     Учёт рабочего времени: смена, перерывы, обед, отсутствия. Отдельная таблица
+     otp_time_events — с часами увольнительных и переработок не пересекается. */
+  const ST_SLOTS = [
+    { slot: "tech1", label: "Технологический перерыв №1", short: "Тех.перерыв 1", icon: "ph-coffee", min: 15, kind: "break1", over: "break_over" },
+    { slot: "lunch", label: "Обед", short: "Обед", icon: "ph-fork-knife", min: 60, kind: "lunch", over: "lunch_over" },
+    { slot: "tech2", label: "Технологический перерыв №2", short: "Тех.перерыв 2", icon: "ph-coffee", min: 15, kind: "break2", over: "break_over" },
+  ];
+  const ST_ABSENCE = [
+    "Без заявки",
+    "Передохнуть на пару минут",
+    "Зарядка для глаз",
+    "Покурить",
+    "Физ. потребность (туалет, попить, принять лекарство)",
+    "Иное",
+  ];
+  const ST_KEY = "otp_time_events_v1";
+  const ST_CLOUD = () => (D.hrRules && D.hrRules.cloud) || null;
+  const stIsoDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const ST_MISS_KEY = "otp_time_missing_at";
+  const stMissing = () => { try { return Date.now() - +(localStorage.getItem(ST_MISS_KEY) || 0) < 10 * 60 * 1000; } catch (e) { return false; } };
+  function stApi(path, opts) {
+    const c = ST_CLOUD();
+    if (!c || c.provider !== "supabase" || !c.url) return Promise.reject(new Error("offline"));
+    if (stMissing()) return Promise.reject(new Error("обслуживание не подключено"));
+    const h = Object.assign({ apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json" }, (opts && opts.headers) || {});
+    return fetch(c.url.replace(/\/$/, "") + "/rest/v1/" + path, Object.assign({}, opts, { headers: h }))
+      .then((r) => {
+        if (r.status === 404) { try { localStorage.setItem(ST_MISS_KEY, String(Date.now())); } catch (e) {} }
+        return r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status));
+      });
+  }
+  const stLocal = () => { try { return JSON.parse(localStorage.getItem(ST_KEY) || "[]"); } catch (e) { return []; } };
+  const stLocalSave = (list) => { try { localStorage.setItem(ST_KEY, JSON.stringify(list)); } catch (e) {} };
+  function stNotify(kind, meta) {
+    const c = ST_CLOUD();
+    if (!c || !c.url) return;
+    fetch(c.url.replace(/\/$/, "") + "/functions/v1/notify", {
+      method: "POST",
+      headers: { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json" },
+      body: JSON.stringify({ kind, fio: emp.fullName, meta: meta || {} }),
+    }).catch(() => {});
+  }
+  /* Облако подключается после первого успешного запроса: пока таблицы нет (не выполнен
+     scripts/supabase_time.sql), страница не дёргает сеть и работает на локальной копии. */
+  const stReady = () => { try { return localStorage.getItem("otp_time_ok") === "1"; } catch (e) { return false; } };
+  const stMarkReady = () => { try { localStorage.setItem("otp_time_ok", "1"); } catch (e) {} };
+  function stEvents(day) {
+    const mine = (l) => l.filter((e) => e.empSlug === ME_SLUG && e.day === day);
+    if (!stReady()) return Promise.resolve(mine(stLocal()));
+    return stApi(`otp_time_events?select=*&day=eq.${day}&empSlug=eq.${ME_SLUG}`)
+      .then((rows) => mine(Array.isArray(rows) ? rows : []))
+      .catch(() => mine(stLocal()));
+  }
+  function stAdd(ev) {
+    const list = stLocal().filter((x) => x.id !== ev.id);
+    list.push(ev); stLocalSave(list);
+    return stApi("otp_time_events", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify([ev]),
+    }).then((r) => { stMarkReady(); return r; }).catch(() => null);
+  }
+  function stCalc(events, nowMs) {
+    let acc = 0, running = false, last = 0, active = null, started = null, stopped = null;
+    const used = new Set();
+    const sorted = events.slice().sort((a, b) => String(a.at).localeCompare(String(b.at)));
+    for (const e of sorted) {
+      const t = Date.parse(e.at);
+      if (!Number.isFinite(t)) continue;
+      if (e.type === "shift_start") { started = t; running = true; last = t; }
+      else if (e.type === "shift_stop") { if (running) { acc += t - last; running = false; } stopped = t; }
+      else if (e.type === "break_start" || e.type === "absence_start") {
+        if (running) { acc += t - last; running = false; }
+        active = { slot: e.slot || "absence", reason: e.reason || "", at: t, type: e.type };
+      } else if (e.type === "break_end" || e.type === "absence_end") {
+        used.add(e.slot || "absence");
+        if (!running) { running = true; last = t; }
+        active = null;
+      }
+    }
+    if (running) acc += nowMs - last;
+    return { sec: Math.max(0, Math.round(acc / 1000)), active, used, started, stopped, running };
+  }
+  const stHms = (sec) => {
+    const s = Math.max(0, Math.round(sec));
+    return [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60].map((x) => String(x).padStart(2, "0")).join(":");
+  };
+  const stHm = (ms) => { const d = new Date(ms); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
+  /* смена и линия на конкретный день из графика */
+  function stShift(date) {
+    const S = D.schedule;
+    if (!S || !S.months) return null;
+    const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    const m = S.months[iso];
+    if (!m) return null;
+    const fio = S.fio || emp.fullName;
+    const sh = (m.shifts && m.shifts[fio]) ? m.shifts[fio][String(date.getDate())] : null;
+    const lines = [];
+    const d0 = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    for (const [lid, info] of Object.entries(m.lines || {})) {
+      (info.weeks || []).forEach((week, i) => {
+        const names = Array.isArray(week) ? week : [week];
+        if (!names.some((n) => String(n).split(" ")[0] === String(fio).split(" ")[0])) return;
+        const mm = /^(\d{2})\.(\d{2})\s*-\s*(\d{2})\.(\d{2})$/.exec(String((info.labels || [])[i] || "").trim());
+        if (!mm) return;
+        const from = new Date(date.getFullYear(), +mm[2] - 1, +mm[1]);
+        let to = new Date(date.getFullYear(), +mm[4] - 1, +mm[3]);
+        if (to < from) to = new Date(date.getFullYear() + 1, +mm[4] - 1, +mm[3]);
+        if (d0 >= from && d0 <= to) lines.push({ id: lid, title: info.title });
+      });
+    }
+    let vacation = false;
+    const y = String(date.getFullYear());
+    const vacs = (S.vacations && S.vacations[y]) ? S.vacations[y] : null;
+    if (vacs) {
+      for (const [fio2, list] of Object.entries(vacs)) {
+        if (String(fio2).split(" ")[0] !== String(fio).split(" ")[0]) continue;
+        if ((list || []).some((p) => p.from <= iso + "-" + String(date.getDate()).padStart(2, "0") && p.to >= iso + "-" + String(date.getDate()).padStart(2, "0"))) vacation = true;
+      }
+    }
+    return { sh, lines, vacation };
+  }
+  /* день: выходной / отпуск / увольнительная / отгул / рабочая смена */
+  function stDayKind(date, shiftInfo) {
+    const day = stIsoDate(date);
+    const reqs = loadReqs().filter((r) => r.status === "approved" && r.date === day);
+    if (reqs.some((r) => r.type === "leave")) return { kind: "leave", title: "Увольнительная", icon: "ph-door-open" };
+    if (reqs.some((r) => r.type === "dayoff")) return { kind: "dayoff", title: "Отгул за выходную смену", icon: "ph-calendar-minus" };
+    if (shiftInfo && shiftInfo.vacation) return { kind: "vacation", title: "Отпуск", icon: "ph-airplane-tilt" };
+    const sh = shiftInfo && shiftInfo.sh;
+    if (!sh) return { kind: "off", title: "Вне графика", icon: "ph-moon" };
+    if (["shift", "weekend", "duty", "extra"].includes(sh.kind)) return { kind: "work", title: sh.title || "Смена", icon: "ph-briefcase", sh };
+    return { kind: "off", title: sh.title || "Выходной", icon: "ph-moon" };
+  }
+  function sectionStart() {
+    return `<section class="p-sec st-sec">
+      <div class="st-shift" id="st-shift"></div>
+      <div class="st-top">
+        <div class="st-status" id="st-status"><span class="st-si"><i class="ph-bold ph-hourglass"></i></span><span class="st-st-txt">Загрузка…</span></div>
+        <div class="st-timer-wrap"><div class="st-timer" id="st-timer">00:00:00</div><span class="st-timer-h">отработано за день</span></div>
+      </div>
+      <div class="st-actions" id="st-actions"></div>
+      <div class="st-note" id="st-note"></div>
+    </section>
+    ${emp.canManage ? `<section class="p-sec" id="st-report-sec">
+      <div class="p-sec-head"><h2><i class="ph-bold ph-chart-bar"></i> Отчёт по рабочему времени</h2>
+        <span class="p-sec-hint">кто сколько отработал по дням · норма 8 часов</span></div>
+      <div class="hj-filters st-filters">
+        <label class="hj-f"><span>Период с</span><input type="date" id="st-from"></label>
+        <label class="hj-f"><span>по</span><input type="date" id="st-to"></label>
+        <label class="hj-f"><span>Сотрудник</span><select id="st-emp"><option value="">Все</option></select></label>
+        <button class="btn btn-primary" type="button" id="st-show"><i class="ph-bold ph-magnifying-glass"></i> Показать</button>
+      </div>
+      <div class="st-sum" id="st-sum"></div>
+      <div class="st-table-wrap"><table class="hj-table st-table"><thead><tr>
+        <th>Дата</th><th>Сотрудник</th><th>Начало</th><th>Конец</th><th class="num">Отработано</th><th class="num">Недоработка</th><th class="num">Перерывы</th>
+      </tr></thead><tbody id="st-body"></tbody></table></div>
+      <p class="muted" id="st-empty" hidden>За выбранный период записей нет.</p>
+    </section>` : ""}`;
+  }
+  function initStart() {
+    const box = document.getElementById("st-actions");
+    const statusEl = document.getElementById("st-status");
+    const timerEl = document.getElementById("st-timer");
+    const shiftEl = document.getElementById("st-shift");
+    const noteEl = document.getElementById("st-note");
+    if (!box || !statusEl) return;
+
+    const now = new Date();
+    const today = stIsoDate(now);
+    const shiftInfo = stShift(now);
+    const dayKind = stDayKind(now, shiftInfo);
+    let events = [];
+    let timer = null;
+    let absenceOpen = false;
+    let absenceReason = "";
+    let customReason = "";
+
+    /* шапка: смена, линия, перерывы, обед */
+    if (shiftEl) {
+      const sh = dayKind.sh || (shiftInfo && shiftInfo.sh) || null;
+      const lines = (shiftInfo && shiftInfo.lines) || [];
+      const ln = lines.map((l) => `${l.id}${l.title ? " · " + l.title : ""}`).join(", ");
+      shiftEl.innerHTML = `
+        <div class="st-sh">
+          <span class="st-sh-day">${new Date().toLocaleDateString("ru-RU", { weekday: "long", day: "numeric", month: "long" })}</span>
+          <b class="st-sh-title">${escHtml(dayKind.title)}${sh && sh.time ? ` · ${escHtml(sh.time)}` : ""}</b>
+          ${ln ? `<span class="st-sh-line"><i class="ph-bold ph-git-branch"></i> ${escHtml(ln)}</span>` : ""}
+        </div>
+        ${sh ? `<div class="st-sh-sub">
+          ${sh.breaks && sh.breaks.length ? `<span><i class="ph-bold ph-coffee"></i> перерывы: ${sh.breaks.map(escHtml).join(", ")}</span>` : ""}
+          ${sh.lunch ? `<span><i class="ph-bold ph-fork-knife"></i> обед: ${escHtml(sh.lunch)}</span>` : ""}
+        </div>` : ""}`;
+    }
+
+    const render = () => {
+      const st = stCalc(events, Date.now());
+      const working = st.started && !st.stopped;
+      const isWorkDay = dayKind.kind === "work";
+      const canAct = isWorkDay && !st.stopped;
+
+      /* статус и иконка */
+      let icon = "ph-hourglass", text = "", cls = "";
+      if (!isWorkDay) { icon = dayKind.icon; text = dayKind.title; cls = "off"; }
+      else if (!st.started) { icon = "ph-alarm"; text = "Ожидание начала смены"; cls = "wait"; }
+      else if (st.stopped) { icon = "ph-check-circle"; text = "Смена завершена"; cls = "done"; }
+      else if (st.active) {
+        const slot = ST_SLOTS.find((s) => s.slot === st.active.slot);
+        if (st.active.type === "absence_start") {
+          icon = "ph-walking"; text = `Временное отсутствие · ${st.active.reason || "без причины"}`; cls = "pause";
+        } else if (slot) {
+          icon = slot.icon;
+          const to = stHm(st.active.at + slot.min * 60000);
+          text = `${slot.label} · с ${stHm(st.active.at)} до ${to}`;
+          cls = "pause";
+        } else { icon = "ph-pause"; text = "Пауза"; cls = "pause"; }
+      } else { icon = "ph-briefcase"; text = "Работа"; cls = "work"; }
+      if (statusEl) statusEl.innerHTML = `<span class="st-si k-${cls}"><i class="ph-bold ${icon}"></i></span><span class="st-st-txt">${escHtml(text)}</span>`;
+      if (timerEl) timerEl.textContent = stHms(st.sec);
+
+      /* кнопки */
+      const btn = (opts) => `<button class="st-btn${opts.run ? " is-run" : ""}${opts.used ? " is-used" : ""}" data-act="${opts.act}" ${opts.disabled ? "disabled" : ""}>
+        <i class="ph-bold ${opts.icon}"></i><span>${escHtml(opts.label)}</span>${opts.used ? '<i class="ph-bold ph-x st-x"></i>' : ""}</button>`;
+      const startedUsed = !!st.started;
+      const stopApplied = !!st.stopped;
+      const inPause = !!st.active;
+      const buttons = [];
+      buttons.push(btn({
+        act: "start", icon: "ph-play", label: startedUsed ? "Начало смены" : "Начало смены",
+        disabled: !canAct || startedUsed, used: startedUsed,
+      }));
+      for (const s of ST_SLOTS) {
+        const isActive = st.active && st.active.slot === s.slot && st.active.type === "break_start";
+        const used = st.used.has(s.slot);
+        buttons.push(btn({
+          act: "slot-" + s.slot, icon: isActive ? "ph-stop-circle" : s.icon,
+          label: isActive ? `${s.short} — Завершить` : s.label,
+          run: isActive,
+          disabled: !canAct || (!isActive && (used || inPause)),
+          used: used && !isActive,
+        }));
+      }
+      const absActive = st.active && st.active.type === "absence_start";
+      buttons.push(btn({
+        act: "absence", icon: absActive ? "ph-stop-circle" : "ph-walking",
+        label: absActive ? `Отсутствие — Завершить` : "Временное отсутствие",
+        run: absActive,
+        disabled: !canAct || (!absActive && (st.used.has("absence") || inPause)),
+        used: st.used.has("absence") && !absActive,
+      }));
+      buttons.push(btn({
+        act: "stop", icon: "ph-sign-out", label: "Завершить смену",
+        disabled: !canAct || !working || inPause, used: stopApplied,
+      }));
+      if (absenceOpen) {
+        buttons.push(`<div class="st-absence">
+          <label><span>Причина отсутствия</span>
+            <select id="st-reason">${ST_ABSENCE.map((r) => `<option${r === absenceReason ? " selected" : ""}>${escHtml(r)}</option>`).join("")}</select></label>
+          <label class="st-custom" id="st-custom-wrap"${absenceReason === "Иное" ? "" : " hidden"}><span>Опиши причину</span>
+            <input id="st-custom" type="text" maxlength="120" placeholder="например: забрал ребёнка из школы" value="${escHtml(customReason)}"></label>
+          <div class="st-absence-a">
+            <button class="btn btn-primary" data-act="absence-ok"><i class="ph-bold ph-check"></i> Отметить</button>
+            <button class="btn btn-ghost" data-act="absence-cancel">Отмена</button>
+          </div>
+        </div>`);
+      }
+      box.innerHTML = buttons.join("");
+      if (noteEl) noteEl.innerHTML = !isWorkDay
+        ? `<i class="ph-bold ph-info"></i> ${escHtml(dayKind.title)} — рабочие кнопки в этот день не активны.`
+        : stMissing()
+          ? `<i class="ph-bold ph-warning"></i> Учёт ещё не подключён: выполните <b>scripts/supabase_time.sql</b> в Supabase. Пока время считается только в этом браузере.`
+          : st.sec >= 8 * 3600
+            ? `<i class="ph-bold ph-check-circle"></i> Норма 8 часов на сегодня отработана.`
+            : `<i class="ph-bold ph-info"></i> До нормы осталось ${stHms(8 * 3600 - st.sec)}.`;
+
+      /* опоздания и затянувшиеся перерывы проверяет облачная функция cron — без участия браузера */
+    };
+
+    /* действия */
+    box.addEventListener("click", async (e) => {
+      const b = e.target.closest("[data-act]");
+      if (!b) return;
+      const act = b.dataset.act;
+      const st = stCalc(events, Date.now());
+      const at = new Date().toISOString();
+      const base = { id: "t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), empSlug: ME_SLUG, empName: emp.fullName, day: today };
+      const push = (ev) => { events = events.concat([ev]); stAdd(ev); render(); };
+
+      if (act === "start") {
+        if (st.started) return;
+        push({ ...base, type: "shift_start", slot: null, at });
+        stNotify("shift_start");
+        return;
+      }
+      if (act === "stop") {
+        if (!st.started || st.stopped) return;
+        push({ ...base, type: "shift_stop", slot: null, at });
+        stNotify("shift_stop");
+        return;
+      }
+      if (act.startsWith("slot-")) {
+        const slot = act.slice(5);
+        const s = ST_SLOTS.find((x) => x.slot === slot);
+        if (!s) return;
+        const active = st.active && st.active.slot === slot && st.active.type === "break_start";
+        if (active) {
+          push({ ...base, type: "break_end", slot, at });
+          stNotify("return");
+        } else {
+          if (!st.running || st.active || st.used.has(slot)) return;
+          push({ ...base, type: "break_start", slot, at });
+          stNotify(s.kind);
+        }
+        return;
+      }
+      if (act === "absence") {
+        const active = st.active && st.active.type === "absence_start";
+        if (active) {
+          push({ ...base, type: "absence_end", slot: "absence", at });
+          stNotify("return");
+        } else {
+          absenceOpen = true; render();
+        }
+        return;
+      }
+      if (act === "absence-cancel") { absenceOpen = false; render(); return; }
+      if (act === "absence-ok") {
+        const sel = document.getElementById("st-reason");
+        const custom = document.getElementById("st-custom");
+        const reason = (sel && sel.value === "Иное" && custom && custom.value.trim()) ? custom.value.trim() : (sel ? sel.value : "Без заявки");
+        absenceOpen = false;
+        push({ ...base, type: "absence_start", slot: "absence", at, reason });
+        stNotify("absence", { reason });
+        return;
+      }
+    });
+
+    box.addEventListener("change", (e) => {
+      if (e.target.id === "st-reason") {
+        absenceReason = e.target.value;
+        const w = document.getElementById("st-custom-wrap");
+        if (w) w.hidden = absenceReason !== "Иное";
+      }
+      if (e.target.id === "st-custom") customReason = e.target.value;
+    });
+    box.addEventListener("input", (e) => { if (e.target.id === "st-custom") customReason = e.target.value; });
+
+    render();
+    events = events || [];
+    stEvents(today).then((rows) => { events = rows || []; render(); }).catch(() => {});
+    timer = setInterval(() => {
+      const st = stCalc(events, Date.now());
+      if (timerEl) timerEl.textContent = stHms(st.sec);
+      render();
+    }, 1000);
+    window.addEventListener("beforeunload", () => clearInterval(timer));
+
+    /* отчёт для руководителя/главного специалиста */
+    if (emp.canManage) initStartReport();
+  }
+
+  function initStartReport() {
+    const from = document.getElementById("st-from");
+    const to = document.getElementById("st-to");
+    const empSel = document.getElementById("st-emp");
+    const body = document.getElementById("st-body");
+    const sumEl = document.getElementById("st-sum");
+    const empty = document.getElementById("st-empty");
+    const show = document.getElementById("st-show");
+    if (!from || !body) return;
+    const now = new Date();
+    from.value = stIsoDate(new Date(now.getFullYear(), now.getMonth(), 1));
+    to.value = stIsoDate(now);
+    const names = new Map();
+    for (const e of (window.OTP_EMP && window.OTP_EMP.employeesList ? window.OTP_EMP.employeesList : [])) names.set(e.slug, e.name);
+    if (!names.size) names.set(ME_SLUG, emp.fullName);
+    empSel.innerHTML = '<option value="">Все сотрудники</option>' + [...names.entries()]
+      .sort((a, b) => String(a[1]).localeCompare(String(b[1]), "ru"))
+      .map(([slug, name]) => `<option value="${escHtml(slug)}">${escHtml(name)}</option>`).join("");
+
+    const load = () => {
+      const a = from.value || stIsoDate(now), b = to.value || a;
+      const q = `otp_time_events?select=*&day=gte.${a}&day=lte.${b}&order=day.asc,at.asc`;
+      return stApi(q).catch(() => stLocal().filter((e) => e.day >= a && e.day <= b));
+    };
+
+    const paint = (rows) => {
+      const pick = empSel.value;
+      const list = (rows || []).filter((e) => !pick || e.empSlug === pick);
+      const byDay = new Map();
+      for (const e of list) {
+        const k = e.empSlug + "|" + e.day;
+        if (!byDay.has(k)) byDay.set(k, { slug: e.empSlug, name: e.empName || e.empSlug, day: e.day, ev: [] });
+        byDay.get(k).ev.push(e);
+      }
+      const rowsOut = [...byDay.values()].map((d) => {
+        const st = stCalc(d.ev, Date.now());
+        return { ...d, sec: st.sec, started: st.started, stopped: st.stopped, breaks: st.used.size };
+      }).sort((x, y) => y.day.localeCompare(x.day) || String(x.name).localeCompare(String(y.name), "ru"));
+      const total = rowsOut.reduce((s, r) => s + r.sec, 0);
+      const deficit = rowsOut.reduce((s, r) => s + Math.max(0, 8 * 3600 - r.sec), 0);
+      if (sumEl) sumEl.innerHTML = `<span class="hj-chip">дней: <b>${rowsOut.length}</b></span>
+        <span class="hj-chip plus">отработано: <b>${stHms(total)}</b></span>
+        <span class="hj-chip minus">недоработка: <b>${stHms(deficit)}</b></span>`;
+      body.innerHTML = rowsOut.slice(0, 200).map((r) => `<tr class="${r.sec < 8 * 3600 ? "neg" : "pos"}">
+        <td class="mono">${escHtml(r.day)}</td><td>${escHtml(String(r.name))}</td>
+        <td class="mono">${r.started ? stHm(r.started) : "—"}</td>
+        <td class="mono">${r.stopped ? stHm(r.stopped) : "—"}</td>
+        <td class="num">${stHms(r.sec)}</td>
+        <td class="num">${r.sec < 8 * 3600 ? "−" + stHms(8 * 3600 - r.sec) : "—"}</td>
+        <td class="num">${r.breaks}</td></tr>`).join("");
+      if (empty) empty.hidden = rowsOut.length > 0;
+    };
+
+    show.addEventListener("click", () => load().then(paint));
+    // автозагрузки нет: отчёт запрашивается кнопкой «Показать» (и не дёргает сеть до настройки)
+    if (sumEl) sumEl.innerHTML = '<span class="hj-chip">нажми «Показать», чтобы построить отчёт</span>';
+  }
+
   function sectionLinks() {
     const L = D.links || [];
     if (!L.length) return `<section class="p-sec"><p class="muted">Список ссылок ещё не заполнен.</p></section>`;
@@ -2057,7 +2477,7 @@ function robotMenuHtml() {
     });
   }
 
-  const RENDER = { bonus: sectionBonus, income: sectionIncome, lvl: sectionLvl, awards: sectionAwards, growth: sectionGrowth, graph: sectionGraph, stats: sectionStats, rules: sectionRules, hours: sectionHours, links: sectionLinks, settings: sectionSettings };
+  const RENDER = { start: sectionStart, bonus: sectionBonus, income: sectionIncome, lvl: sectionLvl, awards: sectionAwards, growth: sectionGrowth, graph: sectionGraph, stats: sectionStats, rules: sectionRules, hours: sectionHours, links: sectionLinks, settings: sectionSettings };
   root.innerHTML = heroHtml() + (RENDER[SECTION] || sectionBonus)();
 
   /* ---------- общие обработчики ---------- */
@@ -2788,6 +3208,7 @@ function robotMenuHtml() {
   setTimeout(refreshSectionIcons, 60);
   setTimeout(refreshSectionIcons, 600);
   if (emp.canManage) { initPendingHours(); syncReqs().then(() => initPendingHours()).catch(() => {}); }
+  if (SECTION === "start") initStart();
   if (SECTION === "hours") { initHoursJournal(); if (window.OTP_CLOUD && CLOUD) syncReqs().then(() => initHoursJournal()).catch(() => {}); }
   if (SECTION === "bonus") initTips();
   setTimeout(() => { fitStarSum(); if (SECTION === "bonus") initTips(); }, 150);
