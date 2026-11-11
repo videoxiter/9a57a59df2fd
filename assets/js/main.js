@@ -34,15 +34,16 @@
   const samePerson = (a, b) => !!a && !!b && surname(a) === surname(b);
 
   /* ---------- накопленные часы ----------
-     Правило одно на весь сайт (otp.reqDelta): списывает только увольнительная, максимум
-     4 ч; отгул за выходную смену и прочее часы не двигают. */
+     Правило одно на весь сайт (otp.reqDelta): увольнительная списывает до 4 ч, если
+     руководитель не поставил «не списывать»; корректировка — по знаку; отгул за
+     выходную смену и прочее часы не двигают. Автоматических исключений по KPI нет. */
   const hoursOfReq = (r) => otp.reqHours(r);
   function balanceOf(emp, reqs) {
     if (!emp) return null;
     let sum = emp.hours_base || 0;
     for (const r of reqs) {
       if (r.empSlug !== emp.slug || r.status !== "approved") continue;
-      sum += otp.reqDelta(r, { noDeduct: !!emp.no_deduct || !!r.noDeduct });
+      sum += otp.reqDelta(r);
     }
     return { balance: Math.round(sum * 10) / 10 };
   }
@@ -71,7 +72,7 @@
     list = list.filter((r) => !isGone(r));
     const TYPE = { adjust: "Корректировка (руководитель)", overtime: "Переработка", leave: "Увольнительная", dayoff: "Отгул за вых. смену" };
     const ST = { approved: "подтверждено", pending: "на рассмотрении", cancelled: "отменено", rejected: "отклонено" };
-    const signed = (r) => otp.reqDelta(r, { noDeduct: !!((bySlug(r.empSlug) || {}).no_deduct || r.noDeduct) });
+    const signed = (r) => otp.reqDelta(r);
     const names = [...new Set(list.map((r) => r.empName).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), "ru"));
     const years = [...new Set(list.map((r) => String(r.date || "").slice(0, 4)).filter(Boolean))].sort().reverse();
     box.innerHTML = `
@@ -121,7 +122,7 @@
       const view = shown.slice(page * PER, page * PER + PER);
       document.getElementById("hjx-body").innerHTML = view.map((r) => {
         const hh = signed(r);
-        const note = otp.reqDeltaNote(r, { noDeduct: !!(bySlug(r.empSlug) || {}).no_deduct });
+        const note = otp.reqDeltaNote(r);
         const who = r.decidedBy || (r.status === "approved" ? "руководитель (ранее)" : "—");
         return `<tr><td class="mono">${escJ(String(r.date || "—"))}</td><td>${escJ(String(r.empName || ""))}</td>
           <td class="hj-who">${escJ(String(who))}</td>
@@ -129,7 +130,7 @@
           <td>${escJ(TYPE[r.type] || r.type || "")}</td>
           <td class="num ${hh < 0 ? "neg" : "pos"}"${note ? ` title="${escJ(note)}"` : ""}>${hh === 0 ? "0" : (hh > 0 ? "+" : "") + hh}${note ? '<sup class="hj-zero">·</sup>' : ""}</td>
           <td class="hj-why">${escJ(String(r.reason || ""))}</td>
-          <td><span class="hj-st hj-${r.status || "pending"}">${ST[r.status] || r.status || ""}</span></td>
+          <td><span class="hj-st hj-${r.status || "pending"}">${ST[r.status] || r.status || ""}</span>${(() => { const d = otp.reqDecision(r); return d ? `<span class="hj-dec">${escJ(d)}</span>` : ""; })()}</td>
           <td class="num hj-left">${r.status === "approved" ? balMap.get(r.id) : "—"}</td></tr>`;
       }).join("");
       const pager = document.getElementById("hjx-pager");

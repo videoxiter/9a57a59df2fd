@@ -1847,6 +1847,10 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
   background: rgba(251,191,36,.12); border: 1px solid rgba(251,191,36,.28); white-space: nowrap; }
 /* строка журнала, которая часы не двигает */
 .hj-zero { font-size: 10px; color: #7f8a99; margin-left: 1px; }
+/* решение руководителя по заявке — рядом со статусом */
+.hj-dec { display: inline-block; margin-left: 7px; font-size: 10.5px; line-height: 1.35;
+  padding: 2px 7px; border-radius: 7px; color: #a7b4c6;
+  background: rgba(148,163,184,.12); border: 1px solid rgba(148,163,184,.22); white-space: nowrap; }
 .hx-form { display: grid; grid-template-columns: 1.1fr .55fr 1.7fr auto; gap: 9px; align-items: stretch; }
 .hx-form select, .hx-form input { padding: 10px 12px; border-radius: 10px; font-size: 13.5px; color: #e8edf5;
   background: rgba(9,12,18,.75); border: 1px solid rgba(148,163,184,.22); outline: none; }

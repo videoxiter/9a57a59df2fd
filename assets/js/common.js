@@ -166,10 +166,11 @@
     t._timer = setTimeout(() => t.classList.remove("show"), 3200);
   };
   /* ---------- часы: единое правило для дашборда и личных страниц ----------
-     • Увольнительная (до 4 ч) списывается. Не списывается только если стоит галка
-       «не списывать» или показатели сотрудника не позволяют (кроме решения руководителя).
+     Решение о списании принимает только руководитель — галкой «не списывать»
+     на заявке (или галочкой в форме решения). Никаких автоматических исключений
+     по показателям нет.
+     • Увольнительная (до 4 ч) списывается, если не стоит «не списывать».
      • Корректировка руководителя — по знаку: плюс начисляет, минус списывает.
-       Подтвердил — значит часы сдвинулись, галки «не списывать» у неё нет.
      • Отгул за выходную смену (8 ч) — всегда 0: компенсация выходной смены не
        записывается переработкой, поэтому и отгул её не тратит.
      • Переработка — плюс. */
@@ -183,23 +184,35 @@
     const a = p(r.from), b = p(r.to);
     return a == null || b == null ? 0 : Math.max(0, Math.round((b - a) * 10) / 10);
   };
-  /** Влияние заявки на остаток часов. opts.noDeduct — показатели запрещают списание. */
-  otp.reqDelta = (r, opts) => {
-    const o = opts || {};
+  /** Влияние заявки на остаток часов. */
+  otp.reqDelta = (r) => {
     if (!r) return 0;
     if (r.type === "overtime") return otp.reqHours(r);
     if (r.type === "leave") {
-      const capped = Math.min(otp.reqHours(r), otp.LEAVE_MAX);
-      return (r.forceDeduct || (!o.noDeduct && !r.noDeduct)) ? -capped : 0;
+      if (r.noDeduct && !r.forceDeduct) return 0;          // решение руководителя «не списывать»
+      return -Math.min(otp.reqHours(r), otp.LEAVE_MAX);
     }
     if (r.type === "adjust") return +r.hours || 0;        // знак задаёт руководитель
     return 0;                                            // dayoff и всё прочее
   };
   /** Подсказка, почему подтверждённая заявка не изменила часы. */
-  otp.reqDeltaNote = (r, opts) => {
-    if (!r || r.status !== "approved" || otp.reqDelta(r, opts) !== 0) return "";
+  otp.reqDeltaNote = (r) => {
+    if (!r || r.status !== "approved" || otp.reqDelta(r) !== 0) return "";
     if (r.type === "dayoff") return "отгул за выходную смену — часы не двигает";
-    if (r.type === "leave") return "увольнительная не списывается: показатели не позволяют";
+    if (r.type === "leave") return "увольнительная не списывается — решение руководителя";
+    return "";
+  };
+  /** Что руководитель решил по этой заявке — словами, для журналов и отчётов. */
+  otp.reqDecision = (r) => {
+    if (!r) return "";
+    if (r.status === "pending") return "ждёт решения";
+    if (r.status !== "approved") return "";
+    const d = otp.reqDelta(r);
+    const h = (x) => (Math.round(Math.abs(x) * 10) / 10).toString().replace(".", ",");
+    if (r.type === "dayoff") return "часы не двигает";
+    if (r.type === "leave") return d < 0 ? `руководитель списал ${h(d)} ч` : "руководитель не списывал";
+    if (r.type === "adjust") return d < 0 ? `руководитель списал ${h(d)} ч` : `руководитель начислил ${h(d)} ч`;
+    if (r.type === "overtime") return `начислено ${h(d)} ч`;
     return "";
   };
   otp.reveal = reveal;

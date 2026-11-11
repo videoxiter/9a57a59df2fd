@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Генерирует персональные страницы сотрудника: набор разделов.
 
 team/<slug>/           — Бонусы (KPI + денежная часть)
@@ -119,7 +119,7 @@ TEMPLATE = """<!DOCTYPE html>
 </html>
 """
 
-V = "166"
+V = "168"
 
 # Турнирная таблица команды (данные коллег) отдаётся только этим сотрудникам.
 # У остальных в payload её нет вовсе — ни в разметке, ни в исходнике страницы.
@@ -167,8 +167,7 @@ def main():
             "incomeRules": data.get("incomeRules", {}),
             # база часов и флаг «показатели не позволяют списание» — только тем, кто и так
             # видит журнал всего отдела (canManage), иначе колонка «Остаток» смешала бы людей
-            "hoursBaseInfo": {e2.get("slug", e2["id"]): {"base": e2.get("hours_base", 0),
-                                                          "nd": bool(e2.get("no_deduct"))}
+            "hoursBaseInfo": {e2.get("slug", e2["id"]): {"base": e2.get("hours_base", 0)}
                               for e2 in data["employees"]} if e.get("canManage") else {},
             "schedule": _schedule_for(emp, data.get("schedule")),
             # дорожная карта развития — только своя (соседние на страницу не попадают)

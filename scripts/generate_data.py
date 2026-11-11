@@ -949,16 +949,8 @@ def _surname(fio):
     return (fio or "").split()[0].lower().replace("ё", "е")
 
 
-def _no_deduct(latest):
-    """Часы увольнительных не списываются только без провальных показателей (см. константы выше)."""
-    vals = [latest.get(k) for k in MKEYS if latest.get(k) is not None]
-    if not vals:
-        return False
-    if any(v <= NO_DEDUCT_HARD_MAX for v in vals):
-        return False
-    if len([v for v in vals if v < NO_DEDUCT_MIN_METRIC]) >= NO_DEDUCT_LOW_LIMIT:
-        return False
-    return True
+# Списание часов больше не зависит от KPI: решение принимает только руководитель
+# галкой «не списывать» на заявке. Автоматических исключений нет.
 
 
 def _cloud():
@@ -1081,14 +1073,8 @@ HOURS_BASE = {
     "frolov": 13, "bolgov": 8, "melnikov": 13, "khasanov": 1, "pestovsky": 6,
     "eliseev": 18, "zavyalov": 6, "yuryev": 5, "pospelova": 3,
 }
-# Часы увольнительных НЕ списываются, если у сотрудника нет «провальных» показателей:
-#   • любой показатель 6 и ниже — списание обязательно;
-#   • два и более показателя ниже 7 — тоже списание;
-#   • иначе (все показатели 7 и выше) — часы не списываются.
-# Средний KPI в этом решении больше не участвует.
-NO_DEDUCT_MIN_METRIC = 7
-NO_DEDUCT_HARD_MAX = 6
-NO_DEDUCT_LOW_LIMIT = 2
+# Списание часов от KPI не зависит: единственное решение — галка «не списывать»,
+# которую ставит руководитель при подтверждении заявки.
 
 
 # ── Карта доходов ──────────────────────────────────────────────────────────────
@@ -1217,10 +1203,6 @@ def build():
             "history": history,
             "current": current, "avg": avg, "growth_delta": growth_delta,
             "hours_base": HOURS_BASE.get(eid, 0),
-            "no_deduct": _no_deduct(latest),
-            "no_deduct_low": [{"key": k, "title": (METRICS.get(k) or {}).get("label", k),
-                               "value": latest.get(k)} for k in MKEYS
-                              if latest.get(k) is not None and latest.get(k) < NO_DEDUCT_MIN_METRIC],
             "stars": stars_total, "stars_delta": stars_delta, "starLog": stars_log,
             "lvl": max(1, min(MAX_LVL, 1 + stars_total // 10)), "stars_in_level": stars_total % 10,
             "bonuses": latest.get("money", []),
@@ -1259,8 +1241,7 @@ def build():
         "rules": RULES,
         "bonusRules": BONUS_RULES,
         "links": LINKS,
-        "hrRules": {"noDeductMin": NO_DEDUCT_MIN_METRIC, "noDeductHard": NO_DEDUCT_HARD_MAX,
-                    "noDeductLowLimit": NO_DEDUCT_LOW_LIMIT, "leaveMaxHours": 4,
+        "hrRules": {"leaveMaxHours": 4,
                     "queueFromLvl": 2, "hoursBaseDate": "02.10.2026",
                     "cloud": _cloud()},
         "months": [month_label(m) for m in months],

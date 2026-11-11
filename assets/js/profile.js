@@ -977,14 +977,8 @@ function robotMenuHtml() {
     return loadReqs().filter((r) => r.empSlug === ME_SLUG)
       .sort((a, b) => key(b).localeCompare(key(a)));   // сверху — поздние даты, ниже — ранние
   }
-  const HR_RULES = (D && D.hrRules) || { noDeductAvg: 8, leaveMaxHours: 4, queueFromLvl: 2 };
-  const NO_DEDUCT = !!emp.no_deduct;                       // средний ≥ 9.0 и ни один показатель ниже 8
+  const HR_RULES = (D && D.hrRules) || { leaveMaxHours: 4, queueFromLvl: 2 };
   const MY_AVG = emp.avg;
-  const MIN_METRIC = HR_RULES.noDeductMin != null ? HR_RULES.noDeductMin : 7;
-  const HARD_METRIC = HR_RULES.noDeductHard != null ? HR_RULES.noDeductHard : 6;
-  const LOW_LIMIT = HR_RULES.noDeductLowLimit != null ? HR_RULES.noDeductLowLimit : 2;
-  const LOW_METRICS = emp.no_deduct_low || [];
-  const LOW_TXT = LOW_METRICS.map((m) => `${m.title} <b>${m.value}</b>`).join(", ");
   const QUEUE_LVL = (emp.lvl || 1) >= (HR_RULES.queueFromLvl || 2);
   function hoursBalance() {
     let plus = 0, minus = 0, dayoffs = 0;
@@ -992,8 +986,8 @@ function robotMenuHtml() {
       if (r.status !== "approved") continue;
       const h = hoursOf(r);
       if (r.type === "dayoff") { dayoffs += h; continue; }   // отгул — только справочная сумма
-      // единое правило сайта: списывает только увольнительная (≤ 4 ч), прочее не минусует
-      const d = otp.reqDelta(r, { noDeduct: NO_DEDUCT || r.noDeduct });
+      // единое правило сайта: решает руководитель (галка «не списывать»), KPI не участвует
+      const d = otp.reqDelta(r);
       if (d >= 0) plus += d; else minus += -d;
     }
     const base = emp.hours_base || 0;
@@ -1004,8 +998,8 @@ function robotMenuHtml() {
   const fmtH = (h) => (Math.round(h * 10) / 10).toString().replace(".", ",") + " ч";
   const statusChip = (r) => {
     if (r.status === "approved") {
-      const note = otp.reqDeltaNote(r, { noDeduct: NO_DEDUCT || !!r.noDeduct });
-      return `<span class="req-st ok"><i class="ph-bold ph-check-circle"></i> подтверждено${note ? " · " + note : r.forceDeduct ? " · списано по решению руководителя" : ""}</span>`;
+      const dec = otp.reqDecision(r);
+      return `<span class="req-st ok"><i class="ph-bold ph-check-circle"></i> подтверждено</span>${dec ? `<span class="hj-dec">${dec}</span>` : ""}`;
     }
     if (r.status === "rejected") return `<span class="req-st no"><i class="ph-bold ph-x-circle"></i> отказано</span>`;
     if (r.status === "cancelled") return `<span class="req-st cancel"><i class="ph-bold ph-prohibit"></i> отменено${r.cancelledBy === "boss" ? " руководителем" : r.cancelledBy === "emp" ? " тобой" : ""}</span>`;
@@ -1293,9 +1287,7 @@ function robotMenuHtml() {
       const b = hoursBalance();
       const reqs = myRequests();
       const pending = reqs.filter((r) => r.status === "pending").length;
-      const ruleNote = NO_DEDUCT
-        ? `<div class="hr-rule good"><i class="ph-bold ph-shield-check"></i> Увольнительные <b>не списывают часы</b>: все показатели за последний месяц ${MIN_METRIC} и выше.</div>`
-        : `<div class="hr-rule warn"><i class="ph-bold ph-warning"></i> Увольнительные <b>списывают часы</b>: ${LOW_TXT ? `показатели ниже ${MIN_METRIC} — ${LOW_TXT}` : `есть показатель ${HARD_METRIC} и ниже`}. Чтобы не списывались — все показатели от ${MIN_METRIC}.</div>`;
+      const ruleNote = `<div class="hr-rule"><i class="ph-bold ph-info"></i> Списывается ли увольнительная, решает руководитель при подтверждении — отдельной галкой «не списывать». От показателей это больше не зависит.</div>`;
       const queueNote = QUEUE_LVL
         ? `<div class="hr-rule gold"><i class="ph-bold ph-crown-simple"></i> <b>LVL ${emp.lvl} · ${lvlNow ? lvlNow.title : ""}</b> — право увольнительной <b>вне очереди</b>: приоритет при выборе даты и времени.</div>`
         : `<div class="hr-rule muted"><i class="ph-bold ph-lock"></i> Внеочередная увольнительная откроется на <b>LVL ${HR_RULES.queueFromLvl}</b> «${(lvlInfo(HR_RULES.queueFromLvl) || {}).title || ""}» — сейчас LVL ${emp.lvl}.</div>`;
@@ -1306,7 +1298,7 @@ function robotMenuHtml() {
           <span class="gs-h-s">${b.balance >= 0 ? "часов накоплено" : "часов нужно отработать"}${b.base ? ` · с учётом базы ${fmtH(b.base)}` : ""}</span>
         </div>
         <div class="gs-h-card"><span class="gs-h-k">Подтверждено</span><span class="gs-h-v good">+${fmtH(b.plus)}</span><span class="gs-h-s">переработки</span></div>
-        <div class="gs-h-card"><span class="gs-h-k">Списано</span><span class="gs-h-v bad">−${fmtH(b.minus)}</span><span class="gs-h-s">${NO_DEDUCT ? "увольнительные не списываются" : "увольнительные списываются"}</span></div>
+        <div class="gs-h-card"><span class="gs-h-k">Списано</span><span class="gs-h-v bad">−${fmtH(b.minus)}</span><span class="gs-h-s">по решению руководителя</span></div>
         <div class="gs-h-card"><span class="gs-h-k">Отгулы за вых. смены</span><span class="gs-h-v">${fmtH(b.dayoffs)}</span><span class="gs-h-s">компенсация выходных смен</span></div>
         <div class="gs-h-card"><span class="gs-h-k">На согласовании</span><span class="gs-h-v">${pending}</span><span class="gs-h-s">${pending === 1 ? "заявка" : "заявок"}</span></div>
       </div>
@@ -1436,8 +1428,6 @@ function robotMenuHtml() {
         ? `<label class="otp-f"><span>${label}</span><textarea name="${name}" rows="3" ${req ? "required" : ""} placeholder="Опиши подробно — это увидит руководитель"></textarea></label>`
         : `<label class="otp-f"><span>${label}</span><input type="${kind}" name="${name}" ${req ? "required" : ""}></label>`).join("")
         + (type === "leave" ? `<div class="otp-note"><i class="ph ph-info"></i> Увольнительная — не больше ${HR_RULES.leaveMaxHours} часов в день.</div>`
-            + (NO_DEDUCT ? `<div class="otp-note good"><i class="ph-bold ph-shield-check"></i> Без списания часов: все показатели за последний месяц ${MIN_METRIC} и выше.</div>`
-                         : `<div class="otp-note warn"><i class="ph-bold ph-warning"></i> Часы спишутся: ${LOW_TXT ? `ниже ${MIN_METRIC} — ${LOW_TXT}` : `есть показатель ${HARD_METRIC} и ниже`}.</div>`)
             + (QUEUE_LVL ? `<div class="otp-note gold"><i class="ph-bold ph-crown-simple"></i> LVL ${emp.lvl} — увольнительная вне очереди.</div>` : "")
             : "")
         + `<div class="otp-form-foot"><button class="btn btn-primary" type="submit"><i class="ph-bold ph-paper-plane-tilt"></i> Отправить руководителю</button>
@@ -1943,7 +1933,7 @@ function robotMenuHtml() {
     return l.filter((r) => r.empSlug !== "deleted" && !/^\[(удалено|тест)\]/.test(String(r.reason || "")) && !/^DIAG TEST/i.test(String(r.reason || "")));
   }
   function reqSource(r) { return r.type === "adjust" ? "boss" : "emp"; }
-  function reqHoursSigned(r) { return otp.reqDelta(r, { noDeduct: NO_DEDUCT || !!r.noDeduct }); }
+  function reqHoursSigned(r) { return otp.reqDelta(r); }
   function sectionHours() {
     const list = allReqList();
     const years = [...new Set(list.map((r) => (r.date || "").slice(0, 4)).filter(Boolean))].sort().reverse();
@@ -2643,11 +2633,10 @@ function robotMenuHtml() {
         const info = (D.hoursBaseInfo || {})[slug];
         return info ? +info.base || 0 : 0;
       };
-      const ndOf = (slug) => (slug === ME_SLUG ? NO_DEDUCT : !!((D.hoursBaseInfo || {})[slug] || {}).nd);
       for (const r of list.slice().reverse()) {
         const slug = r.empSlug || ME_SLUG;
         if (!run.has(slug)) run.set(slug, baseOf(slug));
-        if (r.status === "approved") run.set(slug, run.get(slug) + otp.reqDelta(r, { noDeduct: ndOf(slug) || !!r.noDeduct }));
+        if (r.status === "approved") run.set(slug, run.get(slug) + otp.reqDelta(r));
         m.set(r.id, Math.round(run.get(slug) * 10) / 10);
       }
       return m;
@@ -2663,9 +2652,10 @@ function robotMenuHtml() {
       const balanceAfter = balanceMap = calcBalances(R);
       body.innerHTML = pageRows.map((r) => {
         const h = reqHoursSigned(r);
-        const zeroNote = otp.reqDeltaNote(r, { noDeduct: NO_DEDUCT || !!r.noDeduct });
+        const zeroNote = otp.reqDeltaNote(r);
         const src = reqSource(r) === "boss" ? '<span class="hj-boss">руководитель</span>' : '<span class="hj-emp-src">заявка</span>';
-        const st = `<span class="hj-st hj-${r.status || "pending"}">${ST[r.status] || r.status || "—"}</span>`;
+        const dec = otp.reqDecision(r);
+        const st = `<span class="hj-st hj-${r.status || "pending"}">${ST[r.status] || r.status || "—"}</span>${dec ? `<span class="hj-dec">${escHtml(dec)}</span>` : ""}`;
         return `<tr class="${h < 0 ? "neg" : "pos"}">
           <td class="mono">${escHtml(String(r.date || "—"))}</td>
           <td>${escHtml(String(r.empName || r.empSlug || "—"))}</td>

@@ -31,8 +31,7 @@
   const dmy = (iso) => { if (!iso) return "—"; const [y, m, d] = iso.split("-"); return `${d}.${m}.${y}`; };
 
   /* Баланс часов сотрудника: база + подтверждённые переработки − увольнительные
-     (увольнительные не списываются, если у сотрудника нет провальных показателей
-     или руководитель отметил «не списывать»). */
+     (увольнительная не списывается только если руководитель поставил «не списывать»). */
   function empHours(slug) {
     const D = window.OTP_DATA || {};
     const e = (D.employees || []).find((x) => x.slug === slug);
@@ -40,18 +39,13 @@
     let plus = 0, minus = 0;
     for (const r of load2()) {
       if (r.empSlug !== slug || r.status !== "approved") continue;
-      const h = hoursOf(r);
-      if (r.type === "overtime") plus += h;
-      else if (r.type === "leave" || r.type === "dayoff") {
-        // списываем, если руководитель так решил (forceDeduct) либо это обычная увольнительная
-        // без защиты по показателям; отгул сам по себе часы не двигает
-        const forced = !!r.forceDeduct;
-        const plain = r.type === "leave" && !r.noDeduct && !(e && e.no_deduct);
-        if (forced || plain) minus += h;
-      }
+      // единое правило сайта: увольнительная списывается, если руководитель не поставил
+      // «не списывать»; отгул за выходную смену часы не двигает; корректировка — по знаку
+      const d = otp.reqDelta(r);
+      if (d >= 0) plus += d; else minus += -d;
     }
     return { base, plus: Math.round(plus * 10) / 10, minus: Math.round(minus * 10) / 10,
-             balance: Math.round((base + plus - minus) * 10) / 10, noDeduct: !!(e && e.no_deduct) };
+             balance: Math.round((base + plus - minus) * 10) / 10 };
   }
   const hoursChip = (slug) => {
     const b = empHours(slug);
@@ -108,7 +102,7 @@
               ? `отгул ${dmy(r.date)} · за выходную смену ${dmy(r.date2)}`
               : `${dmy(r.date)} · ${r.from}–${r.to} · ${fmtH(hoursOf(r))}`}</i>
         ${r.reason ? `<em>${r.reason}</em>` : ""}
-        <span class="hr-hours-line">${hoursChip(r.empSlug)}${empHours(r.empSlug).noDeduct ? '<span class="hr-hours-note">показатели 7+ — часы не списываются</span>' : ""}</span>
+        <span class="hr-hours-line">${hoursChip(r.empSlug)}</span>
         ${r.forceDeduct ? '<span class="hr-forced"><i class="ph-bold ph-scissors"></i> списано по решению руководителя</span>' : ""}
         ${clashNote(r)}
         ${r.decidedBy ? `<em class="hr-by">решение: ${r.decidedBy}</em>` : ""}
@@ -119,14 +113,14 @@
         ? `<span class="hr-actions">
              ${r.type === "leave" ? `<label class="hr-nodeduct" title="Часы увольнительной не спишутся с переработки">
                <input type="checkbox" data-nodeduct="${r.id}"> <span>не списывать</span></label>` : ""}
-             ${r.type === "leave" || r.type === "dayoff" ? `<label class="hr-force" title="Решение руководителя сильнее правила: часы спишутся, даже если показатели позволяют не списывать">
+             ${r.type === "leave" || r.type === "dayoff" ? `<label class="hr-force" title="Списать часы, даже если стоит «не списывать»">
                <input type="checkbox" data-force="${r.id}"> <span>всё равно списать</span></label>` : ""}
              <button class="hr-ok" data-ok="${r.id}" title="Одобрить"><i class="ph-bold ph-check"></i></button>
              <button class="hr-no" data-no="${r.id}" title="Отказать"><i class="ph-bold ph-x"></i></button>
              <button class="hr-cancel" data-cancel="${r.id}" title="Отменить заявку (например, если сотрудник передумал)"><i class="ph-bold ph-prohibit"></i></button>
            </span>`
         : r.status === "approved"
-          ? `<span class="hr-done"><span class="req-st ok"><i class="ph-bold ph-check-circle"></i> подтверждено${r.forceDeduct ? " · списано" : r.noDeduct ? " · без списания" : ""}</span>
+          ? `<span class="hr-done"><span class="req-st ok"><i class="ph-bold ph-check-circle"></i> подтверждено</span><span class="hj-dec">${otp.reqDecision(r)}</span>
                <button class="hr-cancel" data-cancel="${r.id}" title="Отменить подтверждённую заявку"><i class="ph-bold ph-prohibit"></i></button></span>`
           : r.status === "cancelled"
             ? `<span class="req-st cancel"><i class="ph-bold ph-prohibit"></i> отменено${r.cancelledBy === "emp" ? " сотрудником" : ""}</span>`
