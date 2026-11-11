@@ -119,7 +119,12 @@ TEMPLATE = """<!DOCTYPE html>
 </html>
 """
 
-V = "163"
+V = "164"
+
+# Турнирная таблица команды (данные коллег) отдаётся только этим сотрудникам.
+# У остальных в payload её нет вовсе — ни в разметке, ни в исходнике страницы.
+# Руководитель (Яковленков) уволен и своих страниц не имеет; доска остаётся у Фролова.
+BOARD_IDS = {"frolov"}
 
 
 def secnav_html(rel, active, secs=None):
@@ -135,10 +140,12 @@ def main():
     data = load_data()
     os.makedirs(TEAM_DIR, exist_ok=True)
     n = 0
+    made = 0
     for e in data["employees"]:
         if e.get("status") == "left":
             print(f"  - {e['fullName']}: уволен, страницы не генерируются")
             continue
+        made += 1
         emp = copy.deepcopy(e)
         # «Учебные материалы» убраны со страниц — не тащим их в payload
         emp.pop("literature", None)
@@ -153,9 +160,8 @@ def main():
             "months": data["months"],
             "totalEmployees": len(data["employees"]),
             "team": data.get("team", {}),
-            # турнирная таблица — только на странице руководителя; у специалистов её нет
-            # ни в разметке, ни в исходнике страницы (изоляция данных коллег)
-            "leaderboard": data.get("leaderboard", []) if e["id"] == "yakovlenkov" else [],
+            # турнирная таблица — только тем, кто есть в BOARD_IDS (см. выше)
+            "leaderboard": data.get("leaderboard", []) if e["id"] in BOARD_IDS else [],
             "employee": emp,
             "hrRules": data.get("hrRules", {}),
             "incomeRules": data.get("incomeRules", {}),
@@ -191,7 +197,7 @@ def main():
                 f.write(html)
             n += 1
         print(f"  OK team/{slug}/ + {len(secs) - 1} разделов")
-    print(f"\nГотово: {n} страниц ({len(data['employees'])} сотрудников × {len(SECTIONS)} разделов, изолированы, без ссылок на дашборд)")
+    print(f"\nГотово: {n} страниц ({made} сотрудников × {len(SECTIONS)} разделов, изолированы, без ссылок на дашборд)")
 
 
 if __name__ == "__main__":

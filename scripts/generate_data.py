@@ -978,15 +978,6 @@ def _cloud():
         return {"provider": "offline"}
 
 
-def _endpoint():
-    """Адрес сервиса заявок (scripts/endpoint.txt) — общий канал для всех устройств."""
-    path = os.path.join(ROOT, "scripts", "endpoint.txt")
-    try:
-        return open(path, encoding="utf-8").read().strip().rstrip("/")
-    except Exception:
-        return ""
-
-
 def build_boss_awards():
     """Личные награды руководителя (у него нет страницы специалиста): знаки + похвалы ИТ-директора."""
     degrees = sorted(RECOGNITION.get("yakovlev", []), reverse=True)

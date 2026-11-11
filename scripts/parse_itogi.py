@@ -528,8 +528,16 @@ def main():
         print("\nDRY-RUN: extracted.json не изменён. Для записи: --write")
         return 0
 
-    merged = json.load(open(EXT, encoding="utf-8"))
-    shutil.copy2(EXT, EXT + ".bak")
+    # Базы может не быть: свежий клон, новая машина, потерянный файл. Тогда собираем с нуля,
+    # а не падаем. ВАЖНО: в базе живут месяцы, которых нет в itogi/*.txt (апрель 2026 пришёл
+    # из выгрузки Qwen), — из txt они не восстановятся, поэтому файл нужно сохранять/бэкапить.
+    if os.path.exists(EXT):
+        merged = json.load(open(EXT, encoding="utf-8"))
+        shutil.copy2(EXT, EXT + ".bak")
+    else:
+        merged = {}
+        print(f"\nВНИМАНИЕ: {EXT} не найден — база создаётся с нуля.")
+        print("          Месяцы, которых нет в itogi/*.txt (например, апрель 2026), в новый файл не попадут.")
     changed = []
     for eid, months in parsed.items():
         dst = merged.setdefault(eid, {"months": {}})

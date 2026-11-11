@@ -45,7 +45,10 @@
   const teamProfileOf = (key) => teamProfileByMonth[key] || null;
   const teamAvgOf = (key) => (teamAvgByMonth[key] != null ? teamAvgByMonth[key] : null);
   const leaderboardRows = D.leaderboard || [];
-  const showBoard = emp.id === "yakovlenkov";
+  /* Турнирная таблица (данные коллег) приходит в payload только тем, кому её отдаёт
+     generate_pages.py (BOARD_IDS). У остальных массив пуст — доски нет ни в разметке,
+     ни в исходнике страницы. */
+  const showBoard = leaderboardRows.length > 0;
 
   let bestMonthKey = null;   // лучший месяц: заполняет sectionStats, читают обработчики карточек-сводок
 
@@ -942,7 +945,6 @@ function robotMenuHtml() {
 
   /* ---- заявки сотрудника (переработка / увольнительная / отгул) ---- */
   const REQ_KEY = "otp_hr_requests_v1";
-  const ENDPOINT = ((D && D.hrRules && D.hrRules.endpoint) || "").replace(/\/$/, "");
   const loadReqs = () => { try { return JSON.parse(localStorage.getItem(REQ_KEY) || "[]"); } catch (e) { return []; } };
   const saveReqs = (list) => { try { localStorage.setItem(REQ_KEY, JSON.stringify(list)); } catch (e) {} };
   /* --- общий канал: заявки ходят через сервис Hermes, а не только в этом браузере --- */
@@ -1464,11 +1466,18 @@ function robotMenuHtml() {
         const list = loadReqs(); list.push(rec); saveReqs(list);
         modal.hidden = true;
         renderHours();
-        (CLOUD ? CLOUD.upsert(rec).then((r) => !!r.online) : Promise.resolve(false)).then((ok) => {
-          const box = document.getElementById("gs-history");
-          if (box && !ok && ENDPOINT) box.insertAdjacentHTML("afterbegin",
-            '<p class="muted">Заявка сохранена локально — сервис недоступен, уйдёт при следующем открытии.</p>');
-        });
+        // Заявка уходит в облако; при сбое остаётся локальной (rec._local = true)
+        // и отправится при следующей синхронизации — об этом честно сообщаем.
+        if (CLOUD) {
+          CLOUD.upsert(rec)
+            .then((r) => !(r && r.online))
+            .catch(() => true)
+            .then((offline) => {
+              const box = document.getElementById("gs-history");
+              if (box && offline) box.insertAdjacentHTML("afterbegin",
+                '<p class="muted">Заявка сохранена локально — сервис недоступен, уйдёт при следующем открытии.</p>');
+            });
+        }
       };
     }
     document.querySelectorAll(".gs-act").forEach((b) => b.addEventListener("click", () => openForm(b.dataset.form)));

@@ -12,7 +12,6 @@
   };
   const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) { return []; } };
   const save = (l) => { try { localStorage.setItem(KEY, JSON.stringify(l)); } catch (e) {} };
-  const ENDPOINT = ((window.OTP_DATA && window.OTP_DATA.hrRules && window.OTP_DATA.hrRules.endpoint) || "").replace(/\/$/, "");
   const CLOUD = window.OTP_CLOUD || null;
   const load2 = () => (CLOUD ? CLOUD.loadLocal() : load());
   const save2 = (l) => (CLOUD ? CLOUD.saveLocal(l) : save(l));
