@@ -1840,6 +1840,13 @@ h1, h2, h3 { font-weight: 650; letter-spacing: -.02em; line-height: 1.12; }
 .hx-head h3 { margin: 0; font-size: 17px; color: #e8edf5; display: flex; align-items: center; gap: 9px; }
 .hx-head h3 i { color: #fbbf24; }
 .hx-note { font-size: 11.5px; color: #7f8a99; }
+/* правило часов: списывает только увольнительная */
+.hx-rule { margin: 9px 2px 0; font-size: 11.5px; line-height: 1.5; color: #7f8a99; display: flex; gap: 7px; align-items: flex-start; }
+.hx-rule i { color: #22d3ee; margin-top: 2px; }
+.hx-rule-note { font-size: 10.5px; padding: 2px 6px; border-radius: 6px; color: #fbbf24;
+  background: rgba(251,191,36,.12); border: 1px solid rgba(251,191,36,.28); white-space: nowrap; }
+/* строка журнала, которая часы не двигает */
+.hj-zero { font-size: 10px; color: #7f8a99; margin-left: 1px; }
 .hx-form { display: grid; grid-template-columns: 1.1fr .55fr 1.7fr auto; gap: 9px; align-items: stretch; }
 .hx-form select, .hx-form input { padding: 10px 12px; border-radius: 10px; font-size: 13.5px; color: #e8edf5;
   background: rgba(9,12,18,.75); border: 1px solid rgba(148,163,184,.22); outline: none; }

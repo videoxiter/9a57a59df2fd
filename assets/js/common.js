@@ -165,6 +165,41 @@
     clearTimeout(t._timer);
     t._timer = setTimeout(() => t.classList.remove("show"), 3200);
   };
+  /* ---------- часы: единое правило для дашборда и личных страниц ----------
+     Списание даёт ТОЛЬКО увольнительная, и не более 4 ч за раз.
+     Отгул за выходную смену (dayoff) и прочее часы не двигают вообще:
+     компенсация выходной смены уже учтена тем, что смена не записана переработкой.
+     Начисление: переработка (overtime) и положительная корректировка руководителя. */
+  otp.LEAVE_MAX = 4;
+  /** «Сырые» часы заявки: из интервала времени, из hours или 8 ч за отгул. */
+  otp.reqHours = (r) => {
+    if (!r) return 0;
+    if (r.type === "adjust") return +r.hours || 0;
+    if (r.type === "dayoff") return +r.hours || 8;
+    const p = (x) => { const m = /^(\d{1,2}):(\d{2})$/.exec(x || ""); return m ? +m[1] + +m[2] / 60 : null; };
+    const a = p(r.from), b = p(r.to);
+    return a == null || b == null ? 0 : Math.max(0, Math.round((b - a) * 10) / 10);
+  };
+  /** Влияние заявки на остаток часов. opts.noDeduct — показатели запрещают списание. */
+  otp.reqDelta = (r, opts) => {
+    const o = opts || {};
+    if (!r) return 0;
+    if (r.type === "overtime") return otp.reqHours(r);
+    if (r.type === "leave") {
+      const capped = Math.min(otp.reqHours(r), otp.LEAVE_MAX);
+      return (r.forceDeduct || !o.noDeduct) ? -capped : 0;
+    }
+    if (r.type === "adjust") return Math.max(0, +r.hours || 0);
+    return 0;                                   // dayoff и всё прочее — не двигают
+  };
+  /** Подсказка, почему подтверждённая заявка не изменила часы. */
+  otp.reqDeltaNote = (r, opts) => {
+    if (!r || r.status !== "approved" || otp.reqDelta(r, opts) !== 0) return "";
+    if (r.type === "dayoff") return "отгул за выходную смену — часы не двигает";
+    if (r.type === "leave") return "увольнительная не списывается: показатели не позволяют";
+    if (r.type === "adjust") return "отрицательная корректировка не списывает часы: списывает только увольнительная";
+    return "";
+  };
   otp.reveal = reveal;
 
   /* первичное раскрытие статики */

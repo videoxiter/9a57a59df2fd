@@ -970,14 +970,7 @@ function robotMenuHtml() {
     leave: { label: "Увольнительная", icon: "ph-door-open", accent: "warn" },
     dayoff: { label: "Отгул за вых. смену", icon: "ph-calendar-minus", accent: "info" },
   };
-  function hoursOf(r) {
-    if (r.type === "adjust") return +r.hours || 0;      // начисление (+) или списание (−)
-    if (r.type === "dayoff") return r.hours || 8;
-    const p = (t) => { const m = /^(\d{1,2}):(\d{2})$/.exec(t || ""); return m ? +m[1] + (+m[2]) / 60 : null; };
-    const a = p(r.from), b = p(r.to);
-    if (a == null || b == null) return 0;
-    return Math.max(0, Math.round((b - a) * 10) / 10);
-  }
+  function hoursOf(r) { return otp.reqHours(r); }        // «сырые» часы: время, hours или 8 ч за отгул
   function myRequests() {
     // показываем и отменённые — сотрудник должен видеть, что заявку сняли (и почему)
     const key = (r) => `${r.date || ""} ${r.type === "dayoff" ? "00:00" : (r.from || "00:00")}`;
@@ -998,13 +991,10 @@ function robotMenuHtml() {
     for (const r of myRequests()) {
       if (r.status !== "approved") continue;
       const h = hoursOf(r);
-      if (r.type === "adjust") { if (h >= 0) plus += h; else minus += -h; }
-      else if (r.type === "overtime") plus += h;
-      else if (r.type === "leave") {
-        // forceDeduct — руководитель решил списать часы вопреки правилу «показатели позволяют»
-        if (r.forceDeduct || (!NO_DEDUCT && !r.noDeduct)) minus += h;
-      }
-      else if (r.type === "dayoff") dayoffs += h;            // отгул за вых. смену — часы НЕ двигает никогда
+      if (r.type === "dayoff") { dayoffs += h; continue; }   // отгул — только справочная сумма
+      // единое правило сайта: списывает только увольнительная (≤ 4 ч), прочее не минусует
+      const d = otp.reqDelta(r, { noDeduct: NO_DEDUCT || r.noDeduct });
+      if (d >= 0) plus += d; else minus += -d;
     }
     const base = emp.hours_base || 0;
     return { base, plus: Math.round(plus * 10) / 10, minus: Math.round(minus * 10) / 10,
@@ -1013,7 +1003,10 @@ function robotMenuHtml() {
   }
   const fmtH = (h) => (Math.round(h * 10) / 10).toString().replace(".", ",") + " ч";
   const statusChip = (r) => {
-    if (r.status === "approved") return `<span class="req-st ok"><i class="ph-bold ph-check-circle"></i> подтверждено${r.forceDeduct ? " · списано по решению руководителя" : r.noDeduct ? " · без списания" : ""}</span>`;
+    if (r.status === "approved") {
+      const note = otp.reqDeltaNote(r, { noDeduct: NO_DEDUCT || !!r.noDeduct });
+      return `<span class="req-st ok"><i class="ph-bold ph-check-circle"></i> подтверждено${note ? " · " + note : r.forceDeduct ? " · списано по решению руководителя" : ""}</span>`;
+    }
     if (r.status === "rejected") return `<span class="req-st no"><i class="ph-bold ph-x-circle"></i> отказано</span>`;
     if (r.status === "cancelled") return `<span class="req-st cancel"><i class="ph-bold ph-prohibit"></i> отменено${r.cancelledBy === "boss" ? " руководителем" : r.cancelledBy === "emp" ? " тобой" : ""}</span>`;
     return `<span class="req-st wait"><i class="ph-bold ph-hourglass-medium"></i> на согласовании</span>`;
@@ -1950,13 +1943,7 @@ function robotMenuHtml() {
     return l.filter((r) => r.empSlug !== "deleted" && !/^\[(удалено|тест)\]/.test(String(r.reason || "")) && !/^DIAG TEST/i.test(String(r.reason || "")));
   }
   function reqSource(r) { return r.type === "adjust" ? "boss" : "emp"; }
-  function reqHoursSigned(r) {
-    const h = hoursOf(r);
-    if (r.type === "adjust") return h;                       // знак уже в hours
-    if (r.type === "leave") return -h;                        // увольнительная — списание
-    if (r.type === "overtime" || r.type === "dayoff") return h;
-    return h;
-  }
+  function reqHoursSigned(r) { return otp.reqDelta(r, { noDeduct: NO_DEDUCT || !!r.noDeduct }); }
   function sectionHours() {
     const list = allReqList();
     const years = [...new Set(list.map((r) => (r.date || "").slice(0, 4)).filter(Boolean))].sort().reverse();
@@ -2647,16 +2634,21 @@ function robotMenuHtml() {
     const PER = 10;
     let page = 0;
     const calcBalances = (list) => {
+      // Остаток считается ПО КАЖДОМУ сотруднику отдельно: у главного специалиста в журнале
+      // лежат записи всего отдела, и общий «котёл» давал бы ложные числа.
       const m = new Map();
-      let run = emp.hours_base || 0;
+      const run = new Map();
+      const baseOf = (slug) => {
+        if (slug === ME_SLUG) return emp.hours_base || 0;
+        const info = (D.hoursBaseInfo || {})[slug];
+        return info ? +info.base || 0 : 0;
+      };
+      const ndOf = (slug) => (slug === ME_SLUG ? NO_DEDUCT : !!((D.hoursBaseInfo || {})[slug] || {}).nd);
       for (const r of list.slice().reverse()) {
-        if (r.status === "approved") {
-          const hh = hoursOf(r);
-          if (r.type === "adjust" || r.type === "overtime") run += hh;
-          else if (r.type === "leave" && (r.forceDeduct || !NO_DEDUCT)) run -= hh;
-          // dayoff — не влияет
-        }
-        m.set(r.id, Math.round(run * 10) / 10);
+        const slug = r.empSlug || ME_SLUG;
+        if (!run.has(slug)) run.set(slug, baseOf(slug));
+        if (r.status === "approved") run.set(slug, run.get(slug) + otp.reqDelta(r, { noDeduct: ndOf(slug) || !!r.noDeduct }));
+        m.set(r.id, Math.round(run.get(slug) * 10) / 10);
       }
       return m;
     };
@@ -2671,6 +2663,7 @@ function robotMenuHtml() {
       const balanceAfter = balanceMap = calcBalances(R);
       body.innerHTML = pageRows.map((r) => {
         const h = reqHoursSigned(r);
+        const zeroNote = otp.reqDeltaNote(r, { noDeduct: NO_DEDUCT || !!r.noDeduct });
         const src = reqSource(r) === "boss" ? '<span class="hj-boss">руководитель</span>' : '<span class="hj-emp-src">заявка</span>';
         const st = `<span class="hj-st hj-${r.status || "pending"}">${ST[r.status] || r.status || "—"}</span>`;
         return `<tr class="${h < 0 ? "neg" : "pos"}">
@@ -2679,7 +2672,7 @@ function robotMenuHtml() {
           <td class="hj-who">${escHtml(String(r.decidedBy || (r.status === "approved" ? "руководитель (ранее)" : "—")))}</td>
           <td>${src}</td>
           <td>${escHtml(TYPE_LABEL[r.type] || r.type || "—")}</td>
-          <td class="num ${h < 0 ? "neg" : "pos"}">${h > 0 ? "+" : ""}${otp.fmt(h)}</td>
+          <td class="num ${h < 0 ? "neg" : "pos"}"${zeroNote ? ` title="${escHtml(zeroNote)}"` : ""}>${h === 0 ? "0" : (h > 0 ? "+" : "") + otp.fmt(h)}${zeroNote ? '<sup class="hj-zero">·</sup>' : ""}</td>
           <td class="hj-why">${escHtml(String(r.reason || r.reject || ""))}</td>
           <td>${st}</td>
           <td class="num hj-left">${r.status === "approved" ? otp.fmt(balanceAfter.get(r.id)) : "—"}</td>
@@ -2715,8 +2708,9 @@ function robotMenuHtml() {
       const minus = ok.reduce((s, r) => s + Math.min(0, reqHoursSigned(r)), 0);
       const boss = ok.filter((r) => reqSource(r) === "boss").length;
       const empq = ok.length - boss;
+      const scope = (emp.canManage && !f.emp) ? '<span class="hj-chip scope">весь отдел</span>' : "";
       document.getElementById("hj-sum").innerHTML =
-        `<span class="hj-chip">записей: <b>${R.length}</b></span>
+        `${scope}<span class="hj-chip">записей: <b>${R.length}</b></span>
          <span class="hj-chip plus">начислено: <b>+${otp.fmt(plus)} ч</b></span>
          <span class="hj-chip minus">списано: <b>${otp.fmt(minus)} ч</b></span>
          <span class="hj-chip">руководитель: <b>${boss}</b></span>

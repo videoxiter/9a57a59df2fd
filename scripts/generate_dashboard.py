@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """Собирает дашборд руководителя из разделов.
 
   /                 — Моя команда · Кто лучше · Заявки · Рейтинг по KPI
@@ -17,7 +17,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DASH = os.path.join(ROOT, "1bceb335668c")
 SRC = os.path.join(DASH, "index.html")
 SOURCE = os.path.join(ROOT, "scripts", "dashboard_source.html")   # неизменный исходник секций
-V = "164"
+V = "165"
 
 PAGES = [
     ("", "Моя команда", "team", ["top", "best", "hr-sec", "hours", "rating"]),

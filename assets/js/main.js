@@ -33,29 +33,18 @@
   const surname = (f) => String(f || "").split(" ")[0].toLowerCase().replace("ё", "е");
   const samePerson = (a, b) => !!a && !!b && surname(a) === surname(b);
 
-  /* ---------- накопленные часы ---------- */
-  function hoursOfReq(r) {
-    if (r.type === "adjust") return +r.hours || 0;      // начисление (+) или списание (−) часов
-    if (r.type === "dayoff") return r.hours || 8;
-    const p = (x) => { const m = /^(\d{1,2}):(\d{2})$/.exec(x || ""); return m ? +m[1] + +m[2] / 60 : null; };
-    const a = p(r.from), b = p(r.to);
-    return a == null || b == null ? 0 : Math.max(0, Math.round((b - a) * 10) / 10);
-  }
+  /* ---------- накопленные часы ----------
+     Правило одно на весь сайт (otp.reqDelta): списывает только увольнительная, максимум
+     4 ч; отгул за выходную смену и прочее часы не двигают. */
+  const hoursOfReq = (r) => otp.reqHours(r);
   function balanceOf(emp, reqs) {
     if (!emp) return null;
-    let plus = 0, minus = 0;
+    let sum = emp.hours_base || 0;
     for (const r of reqs) {
       if (r.empSlug !== emp.slug || r.status !== "approved") continue;
-      const h = hoursOfReq(r);
-      if (r.type === "adjust") { if (h >= 0) plus += h; else minus += -h; }
-      else if (r.type === "overtime") plus += h;
-      else if (r.type === "leave") {
-        const forced = !!r.forceDeduct;                                  // решение руководителя сильнее правила
-        const plain = r.type === "leave" && !r.noDeduct && !emp.no_deduct;
-        if (forced || plain) minus += h;
-      }
+      sum += otp.reqDelta(r, { noDeduct: !!emp.no_deduct || !!r.noDeduct });
     }
-    return { balance: Math.round(((emp.hours_base || 0) + plus - minus) * 10) / 10 };
+    return { balance: Math.round(sum * 10) / 10 };
   }
   const fmtH = (h) => (Math.round(h * 10) / 10).toString().replace(".", ",") + " ч";
   function hoursChip(emp, reqs) {
@@ -82,16 +71,7 @@
     list = list.filter((r) => !isGone(r));
     const TYPE = { adjust: "Корректировка (руководитель)", overtime: "Переработка", leave: "Увольнительная", dayoff: "Отгул за вых. смену" };
     const ST = { approved: "подтверждено", pending: "на рассмотрении", cancelled: "отменено", rejected: "отклонено" };
-    const signed = (r) => {
-      if (r.type === "adjust") return +r.hours || 0;
-      const p = (x) => { const mm = /^(\d{1,2}):(\d{2})$/.exec(x || ""); return mm ? +mm[1] + +mm[2] / 60 : null; };
-      if (r.type === "dayoff") return +r.hours || 8;
-      const a = p(r.from), b = p(r.to);
-      const hh = a == null || b == null ? 0 : Math.max(0, Math.round((b - a) * 10) / 10);
-      if (r.type === "leave") return -hh;
-      if (r.type === "dayoff") return 0;              // отгул за вых. смену — часы не двигает
-      return hh;
-    };
+    const signed = (r) => otp.reqDelta(r, { noDeduct: !!((bySlug(r.empSlug) || {}).no_deduct || r.noDeduct) });
     const names = [...new Set(list.map((r) => r.empName).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), "ru"));
     const years = [...new Set(list.map((r) => String(r.date || "").slice(0, 4)).filter(Boolean))].sort().reverse();
     box.innerHTML = `
@@ -141,12 +121,13 @@
       const view = shown.slice(page * PER, page * PER + PER);
       document.getElementById("hjx-body").innerHTML = view.map((r) => {
         const hh = signed(r);
+        const note = otp.reqDeltaNote(r, { noDeduct: !!(bySlug(r.empSlug) || {}).no_deduct });
         const who = r.decidedBy || (r.status === "approved" ? "руководитель (ранее)" : "—");
         return `<tr><td class="mono">${escJ(String(r.date || "—"))}</td><td>${escJ(String(r.empName || ""))}</td>
           <td class="hj-who">${escJ(String(who))}</td>
           <td>${r.type === "adjust" ? '<span class="hj-boss">руководитель</span>' : '<span class="hj-emp-src">заявка</span>'}</td>
           <td>${escJ(TYPE[r.type] || r.type || "")}</td>
-          <td class="num ${hh < 0 ? "neg" : "pos"}">${hh > 0 ? "+" : ""}${hh}</td>
+          <td class="num ${hh < 0 ? "neg" : "pos"}"${note ? ` title="${escJ(note)}"` : ""}>${hh === 0 ? "0" : (hh > 0 ? "+" : "") + hh}${note ? '<sup class="hj-zero">·</sup>' : ""}</td>
           <td class="hj-why">${escJ(String(r.reason || ""))}</td>
           <td><span class="hj-st hj-${r.status || "pending"}">${ST[r.status] || r.status || ""}</span></td>
           <td class="num hj-left">${r.status === "approved" ? balMap.get(r.id) : "—"}</td></tr>`;
@@ -239,24 +220,26 @@
     const row = (r) => {
       const h = +r.hours || 0;
       const d = String(r.date || (r.created || "").slice(0, 10));
+      const legacy = h < 0 ? ' <span class="hx-rule-note" title="минусовать может только увольнительная — эта запись баланс не меняет">не влияет</span>' : "";
       return `<div class="hx-row">
         <span class="hx-d">${escT(d)}</span>
         <span class="hx-n">${escT(r.empName || "")}</span>
-        <b class="hx-h ${h >= 0 ? "pos" : "neg"}">${h >= 0 ? "+" : "−"}${fmtH(Math.abs(h))}</b>
+        <b class="hx-h ${h >= 0 ? "pos" : "neg"}">${h >= 0 ? "+" : "−"}${fmtH(Math.abs(h))}</b>${legacy}
         <span class="hx-r">${escT(r.reason || "")}</span>
       </div>`;
     };
     box.innerHTML = `<div class="hx-wrap">
       <div class="hx-head">
-        <h3><i class="ph-bold ph-hourglass-high"></i> Часы: начислить или списать</h3>
+        <h3><i class="ph-bold ph-hourglass-high"></i> Часы: начислить</h3>
         <span class="hx-note">решение руководителя · история видна всем сотрудникам</span>
       </div>
       <form class="hx-form" id="hx-form" autocomplete="off">
         <select id="hx-emp">${emps.map((e) => `<option value="${e.slug}">${escT(e.fullName)}</option>`).join("")}</select>
-        <input id="hx-hours" type="number" step="0.5" inputmode="decimal" placeholder="часы: +2 или −1,5" required>
+        <input id="hx-hours" type="number" step="0.5" min="0" inputmode="decimal" placeholder="часы: +2" required>
         <input id="hx-reason" type="text" maxlength="160" placeholder="Причина (обязательно)" required>
-        <button type="submit" class="hx-btn"><i class="ph-bold ph-check"></i> Применить</button>
+        <button type="submit" class="hx-btn"><i class="ph-bold ph-check"></i> Начислить</button>
       </form>
+      <p class="hx-rule"><i class="ph-bold ph-info"></i> Списание часов оформляется только увольнительной (не более 4 ч за раз). Отгул за выходную смену и прочие операции часы не отнимают.</p>
       <div class="hx-log">
         <div class="hx-log-h">История начислений и списаний <span>${list.length}</span></div>
         ${list.length ? list.map(row).join("") : `<div class="hx-empty">Пока нет записей.</div>`}
@@ -272,6 +255,13 @@
       if (!emp || !isFinite(h) || h === 0 || reason.length < 3) {
         form.classList.add("is-err");
         setTimeout(() => form.classList.remove("is-err"), 1200);
+        return;
+      }
+      // минусовать часы может только увольнительная (≤ 4 ч) — вручную не списываем
+      if (h < 0) {
+        form.classList.add("is-err");
+        setTimeout(() => form.classList.remove("is-err"), 1200);
+        if (otp.toast) otp.toast("Списание — только увольнительной (до 4 ч). Вручную часы не отнимаются.");
         return;
       }
       const nowIso = new Date().toISOString();
