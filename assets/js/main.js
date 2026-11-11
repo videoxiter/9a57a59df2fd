@@ -220,26 +220,25 @@
     const row = (r) => {
       const h = +r.hours || 0;
       const d = String(r.date || (r.created || "").slice(0, 10));
-      const legacy = h < 0 ? ' <span class="hx-rule-note" title="минусовать может только увольнительная — эта запись баланс не меняет">не влияет</span>' : "";
       return `<div class="hx-row">
         <span class="hx-d">${escT(d)}</span>
         <span class="hx-n">${escT(r.empName || "")}</span>
-        <b class="hx-h ${h >= 0 ? "pos" : "neg"}">${h >= 0 ? "+" : "−"}${fmtH(Math.abs(h))}</b>${legacy}
+        <b class="hx-h ${h >= 0 ? "pos" : "neg"}">${h >= 0 ? "+" : "−"}${fmtH(Math.abs(h))}</b>
         <span class="hx-r">${escT(r.reason || "")}</span>
       </div>`;
     };
     box.innerHTML = `<div class="hx-wrap">
       <div class="hx-head">
-        <h3><i class="ph-bold ph-hourglass-high"></i> Часы: начислить</h3>
+        <h3><i class="ph-bold ph-hourglass-high"></i> Часы: начислить или списать</h3>
         <span class="hx-note">решение руководителя · история видна всем сотрудникам</span>
       </div>
       <form class="hx-form" id="hx-form" autocomplete="off">
         <select id="hx-emp">${emps.map((e) => `<option value="${e.slug}">${escT(e.fullName)}</option>`).join("")}</select>
-        <input id="hx-hours" type="number" step="0.5" min="0" inputmode="decimal" placeholder="часы: +2" required>
+        <input id="hx-hours" type="number" step="0.5" inputmode="decimal" placeholder="часы: +2 или −1,5" required>
         <input id="hx-reason" type="text" maxlength="160" placeholder="Причина (обязательно)" required>
-        <button type="submit" class="hx-btn"><i class="ph-bold ph-check"></i> Начислить</button>
+        <button type="submit" class="hx-btn"><i class="ph-bold ph-check"></i> Применить</button>
       </form>
-      <p class="hx-rule"><i class="ph-bold ph-info"></i> Списание часов оформляется только увольнительной (не более 4 ч за раз). Отгул за выходную смену и прочие операции часы не отнимают.</p>
+      <p class="hx-rule"><i class="ph-bold ph-info"></i> Подтверждённая корректировка сдвигает часы: плюс начисляет, минус списывает. Увольнительная списывает до 4 ч, отгул за выходную смену — всегда 0.</p>
       <div class="hx-log">
         <div class="hx-log-h">История начислений и списаний <span>${list.length}</span></div>
         ${list.length ? list.map(row).join("") : `<div class="hx-empty">Пока нет записей.</div>`}
@@ -257,13 +256,7 @@
         setTimeout(() => form.classList.remove("is-err"), 1200);
         return;
       }
-      // минусовать часы может только увольнительная (≤ 4 ч) — вручную не списываем
-      if (h < 0) {
-        form.classList.add("is-err");
-        setTimeout(() => form.classList.remove("is-err"), 1200);
-        if (otp.toast) otp.toast("Списание — только увольнительной (до 4 ч). Вручную часы не отнимаются.");
-        return;
-      }
+      // минус тоже допустим: подтверждённая корректировка списывает часы
       const nowIso = new Date().toISOString();
       const rec = {
         id: "adj-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
