@@ -2484,6 +2484,8 @@ function robotMenuHtml() {
 
 
 
+  let hjHistPage = 0;                 // страница истории начислений/списаний у главного специалиста
+  const HJ_HIST_PER = 10;
   function renderManageBlock() {
     const box = document.getElementById("hj-manage");
     if (!box) return;
@@ -2493,6 +2495,33 @@ function robotMenuHtml() {
     const emps = [...new Set(list.map((r) => r.empName).filter(Boolean))]
       .sort((a, b) => String(a).localeCompare(String(b), "ru"));
     const typeLbl = (r) => (REQ_TYPES[r.type] && REQ_TYPES[r.type].label) || r.type || "—";
+    /* история корректировок с листанием: видно не только последние, но и более ранние */
+    const adjusts = list.filter((r) => r.type === "adjust")
+      .sort((a, b) => String(b.created || "").localeCompare(String(a.created || "")));
+    const hPages = Math.max(1, Math.ceil(adjusts.length / HJ_HIST_PER));
+    hjHistPage = Math.min(Math.max(0, hjHistPage), hPages - 1);
+    const hView = adjusts.slice(hjHistPage * HJ_HIST_PER, hjHistPage * HJ_HIST_PER + HJ_HIST_PER);
+    const hRow = (r) => {
+      const h = +r.hours || 0;
+      const d = String(r.date || (r.created || "").slice(0, 10));
+      return `<div class="hx-row">
+        <span class="hx-d">${escHtml(d)}</span>
+        <span class="hx-n">${escHtml(String(r.empName || ""))}</span>
+        <b class="hx-h ${h >= 0 ? "pos" : "neg"}">${h >= 0 ? "+" : "−"}${fmtH(Math.abs(h))}</b>
+        <span class="hx-r">${escHtml(String(r.reason || ""))}</span>
+      </div>`;
+    };
+    const hPager = hPages > 1 ? `<div class="hj-pager">
+      <button class="hj-pg" data-hjhist="${hjHistPage - 1}" ${hjHistPage === 0 ? "disabled" : ""}>‹</button>
+      ${Array.from({ length: hPages }, (_, i) => `<button class="hj-pg${i === hjHistPage ? " on" : ""}" data-hjhist="${i}">${i + 1}</button>`).join("")}
+      <button class="hj-pg" data-hjhist="${hjHistPage + 1}" ${hjHistPage >= hPages - 1 ? "disabled" : ""}>›</button>
+      <span class="hj-pg-info">${hjHistPage * HJ_HIST_PER + 1}–${Math.min(adjusts.length, (hjHistPage + 1) * HJ_HIST_PER)} из ${adjusts.length}</span>
+    </div>` : "";
+    const hist = `<div class="hj-panel hj-hist">
+        <h3><i class="ph-bold ph-clock-counter-clockwise"></i> История начислений и списаний <span class="muted">· всего ${adjusts.length}</span></h3>
+        ${hView.length ? hView.map(hRow).join("") : '<p class="muted">Пока нет записей.</p>'}
+        ${hPager}
+      </div>`;
     box.innerHTML = `
       <div class="hj-manage-grid">
         <div class="hj-panel">
@@ -2524,7 +2553,15 @@ function robotMenuHtml() {
             <button class="btn btn-primary" type="submit"><i class="ph-bold ph-check"></i> Записать</button>
           </form>
         </div>
-      </div>`;
+      </div>
+      ${hist}`;
+
+    box.querySelectorAll("[data-hjhist]").forEach((b) => b.addEventListener("click", () => {
+      const n = +b.dataset.hjhist;
+      if (n < 0 || n > hPages - 1) return;
+      hjHistPage = n;
+      renderManageBlock();
+    }));
 
     box.querySelectorAll(".hj-req").forEach((el) => {
       el.querySelectorAll("button[data-act]").forEach((b) => b.addEventListener("click", async () => {
@@ -2555,6 +2592,7 @@ function robotMenuHtml() {
       };
       try { if (window.OTP_CLOUD) await window.OTP_CLOUD.upsert(row); } catch (e) {}
       form.reset();
+      hjHistPage = 0;                        // свежая запись — на первую страницу истории
       renderManageBlock(); initHoursJournal();
     });
   }

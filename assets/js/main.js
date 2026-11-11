@@ -212,11 +212,16 @@
   }
   /* ---------- Часы: начисление/списание от руководителя ---------- */
   const escT = (s) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const HX_PER = 10;            // история начислений/списаний — по 10 на страницу
+  let hxPage = 0;
   function renderHoursAdmin(reqs) {
     const box = $("#hours-admin");
     if (!box) return;
-    const list = (reqs || []).filter((r) => r.type === "adjust")
-      .sort((a, b) => String(b.created || "").localeCompare(String(a.created || ""))).slice(0, 40);
+    const all = (reqs || []).filter((r) => r.type === "adjust")
+      .sort((a, b) => String(b.created || "").localeCompare(String(a.created || "")));
+    const pages = Math.max(1, Math.ceil(all.length / HX_PER));
+    hxPage = Math.min(Math.max(0, hxPage), pages - 1);
+    const list = all.slice(hxPage * HX_PER, hxPage * HX_PER + HX_PER);
     const emps = ACTIVE.filter((e) => e.slug && e.status !== "left");
     const row = (r) => {
       const h = +r.hours || 0;
@@ -228,6 +233,12 @@
         <span class="hx-r">${escT(r.reason || "")}</span>
       </div>`;
     };
+    const pager = pages > 1 ? `<div class="hj-pager hx-pager">
+      <button class="hj-pg" data-hxpg="${hxPage - 1}" ${hxPage === 0 ? "disabled" : ""}>‹</button>
+      ${Array.from({ length: pages }, (_, i) => `<button class="hj-pg${i === hxPage ? " on" : ""}" data-hxpg="${i}">${i + 1}</button>`).join("")}
+      <button class="hj-pg" data-hxpg="${hxPage + 1}" ${hxPage >= pages - 1 ? "disabled" : ""}>›</button>
+      <span class="hj-pg-info">${hxPage * HX_PER + 1}–${Math.min(all.length, (hxPage + 1) * HX_PER)} из ${all.length}</span>
+    </div>` : "";
     box.innerHTML = `<div class="hx-wrap">
       <div class="hx-head">
         <h3><i class="ph-bold ph-hourglass-high"></i> Часы: начислить или списать</h3>
@@ -241,10 +252,17 @@
       </form>
       <p class="hx-rule"><i class="ph-bold ph-info"></i> Подтверждённая корректировка сдвигает часы: плюс начисляет, минус списывает. Увольнительная списывает до 4 ч, отгул за выходную смену — всегда 0.</p>
       <div class="hx-log">
-        <div class="hx-log-h">История начислений и списаний <span>${list.length}</span></div>
+        <div class="hx-log-h">История начислений и списаний <span>${all.length}</span></div>
         ${list.length ? list.map(row).join("") : `<div class="hx-empty">Пока нет записей.</div>`}
+        ${pager}
       </div>
     </div>`;
+    box.querySelectorAll("[data-hxpg]").forEach((b) => b.addEventListener("click", () => {
+      const n = +b.dataset.hxpg;
+      if (n < 0 || n > pages - 1) return;
+      hxPage = n;
+      renderHoursAdmin(window.OTP_REQS || []);
+    }));
     const form = $("#hx-form");
     if (!form) return;
     form.addEventListener("submit", async (e) => {
@@ -268,6 +286,7 @@
       try { if (window.OTP_CLOUD) await window.OTP_CLOUD.upsert(rec); } catch (err) {}
       $("#hx-hours").value = "";
       $("#hx-reason").value = "";
+      hxPage = 0;                                   // свежая запись — на первую страницу
       await hydrateHours();
       renderHoursAdmin(window.OTP_REQS || []);
     });
