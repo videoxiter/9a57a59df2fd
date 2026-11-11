@@ -95,8 +95,10 @@ async function worker(browser, queue, jobs) {
     // (переход по file:///быстрым страницам иногда не дожидался рендера).
     const page = await ctx.newPage();
     const errors = [];
+    const notFound = [];
     page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
     page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
+    page.on("response", (r) => { if (r.status() === 404) notFound.push(r.url()); });
 
     let status = null, note = "", probe = null;
     try {
@@ -134,8 +136,15 @@ async function worker(browser, queue, jobs) {
     } catch (e) {
       note += "FAIL " + e.message.split("\n")[0] + " ";
     }
-    // favicon у заглушки корня — известная безобидная запись, её игнорируем
-    const realErrors = errors.filter((e) => !(item.kind === "root" && /favicon\.ico/.test(e)));
+    // favicon у заглушки корня — известная безобидная запись, её игнорируем.
+    // Chrome пишет в консоль «Failed to load resource… 404 ()» без URL, поэтому
+    // сопоставляем такие сообщения с фактическими 404-ответами страницы.
+    const onlyFavicon404 = notFound.length > 0 && notFound.every((u) => /favicon\.ico$/i.test(u));
+    const realErrors = errors.filter((e) => {
+      if (item.kind === "root" && /favicon\.ico/.test(e)) return false;
+      if (item.kind === "root" && onlyFavicon404 && /status of 404/.test(e)) return false;
+      return true;
+    });
     // На file:// SITE_ROOT даёт «file:///диск/», поэтому картинки наград не находятся —
     // это артефакт локального прогона, на HTTP/GitHub Pages они грузятся нормально.
     const fileArtifacts = IS_FILE ? realErrors.filter((e) => /ERR_FILE_NOT_FOUND/.test(e)) : [];
