@@ -2615,3 +2615,7 @@ html[data-theme="ocean"] .award-tile .medal {
 .set-more { margin-top: 12px; padding: 8px 14px; border-radius: 10px; cursor: pointer; font-size: .82rem;
   border: 1px solid rgba(148,163,184,.28); background: rgba(148,163,184,.08); color: #cbd5e1; }
 .set-more:hover { border-color: rgba(34,211,238,.5); color: #22d3ee; }
+
+/* защита страницы дашборда: контент скрыт до входа */
+html.auth-lock #root { display: none !important; }
+html.auth-lock body > :not(.auth-gate):not(script):not(style) { display: none !important; }

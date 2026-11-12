@@ -757,7 +757,7 @@
         </span>
       </div>
       <div class="now-grid">
-        ${list.map((x) => `<div class="now-card k-${x.st.kind}">
+        ${list.map((x) => `<div class="now-card k-${x.st.kind}" data-ns="${escNow(x.emp.id)}">
           <i class="ph-bold ${x.st.icon}"></i>
           <span class="now-body"><b>${escNow(x.emp.fullName)}</b><span>${escNow(x.st.label)}${x.st.since ? " · с " + hm(x.st.since) : ""}</span><span class="now-line"><i style="width:${shiftPct(x.emp)}%"></i></span></span>
           <span class="now-time">${x.st.kind === "idle" ? "" : hms(x.st.sec)}</span>
@@ -778,6 +778,18 @@
           </div>`).join("")}
         </div>
       </div>` : ""}`;
+    window.__nowState = list.map((x) => ({ slug: x.emp.id, sec: x.st.sec, running: x.st.kind === "work", base: Date.now() }));
+    if (!box.dataset.tick) {
+      box.dataset.tick = "1";
+      setInterval(() => {
+        if (document.hidden) return;
+        for (const s of (window.__nowState || [])) {
+          if (!s.running) continue;
+          const el = box.querySelector(`[data-ns="${s.slug}"] .now-time`);
+          if (el) el.textContent = hms(Math.max(0, Math.round(s.sec + (Date.now() - s.base) / 1000)));
+        }
+      }, 1000);
+    }
     box.querySelectorAll("[data-leave]").forEach((b) => b.addEventListener("click", async () => {
       const id = b.getAttribute("data-leave");
       if (!id) return;

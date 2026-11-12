@@ -1,4 +1,4 @@
-/* Учётные записи: вход по slug + пароль, сессия в браузере (60 дней).
+﻿/* Учётные записи: вход по slug + пароль, сессия в браузере (60 дней).
    Пароли проверяет Supabase (RPC otp_login), в браузере хранится только токен. */
 (function () {
   "use strict";
@@ -40,6 +40,32 @@
       }).catch(function () { return null; });
     },
     staffList: function () { return rpc("otp_staff_list", {}).catch(function () { return []; }); },
+    /* защита страницы: пока не вошёл — контент скрыт, показывается форма */
+    protect: function (slug, adminOnly) {
+      var html = document.documentElement;
+      html.classList.add("auth-lock");
+      var done = function () { html.classList.remove("auth-lock"); };
+      return API.session(slug).then(function (s) {
+        if (s && (!adminOnly || s.admin)) { done(); return; }
+        var ov = document.createElement("div");
+        ov.className = "auth-gate";
+        ov.innerHTML = `<div class="auth-box"><h3><i class="ph-bold ph-lock-key"></i> Вход</h3>`
+          + `<p>Страница руководителя — нужен пароль администратора.</p>`
+          + `<input id="pg-pass" type="password" placeholder="пароль" autocomplete="current-password">`
+          + `<button class="btn btn-primary" id="pg-go" type="button">Войти</button>`
+          + `<span class="auth-err" id="pg-err"></span></div>`;
+        document.body.appendChild(ov);
+        var go = function () {
+          var pass = (document.getElementById("pg-pass") || {}).value || "";
+          API.login(slug, pass).then(function (res) {
+            if (res && res.ok && (!adminOnly || res.admin)) { ov.remove(); done(); }
+            else { var e = document.getElementById("pg-err"); if (e) e.textContent = "Неверный пароль"; }
+          });
+        };
+        ov.querySelector("#pg-go").addEventListener("click", go);
+        ov.querySelector("#pg-pass").addEventListener("keydown", function (ev) { if (ev.key === "Enter") go(); });
+      }).catch(function () { done(); });
+    },
     saveStaff: function (row) {
       return rpc("otp_staff_save", {
         p_token: tok("admin"), p_slug: row.slug, p_fio: row.fio, p_login: row.login || null,
