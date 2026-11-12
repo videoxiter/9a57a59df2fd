@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Моя команда ОТП — техническая документация</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Arial, sans-serif; color: #1a2230; font-size: 10.5pt; line-height: 1.55; }
+  h1 { font-size: 24pt; margin: 0 0 6px; color: #0b5f6b; }
+  h2 { font-size: 15pt; margin: 26px 0 8px; padding-bottom: 4px; border-bottom: 2px solid #22d3ee; color: #0b3b47; page-break-after: avoid; }
+  h3 { font-size: 11.5pt; margin: 16px 0 6px; color: #0b3b47; page-break-after: avoid; }
+  p { margin: 6px 0; }
+  code, pre { font-family: "Consolas", "Courier New", monospace; }
+  code { background: #eef4f7; padding: 1px 5px; border-radius: 4px; font-size: 9.5pt; }
+  pre { background: #0f1720; color: #d7e4ef; padding: 10px 12px; border-radius: 8px; font-size: 8.8pt;
+        line-height: 1.45; overflow: hidden; white-space: pre-wrap; page-break-inside: avoid; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; font-size: 9.3pt; page-break-inside: avoid; }
+  th, td { border: 1px solid #cbd6e0; padding: 5px 7px; text-align: left; vertical-align: top; }
+  th { background: #eaf3f7; font-weight: 600; }
+  .muted { color: #5b6b7c; }
+  .lead { font-size: 11pt; color: #33475b; }
+  .tag { display: inline-block; background: #e6f7fb; color: #0b5f6b; border: 1px solid #b6e6f0;
+         border-radius: 5px; padding: 0 6px; font-size: 8.5pt; margin-right: 4px; }
+  .cover { border: 1px solid #cbd6e0; border-radius: 12px; padding: 18px 20px; margin-bottom: 14px; background: #f8fbfc; }
+  ul, ol { margin: 6px 0 6px 20px; }
+  li { margin: 3px 0; }
+  .pagebreak { page-break-before: always; }
+  .small { font-size: 9pt; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <h1>Моя команда ОТП</h1>
+  <p class="lead">Техническая документация: архитектура, данные, API и эксплуатация</p>
+  <p class="muted">Статический сайт + Supabase. Версия документа: 13.11.2026</p>
+</div>
+
+<h2>1. Назначение</h2>
+<p>Внутренний портал отдела технической поддержки: дашборд эффективности (KPI, рейтинг, динамика), персональные страницы сотрудников (бонусы, LVL, награды, рост, статистика, доход), учёт рабочего времени («Стартовая»), отчёты для руководителя, уведомления в Яндекс Мессенджер.</p>
+<table>
+  <tr><th>Слой</th><th>Технология</th><th>Где размещён</th></tr>
+  <tr><td>Фронтенд</td><td>Статический HTML + vanilla JS/CSS</td><td>GitHub Pages (репозиторий <code>videoxiter/9a57a59df2fd</code>, ветка <code>main</code>)</td></tr>
+  <tr><td>Данные</td><td>Supabase (Postgres + PostgREST + Edge Functions)</td><td>проект Supabase</td></tr>
+  <tr><td>Генерация</td><td>Python 3 (стандартная библиотека)</td><td>локально/CI, результат коммитится</td></tr>
+  <tr><td>Уведомления</td><td>Яндекс Bot API</td><td>Edge Function <code>notify</code> + <code>cron</code></td></tr>
+</table>
+
+<h2>2. Архитектура</h2>
+<pre>Confluence (выгрузка) ─┐
+itogi/*.txt            ├─→ scripts/*.py ─→ HTML-страницы + assets/data/*.json ─→ git push ─→ GitHub Pages
+extracted.json         │
+schedule.json          ┘                                   │
+                                                          ├─→ Supabase (события времени, заявки, сотрудники, контент)
+                                                          └─→ Edge Functions (notify, cron) ─→ Яндекс Мессенджер</pre>
+<p>Сайт не имеет собственного бэкенда: браузер обращается к Supabase REST/RPC и к Edge Functions напрямую по публичному ключу. Учётные записи и защита страниц — сессии в <code>otp_sessions</code>.</p>
+
+<h2>3. Структура репозитория</h2>
+<table>
+  <tr><th>Путь</th><th>Назначение</th></tr>
+  <tr><td><code>index.html</code></td><td>заглушка/переход на дашборд</td></tr>
+  <tr><td><code>1bceb335668c/</code></td><td>дашборд: <code>index.html</code>, <code>dynamics/</code>, <code>people/</code>, <code>duties/</code>, <code>development/</code>, <code>settings/</code>, <code>staff/</code> (админка)</td></tr>
+  <tr><td><code>team/&lt;hash&gt;/</code></td><td>12 разделов личной страницы: <code>start</code>, <code>bonus</code>, <code>lvl</code>, <code>awards</code>, <code>growth</code>, <code>graph</code>, <code>stats</code>, <code>income</code>, <code>rules</code>, <code>hours</code>, <code>links</code>, <code>settings</code></td></tr>
+  <tr><td><code>assets/js/</code></td><td><code>data.js</code> (общие данные), <code>common.js</code>, <code>cloud.js</code>, <code>hr.js</code>, <code>themes.js</code>, <code>theme.js</code>, <code>auth.js</code>, <code>main.js</code> (дашборд), <code>profile.js</code> (личные страницы)</td></tr>
+  <tr><td><code>assets/vendor/</code></td><td>локальные GSAP, ScrollTrigger, Lenis, Chart.js, Phosphor</td></tr>
+  <tr><td><code>assets/fonts/</code></td><td>Space Grotesk, JetBrains Mono (woff2) + <code>assets/css/fonts.css</code></td></tr>
+  <tr><td><code>scripts/</code></td><td>генераторы и SQL: <code>generate_data.py</code>, <code>generate_pages.py</code>, <code>generate_dashboard.py</code>, <code>parse_itogi.py</code>, <code>verify.js</code>, <code>supabase_*.sql</code></td></tr>
+  <tr><td><code>supabase/functions/</code></td><td>Edge Functions: <code>notify</code>, <code>cron</code></td></tr>
+  <tr><td><code>docs/</code></td><td>документация (<code>timetrack.md</code>, этот PDF)</td></tr>
+</table>
+
+<h2>4. Генерация страниц</h2>
+<p>Все страницы собираются из Python-генераторов; руками <code>team/*</code> и дашборд не правятся.</p>
+<pre>python scripts/generate_data.py       # assets/js/data.js + assets/data/schedule.json
+python scripts/generate_pages.py      # team/&lt;hash&gt;/* (10 сотрудников × 12 разделов)
+python scripts/generate_dashboard.py  # 1bceb335668c/* (7 страниц)</pre>
+<table>
+  <tr><th>Файл</th><th>Входные данные</th><th>Выход</th></tr>
+  <tr><td><code>generate_data.py</code></td><td><code>extracted.json</code>, <code>itogi/*.txt</code>, <code>roadmaps.json</code>, <code>cloud.json</code></td><td><code>assets/js/data.js</code>, <code>assets/data/schedule.json</code></td></tr>
+  <tr><td><code>generate_pages.py</code></td><td><code>data.js</code>, шаблон <code>TEMPLATE</code></td><td>120 HTML-страниц; в каждой — <code>window.OTP_PROFILE</code> (данные только этого сотрудника)</td></tr>
+  <tr><td><code>generate_dashboard.py</code></td><td><code>dashboard_source.html</code></td><td>7 HTML-страниц дашборда</td></tr>
+</table>
+<p><b>Версия ассетов.</b> В генераторах есть константа <code>V = "189"</code> — она подставляется в <code>?v=</code> у JS/CSS. Любое изменение <code>assets/*</code> требует поднять <code>V</code> и перегенерировать страницы, иначе браузеры отдадут старую версию из кэша.</p>
+
+<h2>5. Данные и JSON-схемы</h2>
+<h3>5.1. <code>window.OTP_DATA</code> (assets/js/data.js)</h3>
+<pre>{
+  "meta":    { "updated": "Окт 2026", "months": ["Май 2025", "..."] },
+  "months":  ["Май 2025", "..."],
+  "employees": [{
+    "id": "bolgov", "slug": "e5d35a6fc921", "fullName": "Болгов Андрей Владимирович",
+    "shortName": "БА", "role": "Ведущий специалист ТП", "status": "active",
+    "current": { "kpi": 7.6, "rank": 1, "bonus": 106150 },
+    "history": [[7.1, 7.4, 7.6], "..."],
+    "hoursBase": 18, "canManage": false
+  }],
+  "team":       { "avg": [7.2, "..."], "bonus": [100000, "..."] },
+  "schedule":   { "people": [{ "fio": "Болгов ...", "slug": "bolgov", "surname": "Болгов" }],
+                  "months": { "2026-11": { "shifts": { "Болгов Андрей Владимирович": { "12": { "sym": "2", "title": "Смена 2", "kind": "shift", "time": "09:00–18:00" } } },
+                                            "lines": { "L1": { "title": "L1.1 · первая линия", "weeks": [["Болгов ..."]], "labels": ["01.11-15.11"] } },
+                                            "vacations": { "2026": { "Болгов ...": [{ "from": "2026-07-01", "to": "2026-07-14" }] } } } } },
+  "hrRules":    { "cloud": { "provider": "supabase", "url": "https://&lt;project&gt;.supabase.co", "key": "&lt;publishable&gt;", "table": "otp_requests" },
+                  "leaveMax": 4 }
+}</pre>
+<h3>5.2. <code>window.OTP_PROFILE</code> (страница сотрудника)</h3>
+<pre>{
+  "id": "bolgov", "slug": "e5d35a6fc921", "fullName": "...", "role": "...",
+  "sections": ["start", "bonus", "..."], "schedule": { "fio": "...", "months": {...}, "people": [...], "legend": {...} },
+  "history": [...], "current": {...}, "peers": [...], "hoursBaseInfo": {...}
+}</pre>
+
+<h2 class="pagebreak">6. Supabase: схема</h2>
+<table>
+  <tr><th>Объект</th><th>Назначение</th><th>Ключевые поля</th></tr>
+  <tr><td><code>otp_requests</code></td><td>заявки: увольнительные, отгулы, переработки, корректировки</td><td><code>id, empSlug, empName, type(leave|dayoff|overtime|adjust), status(approved|rejected|cancelled), date, from, to, hours, reason, decidedBy, decided</code></td></tr>
+  <tr><td><code>otp_time_events</code></td><td>события «Стартовой»</td><td><code>id, empSlug, empName, day(YYYY-MM-DD), type(shift_start|shift_stop|break_start|break_end|absence_start|absence_end), slot, at(timestamptz), reason</code></td></tr>
+  <tr><td><code>otp_time_days</code></td><td>представление: сводка по дням</td><td><code>empSlug, empName, day, started, stopped, worked_sec, breaks, absences</code></td></tr>
+  <tr><td><code>otp_time_notices</code></td><td>журнал уведомлений (антидубль)</td><td><code>id(day:kind:emp), day, kind, emp, at</code></td></tr>
+  <tr><td><code>otp_staff</code></td><td>учётные записи</td><td><code>slug, fio, login, pass_hash(bcrypt), is_admin, avatar, active</code></td></tr>
+  <tr><td><code>otp_sessions</code></td><td>сессии входа</td><td><code>token(uuid), slug, created, expires</code></td></tr>
+  <tr><td><code>otp_content</code></td><td>контент от руководителя</td><td><code>id, emp_slug, section(bonus|awards|growth|lvl|stats), title, body, value, on_date</code></td></tr>
+</table>
+<p class="small">RLS: на всех таблицах включён; для <code>anon</code> открыто чтение и необходимые записи. Файлы схемы: <code>scripts/supabase_time.sql</code>, <code>scripts/supabase_staff.sql</code>, <code>scripts/supabase_staff2.sql</code>, <code>scripts/supabase_content.sql</code>.</p>
+
+<h3>6.1. RPC (PostgREST)</h3>
+<table>
+  <tr><th>Функция</th><th>Параметры</th><th>Возврат</th></tr>
+  <tr><td><code>otp_current_status()</code></td><td>—</td><td>по строке на сотрудника: <code>emp_slug, emp_name, status(work|tech1|tech2|lunch|absence|done), since, started, stopped, worked_sec</code></td></tr>
+  <tr><td><code>otp_login(p_slug, p_pass)</code></td><td>slug, пароль</td><td><code>{ok, token, slug, admin}</code> или <code>{ok:false, error}</code></td></tr>
+  <tr><td><code>otp_check_session(p_token)</code></td><td>uuid сессии</td><td><code>{ok, slug, admin}</code></td></tr>
+  <tr><td><code>otp_staff_list()</code></td><td>—</td><td>список сотрудников с <code>has_pass</code></td></tr>
+  <tr><td><code>otp_staff_save(p_token, ...)</code></td><td>токен админа + поля</td><td><code>{ok}</code> или <code>forbidden</code></td></tr>
+  <tr><td><code>otp_content_list(p_emp)</code></td><td>slug</td><td>массив записей</td></tr>
+  <tr><td><code>otp_content_save(p_token, ...)</code></td><td>токен админа + поля</td><td><code>{ok}</code></td></tr>
+  <tr><td><code>otp_content_del(p_token, p_id)</code></td><td>токен админа, id</td><td><code>{ok}</code></td></tr>
+</table>
+
+<h2>7. REST API — примеры</h2>
+<p>Базовый адрес: <code>https://&lt;project&gt;.supabase.co/rest/v1</code>. Заголовки: <code>apikey: &lt;ключ&gt;</code>, <code>Authorization: Bearer &lt;ключ&gt;</code>.</p>
+<pre># события за день
+GET /otp_time_events?select=*&amp;day=eq.2026-11-12&amp;order=at.asc
+
+# сводка по дням
+GET /otp_time_days?select=*&amp;day=eq.2026-11-12
+
+# текущий статус (RPC)
+POST /rpc/otp_current_status  {}
+
+# заявки (увольнительные/корректировки)
+GET /otp_requests?select=*&amp;status=eq.approved&amp;order=date.desc
+
+# вход
+POST /rpc/otp_login  {"p_slug":"admin","p_pass":"..."}
+
+# контент сотрудника
+POST /rpc/otp_content_list  {"p_emp":"bolgov"}</pre>
+<h3>7.1. Формат события времени</h3>
+<pre>{ "id": "ev-1794057858723-x1y2", "empSlug": "e5d35a6fc921", "empName": "Болгов Андрей Владимирович",
+  "day": "2026-11-12", "type": "break_start", "slot": "lunch",
+  "at": "2026-11-12T10:00:24.731+00:00", "reason": null }</pre>
+
+<h2>8. Edge Functions</h2>
+<table>
+  <tr><th>Функция</th><th>Вызов</th><th>Что делает</th></tr>
+  <tr><td><code>notify</code></td><td><code>POST /functions/v1/notify</code> с <code>{kind, fio, meta}</code></td><td>мгновенные сообщения в канал: shift_start, break1/break2, lunch, absence, return, shift_stop, leave_end</td></tr>
+  <tr><td><code>cron</code></td><td>по расписанию (<code>pg_cron</code> + <code>pg_net</code>, каждую минуту)</td><td>опоздания, затянувшиеся перерывы, напоминания через 5 минут, автозакрытие смены в 23:50; личные сообщения по <code>TEAM_LOGINS</code></td></tr>
+</table>
+<p>Секреты: <code>YANDEX_BOT_TOKEN</code>, <code>DISCO_CHAT_ID</code>, <code>TEAM_LOGINS</code> (JSON «ФИО → login»), <code>LATE_FROM</code> (дата, с которой сообщать об опозданиях).</p>
+
+<h2>9. Учётные записи и защита</h2>
+<ul>
+  <li>Пароли хранятся как bcrypt-хеш (<code>crypt(pass, gen_salt('bf'))</code>), проверка — только в RPC.</li>
+  <li>Сессия: токен uuid в <code>otp_sessions</code> на 60 дней, в браузере — <code>localStorage["otp_sess_&lt;slug&gt;"]</code>.</li>
+  <li>Дашборд закрыт паролем администратора (<code>auth.js → OTP_AUTH.protect("admin", true)</code>); личные страницы — если сотруднику задан пароль.</li>
+  <li><b>Ограничение:</b> страницы статические, данные приходят в HTML — защита визуальная. Для реальной защиты нужен прокси (см. раздел 12).</li>
+</ul>
+
+<h2>10. Учёт рабочего времени</h2>
+<ul>
+  <li>Норма дня — <b>7 ч 30 мин</b> (9-часовая смена минус обед и два тех.перерыва по 15 минут).</li>
+  <li>Отработано = сумма интервалов «работа → пауза»; незакрытый интервал сегодняшнего дня считается до текущего момента.</li>
+  <li>«Временное отсутствие: Без заявки» — статус фиксируется, но рабочее время <b>не</b> останавливает.</li>
+  <li>Увольнительная (leave) — пауза только внутри интервала <code>from–to</code>; кнопка «Завершить увольнительную» сокращает интервал до текущего времени.</li>
+  <li>Язык время: <b>МСК (UTC+3)</b>, независимо от пояса браузера.</li>
+</ul>
+
+<h2>11. Эксплуатация</h2>
+<h3>11.1. Обновление данных</h3>
+<pre>git clone https://github.com/videoxiter/9a57a59df2fd
+# положить входные файлы: extracted.json, schedule.json, roadmaps.json, cloud.json (не в git)
+python scripts/parse_itogi.py --write
+python scripts/generate_data.py
+python scripts/generate_pages.py
+python scripts/generate_dashboard.py
+git add -A &amp;&amp; git commit -m "данные за месяц" &amp;&amp; git push</pre>
+<h3>11.2. Проверка релиза</h3>
+<pre>NODE_PATH=.verify/otp-verify/node_modules node scripts/verify.js "https://videoxiter.github.io/9a57a59df2fd/" --conc=5
+# ожидается: 128 страниц, 0 проблем</pre>
+<h3>11.3. Развёртывание функций</h3>
+<p>Supabase → Edge Functions → нужная функция → Code → вставить содержимое <code>supabase/functions/&lt;name&gt;/index.ts</code> → Deploy. Секреты — в Edge Functions → Secrets.</p>
+<h3>11.4. Cron</h3>
+<pre>-- pg_cron: каждую минуту
+select cron.schedule('otp-time-cron', '* * * * *', $$
+  select net.http_post(
+    url := 'https://&lt;project&gt;.supabase.co/functions/v1/cron',
+    headers := jsonb_build_object('Authorization','Bearer &lt;anon&gt;','Content-Type','application/json'),
+    body := '{}'::jsonb
+  );
+$$);</pre>
+
+<h2>12. Известные ограничения и план</h2>
+<ul>
+  <li><b>Данные в HTML.</b> Для реальной защиты нужен прокси: Edge Function <code>api</code>, которая держит service-role ключ, проверяет сессию и отдаёт данные; клиент ходит только в неё. Публичный ключ из <code>data.js</code> при этом убирается.</li>
+  <li>Часы в заявках: увольнительная «не списывать» помечается маркером в тексте заявки (<code>[[OTP-META:{"noDeduct":true}]]</code>) — хрупко, лучше отдельное поле <code>no_deduct</code>.</li>
+  <li>ФИО в <code>otp_time_events</code> приходит из профиля; в Confluence бывают написания на одну букву иначе (Радион/Родион) — сопоставление по внутреннему id.</li>
+  <li>Пароли личных страниц включаются только после того, как руководитель задал пароль в админке.</li>
+</ul>
+
+<h2>13. Контакты и доступы</h2>
+<table>
+  <tr><th>Что</th><th>Где</th></tr>
+  <tr><td>Дашборд</td><td><code>https://videoxiter.github.io/9a57a59df2fd/1bceb335668c/index.html</code></td></tr>
+  <tr><td>Админка</td><td><code>https://videoxiter.github.io/9a57a59df2fd/1bceb335668c/staff/</code></td></tr>
+  <tr><td>Репозиторий</td><td><code>https://github.com/videoxiter/9a57a59df2fd</code></td></tr>
+  <tr><td>Канал уведомлений</td><td>Яндекс Мессенджер, «ДисКо»</td></tr>
+</table>
+
+</body>
+</html>
