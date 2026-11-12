@@ -36,8 +36,11 @@ const headers = { apikey: KEY, Authorization: `Bearer ${KEY}`, "Content-Type": "
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
+const T = (ms: number) => AbortSignal.timeout(ms);
+const TIMEOUT = 8000;
+
 async function sb(path: string, init?: RequestInit) {
-  const r = await fetch(`${SB}/rest/v1/${path}`, { ...(init || {}), headers });
+  const r = await fetch(`${SB}/rest/v1/${path}`, { ...(init || {}), headers, signal: T(TIMEOUT) });
   if (!r.ok) throw new Error(`supabase ${r.status}: ${await r.text()}`);
   const text = await r.text();
   return text ? JSON.parse(text) : null;
@@ -55,6 +58,7 @@ async function send(text: string, login?: string) {
     method: "POST",
     headers: { Authorization: `OAuth ${BOT}`, "Content-Type": "application/json" },
     body: JSON.stringify(body),
+    signal: T(TIMEOUT),
   });
   return await r.json().catch(() => ({ ok: false }));
 }
@@ -72,7 +76,7 @@ Deno.serve(async () => {
     const dayNum = String(+today.slice(8, 10));
     const nowMs = Date.now();
 
-    const schedRes = await fetch(SCHEDULE_URL, { cache: "no-store" });
+    const schedRes = await fetch(SCHEDULE_URL, { cache: "no-store", signal: T(TIMEOUT) });
     if (!schedRes.ok) return json({ ok: false, error: "schedule " + schedRes.status }, 502);
     const schedDoc = await schedRes.json();
     const sched = schedDoc.schedule || {};
