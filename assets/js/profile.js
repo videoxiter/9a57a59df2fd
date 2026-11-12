@@ -3334,13 +3334,49 @@ function robotMenuHtml() {
       btn.addEventListener("click", () => { selected = i; renderMonth(i); });
     });
   }
-  initMonthTabs();
-  setTimeout(refreshSectionIcons, 60);
-  setTimeout(refreshSectionIcons, 600);
-  if (emp.canManage) { initPendingHours(); syncReqs().then(() => initPendingHours()).catch(() => {}); }
-  if (SECTION === "start") initStart();
-  if (SECTION === "hours") { initHoursJournal(); if (window.OTP_CLOUD && CLOUD) syncReqs().then(() => initHoursJournal()).catch(() => {}); }
-  if (SECTION === "bonus") initTips();
-  setTimeout(() => { fitStarSum(); if (SECTION === "bonus") initTips(); }, 150);
-  otp.reveal(document);
+  /* вход по паролю, если он задан сотруднику (иначе страница открывается как раньше) */
+  function authGate(next) {
+    const A = window.OTP_AUTH;
+    if (!A) return next();
+    A.session(String(emp.id)).then((s) => {
+      if (s) return next();
+      A.staffList().then((list) => {
+        const row = (list || []).find((x) => x.slug === emp.id);
+        if (!row || !row.has_pass) return next();
+        showGate(next);
+      }).catch(() => next());
+    }).catch(() => next());
+  }
+  function showGate(next) {
+    const ov = document.createElement("div");
+    ov.className = "auth-gate";
+    ov.innerHTML = `<div class="auth-box">
+      <h3><i class="ph-bold ph-lock-key"></i> Вход</h3>
+      <p>${escHtml(emp.fullName)}</p>
+      <input id="ag-pass" type="password" placeholder="пароль" autocomplete="current-password">
+      <button class="btn btn-primary" id="ag-go" type="button">Войти</button>
+      <span class="auth-err" id="ag-err"></span></div>`;
+    document.body.appendChild(ov);
+    const go = () => {
+      const pass = (document.getElementById("ag-pass") || {}).value || "";
+      window.OTP_AUTH.login(String(emp.id), pass).then((res) => {
+        if (res && res.ok) { ov.remove(); next(); }
+        else { const e = document.getElementById("ag-err"); if (e) e.textContent = "Неверный пароль"; }
+      });
+    };
+    ov.querySelector("#ag-go").addEventListener("click", go);
+    ov.querySelector("#ag-pass").addEventListener("keydown", (ev) => { if (ev.key === "Enter") go(); });
+  }
+
+  authGate(() => {
+    initMonthTabs();
+    setTimeout(refreshSectionIcons, 60);
+    setTimeout(refreshSectionIcons, 600);
+    if (emp.canManage) { initPendingHours(); syncReqs().then(() => initPendingHours()).catch(() => {}); }
+    if (SECTION === "start") initStart();
+    if (SECTION === "hours") { initHoursJournal(); if (window.OTP_CLOUD && CLOUD) syncReqs().then(() => initHoursJournal()).catch(() => {}); }
+    if (SECTION === "bonus") initTips();
+    setTimeout(() => { fitStarSum(); if (SECTION === "bonus") initTips(); }, 150);
+    otp.reveal(document);
+  });
 })();

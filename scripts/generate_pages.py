@@ -116,6 +116,7 @@ TEMPLATE = """<!DOCTYPE html>
   <script src="__PREFIX__assets/vendor/lenis.min.js?v=__V__"></script>
   <script src="__PREFIX__assets/vendor/chart.umd.min.js?v=__V__"></script>
   <script src="__PREFIX__assets/js/common.js?v=__V__"></script>
+  <script src="__PREFIX__assets/js/auth.js?v=__V__"></script>
   <script src="__PREFIX__assets/js/cloud.js?v=__V__"></script>
   <script src="__PREFIX__assets/js/themes.js?v=__V__"></script>
   <script src="__PREFIX__assets/js/profile.js?v=__V__"></script>
@@ -123,7 +124,7 @@ TEMPLATE = """<!DOCTYPE html>
 </html>
 """
 
-V = "179"
+V = "181"
 
 # Турнирная таблица команды (данные коллег) отдаётся только этим сотрудникам.
 # У остальных в payload её нет вовсе — ни в разметке, ни в исходнике страницы.

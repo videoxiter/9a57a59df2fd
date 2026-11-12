@@ -17,7 +17,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DASH = os.path.join(ROOT, "1bceb335668c")
 SRC = os.path.join(DASH, "index.html")
 SOURCE = os.path.join(ROOT, "scripts", "dashboard_source.html")   # неизменный исходник секций
-V = "179"
+V = "181"
 
 PAGES = [
     ("", "Моя команда", "team", ["top", "best", "hr-sec", "hours", "rating"]),
@@ -26,9 +26,9 @@ PAGES = [
     ("duties", "График отдела", "calendar-check", ["duties"]),
     ("development", "Развитие отдела", "rocket-launch", ["grow"]),
     ("settings", "Настройки", "sliders", ["settings"]),
+    ("staff", "Сотрудники", "identification-card", ["staff"]),
 ]
-NAV_LABEL = {"": "Моя команда", "dynamics": "Динамика", "people": "Специалисты",
-             "duties": "График отдела", "development": "Развитие", "settings": "Настройки"}
+NAV_LABEL = {"": "Моя команда", "dynamics": "Динамика", "people": "Специалисты", "duties": "График отдела", "development": "Развитие", "settings": "Настройки", "staff": "Сотрудники"}
 
 BEST_SECTION = '''  <!-- ===== КТО ЛУЧШЕ ===== -->
   <section class="section" id="best" style="padding-top:8px">
@@ -108,6 +108,8 @@ def build_pages():
         # шапка с разделами
         nav = []
         for p, label, ic, _ in PAGES:
+            if p == "staff":
+                continue
             if p == path:
                 href = "./"                        # текущий раздел
             elif p == "":
@@ -135,7 +137,7 @@ def build_pages():
                     "lenis.min.js",
                     "chart.umd.min.js"):
             body.append(f'  <script src="{prefix}assets/vendor/{lib}?v={V}"></script>')
-        for js in ("themes.js", "data.js", "common.js", "cloud.js", "hr.js", "main.js"):
+        for js in ("themes.js", "data.js", "auth.js", "common.js", "cloud.js", "hr.js", "main.js"):
             body.append(f'  <script src="{prefix}assets/js/{js}?v={V}"></script>')
         body.append("</body>\n</html>\n")
 

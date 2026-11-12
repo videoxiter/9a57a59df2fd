@@ -919,6 +919,86 @@
   }
 
   renderSettings();
+  initStaffPage();
+
+  /* ---------- админка: сотрудники, логины, пароли ---------- */
+  async function initStaffPage() {
+    const app = $("#staff-app");
+    if (!app || !window.OTP_AUTH) return;
+    const A = window.OTP_AUTH;
+    const escNow = (s) => String(s == null ? "" : s).replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
+
+    const loginForm = () => {
+      app.innerHTML = `<div class="staff-login">
+        <h3><i class="ph-bold ph-lock-key"></i> Вход для руководителя</h3>
+        <p>Введите пароль администратора, чтобы управлять сотрудниками.</p>
+        <input id="staff-pass" type="password" placeholder="пароль" autocomplete="current-password">
+        <div class="staff-actions">
+          <button class="btn btn-primary" id="staff-do-login">Войти</button>
+          <span class="staff-err" id="staff-err"></span>
+        </div>
+      </div>`;
+      const go = async () => {
+        const pass = ($("#staff-pass") || {}).value || "";
+        const err = $("#staff-err");
+        const res = await A.login("admin", pass);
+        if (res && res.ok) initStaffPage();
+        else if (err) err.textContent = res && res.error === "bad_password" ? "Неверный пароль" : "Не удалось войти";
+      };
+      $("#staff-do-login").addEventListener("click", go);
+      $("#staff-pass").addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
+    };
+
+    const sess = await A.session("admin");
+    if (!sess || !sess.admin) { loginForm(); return; }
+
+    const staff = await A.staffList();
+    const bySlug = new Map((staff || []).map((s) => [s.slug, s]));
+    const rows = D.employees.map((e) => {
+      const s = bySlug.get(e.id) || {};
+      return {
+        slug: e.id, fio: s.fio || e.fullName, login: s.login || "",
+        pass: "", avatar: s.avatar || "", active: s.active !== false,
+        hasPass: !!s.has_pass,
+      };
+    });
+    // администратор — первым
+    const admin = bySlug.get("admin");
+    if (admin) rows.unshift({ slug: "admin", fio: admin.fio || "Руководитель", login: admin.login || "", pass: "", avatar: admin.avatar || "", active: admin.active !== false, hasPass: !!admin.has_pass });
+
+    app.innerHTML = `<div class="staff-head">
+        <h3><i class="ph-bold ph-identification-card"></i> Сотрудники и доступы</h3>
+        <button class="btn btn-ghost" id="staff-out">Выйти</button>
+      </div>
+      <p class="staff-hint">Пароль: если оставить пустым — не меняется. Логин — для личных сообщений в Мессенджере (например, a.bolgov@ftech.io).</p>
+      <div class="staff-list">
+        ${rows.map((r) => `<div class="staff-row" data-slug="${escNow(r.slug)}">
+          <div class="staff-cell"><label>ФИО</label><input data-f="fio" value="${escNow(r.fio)}"></div>
+          <div class="staff-cell"><label>Логин</label><input data-f="login" value="${escNow(r.login)}" placeholder="имя@ftech.io"></div>
+          <div class="staff-cell"><label>Пароль ${r.hasPass ? "(задан)" : "(нет)"}</label><input data-f="pass" type="password" placeholder="новый пароль"></div>
+          <div class="staff-cell"><label>Аватар (URL)</label><input data-f="avatar" value="${escNow(r.avatar)}" placeholder="https://..."></div>
+          <div class="staff-cell staff-check"><label><input data-f="active" type="checkbox" ${r.active ? "checked" : ""}> активен</label></div>
+          <div class="staff-cell staff-save"><button class="btn btn-primary" data-save>Сохранить</button><span class="staff-ok" hidden>сохранено</span></div>
+        </div>`).join("")}
+      </div>`;
+    $("#staff-out").addEventListener("click", () => { A.logout("admin"); initStaffPage(); });
+    app.querySelectorAll("[data-save]").forEach((btn) => btn.addEventListener("click", async () => {
+      const row = btn.closest(".staff-row");
+      const get = (f) => row.querySelector(`[data-f="${f}"]`);
+      const ok = row.querySelector(".staff-ok");
+      btn.disabled = true;
+      const res = await A.saveStaff({
+        slug: row.getAttribute("data-slug"),
+        fio: get("fio").value.trim(),
+        login: get("login").value.trim(),
+        pass: get("pass").value,
+        avatar: get("avatar").value.trim(),
+        active: get("active").checked,
+      });
+      btn.disabled = false;
+      if (res && res.ok) { if (ok) { ok.hidden = false; setTimeout(() => { ok.hidden = true; }, 2000); } get("pass").value = ""; }
+    }));
+  }
 
   otp.reveal(document);
 })();
