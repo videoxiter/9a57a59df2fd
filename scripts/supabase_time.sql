@@ -48,6 +48,8 @@ create policy "notices insert" on public.otp_time_notices for insert to anon wit
 -- Сводка по дням: удобно и для отчёта, и для JSON-запросов.
 -- Отработанные секунды = сумма интервалов «работа → пауза». Незакрытый интервал
 -- за сегодня считается до текущего момента (иначе цифра «застревает» на прошлом событии).
+-- Сначала снимаем зависимую функцию, иначе DROP VIEW не даст пересоздать представление.
+drop function if exists public.otp_current_status();
 drop view if exists public.otp_time_days;
 create view public.otp_time_days with (security_invoker = true) as
 with today as (
