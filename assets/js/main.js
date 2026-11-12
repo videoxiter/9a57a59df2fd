@@ -641,6 +641,10 @@
   async function renderNowBoard() {
     const box = $("#now-board");
     if (!box) return;
+    if (!box.dataset.loaded) {
+      box.innerHTML = `<div class="now-head"><h3><i class="ph-bold ph-broadcast"></i> Сейчас на смене</h3></div>
+        <div class="skl-grid">${Array.from({ length: 6 }).map(() => `<div class="skl-card"><div class="skl"></div><div class="skl"></div></div>`).join("")}</div>`;
+    }
     const c = D.hrRules && D.hrRules.cloud;
     if (!c || !c.url) return;
     const dt = new Date();
@@ -712,6 +716,7 @@
       }
     } catch (e) {}
     if (!list.length) { box.innerHTML = ""; return; }
+    box.dataset.loaded = "1";
     const cnt = (k) => list.filter((x) => x.st.kind === k).length;
     box.innerHTML = `
       <div class="now-head">

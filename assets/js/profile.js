@@ -2008,15 +2008,29 @@ function robotMenuHtml() {
       body: JSON.stringify({ kind, fio: emp.fullName, meta: meta || {} }),
     }).catch(() => {});
   }
-  /* Облако подключается после первого успешного запроса: пока таблицы нет (не выполнен
-     scripts/supabase_time.sql), страница не дёргает сеть и работает на локальной копии. */
-  const stReady = () => { try { return localStorage.getItem("otp_time_ok") === "1"; } catch (e) { return false; } };
-  const stMarkReady = () => { try { localStorage.setItem("otp_time_ok", "1"); } catch (e) {} };
+  /* Облако — единственный источник истины: статусы и кнопки одинаковы на любом
+     устройстве. Локальная копия работает только как офлайн-очередь и кэш. */
+  const stReady = () => true;
+  const stMarkReady = () => {};
   function stEvents(day) {
     const mine = (l) => l.filter((e) => e.empSlug === ME_SLUG && e.day === day);
-    if (!stReady()) return Promise.resolve(mine(stLocal()));
     return stApi(`otp_time_events?select=*&day=eq.${day}&empSlug=eq.${ME_SLUG}`)
-      .then((rows) => mine(Array.isArray(rows) ? rows : []))
+      .then((rows) => {
+        const list = Array.isArray(rows) ? rows : [];
+        // досылаем в облако локальные события, которые не успели уйти (офлайн)
+        const ids = new Set(list.map((e) => e.id));
+        const pending = mine(stLocal()).filter((e) => !ids.has(e.id));
+        if (pending.length) {
+          stApi("otp_time_events", {
+            method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify(pending),
+          }).then(() => {
+            const pend = new Set(pending.map((e) => e.id));
+            stLocalSave(stLocal().filter((e) => !pend.has(e.id)));
+          }).catch(() => {});
+          list.push(...pending);
+        }
+        return mine(list);
+      })
       .catch(() => mine(stLocal()));
   }
   function stAdd(ev) {
@@ -2026,7 +2040,11 @@ function robotMenuHtml() {
       method: "POST",
       headers: { Prefer: "return=minimal" },
       body: JSON.stringify([ev]),
-    }).then((r) => { stMarkReady(); return r; }).catch(() => null);
+    }).then((r) => {
+      // событие записалось в облако — из локальной очереди убираем
+      stLocalSave(stLocal().filter((x) => x.id !== ev.id));
+      return r;
+    }).catch(() => null);
   }
   function stCalc(events, nowMs, windows) {
     const wins = windows || [];
