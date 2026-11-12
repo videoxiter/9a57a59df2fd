@@ -954,7 +954,7 @@
 
     const staff = await A.staffList();
     const bySlug = new Map((staff || []).map((s) => [s.slug, s]));
-    const rows = D.employees.map((e) => {
+    const rows = D.employees.filter((e) => e.status !== "left").map((e) => {
       const s = bySlug.get(e.id) || {};
       return {
         slug: e.id, fio: s.fio || e.fullName, login: s.login || "",
