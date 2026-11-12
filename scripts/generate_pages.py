@@ -39,17 +39,22 @@ def _schedule_for(emp, sched):
     """Срез графика для страницы сотрудника: смены, линии, отпуска, легенда."""
     if not sched:
         return None
-    slug = emp.get("slug") or emp.get("id")
+    # В schedule.people поле slug — это внутренний id сотрудника (khasanov), а не
+    # хеш-слаг страницы (114778baa83f). Ищем по id, иначе ФИО не находится и смены
+    # теряются (у Хасанова в графике «Радион», в профиле «Родион»).
+    eid = emp.get("id") or emp.get("slug")
     fio = None
     for p in sched.get("people", []):
-        if p.get("slug") == slug:
+        if p.get("slug") == eid or p.get("fio") == emp.get("fullName"):
             fio = p["fio"]
             break
+    if not fio:
+        fio = emp.get("fullName")
     return {
         "generated": sched.get("generated"),
         "legend": sched.get("legend", {}),
         "fio": fio,
-        "slug": slug,
+        "slug": eid,
         "people": [{"fio": p["fio"], "slug": p.get("slug"), "surname": p.get("surname")}
                    for p in sched.get("people", [])],
         "months": sched.get("months", {}),
@@ -120,7 +125,7 @@ TEMPLATE = """<!DOCTYPE html>
 </html>
 """
 
-V = "174"
+V = "176"
 
 # Турнирная таблица команды (данные коллег) отдаётся только этим сотрудникам.
 # У остальных в payload её нет вовсе — ни в разметке, ни в исходнике страницы.

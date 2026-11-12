@@ -1,4 +1,4 @@
-/* Логика персональных страниц: разделы «Бонусы / Мой LVL / Награды / Мой рост / Статистика / Правила» */
+﻿/* Логика персональных страниц: разделы «Бонусы / Мой LVL / Награды / Мой рост / Статистика / Правила» */
 (function () {
   "use strict";
   const D = window.OTP_EMP;
@@ -1980,6 +1980,8 @@ function robotMenuHtml() {
     "Иное",
   ];
   const ST_KEY = "otp_time_events_v1";
+  // Норма дня: 8 часов минус два тех.перерыва по 15 минут = 7 ч 30 мин.
+  const ST_NORM_SEC = 7.5 * 3600;
   const ST_CLOUD = () => (D.hrRules && D.hrRules.cloud) || null;
   const stIsoDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   const ST_MISS_KEY = "otp_time_missing_at";
@@ -2207,9 +2209,9 @@ function robotMenuHtml() {
       ? `<i class="ph-bold ph-info"></i> ${escHtml(dayKind.title)} — рабочие кнопки в этот день не активны.`
       : stMissing()
         ? `<i class="ph-bold ph-warning"></i> Учёт ещё не подключён: выполните <b>scripts/supabase_time.sql</b> в Supabase. Пока время считается только в этом браузере.`
-        : sec >= 8 * 3600
-          ? `<i class="ph-bold ph-check-circle"></i> Норма 8 часов на сегодня отработана.`
-          : `<i class="ph-bold ph-info"></i> До нормы осталось ${stHms(8 * 3600 - sec)}.`;
+        : sec >= ST_NORM_SEC
+          ? `<i class="ph-bold ph-check-circle"></i> Норма 7 ч 30 мин на сегодня отработана.`
+          : `<i class="ph-bold ph-info"></i> До нормы осталось ${stHms(ST_NORM_SEC - sec)}.`;
     const tickLive = () => {
       const st = stCalc(events, Date.now(), winsNow());
       if (timerEl) timerEl.textContent = stHms(st.sec);
@@ -2428,16 +2430,16 @@ function robotMenuHtml() {
         return { ...d, sec: st.sec, started: st.started, stopped: st.stopped, breaks: st.used.size };
       }).sort((x, y) => y.day.localeCompare(x.day) || String(x.name).localeCompare(String(y.name), "ru"));
       const total = rowsOut.reduce((s, r) => s + r.sec, 0);
-      const deficit = rowsOut.reduce((s, r) => s + Math.max(0, 8 * 3600 - r.sec), 0);
+      const deficit = rowsOut.reduce((s, r) => s + Math.max(0, ST_NORM_SEC - r.sec), 0);
       if (sumEl) sumEl.innerHTML = `<span class="hj-chip">дней: <b>${rowsOut.length}</b></span>
         <span class="hj-chip plus">отработано: <b>${stHms(total)}</b></span>
         <span class="hj-chip minus">недоработка: <b>${stHms(deficit)}</b></span>`;
-      body.innerHTML = rowsOut.slice(0, 200).map((r) => `<tr class="${r.sec < 8 * 3600 ? "neg" : "pos"}">
+      body.innerHTML = rowsOut.slice(0, 200).map((r) => `<tr class="${r.sec < ST_NORM_SEC ? "neg" : "pos"}">
         <td class="mono">${escHtml(r.day)}</td><td>${escHtml(String(r.name))}</td>
         <td class="mono">${r.started ? stHm(r.started) : "—"}</td>
         <td class="mono">${r.stopped ? stHm(r.stopped) : "—"}</td>
         <td class="num">${stHms(r.sec)}</td>
-        <td class="num">${r.sec < 8 * 3600 ? "−" + stHms(8 * 3600 - r.sec) : "—"}</td>
+        <td class="num">${r.sec < ST_NORM_SEC ? "−" + stHms(ST_NORM_SEC - r.sec) : "—"}</td>
         <td class="num">${r.breaks}</td></tr>`).join("");
       if (empty) empty.hidden = rowsOut.length > 0;
       lastRows = rowsOut;
@@ -2453,7 +2455,7 @@ function robotMenuHtml() {
       const head = ["Дата", "Сотрудник", "Начало", "Конец", "Отработано", "Недоработка", "Перерывов"];
       const rows = lastRows.map((r) => [
         r.day, r.name, r.started ? stHm(r.started) : "", r.stopped ? stHm(r.stopped) : "",
-        stHms(r.sec), r.sec < 8 * 3600 ? "-" + stHms(8 * 3600 - r.sec) : "",
+        stHms(r.sec), r.sec < ST_NORM_SEC ? "-" + stHms(ST_NORM_SEC - r.sec) : "",
         String(r.breaks),
       ].map(q).join(";"));
       const csv = "\uFEFF" + [head.map(q).join(";")].concat(rows).join("\r\n");
