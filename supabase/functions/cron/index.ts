@@ -1,4 +1,4 @@
-// Supabase Edge Function `cron`: контроль опозданий и затянувшихся перерывов.
+﻿// Supabase Edge Function `cron`: контроль опозданий и затянувшихся перерывов.
 // Работает целиком в облаке — открытая вкладка сотрудника и чей-либо ПК не нужны.
 //
 // Деплой: Supabase → Edge Functions → New function → имя `cron` → вставить код.
@@ -20,6 +20,11 @@ const SCHEDULE_URL = Deno.env.get("SCHEDULE_URL") || "https://videoxiter.github.
 // С какой даты вообще сообщать об опозданиях (при запуске системы люди ещё не начали
 // пользоваться кнопкой — иначе канал завалит сообщениями в первый же день).
 const LATE_FROM = Deno.env.get("LATE_FROM") || "2026-11-13";
+// Личные сообщения: {"Фамилия Имя Отчество": "login"} — логины в Яндекс Мессенджере.
+// Без них напоминания уходят в общий канал.
+const LOGINS: Record<string, string> = (() => {
+  try { return JSON.parse(Deno.env.get("TEAM_LOGINS") || "{}"); } catch { return {}; }
+})();
 
 const YANDEX = "https://botapi.messenger.yandex.net/bot/v1/messages/sendText/";
 const TZ_OFFSET = 3 * 60 * 60 * 1000;              // Москва, UTC+3 (без перехода на летнее время)
@@ -38,12 +43,18 @@ async function sb(path: string, init?: RequestInit) {
   return text ? JSON.parse(text) : null;
 }
 
-async function send(text: string) {
-  if (!BOT || !CHAT) return { ok: false, error: "secrets not set" };
+async function send(text: string, login?: string) {
+  if (!BOT) return { ok: false, error: "secrets not set" };
+  const body: Record<string, unknown> = { text };
+  if (login) body.login = login;        // личное сообщение сотруднику
+  else {
+    if (!CHAT) return { ok: false, error: "DISCO_CHAT_ID не задан" };
+    body.chat_id = CHAT;               // в общий канал «ДисКо»
+  }
   const r = await fetch(YANDEX, {
     method: "POST",
     headers: { Authorization: `OAuth ${BOT}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: CHAT, text }),
+    body: JSON.stringify(body),
   });
   return await r.json().catch(() => ({ ok: false }));
 }
@@ -89,17 +100,18 @@ Deno.serve(async () => {
     }
 
     const out: string[] = [];
-    const notifyOnce = async (kind: string, emp: string, text: string) => {
+    const notifyOnce = async (kind: string, emp: string, text: string, personal = false) => {
       const id = `${today}:${kind}:${emp}`;
       if (sent.has(id)) return;
-      const res: any = await send(text);
+      const login = personal ? LOGINS[String(emp).trim()] : undefined;
+      const res: any = await send(text, login);
       if (res && res.ok !== false) {
         sent.add(id);
         await sb("otp_time_notices", {
           method: "POST", headers: { Prefer: "return=minimal" },
           body: JSON.stringify([{ id, day: today, kind, emp }]),
         }).catch(() => {});
-        out.push(`${kind}: ${emp}`);
+        out.push(`${kind}: ${emp}${login ? " (личное)" : ""}`);
       }
     };
 
@@ -118,20 +130,58 @@ Deno.serve(async () => {
       if (!started && nowMs > startMs + 5 * 60000) {
         await notifyOnce("late", fio, `⚠️ Зафиксировано опоздание! — ${fio}`);
       }
+      // 3. напоминание о конце смены — через 5 минут после её окончания
+      const endM = /[–-]\s*(\d{1,2}):(\d{2})/.exec(String(sh.time || ""));
+      if (endM && started) {
+        const endMs = new Date(`${today}T${String(endM[1]).padStart(2, "0")}:${endM[2]}:00+03:00`).getTime();
+        const passed = nowMs - endMs;
+        const stopped = list.some((e) => e.type === "shift_stop");
+        if (!stopped && passed >= 5 * 60000) {
+          await notifyOnce("shift_late_end", fio,
+            `⏰ Смена закончилась ${Math.max(1, Math.round(passed / 60000))} мин назад — не забудь нажать «Завершить смену».`, true);
+        }
+      }
     }
 
-    // 2. затянувшийся перерыв/обед
+    // 2. затянувшийся перерыв/обед + напоминание за 2 минуты до конца
     for (const [emp, list] of byEmp.entries()) {
       const last = list[list.length - 1];
       if (!last || last.type !== "break_start") continue;
       const limit = BREAK_MIN[last.slot as keyof typeof BREAK_MIN] || 15;
-      const over = nowMs - Date.parse(last.at) > limit * 60000;
-      if (!over) continue;
-      const kind = last.slot === "lunch" ? "lunch_over" : "break_over";
-      const text = last.slot === "lunch"
-        ? `⚠️ Обед затянулся! — ${emp}`
-        : `⚠️ Перерыв затянулся! — ${emp}`;
-      await notifyOnce(kind, emp, text);
+      const endMs = Date.parse(last.at) + limit * 60000;
+      // сообщение только через 5 минут после того, как перерыв должен был закончиться
+      const overMs = nowMs - endMs;
+      if (overMs >= 5 * 60000) {
+        const kind = last.slot === "lunch" ? "lunch_over" : "break_over";
+        const text = last.slot === "lunch" ? `⚠️ Обед затянулся! — ${emp}` : `⚠️ Перерыв затянулся! — ${emp}`;
+        await notifyOnce(kind, emp, text);
+        const name = last.slot === "lunch" ? "Обед" : "Перерыв";
+        await notifyOnce(`back_${last.slot}`, emp,
+          `⏳ ${name} идёт уже ${Math.round(overMs / 60000)} мин — пора возвращаться к работе.`, true);
+      }
+    }
+
+    // 4. автозакрытие смены в конце дня (если сотрудник забыл нажать «Завершить»)
+    const minsNow = nowMsk.getUTCHours() * 60 + nowMsk.getUTCMinutes();
+    if (minsNow >= 23 * 60 + 50) {
+      for (const [emp, list] of byEmp.entries()) {
+        const started = list.some((e) => e.type === "shift_start");
+        const stopped = list.some((e) => e.type === "shift_stop");
+        if (!started || stopped) continue;
+        const id = `${today}:auto_stop:${emp}`;
+        if (sent.has(id)) continue;
+        const first = list.find((e) => e.type === "shift_start");
+        const slug = first ? first.empSlug : "";
+        await sb("otp_time_events", {
+          method: "POST", headers: { Prefer: "return=minimal" },
+          body: JSON.stringify([{
+            id: "auto-" + today + "-" + String(slug || emp).slice(0, 12),
+            empSlug: slug, empName: emp, day: today, type: "shift_stop", slot: null,
+            at: new Date().toISOString(), reason: "автозакрытие",
+          }]),
+        }).catch(() => {});
+        await notifyOnce("auto_stop", emp, `🏁 Смена закрыта автоматически (забыли нажать «Завершить») — ${emp}`, true);
+      }
     }
 
     return json({ ok: true, today, sent: out, checked: Object.keys(month.shifts || {}).length });

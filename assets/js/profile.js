@@ -2028,6 +2028,7 @@ function robotMenuHtml() {
   }
   function stCalc(events, nowMs) {
     let acc = 0, running = false, last = 0, active = null, started = null, stopped = null;
+    let noStopAbsence = false;
     const used = new Set();
     const sorted = events.slice().sort((a, b) => String(a.at).localeCompare(String(b.at)));
     for (const e of sorted) {
@@ -2035,12 +2036,22 @@ function robotMenuHtml() {
       if (!Number.isFinite(t)) continue;
       if (e.type === "shift_start") { started = t; running = true; last = t; }
       else if (e.type === "shift_stop") { if (running) { acc += t - last; running = false; } stopped = t; }
-      else if (e.type === "break_start" || e.type === "absence_start") {
+      else if (e.type === "break_start") {
         if (running) { acc += t - last; running = false; }
-        active = { slot: e.slot || "absence", reason: e.reason || "", at: t, type: e.type };
-      } else if (e.type === "break_end" || e.type === "absence_end") {
-        used.add(e.slot || "absence");
+        active = { slot: e.slot || "break", reason: e.reason || "", at: t, type: "break_start" };
+      } else if (e.type === "break_end") {
+        used.add(e.slot || "break");
         if (!running) { running = true; last = t; }
+        active = null;
+      } else if (e.type === "absence_start") {
+        // «Без заявки» — отсутствие на рабочем месте в рамках производства:
+        // статус показываем, но рабочее время НЕ останавливаем.
+        noStopAbsence = String(e.reason || "") === "Без заявки";
+        if (!noStopAbsence && running) { acc += t - last; running = false; }
+        active = { slot: "absence", reason: e.reason || "", at: t, type: "absence_start" };
+      } else if (e.type === "absence_end") {
+        if (noStopAbsence) noStopAbsence = false;          // время и так шло
+        else if (!running) { running = true; last = t; }
         active = null;
       }
     }
@@ -2188,7 +2199,10 @@ function robotMenuHtml() {
       else if (st.active) {
         const slot = ST_SLOTS.find((s) => s.slot === st.active.slot);
         if (st.active.type === "absence_start") {
-          icon = "ph-walking"; text = `Временное отсутствие · ${st.active.reason || "без причины"}`; cls = "pause";
+          const ns = String(st.active.reason || "") === "Без заявки";
+          icon = "ph-walking";
+          text = `Временное отсутствие · ${st.active.reason || "без причины"}${ns ? " (время идёт)" : ""}`;
+          cls = "pause";
         } else if (slot) {
           icon = slot.icon;
           const to = stHm(st.active.at + slot.min * 60000);
@@ -2222,12 +2236,12 @@ function robotMenuHtml() {
         }));
       }
       const absActive = st.active && st.active.type === "absence_start";
+      // отсутствие многоразовое: после завершения кнопка снова доступна
       buttons.push(btn({
         act: "absence", icon: absActive ? "ph-stop-circle" : "ph-walking",
-        label: absActive ? `Отсутствие — Завершить` : "Временное отсутствие",
+        label: absActive ? "Отсутствие — Завершить" : "Временное отсутствие",
         run: absActive,
-        disabled: !canAct || (!absActive && (st.used.has("absence") || inPause)),
-        used: st.used.has("absence") && !absActive,
+        disabled: !canAct || (!absActive && inPause),
       }));
       buttons.push(btn({
         act: "stop", icon: "ph-sign-out", label: "Завершить смену",
@@ -2291,7 +2305,7 @@ function robotMenuHtml() {
       if (act === "absence") {
         const active = st.active && st.active.type === "absence_start";
         if (active) {
-          push({ ...base, type: "absence_end", slot: "absence", at });
+          push({ ...base, type: "absence_end", slot: "absence", at, reason: (st.active && st.active.reason) || "" });
           stNotify("return");
         } else {
           absenceOpen = true; render();

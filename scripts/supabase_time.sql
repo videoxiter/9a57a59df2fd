@@ -56,9 +56,12 @@ with today as (
   select to_char((now() at time zone 'Europe/Moscow')::date, 'YYYY-MM-DD') as d
 ),
 marks as (
+  -- «Временное отсутствие: Без заявки» — отсутствие на рабочем месте в рамках
+  -- производства: статус фиксируется, но рабочий интервал НЕ прерывается.
   select e.*,
          lead(at) over (partition by "empSlug", day order by at, id) as next_at
   from public.otp_time_events e
+  where not (e.type in ('absence_start', 'absence_end') and coalesce(e.reason, '') = 'Без заявки')
 ),
 work as (
   select m."empSlug", m.day,
