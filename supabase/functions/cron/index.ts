@@ -100,6 +100,7 @@ Deno.serve(async () => {
     }
 
     const out: string[] = [];
+    const errors: string[] = [];
     const notifyOnce = async (kind: string, emp: string, text: string, personal = false) => {
       const id = `${today}:${kind}:${emp}`;
       if (sent.has(id)) return;
@@ -111,7 +112,10 @@ Deno.serve(async () => {
           method: "POST", headers: { Prefer: "return=minimal" },
           body: JSON.stringify([{ id, day: today, kind, emp }]),
         }).catch(() => {});
-        out.push(`${kind}: ${emp}${login ? " (личное)" : ""}`);
+        out.push(`${kind}: ${emp}${login ? " (личное " + login + ")" : " (канал)"}`);
+      } else {
+        // не молчим: видно, почему Яндекс отклонил (например, неверный логин)
+        errors.push(`${kind}: ${emp}${login ? " [" + login + "]" : " [канал]"}: ${JSON.stringify(res).slice(0, 160)}`);
       }
     };
 
@@ -184,7 +188,7 @@ Deno.serve(async () => {
       }
     }
 
-    return json({ ok: true, today, sent: out, checked: Object.keys(month.shifts || {}).length });
+    return json({ ok: true, today, sent: out, errors, checked: Object.keys(month.shifts || {}).length });
   } catch (e) {
     return json({ ok: false, error: String(e) }, 500);
   }
