@@ -1029,7 +1029,48 @@
           <div class="staff-cell staff-save"><button class="btn btn-primary" data-save>Сохранить</button><span class="staff-ok" hidden>сохранено</span></div>
         </div>`).join("")}
       </div>`;
-    $("#staff-out").addEventListener("click", () => { A.logout("admin"); initStaffPage(); });
+    app.insertAdjacentHTML("beforeend", `<div class="sc-wrap">
+      <h3><i class="ph-bold ph-medal"></i> Достижения, бонусы и зоны роста</h3>
+      <p class="staff-hint">Записи появляются на личной странице сотрудника в соответствующем разделе.</p>
+      <div class="sc-form">
+        <select id="sc-emp">${rows.map((r) => `<option value="${escNow(r.slug)}">${escNow(r.fio)}</option>`).join("")}</select>
+        <select id="sc-section">
+          <option value="bonus">Бонусы</option>
+          <option value="awards">Награды</option>
+          <option value="growth">Зоны роста</option>
+          <option value="lvl">Достижения</option>
+          <option value="stats">Статистика</option>
+        </select>
+        <input id="sc-title" placeholder="Заголовок">
+        <input id="sc-value" placeholder="Сумма/подпись (5 000 ₽)">
+        <input id="sc-date" type="date">
+        <textarea id="sc-body" placeholder="Описание" rows="2"></textarea>
+        <button class="btn btn-primary" id="sc-add">Добавить</button>
+      </div>
+      <div class="sc-list" id="sc-list"></div>
+    </div>`);    $("#staff-out").addEventListener("click", () => { A.logout("admin"); initStaffPage(); });
+    const scList = $("#sc-list");
+    const scEmp = $("#sc-emp");
+    const escX = (s) => String(s == null ? "" : s).replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "\"": "&quot;" }[c]));
+    const loadContent = async () => {
+      if (!scList || !scEmp) return;
+      const list = await A.contentList(scEmp.value);
+      scList.innerHTML = (list || []).length
+        ? list.map((x) => `<div class="sc-item"><div><b>${escX(x.title || "Без названия")}</b><span>${escX(x.section)}${x.on_date ? " · " + escX(x.on_date) : ""}${x.value ? " · " + escX(x.value) : ""}</span><p>${escX(x.body || "")}</p></div><button class="sc-del" data-del="${escX(x.id)}">Удалить</button></div>`).join("")
+        : `<div class="sc-empty">Пока нет записей</div>`;
+      scList.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", async () => {
+        b.disabled = true;
+        await A.delContent(b.getAttribute("data-del"));
+        loadContent();
+      }));
+    };
+    if (scEmp) { scEmp.addEventListener("change", loadContent); loadContent(); }
+    if ($("#sc-add")) $("#sc-add").addEventListener("click", async () => {
+      const row = { emp: scEmp.value, section: $("#sc-section").value, title: $("#sc-title").value.trim(), value: $("#sc-value").value.trim(), onDate: $("#sc-date").value, body: $("#sc-body").value.trim() };
+      if (!row.title && !row.body) return;
+      const res = await A.saveContent(row);
+      if (res && res.ok) { $("#sc-title").value = ""; $("#sc-value").value = ""; $("#sc-body").value = ""; loadContent(); }
+    });
     app.querySelectorAll("[data-file]").forEach((btn) => btn.addEventListener("click", () => {
       const row = btn.closest(".staff-row");
       const inp = row && row.querySelector("[data-file-inp]");

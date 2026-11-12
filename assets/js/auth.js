@@ -40,6 +40,19 @@
       }).catch(function () { return null; });
     },
     staffList: function () { return rpc("otp_staff_list", {}).catch(function () { return []; }); },
+    contentList: function (emp) {
+      return rpc("otp_content_list", { p_emp: emp }).catch(function () { return []; });
+    },
+    saveContent: function (row) {
+      return rpc("otp_content_save", {
+        p_token: tok("admin"), p_id: row.id || "", p_emp: row.emp, p_section: row.section,
+        p_title: row.title || null, p_body: row.body || null,
+        p_value: row.value || null, p_on_date: row.onDate || null,
+      });
+    },
+    delContent: function (id) {
+      return rpc("otp_content_del", { p_token: tok("admin"), p_id: id });
+    },
     /* защита страницы: пока не вошёл — контент скрыт, показывается форма */
     protect: function (slug, adminOnly) {
       var html = document.documentElement;
