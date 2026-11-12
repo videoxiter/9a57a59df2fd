@@ -693,6 +693,11 @@
       if (started) return { kind: "work", label: "работает", icon: "ph-briefcase", since: last, sec };
       return { kind: "idle", label: "не начинал", icon: "ph-moon", since: null, sec };
     };
+    let avatarBy = new Map();
+    if (window.OTP_AUTH) {
+      const sl = await window.OTP_AUTH.staffList();
+      for (const s of (sl || [])) if (s.avatar) avatarBy.set(s.slug, s.avatar);
+    }
     const order = { work: 0, pause: 1, done: 2, idle: 3 };
     const list = D.employees.filter((e) => e.status !== "left")
       .map((e) => ({ emp: e, st: byEmp.has(e.slug) ? stateOf(byEmp.get(e.slug)) : { kind: "idle", label: "не начинал", icon: "ph-moon", since: null, sec: 0 } }))
@@ -981,12 +986,47 @@
           <div class="staff-cell"><label>ФИО</label><input data-f="fio" value="${escNow(r.fio)}"></div>
           <div class="staff-cell"><label>Логин</label><input data-f="login" value="${escNow(r.login)}" placeholder="имя@ftech.io"></div>
           <div class="staff-cell"><label>Пароль ${r.hasPass ? "(задан)" : "(нет)"}</label><input data-f="pass" type="password" placeholder="новый пароль"></div>
-          <div class="staff-cell"><label>Аватар (URL)</label><input data-f="avatar" value="${escNow(r.avatar)}" placeholder="https://..."></div>
+          <div class="staff-cell"><label>Аватар</label><input data-f="avatar" value="${escNow(r.avatar)}" placeholder="https://..."><div class="staff-up"><button data-file>Загрузить фото</button><input type="file" data-file-inp accept="image/*" hidden></div></div>
           <div class="staff-cell staff-check"><label><input data-f="active" type="checkbox" ${r.active ? "checked" : ""}> активен</label></div>
           <div class="staff-cell staff-save"><button class="btn btn-primary" data-save>Сохранить</button><span class="staff-ok" hidden>сохранено</span></div>
         </div>`).join("")}
       </div>`;
     $("#staff-out").addEventListener("click", () => { A.logout("admin"); initStaffPage(); });
+    app.querySelectorAll("[data-file]").forEach((btn) => btn.addEventListener("click", () => {
+      const row = btn.closest(".staff-row");
+      const inp = row && row.querySelector("[data-file-inp]");
+      if (inp) inp.click();
+    }));
+    app.querySelectorAll("[data-file-inp]").forEach((inp) => inp.addEventListener("change", async () => {
+      const file = inp.files && inp.files[0];
+      if (!file) return;
+      const row = inp.closest(".staff-row");
+      const slug = row.getAttribute("data-slug");
+      const c = D.hrRules && D.hrRules.cloud;
+      if (!c || !c.url) return;
+      const btn = row.querySelector("[data-file]");
+      if (btn) btn.disabled = true;
+      const path = slug + "-" + Date.now() + "." + (file.name.split(".").pop() || "png");
+      try {
+        const res = await fetch(c.url.replace(/\/$/, "") + "/storage/v1/object/avatars/" + path, {
+          method: "POST",
+          headers: { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": file.type, "x-upsert": "true" },
+          body: file,
+        });
+        if (res.ok) {
+          const url = c.url.replace(/\/$/, "") + "/storage/v1/object/public/avatars/" + path;
+          row.querySelector(`[data-f="avatar"]`).value = url;
+          await A.saveStaff({
+            slug: slug,
+            fio: row.querySelector(`[data-f="fio"]`).value.trim(),
+            login: row.querySelector(`[data-f="login"]`).value.trim(),
+            avatar: url,
+            active: row.querySelector(`[data-f="active"]`).checked,
+          });
+        }
+      } catch (e) {}
+      if (btn) btn.disabled = false;
+    }));
     app.querySelectorAll("[data-save]").forEach((btn) => btn.addEventListener("click", async () => {
       const row = btn.closest(".staff-row");
       const get = (f) => row.querySelector(`[data-f="${f}"]`);

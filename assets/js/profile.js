@@ -1,4 +1,4 @@
-/* Логика персональных страниц: разделы «Бонусы / Мой LVL / Награды / Мой рост / Статистика / Правила» */
+﻿/* Логика персональных страниц: разделы «Бонусы / Мой LVL / Награды / Мой рост / Статистика / Правила» */
 (function () {
   "use strict";
   const D = window.OTP_EMP;
@@ -3377,6 +3377,16 @@ function robotMenuHtml() {
         showGate(next);
       }).catch(() => next());
     }).catch(() => next());
+  }
+  function applyAvatar() {
+    const A = window.OTP_AUTH;
+    if (!A) return;
+    A.staffList().then((list) => {
+      const row = (list || []).find((x) => x.slug === emp.id);
+      if (!row || !row.avatar) return;
+      const el = document.querySelector(".avatar-xl");
+      if (el) el.innerHTML = `<img src="${escHtml(row.avatar)}" alt="">`;
+    }).catch(() => {});
   }
   function showGate(next) {
     const ov = document.createElement("div");

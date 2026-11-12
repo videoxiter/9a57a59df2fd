@@ -2590,3 +2590,12 @@ html[data-theme="ocean"] .award-tile .medal {
 /* скрытый заголовок для доступности */
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* загрузка аватара в админке + аватар в шапке */
+.staff-up { margin-top: 4px; }
+.staff-up button { font-size: .7rem; padding: 4px 8px; border-radius: 7px; cursor: pointer;
+  border: 1px solid rgba(148,163,184,.28); background: rgba(148,163,184,.08); color: #cbd5e1; }
+.staff-up button:hover { border-color: rgba(34,211,238,.5); color: #22d3ee; }
+.avatar-xl img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+
+.now-av { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex: none; }
