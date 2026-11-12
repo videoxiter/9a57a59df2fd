@@ -63,14 +63,29 @@ marks as (
   from public.otp_time_events e
   where not (e.type in ('absence_start', 'absence_end') and coalesce(e.reason, '') = 'Без заявки')
 ),
+-- Увольнительные: в их интервал рабочее время на паузе, поэтому вычитаем пересечение.
+leave_win as (
+  select l."empSlug", l.date as day,
+         (l.date || ' ' || l."from" || ':00+03:00')::timestamptz as from_ts,
+         (l.date || ' ' || l."to"   || ':00+03:00')::timestamptz as to_ts
+  from public.otp_requests l
+  where l.type = 'leave' and l.status = 'approved'
+    and l."from" ~ '^[0-9]{1,2}:[0-9]{2}$' and l."to" ~ '^[0-9]{1,2}:[0-9]{2}$'
+),
 work as (
   select m."empSlug", m.day,
-         sum(extract(epoch from (
-           (case when m.next_at is not null then m.next_at
-                 when m.day = t.d then now()
-                 else m.at end) - m.at
-         )))::int as worked_sec
-  from marks m cross join today t
+         sum(extract(epoch from (b.b_end - m.at))
+             - coalesce((select sum(extract(epoch from (least(b.b_end, w.to_ts) - greatest(m.at, w.from_ts))))
+                         from leave_win w
+                         where w."empSlug" = m."empSlug" and w.day = m.day
+                           and w.from_ts < b.b_end and w.to_ts > m.at), 0))::int as worked_sec
+  from marks m
+  cross join today t
+  cross join lateral (
+    select case when m.next_at is not null then m.next_at
+                when m.day = t.d then now()
+                else m.at end as b_end
+  ) b
   where m.type in ('shift_start', 'break_end', 'absence_end')
   group by m."empSlug", m.day
 ),

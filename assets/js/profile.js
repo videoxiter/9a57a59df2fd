@@ -2026,7 +2026,9 @@ function robotMenuHtml() {
       body: JSON.stringify([ev]),
     }).then((r) => { stMarkReady(); return r; }).catch(() => null);
   }
-  function stCalc(events, nowMs) {
+  function stCalc(events, nowMs, windows) {
+    const wins = windows || [];
+    const overlap = (a, b) => wins.reduce((s, w) => s + Math.max(0, Math.min(b, w.to) - Math.max(a, w.from)), 0);
     let acc = 0, running = false, last = 0, active = null, started = null, stopped = null;
     let noStopAbsence = false;
     const used = new Set();
@@ -2035,9 +2037,9 @@ function robotMenuHtml() {
       const t = Date.parse(e.at);
       if (!Number.isFinite(t)) continue;
       if (e.type === "shift_start") { started = t; running = true; last = t; }
-      else if (e.type === "shift_stop") { if (running) { acc += t - last; running = false; } stopped = t; }
+      else if (e.type === "shift_stop") { if (running) { acc += (t - last) - overlap(last, t); running = false; } stopped = t; }
       else if (e.type === "break_start") {
-        if (running) { acc += t - last; running = false; }
+        if (running) { acc += (t - last) - overlap(last, t); running = false; }
         active = { slot: e.slot || "break", reason: e.reason || "", at: t, type: "break_start" };
       } else if (e.type === "break_end") {
         used.add(e.slot || "break");
@@ -2047,7 +2049,7 @@ function robotMenuHtml() {
         // «Без заявки» — отсутствие на рабочем месте в рамках производства:
         // статус показываем, но рабочее время НЕ останавливаем.
         noStopAbsence = String(e.reason || "") === "Без заявки";
-        if (!noStopAbsence && running) { acc += t - last; running = false; }
+        if (!noStopAbsence && running) { acc += (t - last) - overlap(last, t); running = false; }
         active = { slot: "absence", reason: e.reason || "", at: t, type: "absence_start" };
       } else if (e.type === "absence_end") {
         if (noStopAbsence) noStopAbsence = false;          // время и так шло
@@ -2055,8 +2057,23 @@ function robotMenuHtml() {
         active = null;
       }
     }
-    if (running) acc += nowMs - last;
+    if (running) acc += (nowMs - last) - overlap(last, nowMs);
     return { sec: Math.max(0, Math.round(acc / 1000)), active, used, started, stopped, running };
+  }
+  /* окна увольнительных: в это время рабочее время автоматически на паузе */
+  const stHHMMmin = (s) => { const m = /^(\d{1,2}):(\d{2})$/.exec(String(s || "")); return m ? +m[1] * 60 + +m[2] : null; };
+  function stLeaveWins(rows) {
+    const map = new Map();
+    for (const r of rows || []) {
+      if (r.type !== "leave" || r.status !== "approved") continue;
+      const a = stHHMMmin(r.from), b = stHHMMmin(r.to);
+      if (a == null || b == null || b <= a) continue;
+      const base = new Date(String(r.date) + "T00:00:00").getTime();
+      const key = `${r.empSlug}|${r.date}`;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push({ from: base + a * 60000, to: base + b * 60000, fromTxt: r.from, toTxt: r.to });
+    }
+    return map;
   }
   const stHms = (sec) => {
     const s = Math.max(0, Math.round(sec));
@@ -2101,7 +2118,8 @@ function robotMenuHtml() {
   function stDayKind(date, shiftInfo) {
     const day = stIsoDate(date);
     const reqs = loadReqs().filter((r) => r.status === "approved" && r.date === day);
-    if (reqs.some((r) => r.type === "leave")) return { kind: "leave", title: "Увольнительная", icon: "ph-door-open" };
+    // Увольнительная — не «нерабочий день»: она просто ставит время на паузу
+    // в свой интервал (см. stLeaveWins), кнопки остаются доступными.
     if (reqs.some((r) => r.type === "dayoff")) return { kind: "dayoff", title: "Отгул за выходную смену", icon: "ph-calendar-minus" };
     if (shiftInfo && shiftInfo.vacation) return { kind: "vacation", title: "Отпуск", icon: "ph-airplane-tilt" };
     const sh = shiftInfo && shiftInfo.sh;
@@ -2149,6 +2167,17 @@ function robotMenuHtml() {
     const shiftInfo = stShift(now);
     const dayKind = stDayKind(now, shiftInfo);
     const isWorkDay = dayKind.kind === "work";
+    // окна увольнительных на сегодня: в них рабочее время автоматически на паузе
+    let leaveWins = stLeaveWins(loadReqs().filter((r) => r.date === today)).get(`${ME_SLUG}|${today}`) || [];
+    const winsNow = () => leaveWins;
+    const loadLeaveWins = () => {
+      const c = ST_CLOUD();
+      const local = () => stLeaveWins(loadReqs().filter((r) => r.date === today)).get(`${ME_SLUG}|${today}`) || [];
+      if (!c || !c.url) return Promise.resolve(local());
+      return fetch(`${c.url.replace(/\/$/, "")}/rest/v1/otp_requests?select=*&empSlug=eq.${ME_SLUG}&type=eq.leave&status=eq.approved&date=eq.${today}`, {
+        cache: "no-store", headers: { apikey: c.key, Authorization: "Bearer " + c.key },
+      }).then((r) => (r.ok ? r.json() : [])).then((rows) => stLeaveWins(rows || []).get(`${ME_SLUG}|${today}`) || []).catch(local);
+    };
     let events = [];
     let timer = null;
     let absenceOpen = false;
@@ -2182,19 +2211,19 @@ function robotMenuHtml() {
           ? `<i class="ph-bold ph-check-circle"></i> Норма 8 часов на сегодня отработана.`
           : `<i class="ph-bold ph-info"></i> До нормы осталось ${stHms(8 * 3600 - sec)}.`;
     const tickLive = () => {
-      const st = stCalc(events, Date.now());
+      const st = stCalc(events, Date.now(), winsNow());
       if (timerEl) timerEl.textContent = stHms(st.sec);
       if (noteEl) noteEl.innerHTML = noteHtml(st.sec);
     };
     const render = () => {
-      const st = stCalc(events, Date.now());
+      const st = stCalc(events, Date.now(), winsNow());
       const working = st.started && !st.stopped;
       const canAct = isWorkDay && !st.stopped;
 
       /* статус и иконка */
       let icon = "ph-hourglass", text = "", cls = "";
+      const lwNow = winsNow().find((w) => Date.now() >= w.from && Date.now() < w.to);
       if (!isWorkDay) { icon = dayKind.icon; text = dayKind.title; cls = "off"; }
-      else if (!st.started) { icon = "ph-alarm"; text = "Ожидание начала смены"; cls = "wait"; }
       else if (st.stopped) { icon = "ph-check-circle"; text = "Смена завершена"; cls = "done"; }
       else if (st.active) {
         const slot = ST_SLOTS.find((s) => s.slot === st.active.slot);
@@ -2209,7 +2238,13 @@ function robotMenuHtml() {
           text = `${slot.label} · с ${stHm(st.active.at)} до ${to}`;
           cls = "pause";
         } else { icon = "ph-pause"; text = "Пауза"; cls = "pause"; }
-      } else { icon = "ph-briefcase"; text = "Работа"; cls = "work"; }
+      } else if (lwNow) {
+        // увольнительная на часть дня: статус виден, время в этом окне на паузе
+        icon = "ph-door-open";
+        text = `Увольнительная с ${lwNow.fromTxt} до ${lwNow.toTxt} (время на паузе)`;
+        cls = "pause";
+      } else if (!st.started) { icon = "ph-alarm"; text = "Ожидание начала смены"; cls = "wait"; }
+      else { icon = "ph-briefcase"; text = "Работа"; cls = "work"; }
       if (statusEl) statusEl.innerHTML = `<span class="st-si k-${cls}"><i class="ph-bold ${icon}"></i></span><span class="st-st-txt">${escHtml(text)}</span>`;
       if (timerEl) timerEl.textContent = stHms(st.sec);
 
@@ -2270,7 +2305,7 @@ function robotMenuHtml() {
       const b = e.target.closest("[data-act]");
       if (!b) return;
       const act = b.dataset.act;
-      const st = stCalc(events, Date.now());
+      const st = stCalc(events, Date.now(), winsNow());
       const at = new Date().toISOString();
       const base = { id: "t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), empSlug: ME_SLUG, empName: emp.fullName, day: today };
       const push = (ev) => { events = events.concat([ev]); stAdd(ev); render(); };
@@ -2336,6 +2371,7 @@ function robotMenuHtml() {
 
     render();
     events = events || [];
+    loadLeaveWins().then((w) => { leaveWins = w; render(); }).catch(() => {});
     stEvents(today).then((rows) => { events = rows || []; render(); }).catch(() => {});
     timer = setInterval(tickLive, 1000);
     window.addEventListener("beforeunload", () => clearInterval(timer));
@@ -2369,13 +2405,18 @@ function robotMenuHtml() {
     const load = () => {
       const a = from.value || stIsoDate(now), b = to.value || a;
       const q = `otp_time_events?select=*&day=gte.${a}&day=lte.${b}&order=day.asc,at.asc`;
-      return stApi(q).catch(() => stLocal().filter((e) => e.day >= a && e.day <= b));
+      const ev = stApi(q).catch(() => stLocal().filter((e) => e.day >= a && e.day <= b));
+      // увольнительные за период — их время вычитается из отработанного
+      const lv = stApi(`otp_requests?select=*&type=eq.leave&status=eq.approved&date=gte.${a}&date=lte.${b}`).catch(() => []);
+      return Promise.all([ev, lv]).then(([e, l]) => ({ ev: e || [], lv: l || [] }));
     };
 
     let lastRows = [];                 // для выгрузки CSV
-    const paint = (rows) => {
+    const paint = (data) => {
+      const rows = (data && data.ev) || [];
+      const winsBy = stLeaveWins((data && data.lv) || []);
       const pick = empSel.value;
-      const list = (rows || []).filter((e) => !pick || e.empSlug === pick);
+      const list = rows.filter((e) => !pick || e.empSlug === pick);
       const byDay = new Map();
       for (const e of list) {
         const k = e.empSlug + "|" + e.day;
@@ -2383,7 +2424,7 @@ function robotMenuHtml() {
         byDay.get(k).ev.push(e);
       }
       const rowsOut = [...byDay.values()].map((d) => {
-        const st = stCalc(d.ev, Date.now());
+        const st = stCalc(d.ev, Date.now(), winsBy.get(`${d.slug}|${d.day}`) || []);
         return { ...d, sec: st.sec, started: st.started, stopped: st.stopped, breaks: st.used.size };
       }).sort((x, y) => y.day.localeCompare(x.day) || String(x.name).localeCompare(String(y.name), "ru"));
       const total = rowsOut.reduce((s, r) => s + r.sec, 0);
