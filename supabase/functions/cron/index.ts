@@ -46,10 +46,11 @@ async function sb(path: string, init?: RequestInit) {
   return text ? JSON.parse(text) : null;
 }
 
-async function send(text: string, login?: string) {
+async function send(text: string, login?: string, userId?: string) {
   if (!BOT) return { ok: false, error: "secrets not set" };
   const body: Record<string, unknown> = { text };
-  if (login) body.login = login;        // личное сообщение сотруднику
+  if (userId) body.user_id = userId;    // личное по UUID
+  else if (login) body.login = login;   // личное по логину
   else {
     if (!CHAT) return { ok: false, error: "DISCO_CHAT_ID не задан" };
     body.chat_id = CHAT;               // в общий канал «ДисКо»
@@ -108,18 +109,21 @@ Deno.serve(async () => {
     const notifyOnce = async (kind: string, emp: string, text: string, personal = false) => {
       const id = `${today}:${kind}:${emp}`;
       if (sent.has(id)) return;
-      const login = personal ? LOGINS[String(emp).trim()] : undefined;
-      const res: any = await send(text, login);
+      const raw = personal ? LOGINS[String(emp).trim()] : undefined;
+      // в TEAM_LOGINS можно писать логин ("a.melnikov") или UUID ("id:xxxxxxxx-...").
+      const userId = raw && raw.startsWith("id:") ? raw.slice(3) : undefined;
+      const login = raw && !raw.startsWith("id:") ? raw : undefined;
+      const res: any = await send(text, login, userId);
       if (res && res.ok !== false) {
         sent.add(id);
         await sb("otp_time_notices", {
           method: "POST", headers: { Prefer: "return=minimal" },
           body: JSON.stringify([{ id, day: today, kind, emp }]),
         }).catch(() => {});
-        out.push(`${kind}: ${emp}${login ? " (личное " + login + ")" : " (канал)"}`);
+        out.push(`${kind}: ${emp}${raw ? " (личное " + raw + ")" : " (канал)"}`);
       } else {
         // не молчим: видно, почему Яндекс отклонил (например, неверный логин)
-        errors.push(`${kind}: ${emp}${login ? " [" + login + "]" : " [канал]"}: ${JSON.stringify(res).slice(0, 160)}`);
+        errors.push(`${kind}: ${emp}${raw ? " [" + raw + "]" : " [канал]"}: ${JSON.stringify(res).slice(0, 160)}`);
         // страховка: личное не доставлено (логин не найден) — пишем в канал, чтобы не потерять
         if (login) {
           const res2: any = await send(text);
