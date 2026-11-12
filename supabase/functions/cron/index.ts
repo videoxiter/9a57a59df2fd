@@ -120,6 +120,18 @@ Deno.serve(async () => {
       } else {
         // не молчим: видно, почему Яндекс отклонил (например, неверный логин)
         errors.push(`${kind}: ${emp}${login ? " [" + login + "]" : " [канал]"}: ${JSON.stringify(res).slice(0, 160)}`);
+        // страховка: личное не доставлено (логин не найден) — пишем в канал, чтобы не потерять
+        if (login) {
+          const res2: any = await send(text);
+          if (res2 && res2.ok !== false) {
+            sent.add(id);
+            await sb("otp_time_notices", {
+              method: "POST", headers: { Prefer: "return=minimal" },
+              body: JSON.stringify([{ id, day: today, kind, emp }]),
+            }).catch(() => {});
+            out.push(`${kind}: ${emp} (канал — личное не доставлено)`);
+          }
+        }
       }
     };
 
