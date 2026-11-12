@@ -1982,6 +1982,7 @@ function robotMenuHtml() {
   const ST_KEY = "otp_time_events_v1";
   // Норма дня: 8 часов минус два тех.перерыва по 15 минут = 7 ч 30 мин.
   const ST_NORM_SEC = 7.5 * 3600;
+  const ST_RING_R = 62, ST_RING_C = 2 * Math.PI * ST_RING_R;
   const ST_CLOUD = () => (D.hrRules && D.hrRules.cloud) || null;
   const stIsoDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   const ST_MISS_KEY = "otp_time_missing_at";
@@ -2152,10 +2153,11 @@ function robotMenuHtml() {
       <div class="st-shift" id="st-shift"></div>
       <div class="st-top">
         <div class="st-status" id="st-status"><span class="st-si"><i class="ph-bold ph-hourglass"></i></span><span class="st-st-txt">Загрузка…</span></div>
-        <div class="st-timer-wrap"><div class="st-timer" id="st-timer">00:00:00</div><span class="st-timer-h">отработано за день</span></div>
+        <div class="st-timer-wrap"><div class="st-timer" id="st-timer">00:00:00</div><div class="st-bar"><div class="st-bar-fg" id="st-bar"></div></div><span class="st-timer-h">отработано за день · норма 7:30</span></div>
       </div>
       <div class="st-actions" id="st-actions"></div>
       <div class="st-note" id="st-note"></div>
+      <div class="st-week" id="st-week"></div>
     </section>
     ${emp.canManage ? `<section class="p-sec" id="st-report-sec">
       <div class="p-sec-head"><h2><i class="ph-bold ph-chart-bar"></i> Отчёт по рабочему времени</h2>
@@ -2200,6 +2202,7 @@ function robotMenuHtml() {
     };
     let events = [];
     let timer = null;
+    const barEl = document.getElementById("st-bar");
     let absenceOpen = false;
     let absenceReason = "";
     let customReason = "";
@@ -2233,6 +2236,7 @@ function robotMenuHtml() {
     const tickLive = () => {
       const st = stCalc(events, Date.now(), winsNow());
       if (timerEl) timerEl.textContent = stHms(st.sec);
+      if (barEl) barEl.style.width = (Math.min(1, st.sec / ST_NORM_SEC) * 100).toFixed(1) + "%";
       if (noteEl) noteEl.innerHTML = noteHtml(st.sec);
     };
     const render = () => {
@@ -2240,6 +2244,7 @@ function robotMenuHtml() {
       const working = st.started && !st.stopped;
       const canAct = isWorkDay && !st.stopped;
       const lwNowActive = winsNow().find((w) => Date.now() >= w.from && Date.now() < w.to);
+      if (barEl) barEl.style.width = (Math.min(1, st.sec / ST_NORM_SEC) * 100).toFixed(1) + "%";
 
       /* статус и иконка */
       let icon = "ph-hourglass", text = "", cls = "";
@@ -2418,6 +2423,32 @@ function robotMenuHtml() {
     events = events || [];
     loadLeaveWins().then((w) => { leaveWins = w; render(); }).catch(() => {});
     stEvents(today).then((rows) => { events = rows || []; render(); }).catch(() => {});
+    /* мини-график за 7 дней */
+    const weekEl = document.getElementById("st-week");
+    if (weekEl) {
+      const days = [];
+      for (let i = 6; i >= 0; i--) days.push(new Date(now.getFullYear(), now.getMonth(), now.getDate() - i));
+      const from = stIsoDate(days[0]);
+      stApi(`otp_time_events?select=*&day=gte.${from}&day=lte.${today}&empSlug=eq.${ME_SLUG}`)
+        .then((rows) => {
+          const all = Array.isArray(rows) ? rows : [];
+          const wnames = ["пн", "вт", "ср", "чт", "пт", "сб", "вс"];
+          weekEl.innerHTML = `<div class="st-week-t">Последние 7 дней</div><div class="st-week-list">` +
+            days.map((d) => {
+              const day = stIsoDate(d);
+              const mine = all.filter((e) => e.day === day);
+              const w = stLeaveWins(loadReqs().filter((r) => r.date === day)).get(`${ME_SLUG}|${day}`) || [];
+              const sec = stCalc(mine, Date.now(), w).sec;
+              const pct = Math.min(100, Math.round((sec / ST_NORM_SEC) * 100));
+              const isToday = day === today;
+              return `<div class="st-week-d${isToday ? " is-today" : ""}" title="${sec ? stHms(sec) : "нет данных"}">
+                <div class="st-week-bar"><i style="height:${pct}%"></i></div>
+                <span>${wnames[(d.getDay() + 6) % 7]} ${d.getDate()}</span>
+                <b>${sec ? stHms(sec).slice(0, 5) : "—"}</b>
+              </div>`;
+            }).join("") + `</div>`;
+        }).catch(() => {});
+    }
     timer = setInterval(tickLive, 1000);
     window.addEventListener("beforeunload", () => clearInterval(timer));
 

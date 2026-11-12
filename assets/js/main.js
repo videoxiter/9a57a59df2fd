@@ -1,4 +1,4 @@
-/* Логика дашборда «Моя команда ОТП».
+﻿/* Логика дашборда «Моя команда ОТП».
    Один файл на все страницы: каждый блок срабатывает только если на странице есть его контейнер.
 
    index.html        — Моя команда · Кто лучше · Заявки · Рейтинг по KPI
@@ -408,7 +408,12 @@
          ${novices.map((e) => `<a class="adapt-chip" href="${SITE_ROOT}team/${e.slug}/index.html" title="Открыть страницу сотрудника">${e.shortName} ${e.fullName.split(" ")[0] || ""}<small>${e.role.replace(/\s*\(.*\)$/, "")}</small></a>`).join("")}`
       : "";
   }
-  if ($("#meta-month")) $("#meta-month").textContent = D.meta.updated;
+  if ($("#meta-month")) {
+    const mm = $("#meta-month");
+    mm.textContent = D.meta.updated;
+    const bd = mm.closest(".badge");
+    if (bd) bd.title = "Итоги за " + D.meta.updated + ". Текущий месяц появится после загрузки итогов.";
+  }
   if ($("#stat-avg")) $("#stat-avg").textContent = teamAvgNow.toFixed(1);
   if ($("#stat-top")) $("#stat-top").textContent = leader.shortName;
   if ($("#stat-bonus")) $("#stat-bonus").textContent = otp.rub(lastBonus);
@@ -883,7 +888,7 @@
         <p class="set-sub">Тема меняет фон, элементы, иконки, эмблему и включает свою анимацию. Настройка личная — у сотрудников свои темы.</p>
         <div class="set-grid set-grid-themes" id="set-themes">
           ${T.themes.map((x) => `<button class="set-opt set-theme-card${st.theme === x.id ? " is-on" : ""}" data-theme-id="${x.id}">
-            <span class="set-thumb th-${x.id}">${(x.figures && x.figures[0]) ? `<img src="${T.img(x.figures[0])}" alt="">` : `<span class="set-thumb-fx"></span>`}</span>
+            <span class="set-thumb th-${x.id}">${(x.figures && x.figures[0]) ? `<img src="${T.img(x.figures[0])}" alt="${x.label}">` : `<span class="set-thumb-fx"></span>`}</span>
             <b>${x.label}</b><i>${x.hint}</i>
             <i class="ph-bold ph-check-circle set-tick"></i></button>`).join("")}
         </div>
