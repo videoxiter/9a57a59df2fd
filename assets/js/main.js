@@ -1,4 +1,4 @@
-﻿/* Логика дашборда «Моя команда ОТП».
+/* Логика дашборда «Моя команда ОТП».
    Один файл на все страницы: каждый блок срабатывает только если на странице есть его контейнер.
 
    index.html        — Моя команда · Кто лучше · Заявки · Рейтинг по KPI
@@ -698,6 +698,24 @@
       const sl = await window.OTP_AUTH.staffList();
       for (const s of (sl || [])) if (s.avatar) avatarBy.set(s.slug, s.avatar);
     }
+    const fioOf = (id) => {
+      const pl = (D.schedule && D.schedule.people) || [];
+      const p = pl.find((x) => x.slug === id);
+      return p ? p.fio : "";
+    };
+    const shiftPct = (e) => {
+      const iso = day.slice(0, 7);
+      const m = D.schedule && D.schedule.months && D.schedule.months[iso];
+      if (!m || !m.shifts) return 0;
+      const sh = m.shifts[fioOf(e.id)] && m.shifts[fioOf(e.id)][String(dt.getDate())];
+      if (!sh) return 0;
+      const mm = /^(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/.exec(String(sh.time || ""));
+      if (!mm) return 0;
+      const s = new Date(day + "T" + mm[1].padStart(2, "0") + ":" + mm[2] + ":00").getTime();
+      const en = new Date(day + "T" + mm[3].padStart(2, "0") + ":" + mm[4] + ":00").getTime();
+      if (!(en > s)) return 0;
+      return Math.max(0, Math.min(100, Math.round(((Date.now() - s) / (en - s)) * 100)));
+    };
     const order = { work: 0, pause: 1, done: 2, idle: 3 };
     const list = D.employees.filter((e) => e.status !== "left")
       .map((e) => ({ emp: e, st: byEmp.has(e.slug) ? stateOf(byEmp.get(e.slug)) : { kind: "idle", label: "не начинал", icon: "ph-moon", since: null, sec: 0 } }))
@@ -741,7 +759,7 @@
       <div class="now-grid">
         ${list.map((x) => `<div class="now-card k-${x.st.kind}">
           <i class="ph-bold ${x.st.icon}"></i>
-          <span class="now-body"><b>${escNow(x.emp.fullName)}</b><span>${escNow(x.st.label)}${x.st.since ? " · с " + hm(x.st.since) : ""}</span></span>
+          <span class="now-body"><b>${escNow(x.emp.fullName)}</b><span>${escNow(x.st.label)}${x.st.since ? " · с " + hm(x.st.since) : ""}</span><span class="now-line"><i style="width:${shiftPct(x.emp)}%"></i></span></span>
           <span class="now-time">${x.st.kind === "idle" ? "" : hms(x.st.sec)}</span>
         </div>`).join("")}
       </div>
@@ -892,11 +910,12 @@
         <div class="set-h"><i class="ph-bold ph-palette"></i><h3>Тема оформления</h3></div>
         <p class="set-sub">Тема меняет фон, элементы, иконки, эмблему и включает свою анимацию. Настройка личная — у сотрудников свои темы.</p>
         <div class="set-grid set-grid-themes" id="set-themes">
-          ${T.themes.map((x) => `<button class="set-opt set-theme-card${st.theme === x.id ? " is-on" : ""}" data-theme-id="${x.id}">
+          ${T.themes.map((x) => `<button class="set-opt set-theme-card${st.theme === x.id ? " is-on" : ""}${["classic","light","dark","cyberpunk"].includes(x.id) ? "" : " set-hide"}" data-theme-id="${x.id}">
             <span class="set-thumb th-${x.id}">${(x.figures && x.figures[0]) ? `<img src="${T.img(x.figures[0])}" alt="${x.label}">` : `<span class="set-thumb-fx"></span>`}</span>
             <b>${x.label}</b><i>${x.hint}</i>
             <i class="ph-bold ph-check-circle set-tick"></i></button>`).join("")}
         </div>
+        <button class="set-more" id="set-more">Показать все темы</button>
       </section>
       <section class="set-block">
         <div class="set-h"><i class="ph-bold ph-sparkle"></i><h3>Анимация</h3></div>
@@ -906,6 +925,13 @@
         <div class="set-foot"><button class="set-btn ghost" id="set-reset"><i class="ph-bold ph-arrow-counter-clockwise"></i> Сбросить к классической</button></div>
       </section>
     </div>`;
+    const more = document.getElementById("set-more");
+    if (more) more.addEventListener("click", () => {
+      const grid = document.getElementById("set-themes");
+      if (!grid) return;
+      const open = grid.classList.toggle("set-open");
+      more.textContent = open ? "Свернуть темы" : "Показать все темы";
+    });
     document.querySelectorAll("#set-themes .set-opt").forEach((b) =>
       b.addEventListener("click", () => {
         T.setTheme(b.dataset.themeId);
