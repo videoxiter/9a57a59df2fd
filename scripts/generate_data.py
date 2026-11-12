@@ -1278,8 +1278,14 @@ def main():
     # публичный JSON с графиком и линиями — его можно запрашивать по HTTP напрямую
     sched_out = os.path.join(ROOT, "assets", "data", "schedule.json")
     os.makedirs(os.path.dirname(sched_out), exist_ok=True)
+    # команда: только действующие сотрудники сайта (уволенные и посторонние из
+    # выгрузки Confluence в уведомления и отчёты попадать не должны)
+    active_ids = {e["id"] for e in data["employees"] if e.get("status") != "left"}
+    team = [{"fio": p.get("fio"), "id": p.get("slug")}
+            for p in ((data.get("schedule") or {}).get("people") or [])
+            if p.get("slug") in active_ids]
     with open(sched_out, "w", encoding="utf-8") as f:
-        json.dump({"generated": data.get("meta", {}).get("updated"),
+        json.dump({"generated": data.get("meta", {}).get("updated"), "team": team,
                    "schedule": data.get("schedule")}, f, ensure_ascii=False)
     print(f"OK -> {sched_out}")
     for e in data["employees"]:

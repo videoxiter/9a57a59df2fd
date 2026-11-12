@@ -17,6 +17,9 @@ const KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_
 const BOT = Deno.env.get("YANDEX_BOT_TOKEN") || "";
 const CHAT = Deno.env.get("DISCO_CHAT_ID") || "";
 const SCHEDULE_URL = Deno.env.get("SCHEDULE_URL") || "https://videoxiter.github.io/9a57a59df2fd/assets/data/schedule.json";
+// С какой даты вообще сообщать об опозданиях (при запуске системы люди ещё не начали
+// пользоваться кнопкой — иначе канал завалит сообщениями в первый же день).
+const LATE_FROM = Deno.env.get("LATE_FROM") || "2026-11-13";
 
 const YANDEX = "https://botapi.messenger.yandex.net/bot/v1/messages/sendText/";
 const TZ_OFFSET = 3 * 60 * 60 * 1000;              // Москва, UTC+3 (без перехода на летнее время)
@@ -60,12 +63,23 @@ Deno.serve(async () => {
 
     const schedRes = await fetch(SCHEDULE_URL, { cache: "no-store" });
     if (!schedRes.ok) return json({ ok: false, error: "schedule " + schedRes.status }, 502);
-    const sched = (await schedRes.json()).schedule || {};
+    const schedDoc = await schedRes.json();
+    const sched = schedDoc.schedule || {};
+    // только действующие сотрудники нашего сайта — посторонние из выгрузки Confluence
+    // (уволенные, другие отделы) в уведомления не попадают
+    const team = new Set((schedDoc.team || []).map((t: any) => String(t.fio || "").trim()));
+    const onlyTeam = (fio: string) => (team.size ? team.has(String(fio).trim()) : true);
     const month = (sched.months || {})[monthKey];
     if (!month) return json({ ok: true, today, note: "нет графика на месяц" });
 
     const events = await sb(`otp_time_events?select=*&day=eq.${today}&order=at.asc`) || [];
     const sent = new Set((await sb(`otp_time_notices?select=id&day=eq.${today}`) || []).map((n: any) => n.id));
+    // кто вообще пользуется системой: если человек ещё ни разу ничего не нажимал,
+    // «опоздание» по нему не шлём (иначе в первые дни канал получает шквал)
+    const usedRows = await sb(
+      `otp_time_events?select=empName&at=gte.${new Date(Date.now() - 14 * 86400000).toISOString()}&limit=2000`,
+    ).catch(() => []) || [];
+    const used = new Set((usedRows as any[]).map((e) => String(e.empName || "").trim()));
 
     const byEmp = new Map<string, any[]>();
     for (const e of events) {
@@ -91,6 +105,9 @@ Deno.serve(async () => {
 
     // 1. опоздание: смена по графику началась, а «Начало» не нажато
     for (const [fio, days] of Object.entries(month.shifts || {})) {
+      if (!onlyTeam(fio)) continue;
+      if (today < LATE_FROM) continue;
+      if (!used.has(String(fio).trim())) continue;      // человек ещё не пользуется системой
       const sh: any = (days as any)[dayNum];
       if (!sh || !WORK_KINDS.has(String(sh.kind))) continue;
       const m = /^(\d{1,2}):(\d{2})/.exec(String(sh.time || ""));
