@@ -46,19 +46,28 @@ create policy "notices read"   on public.otp_time_notices for select to anon usi
 create policy "notices insert" on public.otp_time_notices for insert to anon with check (true);
 
 -- Сводка по дням: удобно и для отчёта, и для JSON-запросов.
--- Отработанные секунды = сумма интервалов «работа → пауза» (пауза = перерыв/обед/отсутствие).
+-- Отработанные секунды = сумма интервалов «работа → пауза». Незакрытый интервал
+-- за сегодня считается до текущего момента (иначе цифра «застревает» на прошлом событии).
 drop view if exists public.otp_time_days;
 create view public.otp_time_days with (security_invoker = true) as
-with marks as (
+with today as (
+  select to_char((now() at time zone 'Europe/Moscow')::date, 'YYYY-MM-DD') as d
+),
+marks as (
   select e.*,
          lead(at) over (partition by "empSlug", day order by at, id) as next_at
   from public.otp_time_events e
 ),
 work as (
-  select "empSlug", day, sum(extract(epoch from (next_at - at)))::int as worked_sec
-  from marks
-  where type in ('shift_start', 'break_end', 'absence_end') and next_at is not null
-  group by "empSlug", day
+  select m."empSlug", m.day,
+         sum(extract(epoch from (
+           (case when m.next_at is not null then m.next_at
+                 when m.day = t.d then now()
+                 else m.at end) - m.at
+         )))::int as worked_sec
+  from marks m cross join today t
+  where m.type in ('shift_start', 'break_end', 'absence_end')
+  group by m."empSlug", m.day
 ),
 agg as (
   select "empSlug", max("empName") as "empName", day,
