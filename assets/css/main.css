@@ -2481,3 +2481,26 @@ html[data-theme="ocean"] .award-tile .medal {
   .st-timer { font-size: 1.9rem; }
   .st-absence { grid-template-columns: 1fr; }
 }
+
+/* ===================== «Сейчас на смене» (дашборд) ===================== */
+.now-board { margin-bottom: 16px; }
+.now-head { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.now-head h3 { margin: 0; font-size: 1rem; display: flex; gap: 8px; align-items: center; }
+.now-head h3 i { color: #22d3ee; }
+.now-sum { display: flex; flex-wrap: wrap; gap: 8px; }
+.now-chip { font-size: .75rem; padding: 3px 9px; border-radius: 8px; background: rgba(148,163,184,.12);
+  border: 1px solid rgba(148,163,184,.2); color: #a7b4c6; }
+.now-chip.w b { color: #34d399; } .now-chip.p b { color: #fbbf24; }
+.now-chip.d b { color: #a78bfa; } .now-chip.i b { color: #7f8a99; }
+.now-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+.now-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px;
+  background: rgba(9,12,18,.7); border: 1px solid rgba(148,163,184,.18); }
+.now-card i { font-size: 1.1rem; color: #7f8a99; flex: none; }
+.now-body { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.now-body b { font-size: .82rem; color: #e8edf5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.now-body span { font-size: .72rem; color: #8b96a8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.now-time { font-family: var(--font-mono); font-size: .78rem; color: #22d3ee; flex: none; }
+.now-card.k-work { border-color: rgba(52,211,153,.35); } .now-card.k-work i { color: #34d399; }
+.now-card.k-pause { border-color: rgba(251,191,36,.35); } .now-card.k-pause i { color: #fbbf24; }
+.now-card.k-done { border-color: rgba(167,139,250,.3); } .now-card.k-done i { color: #a78bfa; }
+.now-card.k-idle { opacity: .6; }

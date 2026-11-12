@@ -634,6 +634,80 @@
   otp.reveal(document);
   hydrateHours();
   renderHoursJournal();
+  renderNowBoard();
+  setInterval(() => { if (!document.hidden) renderNowBoard(); }, 60000);
+
+  /* ---------- «Сейчас на смене»: статусы по событиям «Стартовой» ---------- */
+  async function renderNowBoard() {
+    const box = $("#now-board");
+    if (!box) return;
+    const c = D.hrRules && D.hrRules.cloud;
+    if (!c || !c.url) return;
+    const dt = new Date();
+    const day = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+    let rows = [];
+    try {
+      const r = await fetch(`${c.url.replace(/\/$/, "")}/rest/v1/otp_time_events?select=*&day=eq.${day}&order=at.asc`, {
+        cache: "no-store", headers: { apikey: c.key, Authorization: "Bearer " + c.key },
+      });
+      if (!r.ok) { box.innerHTML = ""; return; }
+      rows = await r.json();
+    } catch (e) { box.innerHTML = ""; return; }
+    if (!Array.isArray(rows)) return;
+
+    const byEmp = new Map();
+    for (const e of rows) {
+      const k = e.empSlug || e.empName;
+      if (!byEmp.has(k)) byEmp.set(k, []);
+      byEmp.get(k).push(e);
+    }
+    const escNow = (s) => String(s == null ? "" : s).replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
+    const hms = (s) => [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60].map((x) => String(x).padStart(2, "0")).join(":");
+    const hm = (ms) => { const d = new Date(ms); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
+    const SLOT = { tech1: ["тех.перерыв 1", "ph-coffee"], tech2: ["тех.перерыв 2", "ph-coffee"], lunch: ["обед", "ph-fork-knife"], absence: ["отсутствие", "ph-walking"] };
+    const stateOf = (ev) => {
+      let acc = 0, running = false, last = 0, started = 0, stopped = 0, active = null;
+      for (const e of ev) {
+        const t = Date.parse(e.at);
+        if (e.type === "shift_start") { started = t; running = true; last = t; }
+        else if (e.type === "shift_stop") { if (running) acc += t - last; running = false; stopped = t; }
+        else if (e.type === "break_start" || e.type === "absence_start") { if (running) acc += t - last; running = false; active = e; }
+        else if (e.type === "break_end" || e.type === "absence_end") { if (!running) { running = true; last = t; } active = null; }
+      }
+      if (running) acc += Date.now() - last;
+      const sec = Math.max(0, Math.round(acc / 1000));
+      if (stopped) return { kind: "done", label: "смена завершена", icon: "ph-check-circle", since: stopped, sec };
+      if (active) {
+        const nm = SLOT[active.slot] || ["пауза", "ph-pause"];
+        return { kind: "pause", label: nm[0] + (active.reason ? ": " + active.reason : ""), icon: nm[1], since: Date.parse(active.at), sec };
+      }
+      if (started) return { kind: "work", label: "работает", icon: "ph-briefcase", since: last, sec };
+      return { kind: "idle", label: "не начинал", icon: "ph-moon", since: null, sec };
+    };
+    const order = { work: 0, pause: 1, done: 2, idle: 3 };
+    const list = D.employees.filter((e) => e.status !== "left")
+      .map((e) => ({ emp: e, st: byEmp.has(e.slug) ? stateOf(byEmp.get(e.slug)) : { kind: "idle", label: "не начинал", icon: "ph-moon", since: null, sec: 0 } }))
+      .sort((a, b) => order[a.st.kind] - order[b.st.kind] || String(a.emp.fullName).localeCompare(String(b.emp.fullName), "ru"));
+    if (!list.length) { box.innerHTML = ""; return; }
+    const cnt = (k) => list.filter((x) => x.st.kind === k).length;
+    box.innerHTML = `
+      <div class="now-head">
+        <h3><i class="ph-bold ph-broadcast"></i> Сейчас на смене</h3>
+        <span class="now-sum">
+          <span class="now-chip w"><b>${cnt("work")}</b> работают</span>
+          <span class="now-chip p"><b>${cnt("pause")}</b> на паузе</span>
+          <span class="now-chip d"><b>${cnt("done")}</b> завершили</span>
+          <span class="now-chip i"><b>${cnt("idle")}</b> не начинали</span>
+        </span>
+      </div>
+      <div class="now-grid">
+        ${list.map((x) => `<div class="now-card k-${x.st.kind}">
+          <i class="ph-bold ${x.st.icon}"></i>
+          <span class="now-body"><b>${escNow(x.emp.fullName)}</b><span>${escNow(x.st.label)}${x.st.since ? " · с " + hm(x.st.since) : ""}</span></span>
+          <span class="now-time">${x.st.kind === "idle" ? "" : hms(x.st.sec)}</span>
+        </div>`).join("")}
+      </div>`;
+  }
 
   /* ---------- графики (страница «Динамика») ---------- */
   if (!window.Chart) return;

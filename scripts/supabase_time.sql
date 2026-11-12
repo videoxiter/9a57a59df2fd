@@ -73,3 +73,48 @@ select a."empSlug", a."empName", a.day, a.started, a.stopped,
        coalesce(w.worked_sec, 0) as worked_sec, a.breaks, a.absences
 from agg a
 left join work w using ("empSlug", day);
+
+-- Текущий статус по каждому сотруднику одним запросом (RPC).
+-- Вызов: POST /rest/v1/rpc/otp_current_status   (тело не нужно)
+create or replace function public.otp_current_status()
+returns table (
+  emp_slug   text,
+  emp_name   text,
+  day        text,
+  status     text,          -- work | tech1 | tech2 | lunch | absence | done
+  slot       text,
+  since      timestamptz,   -- с какого момента идёт текущее состояние
+  started    timestamptz,
+  stopped    timestamptz,
+  worked_sec int
+)
+language sql
+security invoker
+set search_path = public
+as $$
+  with t as (
+    select to_char((now() at time zone 'Europe/Moscow')::date, 'YYYY-MM-DD') as d
+  ),
+  last_ev as (
+    select distinct on (e."empSlug") e."empSlug", e."empName", e.type, e.slot, e.at
+    from public.otp_time_events e, t
+    where e.day = t.d
+    order by e."empSlug", e.at desc, e.id desc
+  )
+  select l."empSlug", l."empName", t.d,
+         case
+           when l.type in ('shift_start', 'break_end', 'absence_end') then 'work'
+           when l.type = 'shift_stop' then 'done'
+           when l.type = 'break_start' then coalesce(l.slot, 'break')
+           when l.type = 'absence_start' then 'absence'
+           else 'unknown'
+         end,
+         l.slot, l.at,
+         d.started, d.stopped, coalesce(d.worked_sec, 0)
+  from last_ev l
+  cross join t
+  left join public.otp_time_days d
+    on d."empSlug" = l."empSlug" and d.day = t.d
+$$;
+
+grant execute on function public.otp_current_status() to anon;

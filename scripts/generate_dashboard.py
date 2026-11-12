@@ -17,7 +17,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DASH = os.path.join(ROOT, "1bceb335668c")
 SRC = os.path.join(DASH, "index.html")
 SOURCE = os.path.join(ROOT, "scripts", "dashboard_source.html")   # неизменный исходник секций
-V = "171"
+V = "172"
 
 PAGES = [
     ("", "Моя команда", "team", ["top", "best", "hr-sec", "hours", "rating"]),
@@ -51,6 +51,7 @@ DUTIES_SECTION = '''  <!-- ===== ГРАФИК ОТДЕЛА ===== -->
         <h2>График отдела</h2>
         <p>Состав на сегодня и завтра с временем, перерывами и линиями — плюс отпуска по периодам.</p>
       </div>
+      <div class="now-board" id="now-board" data-reveal></div>
       <div class="duty-board" id="duty-board" data-reveal></div>
     </div>
   </section>

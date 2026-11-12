@@ -1,4 +1,4 @@
-﻿/* Логика персональных страниц: разделы «Бонусы / Мой LVL / Награды / Мой рост / Статистика / Правила» */
+/* Логика персональных страниц: разделы «Бонусы / Мой LVL / Награды / Мой рост / Статистика / Правила» */
 (function () {
   "use strict";
   const D = window.OTP_EMP;
@@ -2116,6 +2116,7 @@ function robotMenuHtml() {
         <label class="hj-f"><span>по</span><input type="date" id="st-to"></label>
         <label class="hj-f"><span>Сотрудник</span><select id="st-emp"><option value="">Все</option></select></label>
         <button class="btn btn-primary" type="button" id="st-show"><i class="ph-bold ph-magnifying-glass"></i> Показать</button>
+        <button class="btn btn-ghost" type="button" id="st-csv"><i class="ph-bold ph-download-simple"></i> CSV</button>
       </div>
       <div class="st-sum" id="st-sum"></div>
       <div class="st-table-wrap"><table class="hj-table st-table"><thead><tr>
@@ -2136,6 +2137,7 @@ function robotMenuHtml() {
     const today = stIsoDate(now);
     const shiftInfo = stShift(now);
     const dayKind = stDayKind(now, shiftInfo);
+    const isWorkDay = dayKind.kind === "work";
     let events = [];
     let timer = null;
     let absenceOpen = false;
@@ -2159,10 +2161,23 @@ function robotMenuHtml() {
         </div>` : ""}`;
     }
 
+    /* Секундный тик НЕ перерисовывает кнопки и поле причины — иначе слетает курсор.
+       Перестраиваем DOM только при изменении состояния (клик/загрузка событий). */
+    const noteHtml = (sec) => !isWorkDay
+      ? `<i class="ph-bold ph-info"></i> ${escHtml(dayKind.title)} — рабочие кнопки в этот день не активны.`
+      : stMissing()
+        ? `<i class="ph-bold ph-warning"></i> Учёт ещё не подключён: выполните <b>scripts/supabase_time.sql</b> в Supabase. Пока время считается только в этом браузере.`
+        : sec >= 8 * 3600
+          ? `<i class="ph-bold ph-check-circle"></i> Норма 8 часов на сегодня отработана.`
+          : `<i class="ph-bold ph-info"></i> До нормы осталось ${stHms(8 * 3600 - sec)}.`;
+    const tickLive = () => {
+      const st = stCalc(events, Date.now());
+      if (timerEl) timerEl.textContent = stHms(st.sec);
+      if (noteEl) noteEl.innerHTML = noteHtml(st.sec);
+    };
     const render = () => {
       const st = stCalc(events, Date.now());
       const working = st.started && !st.stopped;
-      const isWorkDay = dayKind.kind === "work";
       const canAct = isWorkDay && !st.stopped;
 
       /* статус и иконка */
@@ -2231,13 +2246,7 @@ function robotMenuHtml() {
         </div>`);
       }
       box.innerHTML = buttons.join("");
-      if (noteEl) noteEl.innerHTML = !isWorkDay
-        ? `<i class="ph-bold ph-info"></i> ${escHtml(dayKind.title)} — рабочие кнопки в этот день не активны.`
-        : stMissing()
-          ? `<i class="ph-bold ph-warning"></i> Учёт ещё не подключён: выполните <b>scripts/supabase_time.sql</b> в Supabase. Пока время считается только в этом браузере.`
-          : st.sec >= 8 * 3600
-            ? `<i class="ph-bold ph-check-circle"></i> Норма 8 часов на сегодня отработана.`
-            : `<i class="ph-bold ph-info"></i> До нормы осталось ${stHms(8 * 3600 - st.sec)}.`;
+      if (noteEl) noteEl.innerHTML = noteHtml(st.sec);
 
       /* опоздания и затянувшиеся перерывы проверяет облачная функция cron — без участия браузера */
     };
@@ -2314,11 +2323,7 @@ function robotMenuHtml() {
     render();
     events = events || [];
     stEvents(today).then((rows) => { events = rows || []; render(); }).catch(() => {});
-    timer = setInterval(() => {
-      const st = stCalc(events, Date.now());
-      if (timerEl) timerEl.textContent = stHms(st.sec);
-      render();
-    }, 1000);
+    timer = setInterval(tickLive, 1000);
     window.addEventListener("beforeunload", () => clearInterval(timer));
 
     /* отчёт для руководителя/главного специалиста */
@@ -2335,8 +2340,11 @@ function robotMenuHtml() {
     const show = document.getElementById("st-show");
     if (!from || !body) return;
     const now = new Date();
-    from.value = stIsoDate(new Date(now.getFullYear(), now.getMonth(), 1));
-    to.value = stIsoDate(now);
+    // по умолчанию — сегодня; последний выбранный период запоминаем
+    let savedPeriod = null;
+    try { savedPeriod = JSON.parse(localStorage.getItem("otp_st_period") || "null"); } catch (e) { savedPeriod = null; }
+    from.value = (savedPeriod && savedPeriod.from) || stIsoDate(now);
+    to.value = (savedPeriod && savedPeriod.to) || stIsoDate(now);
     const names = new Map();
     for (const e of (window.OTP_EMP && window.OTP_EMP.employeesList ? window.OTP_EMP.employeesList : [])) names.set(e.slug, e.name);
     if (!names.size) names.set(ME_SLUG, emp.fullName);
@@ -2350,6 +2358,7 @@ function robotMenuHtml() {
       return stApi(q).catch(() => stLocal().filter((e) => e.day >= a && e.day <= b));
     };
 
+    let lastRows = [];                 // для выгрузки CSV
     const paint = (rows) => {
       const pick = empSel.value;
       const list = (rows || []).filter((e) => !pick || e.empSlug === pick);
@@ -2376,9 +2385,30 @@ function robotMenuHtml() {
         <td class="num">${r.sec < 8 * 3600 ? "−" + stHms(8 * 3600 - r.sec) : "—"}</td>
         <td class="num">${r.breaks}</td></tr>`).join("");
       if (empty) empty.hidden = rowsOut.length > 0;
+      lastRows = rowsOut;
     };
 
-    show.addEventListener("click", () => load().then(paint));
+    show.addEventListener("click", () => {
+      try { localStorage.setItem("otp_st_period", JSON.stringify({ from: from.value, to: to.value })); } catch (e) {}
+      load().then(paint);
+    });
+    const csvBtn = document.getElementById("st-csv");
+    if (csvBtn) csvBtn.addEventListener("click", () => {
+      const q = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
+      const head = ["Дата", "Сотрудник", "Начало", "Конец", "Отработано", "Недоработка", "Перерывов"];
+      const rows = lastRows.map((r) => [
+        r.day, r.name, r.started ? stHm(r.started) : "", r.stopped ? stHm(r.stopped) : "",
+        stHms(r.sec), r.sec < 8 * 3600 ? "-" + stHms(8 * 3600 - r.sec) : "",
+        String(r.breaks),
+      ].map(q).join(";"));
+      const csv = "\uFEFF" + [head.map(q).join(";")].concat(rows).join("\r\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `rabochee-vremya-${from.value}_${to.value}.csv`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+    });
     // автозагрузки нет: отчёт запрашивается кнопкой «Показать» (и не дёргает сеть до настройки)
     if (sumEl) sumEl.innerHTML = '<span class="hj-chip">нажми «Показать», чтобы построить отчёт</span>';
   }
