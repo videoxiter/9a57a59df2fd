@@ -78,12 +78,10 @@ TEMPLATE = """<!DOCTYPE html>
   <title>__TITLE__</title>
   <meta name="robots" content="noindex">
   <link rel="icon" type="image/svg+xml" href="__PREFIX__assets/img/favicon.svg">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
-  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
-  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
+  <link href="__PREFIX__assets/css/fonts.css?v=__V__" rel="stylesheet">
+  <link rel="stylesheet" href="__PREFIX__assets/vendor/phosphor/regular/style.css">
+  <link rel="stylesheet" href="__PREFIX__assets/vendor/phosphor/fill/style.css">
+  <link rel="stylesheet" href="__PREFIX__assets/vendor/phosphor/bold/style.css">
   <link rel="stylesheet" href="__PREFIX__assets/css/main.css?v=__V__">
 </head>
 <body data-profile="__ID__" data-section="__SECTION__">
@@ -113,10 +111,10 @@ TEMPLATE = """<!DOCTYPE html>
     window.OTP_SECTION = "__SECTION__";
     window.OTP_NAV = __OTP_NAV__;
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="__PREFIX__assets/vendor/gsap.min.js?v=__V__"></script>
+  <script src="__PREFIX__assets/vendor/ScrollTrigger.min.js?v=__V__"></script>
+  <script src="__PREFIX__assets/vendor/lenis.min.js?v=__V__"></script>
+  <script src="__PREFIX__assets/vendor/chart.umd.min.js?v=__V__"></script>
   <script src="__PREFIX__assets/js/common.js?v=__V__"></script>
   <script src="__PREFIX__assets/js/cloud.js?v=__V__"></script>
   <script src="__PREFIX__assets/js/themes.js?v=__V__"></script>
@@ -125,7 +123,7 @@ TEMPLATE = """<!DOCTYPE html>
 </html>
 """
 
-V = "176"
+V = "178"
 
 # Турнирная таблица команды (данные коллег) отдаётся только этим сотрудникам.
 # У остальных в payload её нет вовсе — ни в разметке, ни в исходнике страницы.

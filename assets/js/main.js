@@ -688,6 +688,29 @@
     const list = D.employees.filter((e) => e.status !== "left")
       .map((e) => ({ emp: e, st: byEmp.has(e.slug) ? stateOf(byEmp.get(e.slug)) : { kind: "idle", label: "не начинал", icon: "ph-moon", since: null, sec: 0 } }))
       .sort((a, b) => order[a.st.kind] - order[b.st.kind] || String(a.emp.fullName).localeCompare(String(b.emp.fullName), "ru"));
+    // кто сейчас отсутствует (последнее событие — начало отсутствия)
+    const absNow = [];
+    for (const [emp, evs] of byEmp.entries()) {
+      const last = evs[evs.length - 1];
+      if (last && last.type === "absence_start") absNow.push({ emp, slug: last.empSlug, reason: last.reason || "", at: last.at });
+    }
+    // действующие увольнительные (approved leave, внутри интервала)
+    let leaveNow = [];
+    try {
+      const r2 = await fetch(`${c.url.replace(/\/$/, "")}/rest/v1/otp_requests?select=*&type=eq.leave&status=eq.approved&date=eq.${day}`, {
+        cache: "no-store", headers: { apikey: c.key, Authorization: "Bearer " + c.key },
+      });
+      if (r2.ok) {
+        const rows2 = await r2.json();
+        const base = new Date(day + "T00:00:00").getTime();
+        const minsOf = (s) => { const m = /^(\d{1,2}):(\d{2})$/.exec(String(s || "")); return m ? +m[1] * 60 + +m[2] : null; };
+        leaveNow = (Array.isArray(rows2) ? rows2 : []).map((l) => {
+          const a = minsOf(l.from), b = minsOf(l.to);
+          if (a == null || b == null) return null;
+          return { id: l.id, fio: l.empName, fromTxt: l.from, toTxt: l.to, start: base + a * 60000, end: base + b * 60000 };
+        }).filter((x) => x && Date.now() >= x.start && Date.now() < x.end);
+      }
+    } catch (e) {}
     if (!list.length) { box.innerHTML = ""; return; }
     const cnt = (k) => list.filter((x) => x.st.kind === k).length;
     box.innerHTML = `
@@ -706,7 +729,57 @@
           <span class="now-body"><b>${escNow(x.emp.fullName)}</b><span>${escNow(x.st.label)}${x.st.since ? " · с " + hm(x.st.since) : ""}</span></span>
           <span class="now-time">${x.st.kind === "idle" ? "" : hms(x.st.sec)}</span>
         </div>`).join("")}
-      </div>`;
+      </div>
+      ${(absNow.length || leaveNow.length) ? `<div class="now-alert">
+        <h4><i class="ph-bold ph-warning-circle"></i> Требуют внимания</h4>
+        <div class="now-grid">
+          ${absNow.map((a) => `<div class="now-card k-abs">
+            <i class="ph-bold ph-walking"></i>
+            <span class="now-body"><b>${escNow(a.emp)}</b><span>отсутствует${a.reason ? " · " + escNow(a.reason) : ""} · с ${hm(Date.parse(a.at))}</span></span>
+            <button class="now-act" data-abs="${escNow(a.slug)}" data-emp="${escNow(a.emp)}">Завершить</button>
+          </div>`).join("")}
+          ${leaveNow.map((l) => `<div class="now-card k-leave">
+            <i class="ph-bold ph-door-open"></i>
+            <span class="now-body"><b>${escNow(l.fio)}</b><span>увольнительная ${escNow(l.fromTxt)}–${escNow(l.toTxt)}</span></span>
+            <button class="now-act" data-leave="${escNow(l.id)}" data-fio="${escNow(l.fio)}">Отменить</button>
+          </div>`).join("")}
+        </div>
+      </div>` : ""}`;
+    box.querySelectorAll("[data-leave]").forEach((b) => b.addEventListener("click", async () => {
+      const id = b.getAttribute("data-leave");
+      if (!id) return;
+      const d = new Date(Date.now() + 3 * 3600 * 1000);
+      const hhmm = `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+      b.disabled = true;
+      try {
+        await fetch(`${c.url.replace(/\/$/, "")}/rest/v1/otp_requests?id=eq.${id}`, {
+          method: "PATCH",
+          headers: { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json", Prefer: "return=minimal" },
+          body: JSON.stringify({ to: hhmm }),
+        });
+      } catch (e) {}
+      renderNowBoard();
+    }));
+    box.querySelectorAll("[data-abs]").forEach((b) => b.addEventListener("click", async () => {
+      const slug = b.getAttribute("data-abs");
+      const emp = b.getAttribute("data-emp");
+      if (!slug) return;
+      const d = new Date(Date.now() + 3 * 3600 * 1000);
+      const hhmm = `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+      b.disabled = true;
+      try {
+        await fetch(`${c.url.replace(/\/$/, "")}/rest/v1/otp_time_events`, {
+          method: "POST",
+          headers: { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json", Prefer: "return=minimal" },
+          body: JSON.stringify([{
+            id: "mgr-" + Date.now() + "-" + String(slug).slice(0, 8),
+            empSlug: slug, empName: emp, day, type: "absence_end", slot: "absence",
+            at: new Date().toISOString(), reason: "закрыто руководителем",
+          }]),
+        });
+      } catch (e) {}
+      renderNowBoard();
+    }));
   }
 
   /* ---------- графики (страница «Динамика») ---------- */

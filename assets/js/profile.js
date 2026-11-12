@@ -1,4 +1,4 @@
-﻿/* Логика персональных страниц: разделы «Бонусы / Мой LVL / Награды / Мой рост / Статистика / Правила» */
+/* Логика персональных страниц: разделы «Бонусы / Мой LVL / Награды / Мой рост / Статистика / Правила» */
 (function () {
   "use strict";
   const D = window.OTP_EMP;
@@ -2073,7 +2073,7 @@ function robotMenuHtml() {
       const base = new Date(String(r.date) + "T00:00:00").getTime();
       const key = `${r.empSlug}|${r.date}`;
       if (!map.has(key)) map.set(key, []);
-      map.get(key).push({ from: base + a * 60000, to: base + b * 60000, fromTxt: r.from, toTxt: r.to });
+      map.get(key).push({ id: r.id, from: base + a * 60000, to: base + b * 60000, fromTxt: r.from, toTxt: r.to });
     }
     return map;
   }
@@ -2221,6 +2221,7 @@ function robotMenuHtml() {
       const st = stCalc(events, Date.now(), winsNow());
       const working = st.started && !st.stopped;
       const canAct = isWorkDay && !st.stopped;
+      const lwNowActive = winsNow().find((w) => Date.now() >= w.from && Date.now() < w.to);
 
       /* статус и иконка */
       let icon = "ph-hourglass", text = "", cls = "";
@@ -2280,6 +2281,9 @@ function robotMenuHtml() {
         run: absActive,
         disabled: !canAct || (!absActive && inPause),
       }));
+      if (lwNowActive) {
+        buttons.push(`<button class="st-btn st-btn-leave" data-act="leave-end"><i class="ph-bold ph-door-open"></i> Завершить увольнительную</button>`);
+      }
       buttons.push(btn({
         act: "stop", icon: "ph-sign-out", label: "Завершить смену",
         disabled: !canAct || !working || inPause, used: stopApplied,
@@ -2288,7 +2292,7 @@ function robotMenuHtml() {
         buttons.push(`<div class="st-absence">
           <label><span>Причина отсутствия</span>
             <select id="st-reason">${ST_ABSENCE.map((r) => `<option${r === absenceReason ? " selected" : ""}>${escHtml(r)}</option>`).join("")}</select></label>
-          <label class="st-custom" id="st-custom-wrap"${absenceReason === "Иное" ? "" : " hidden"}><span>Опиши причину</span>
+          <label class="st-custom" id="st-custom-wrap"><span>Опиши причину (необязательно)</span>
             <input id="st-custom" type="text" maxlength="120" placeholder="например: поймала бухгалтерия по принтеру, или срочно ЕВ вызвала" value="${escHtml(customReason)}"></label>
           <div class="st-absence-a">
             <button class="btn btn-primary" data-act="absence-ok"><i class="ph-bold ph-check"></i> Отметить</button>
@@ -2350,10 +2354,35 @@ function robotMenuHtml() {
         return;
       }
       if (act === "absence-cancel") { absenceOpen = false; render(); return; }
+      if (act === "leave-end") {
+        const lw = winsNow().find((w) => Date.now() >= w.from && Date.now() < w.to);
+        if (!lw) return;
+        const d = new Date();
+        const hhmm = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+        const cl = ST_CLOUD();
+        if (cl && cl.url && lw.id) {
+          fetch(`${cl.url.replace(/\/$/, "")}/rest/v1/otp_requests?id=eq.${lw.id}`, {
+            method: "PATCH",
+            headers: { apikey: cl.key, Authorization: "Bearer " + cl.key, "Content-Type": "application/json", Prefer: "return=minimal" },
+            body: JSON.stringify({ to: hhmm }),
+          }).catch(() => {});
+        }
+        const all = loadReqs();
+        const i = all.findIndex((r) => r.id === lw.id);
+        if (i >= 0) { all[i].to = hhmm; saveReqs(all); }
+        leaveWins = stLeaveWins(all.filter((r) => r.date === today)).get(`${ME_SLUG}|${today}`) || [];
+        stNotify("leave_end", { to: hhmm });
+        render();
+        return;
+      }
       if (act === "absence-ok") {
         const sel = document.getElementById("st-reason");
         const custom = document.getElementById("st-custom");
-        const reason = (sel && sel.value === "Иное" && custom && custom.value.trim()) ? custom.value.trim() : (sel ? sel.value : "Без заявки");
+        const baseReason = sel ? sel.value : "Без заявки";
+        const note = custom ? custom.value.trim() : "";
+        // «Иное» — только текст; иначе основа + уточнение из поля
+        const reason = baseReason === "Иное" && note ? note : (note ? `${baseReason} — ${note}` : baseReason);
+        customReason = "";
         absenceOpen = false;
         push({ ...base, type: "absence_start", slot: "absence", at, reason });
         stNotify("absence", { reason });
@@ -2362,11 +2391,7 @@ function robotMenuHtml() {
     });
 
     box.addEventListener("change", (e) => {
-      if (e.target.id === "st-reason") {
-        absenceReason = e.target.value;
-        const w = document.getElementById("st-custom-wrap");
-        if (w) w.hidden = absenceReason !== "Иное";
-      }
+      if (e.target.id === "st-reason") absenceReason = e.target.value;
       if (e.target.id === "st-custom") customReason = e.target.value;
     });
     box.addEventListener("input", (e) => { if (e.target.id === "st-custom") customReason = e.target.value; });

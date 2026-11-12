@@ -2504,3 +2504,15 @@ html[data-theme="ocean"] .award-tile .medal {
 .now-card.k-pause { border-color: rgba(251,191,36,.35); } .now-card.k-pause i { color: #fbbf24; }
 .now-card.k-done { border-color: rgba(167,139,250,.3); } .now-card.k-done i { color: #a78bfa; }
 .now-card.k-idle { opacity: .6; }
+
+/* блок «Требуют внимания» на дашборде */
+.now-alert { margin-top: 14px; padding-top: 12px; border-top: 1px dashed rgba(148,163,184,.18); }
+.now-alert h4 { margin: 0 0 10px; font-size: .9rem; display: flex; gap: 8px; align-items: center; color: #fbbf24; }
+.now-card.k-abs { border-color: rgba(251,191,36,.45); }
+.now-card.k-abs i { color: #fbbf24; }
+.now-card.k-leave { border-color: rgba(34,211,238,.45); }
+.now-card.k-leave i { color: #22d3ee; }
+.now-act { flex: none; border: 1px solid rgba(148,163,184,.28); background: rgba(148,163,184,.08);
+  color: #cbd5e1; font-size: .72rem; padding: 4px 10px; border-radius: 8px; cursor: pointer; }
+.now-act:hover { background: rgba(220,38,38,.16); border-color: rgba(220,38,38,.5); color: #fca5a5; }
+.st-btn-leave { border-color: rgba(34,211,238,.45); }

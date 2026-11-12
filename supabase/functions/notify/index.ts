@@ -36,6 +36,7 @@ const TEMPLATES: Record<string, (c: Ctx) => string> = {
   lunch_over:  (c) => `⚠️ Обед затянулся! — ${c.fio}`,
   return:      (c) => `👊 ${c.fio} — снова в деле!`,
   shift_stop:  (c) => `🏁 Завершение смены — ${c.fio}`,
+  leave_end:   (c) => `⏱ Увольнительная завершена досрочно${c.meta?.to ? ` (${c.meta.to})` : ""} — ${c.fio}`,
 };
 
 Deno.serve(async (req: Request) => {
