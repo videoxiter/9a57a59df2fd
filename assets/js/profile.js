@@ -1,4 +1,4 @@
-/* Логика персональных страниц: разделы «Бонусы / Мой LVL / Награды / Мой рост / Статистика / Правила» */
+﻿/* Логика персональных страниц: разделы «Бонусы / Мой LVL / Награды / Мой рост / Статистика / Правила» */
 (function () {
   "use strict";
   const D = window.OTP_EMP;
@@ -2223,7 +2223,7 @@ function robotMenuHtml() {
           <label><span>Причина отсутствия</span>
             <select id="st-reason">${ST_ABSENCE.map((r) => `<option${r === absenceReason ? " selected" : ""}>${escHtml(r)}</option>`).join("")}</select></label>
           <label class="st-custom" id="st-custom-wrap"${absenceReason === "Иное" ? "" : " hidden"}><span>Опиши причину</span>
-            <input id="st-custom" type="text" maxlength="120" placeholder="например: забрал ребёнка из школы" value="${escHtml(customReason)}"></label>
+            <input id="st-custom" type="text" maxlength="120" placeholder="например: поймала бухгалтерия по принтеру, или срочно ЕВ вызвала" value="${escHtml(customReason)}"></label>
           <div class="st-absence-a">
             <button class="btn btn-primary" data-act="absence-ok"><i class="ph-bold ph-check"></i> Отметить</button>
             <button class="btn btn-ghost" data-act="absence-cancel">Отмена</button>
