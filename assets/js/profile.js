@@ -2100,7 +2100,8 @@ function robotMenuHtml() {
     const s = Math.max(0, Math.round(sec));
     return [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60].map((x) => String(x).padStart(2, "0")).join(":");
   };
-  const stHm = (ms) => { const d = new Date(ms); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
+  // время всегда московское (UTC+3), независимо от пояса браузера
+  const stHm = (ms) => { const d = new Date(ms + 3 * 3600 * 1000); return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`; };
   /* смена и линия на конкретный день из графика */
   function stShift(date) {
     const S = D.schedule;
@@ -2153,7 +2154,7 @@ function robotMenuHtml() {
       <div class="st-shift" id="st-shift"></div>
       <div class="st-top">
         <div class="st-status" id="st-status"><span class="st-si"><i class="ph-bold ph-hourglass"></i></span><span class="st-st-txt">Загрузка…</span></div>
-        <div class="st-timer-wrap"><div class="st-timer" id="st-timer">00:00:00</div><div class="st-bar"><div class="st-bar-fg" id="st-bar"></div></div><span class="st-timer-h">отработано за день · норма 7:30</span></div>
+        <div class="st-timer-wrap"><div class="st-timer" id="st-timer">00:00:00</div><div class="st-bar"><div class="st-bar-fg" id="st-bar"></div></div><span class="st-timer-h">отработано за день · норма 7:30 · МСК</span></div>
       </div>
       <div class="st-actions" id="st-actions"></div>
       <div class="st-note" id="st-note"></div>

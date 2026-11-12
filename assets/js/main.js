@@ -1,4 +1,4 @@
-/* Логика дашборда «Моя команда ОТП».
+﻿/* Логика дашборда «Моя команда ОТП».
    Один файл на все страницы: каждый блок срабатывает только если на странице есть его контейнер.
 
    index.html        — Моя команда · Кто лучше · Заявки · Рейтинг по KPI
@@ -672,7 +672,7 @@
     }
     const escNow = (s) => String(s == null ? "" : s).replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
     const hms = (s) => [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60].map((x) => String(x).padStart(2, "0")).join(":");
-    const hm = (ms) => { const d = new Date(ms); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
+    const hm = (ms) => { const d = new Date(ms + 3 * 3600 * 1000); return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`; };
     const SLOT = { tech1: ["тех.перерыв 1", "ph-coffee"], tech2: ["тех.перерыв 2", "ph-coffee"], lunch: ["обед", "ph-fork-knife"], absence: ["отсутствие", "ph-walking"] };
     const stateOf = (ev) => {
       let acc = 0, running = false, last = 0, started = 0, stopped = 0, active = null;
