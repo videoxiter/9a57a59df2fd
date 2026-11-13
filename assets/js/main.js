@@ -1,4 +1,4 @@
-﻿/* Логика дашборда «Моя команда ОТП».
+/* Логика дашборда «Моя команда ОТП».
    Один файл на все страницы: каждый блок срабатывает только если на странице есть его контейнер.
 
    index.html        — Моя команда · Кто лучше · Заявки · Рейтинг по KPI
@@ -1160,6 +1160,19 @@
         if (hadPass) get("pass").value = "";
       }
     }));
+  }
+
+  /* аватар руководителя в шапке */
+  if (window.OTP_AUTH && D.hrRules && D.hrRules.cloud) {
+    window.OTP_AUTH.staffList().then((list) => {
+      const ad = (list || []).find((x) => x.slug === "admin");
+      if (ad && ad.avatar) {
+        const logo = document.querySelector(".nav-logo");
+        if (logo && !document.querySelector(".nav-ava")) {
+          logo.insertAdjacentHTML("afterend", `<span class="nav-ava"><img src="${ad.avatar}" alt=""></span>`);
+        }
+      }
+    }).catch(() => {});
   }
 
   otp.reveal(document);
