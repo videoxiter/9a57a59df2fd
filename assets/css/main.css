@@ -2648,3 +2648,19 @@ html.auth-lock body > :not(.auth-gate):not(script):not(style) { display: none !i
 .eci-val { font-family: var(--font-mono); font-size: .82rem; color: #34d399; }
 .eci-date { display: block; margin-top: 4px; font-size: .7rem; color: #7f8a99; }
 .emp-content-item p { margin: 8px 0 0; font-size: .82rem; color: #b9c6d8; line-height: 1.5; }
+
+/* пароль, уведомления */
+.pass-wrap { display: flex; gap: 6px; align-items: center; }
+.pass-wrap input { flex: 1; min-width: 0; }
+.pass-wrap button { flex: none; width: 30px; height: 30px; border-radius: 8px; cursor: pointer;
+  border: 1px solid rgba(148,163,184,.28); background: rgba(148,163,184,.08); color: #cbd5e1; }
+.pass-wrap button:hover { color: #22d3ee; border-color: rgba(34,211,238,.5); }
+.toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 10000;
+  padding: 10px 18px; border-radius: 12px; background: rgba(13,18,26,.96); color: #e8edf5;
+  border: 1px solid rgba(52,211,153,.45); box-shadow: 0 8px 30px rgba(0,0,0,.45); font-size: .85rem;
+  animation: toast-in .25s ease; }
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+.nav-ava { width: 34px; height: 34px; border-radius: 50%; overflow: hidden; display: inline-block;
+  margin-left: 10px; vertical-align: middle; border: 1px solid rgba(148,163,184,.35); }
+.nav-ava img { width: 100%; height: 100%; object-fit: cover; display: block; }

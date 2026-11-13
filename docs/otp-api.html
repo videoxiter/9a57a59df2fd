@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="utf-8">
@@ -113,6 +113,45 @@ body: [{
 }]</pre>
 <p class="muted"><code>id</code> должен быть уникальным (любая строка, например <code>ev-&lt;epoch&gt;-&lt;random4&gt;</code>).</p>
 
+<h3>3.8. Снимок дня: статус + история событий с временем</h3>
+<pre>POST /rest/v1/rpc/otp_day_snapshot   body: {"p_slug":"bolgov","p_day":"2026-11-12"}</pre>
+<pre>{
+  "empSlug": "bolgov",
+  "day": "2026-11-12",
+  "status": "work",
+  "since": "2026-11-12T11:45:46+00:00",
+  "reason": null,
+  "events": [
+    { "type": "shift_start", "slot": null, "reason": null, "at": "2026-11-12T11:23:16+00:00" },
+    { "type": "break_start", "slot": "tech1", "reason": null, "at": "2026-11-12T11:23:23+00:00" },
+    { "type": "break_end", "slot": "tech1", "reason": null, "at": "2026-11-12T11:23:32+00:00" }
+  ]
+}</pre>
+<p class="muted">Каждое событие содержит <code>at</code> — точное время, когда статус был получен. Текущий статус — последнее событие.</p>
+
+<h3>3.9. Линия и график на день</h3>
+<p>График хранится в статическом JSON (GitHub Pages), а не в Supabase:</p>
+<pre>GET https://videoxiter.github.io/9a57a59df2fd/assets/data/schedule.json</pre>
+<pre>{
+  "team": [{ "fio": "Болгов Андрей Владимирович", "id": "bolgov" }],
+  "schedule": {
+    "months": {
+      "2026-11": {
+        "shifts": {
+          "Болгов Андрей Владимирович": {
+            "12": { "sym": "2", "title": "Смена 2", "kind": "shift", "time": "09:00–18:00" }
+          }
+        },
+        "lines": {
+          "L3": { "title": "L3 · тех.инженеры",
+                  "weeks": [["Болгов Андрей Владимирович"]],
+                  "labels": ["01.11-15.11"] }
+        }
+      }
+    }
+  }
+}</pre>
+<p class="muted">Линия определяется по фамилии сотрудника в <code>lines[&lt;id&gt;].weeks</code> с учётом <code>labels</code> (период недели). График — <code>shifts[ФИО]["&lt;день&gt;"]</code>.</p>
 <h2>4. Примеры</h2>
 <h3>4.1. Через прокси (curl)</h3>
 <pre>curl -X POST "https://&lt;project&gt;.supabase.co/functions/v1/api" \\

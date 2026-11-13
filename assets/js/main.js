@@ -1005,14 +1005,14 @@
     const rows = D.employees.filter((e) => e.status !== "left").map((e) => {
       const s = bySlug.get(e.id) || {};
       return {
-        slug: e.id, fio: s.fio || e.fullName, login: s.login || "",
+        slug: e.id, hash: e.slug, fio: s.fio || e.fullName, login: s.login || "", pass: s.pass || "",
         pass: "", avatar: s.avatar || "", active: s.active !== false,
         hasPass: !!s.has_pass,
       };
     });
     // администратор — первым
     const admin = bySlug.get("admin");
-    if (admin) rows.unshift({ slug: "admin", fio: admin.fio || "Руководитель", login: admin.login || "", pass: "", avatar: admin.avatar || "", active: admin.active !== false, hasPass: !!admin.has_pass });
+    if (admin) rows.unshift({ slug: "admin", fio: admin.fio || "Руководитель", login: admin.login || "", pass: admin.pass || "", avatar: admin.avatar || "", active: admin.active !== false, hasPass: !!admin.has_pass });
 
     app.innerHTML = `<div class="staff-head">
         <h3><i class="ph-bold ph-identification-card"></i> Сотрудники и доступы</h3>
@@ -1023,10 +1023,10 @@
         ${rows.map((r) => `<div class="staff-row" data-slug="${escNow(r.slug)}">
           <div class="staff-cell"><label>ФИО</label><input data-f="fio" value="${escNow(r.fio)}"></div>
           <div class="staff-cell"><label>Логин</label><input data-f="login" value="${escNow(r.login)}" placeholder="имя@ftech.io"></div>
-          <div class="staff-cell"><label>Пароль ${r.hasPass ? "(задан)" : "(нет)"}</label><input data-f="pass" type="password" placeholder="новый пароль"></div>
+          <div class="staff-cell"><label>Пароль ${r.hasPass ? "(задан)" : "(нет)"}</label><div class="pass-wrap"><input data-f="pass" type="password" value="${escNow(r.pass || "")}" placeholder="новый пароль"><button type="button" data-eye title="Показать пароль"><i class="ph-bold ph-eye"></i></button></div></div>
           <div class="staff-cell"><label>Аватар</label><input data-f="avatar" value="${escNow(r.avatar)}" placeholder="https://..."><div class="staff-up"><button data-file>Загрузить фото</button><input type="file" data-file-inp accept="image/*" hidden></div></div>
           <div class="staff-cell staff-check"><label><input data-f="active" type="checkbox" ${r.active ? "checked" : ""}> активен</label></div>
-          <div class="staff-cell staff-save"><button class="btn btn-primary" data-save>Сохранить</button><span class="staff-ok" hidden>сохранено</span></div>
+          <div class="staff-cell staff-save"><button class="btn btn-primary" data-save>Сохранить</button><button type="button" class="btn btn-ghost" data-access>Текст доступа</button><span class="staff-ok" hidden>сохранено</span></div>
         </div>`).join("")}
       </div>`;
     app.insertAdjacentHTML("beforeend", `<div class="sc-wrap">
@@ -1071,6 +1071,39 @@
       const res = await A.saveContent(row);
       if (res && res.ok) { $("#sc-title").value = ""; $("#sc-value").value = ""; $("#sc-body").value = ""; loadContent(); }
     });
+    const toast = (text) => {
+      const el = document.createElement("div");
+      el.className = "toast";
+      el.textContent = text;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 2600);
+    };
+    app.querySelectorAll("[data-eye]").forEach((b) => b.addEventListener("click", () => {
+      const inp = b.closest(".pass-wrap") && b.closest(".pass-wrap").querySelector("input");
+      if (!inp) return;
+      inp.type = inp.type === "password" ? "text" : "password";
+    }));
+    app.querySelectorAll("[data-access]").forEach((btn) => btn.addEventListener("click", async () => {
+      const row = btn.closest(".staff-row");
+      if (!row) return;
+      const slug = row.getAttribute("data-slug");
+      const info = rows.find((x) => x.slug === slug) || {};
+      const pass = (row.querySelector(`[data-f="pass"]`) || {}).value || info.pass || "—";
+      const fio = (row.querySelector(`[data-f="fio"]`) || {}).value || info.fio || "";
+      const hash = info.hash || "";
+      const link = hash ? "https://videoxiter.github.io/9a57a59df2fd/team/" + hash + "/start/index.html" : "";
+      const text = "Привет! Это «Моя команда ОТП» — внутренний портал отдела технической поддержки.\n\n"
+        + (fio ? fio + ", твоя страница:\n" : "Твоя страница:\n") + link + "\n"
+        + "Пароль: " + pass + "\n\n"
+        + "Что внутри:\n"
+        + "• «Стартовая» — начать и завершить смену, перерывы и обед, таймер и прогресс дня\n"
+        + "• Бонусы, LVL, награды, мой рост, статистика и карта доходов\n"
+        + "• Журнал часов и правила\n\n"
+        + "Как пользоваться: открой ссылку на телефоне или ПК, введи пароль (запомнится на 60 дней), "
+        + "на «Стартовой» нажми «Начало смены», перерывы — по кнопкам.";
+      try { await navigator.clipboard.writeText(text); toast("Текст доступа скопирован"); }
+      catch (e) { window.prompt("Скопируйте текст:", text); }
+    }));
     app.querySelectorAll("[data-file]").forEach((btn) => btn.addEventListener("click", () => {
       const row = btn.closest(".staff-row");
       const inp = row && row.querySelector("[data-file-inp]");
@@ -1120,7 +1153,12 @@
         active: get("active").checked,
       });
       btn.disabled = false;
-      if (res && res.ok) { if (ok) { ok.hidden = false; setTimeout(() => { ok.hidden = true; }, 2000); } get("pass").value = ""; }
+      if (res && res.ok) {
+        const hadPass = !!(get("pass") && get("pass").value);
+        if (ok) { ok.hidden = false; setTimeout(() => { ok.hidden = true; }, 2000); }
+        toast(hadPass ? "Пароль сохранён" : "Данные сохранены");
+        if (hadPass) get("pass").value = "";
+      }
     }));
   }
 
