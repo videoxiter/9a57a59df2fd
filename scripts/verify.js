@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+﻿#!/usr/bin/env node
 /* Штатная проверка всех страниц сайта: код ответа, JS-ошибки, отрисовка, reveal-блоки.
  *
  * Запуск (из корня репозитория):
@@ -130,6 +130,8 @@ async function worker(browser, queue, jobs) {
       });
       await sleep(1200);
       probe.hiddenAfterScroll = await page.evaluate(() => {
+        // страница закрыта паролем — reveal не запускается, это нормально
+        if (document.querySelector(".auth-gate")) return 0;
         const vis = (el) => { const c = getComputedStyle(el); return c.opacity !== "0" && c.visibility !== "hidden"; };
         return [...document.querySelectorAll("[data-reveal]")].filter((el) => !vis(el)).length;
       });
