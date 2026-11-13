@@ -3447,7 +3447,7 @@ function robotMenuHtml() {
       if (s) return next();
       A.staffList().then((list) => {
         const row = (list || []).find((x) => x.slug === emp.id);
-        if (!row || !row.has_pass) return next();
+        if (!row || !row.has_pass) return showNoAccess();
         showGate(next);
       }).catch(() => next());
     }).catch(() => next());
@@ -3461,6 +3461,15 @@ function robotMenuHtml() {
       const el = document.querySelector(".avatar-xl");
       if (el) el.innerHTML = `<img src="${escHtml(row.avatar)}" alt="">`;
     }).catch(() => {});
+  }
+  function showNoAccess() {
+    const ov = document.createElement("div");
+    ov.className = "auth-gate";
+    ov.innerHTML = `<div class="auth-box">
+      <h3><i class="ph-bold ph-lock-key"></i> Доступ закрыт</h3>
+      <p>${escHtml(emp.fullName)}</p>
+      <p class="auth-hint">Пароль ещё не выдан. Обратитесь к руководителю отдела.</p></div>`;
+    document.body.appendChild(ov);
   }
   function showGate(next) {
     const ov = document.createElement("div");

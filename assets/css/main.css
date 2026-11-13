@@ -2677,3 +2677,4 @@ html.auth-lock body > :not(.auth-gate):not(script):not(style) { display: none !i
 .self-msg { margin-top: 10px; font-size: .82rem; min-height: 18px; }
 .self-msg.ok { color: #34d399; }
 .self-msg.err { color: #f87171; }
+.auth-hint { color: #9fb0c5; font-size: .85rem; margin: 6px 0 0; }

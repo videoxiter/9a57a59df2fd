@@ -1,4 +1,4 @@
-/* Логика дашборда «Моя команда ОТП».
+﻿/* Логика дашборда «Моя команда ОТП».
    Один файл на все страницы: каждый блок срабатывает только если на странице есть его контейнер.
 
    index.html        — Моя команда · Кто лучше · Заявки · Рейтинг по KPI
@@ -656,11 +656,8 @@
     const day = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
     let rows = [];
     try {
-      const r = await fetch(`${c.url.replace(/\/$/, "")}/rest/v1/otp_time_events?select=*&day=eq.${day}&order=at.asc`, {
-        cache: "no-store", headers: { apikey: c.key, Authorization: "Bearer " + c.key },
-      });
-      if (!r.ok) { box.innerHTML = ""; return; }
-      rows = await r.json();
+      rows = await window.OTP_AUTH.api("admin", `otp_time_events?select=*&day=eq.${day}&order=at.asc`, "GET");
+      if (!Array.isArray(rows)) rows = [];
     } catch (e) { box.innerHTML = ""; return; }
     if (!Array.isArray(rows)) return;
 
@@ -729,11 +726,8 @@
     // действующие увольнительные (approved leave, внутри интервала)
     let leaveNow = [];
     try {
-      const r2 = await fetch(`${c.url.replace(/\/$/, "")}/rest/v1/otp_requests?select=*&type=eq.leave&status=eq.approved&date=eq.${day}`, {
-        cache: "no-store", headers: { apikey: c.key, Authorization: "Bearer " + c.key },
-      });
-      if (r2.ok) {
-        const rows2 = await r2.json();
+      const rows2 = await window.OTP_AUTH.api("admin", `otp_requests?select=*&type=eq.leave&status=eq.approved&date=eq.${day}`, "GET");
+      if (Array.isArray(rows2)) {
         const base = new Date(day + "T00:00:00").getTime();
         const minsOf = (s) => { const m = /^(\d{1,2}):(\d{2})$/.exec(String(s || "")); return m ? +m[1] * 60 + +m[2] : null; };
         leaveNow = (Array.isArray(rows2) ? rows2 : []).map((l) => {

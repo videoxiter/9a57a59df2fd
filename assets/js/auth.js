@@ -40,6 +40,20 @@
       }).catch(function () { return null; });
     },
     staffList: function () { return rpc("otp_staff_list", {}).catch(function () { return []; }); },
+    /* запрос через прокси (Edge Function api) с токеном сессии */
+    api: function (slug, path, method, body) {
+      var c = CLOUD();
+      if (!c) return Promise.reject(new Error("offline"));
+      return fetch(c.url.replace(/\/$/, "") + "/functions/v1/api", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: c.key,
+          Authorization: "Bearer " + c.key,
+        },
+        body: JSON.stringify({ token: tok(slug), path: path, method: method || "GET", body: body }),
+      }).then(function (r) { return r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)); });
+    },
     selfUpdate: function (slug, pass, avatar) {
       return rpc("otp_self_update", { p_token: tok(slug), p_pass: pass || null, p_avatar: avatar || null });
     },
@@ -60,7 +74,7 @@
     protect: function (slug, adminOnly) {
       var html = document.documentElement;
       html.classList.add("auth-lock");
-      var done = function () { html.classList.remove("auth-lock"); };
+      var done = function () { html.classList.remove("auth-lock"); document.dispatchEvent(new Event("otp-auth")); };
       return API.session(slug).then(function (s) {
         if (s && (!adminOnly || s.admin)) { done(); return; }
         var ov = document.createElement("div");
@@ -74,7 +88,7 @@
         var go = function () {
           var pass = (document.getElementById("pg-pass") || {}).value || "";
           API.login(slug, pass).then(function (res) {
-            if (res && res.ok && (!adminOnly || res.admin)) { ov.remove(); done(); }
+            if (res && res.ok && (!adminOnly || res.admin)) { ov.remove(); done(); location.reload(); }
             else { var e = document.getElementById("pg-err"); if (e) e.textContent = "Неверный пароль"; }
           });
         };
