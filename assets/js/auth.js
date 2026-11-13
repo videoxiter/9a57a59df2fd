@@ -40,6 +40,9 @@
       }).catch(function () { return null; });
     },
     staffList: function () { return rpc("otp_staff_list", {}).catch(function () { return []; }); },
+    selfUpdate: function (slug, pass, avatar) {
+      return rpc("otp_self_update", { p_token: tok(slug), p_pass: pass || null, p_avatar: avatar || null });
+    },
     contentList: function (emp) {
       return rpc("otp_content_list", { p_emp: emp }).catch(function () { return []; });
     },

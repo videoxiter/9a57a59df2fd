@@ -2583,6 +2583,23 @@ function robotMenuHtml() {
     return `
     <div class="set-wrap">
       <section class="set-block" data-reveal>
+        <div class="set-h"><i class="ph-bold ph-user-circle"></i><h3>Мой профиль</h3></div>
+        <p class="set-sub">Аватар виден в шапке страницы и на дашборде. Пароль — для входа на эту страницу с любого устройства.</p>
+        <div class="self-ava">
+          <span class="self-ava-img" id="self-ava-img"><i class="ph-bold ph-user"></i></span>
+          <div class="self-ava-btns">
+            <button class="set-btn" type="button" id="self-ava-upload"><i class="ph-bold ph-upload"></i> Загрузить фото</button>
+            <input type="file" id="self-ava-file" accept="image/*" hidden>
+          </div>
+        </div>
+        <div class="self-pass">
+          <input id="self-pass1" type="password" placeholder="новый пароль (мин. 4 символа)" autocomplete="new-password">
+          <input id="self-pass2" type="password" placeholder="повтори пароль" autocomplete="new-password">
+          <button class="set-btn" type="button" id="self-pass-save"><i class="ph-bold ph-lock-key"></i> Сохранить пароль</button>
+        </div>
+        <div class="self-msg" id="self-msg"></div>
+      </section>
+      <section class="set-block" data-reveal>
         <div class="set-h"><i class="ph-bold ph-palette"></i><h3>Тема оформления</h3></div>
         <p class="set-sub">Тема меняет фон, элементы, иконки и эмблему, а также свою анимацию. Выбор персональный — у коллег останутся их настройки.</p>
         <div class="set-grid set-grid-themes" id="set-themes">
@@ -2615,6 +2632,62 @@ function robotMenuHtml() {
   function initSettings() {
     const T = window.OTP_THEME;
     if (!T) return;
+    const selfMsg = document.getElementById("self-msg");
+    const selfSay = (t, ok) => { if (!selfMsg) return; selfMsg.textContent = t; selfMsg.className = "self-msg " + (ok ? "ok" : "err"); };
+    const AUTH = window.OTP_AUTH;
+    if (AUTH) {
+      AUTH.staffList().then((list) => {
+        const row = (list || []).find((x) => x.slug === emp.id);
+        const img = document.getElementById("self-ava-img");
+        if (row && row.avatar && img) img.innerHTML = `<img src="${escHtml(row.avatar)}" alt="">`;
+      }).catch(() => {});
+    }
+    const avaBtn = document.getElementById("self-ava-upload");
+    const avaInp = document.getElementById("self-ava-file");
+    if (avaBtn && avaInp) {
+      avaBtn.addEventListener("click", () => avaInp.click());
+      avaInp.addEventListener("change", async () => {
+        const f = avaInp.files && avaInp.files[0];
+        if (!f) return;
+        const c = ST_CLOUD();
+        if (!c || !c.url) return selfSay("Хранилище недоступно", false);
+        avaBtn.disabled = true;
+        const path = String(emp.id) + "-" + Date.now() + "." + (f.name.split(".").pop() || "png");
+        try {
+          const res = await fetch(c.url.replace(/\/$/, "") + "/storage/v1/object/avatars/" + path, {
+            method: "POST",
+            headers: { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": f.type, "x-upsert": "true" },
+            body: f,
+          });
+          if (res.ok) {
+            const url = c.url.replace(/\/$/, "") + "/storage/v1/object/public/avatars/" + path;
+            const r = await AUTH.selfUpdate(String(emp.id), null, url);
+            if (r && r.ok) {
+              const img = document.getElementById("self-ava-img");
+              if (img) img.innerHTML = `<img src="${escHtml(url)}" alt="">`;
+              applyAvatar();
+              selfSay("Фото обновлено", true);
+            } else selfSay("Не удалось сохранить фото", false);
+          } else selfSay("Не удалось загрузить фото", false);
+        } catch (e) { selfSay("Не удалось загрузить фото", false); }
+        avaBtn.disabled = false;
+      });
+    }
+    const passBtn = document.getElementById("self-pass-save");
+    if (passBtn && AUTH) {
+      passBtn.addEventListener("click", async () => {
+        const p1 = (document.getElementById("self-pass1") || {}).value || "";
+        const p2 = (document.getElementById("self-pass2") || {}).value || "";
+        if (p1.length < 4) return selfSay("Пароль — минимум 4 символа", false);
+        if (p1 !== p2) return selfSay("Пароли не совпадают", false);
+        const r = await AUTH.selfUpdate(String(emp.id), p1, null);
+        if (r && r.ok) {
+          document.getElementById("self-pass1").value = "";
+          document.getElementById("self-pass2").value = "";
+          selfSay("Пароль обновлён", true);
+        } else selfSay("Не удалось сохранить пароль", false);
+      });
+    }
     document.querySelectorAll("#set-themes .set-opt").forEach((b) => {
       b.addEventListener("click", () => {
         T.setTheme(b.dataset.themeId);

@@ -17,7 +17,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DASH = os.path.join(ROOT, "1bceb335668c")
 SRC = os.path.join(DASH, "index.html")
 SOURCE = os.path.join(ROOT, "scripts", "dashboard_source.html")   # неизменный исходник секций
-V = "192"
+V = "193"
 
 PAGES = [
     ("", "Моя команда", "team", ["top", "now", "best", "hr-sec", "hours", "rating"]),
@@ -137,7 +137,7 @@ def build_pages():
             body.append(f'  <script src="{prefix}assets/vendor/{lib}?v={V}"></script>')
         for js in ("themes.js", "data.js", "auth.js", "common.js", "cloud.js", "hr.js", "main.js"):
             body.append(f'  <script src="{prefix}assets/js/{js}?v={V}"></script>')
-            if js == "auth.js":
+            if js == "auth.js" and path != "staff":
                 body.append(f'  <script>window.OTP_AUTH && window.OTP_AUTH.protect("admin", true);</script>')
         body.append("</body>\n</html>\n")
 
