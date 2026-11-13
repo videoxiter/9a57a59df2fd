@@ -1987,16 +1987,15 @@ function robotMenuHtml() {
   const stIsoDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   const ST_MISS_KEY = "otp_time_missing_at";
   const stMissing = () => { try { return Date.now() - +(localStorage.getItem(ST_MISS_KEY) || 0) < 10 * 60 * 1000; } catch (e) { return false; } };
+  /* Все запросы к данным идут через прокси (Edge Function api) с токеном сотрудника. */
   function stApi(path, opts) {
+    const A = window.OTP_AUTH;
     const c = ST_CLOUD();
-    if (!c || c.provider !== "supabase" || !c.url) return Promise.reject(new Error("offline"));
-    if (stMissing()) return Promise.reject(new Error("обслуживание не подключено"));
-    const h = Object.assign({ apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json" }, (opts && opts.headers) || {});
-    return fetch(c.url.replace(/\/$/, "") + "/rest/v1/" + path, Object.assign({}, opts, { headers: h }))
-      .then((r) => {
-        if (r.status === 404) { try { localStorage.setItem(ST_MISS_KEY, String(Date.now())); } catch (e) {} }
-        return r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status));
-      });
+    if (!A || !c || !c.url) return Promise.reject(new Error("offline"));
+    const method = (opts && opts.method) || "GET";
+    let body = opts && opts.body;
+    if (typeof body === "string") { try { body = JSON.parse(body); } catch (e) { body = []; } }
+    return A.api(String(emp.id), path, method, body);
   }
   const stLocal = () => { try { return JSON.parse(localStorage.getItem(ST_KEY) || "[]"); } catch (e) { return []; } };
   const stLocalSave = (list) => { try { localStorage.setItem(ST_KEY, JSON.stringify(list)); } catch (e) {} };

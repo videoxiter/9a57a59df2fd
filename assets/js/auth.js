@@ -3,7 +3,7 @@
 (function () {
   "use strict";
   var CLOUD = function () {
-    var d = window.OTP_DATA;
+    var d = window.OTP_DATA || window.OTP_EMP;
     return (d && d.hrRules && d.hrRules.cloud && d.hrRules.cloud.url) ? d.hrRules.cloud : null;
   };
   var KEY = function (slug) { return "otp_sess_" + slug; };
