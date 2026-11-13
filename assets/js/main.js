@@ -1,4 +1,4 @@
-﻿/* Логика дашборда «Моя команда ОТП».
+/* Логика дашборда «Моя команда ОТП».
    Один файл на все страницы: каждый блок срабатывает только если на странице есть его контейнер.
 
    index.html        — Моя команда · Кто лучше · Заявки · Рейтинг по KPI
@@ -652,6 +652,8 @@
     }
     const c = D.hrRules && D.hrRules.cloud;
     if (!c || !c.url) return;
+    // данные доступны только после входа (прокси проверяет токен)
+    if (!window.OTP_AUTH || !window.OTP_AUTH.token("admin")) return;
     const dt = new Date();
     const day = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
     let rows = [];
