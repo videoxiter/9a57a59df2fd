@@ -1,4 +1,4 @@
-﻿/* Логика дашборда «Моя команда ОТП».
+/* Логика дашборда «Моя команда ОТП».
    Один файл на все страницы: каждый блок срабатывает только если на странице есть его контейнер.
 
    index.html        — Моя команда · Кто лучше · Заявки · Рейтинг по KPI
@@ -1006,7 +1006,7 @@
       const s = bySlug.get(e.id) || {};
       return {
         slug: e.id, hash: e.slug, fio: s.fio || e.fullName, login: s.login || "", pass: s.pass || "",
-        pass: "", avatar: s.avatar || "", active: s.active !== false,
+        avatar: s.avatar || "", active: s.active !== false,
         hasPass: !!s.has_pass,
       };
     });
