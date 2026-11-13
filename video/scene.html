@@ -1,0 +1,135 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>OTP video</title>
+<style>
+  @font-face { font-family: "SG"; src: url("../assets/fonts/f3.woff2") format("woff2"); font-weight: 400; }
+  @font-face { font-family: "SG"; src: url("../assets/fonts/f8.woff2") format("woff2"); font-weight: 700; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: #05080d; }
+  body { font-family: "Segoe UI", "SG", Arial, sans-serif; color: #e8eef7; }
+  .bg { position: absolute; inset: 0;
+    background:
+      radial-gradient(900px 600px at 12% 8%, rgba(34,211,238,.16), transparent 60%),
+      radial-gradient(900px 700px at 92% 92%, rgba(52,211,153,.14), transparent 62%),
+      linear-gradient(135deg, #05080d 0%, #08111a 55%, #05131a 100%);
+  }
+  .grid { position: absolute; inset: 0; opacity: .18;
+    background-image: linear-gradient(rgba(148,163,184,.25) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(148,163,184,.25) 1px, transparent 1px);
+    background-size: 64px 64px;
+    -webkit-mask-image: radial-gradient(circle at 50% 40%, #000 35%, transparent 78%);
+  }
+  .orb { position: absolute; border-radius: 50%; filter: blur(60px); opacity: .5; animation: drift 14s ease-in-out infinite alternate; }
+  .orb.a { width: 420px; height: 420px; background: #0ea5b7; top: -120px; left: -100px; }
+  .orb.b { width: 380px; height: 380px; background: #10b981; bottom: -140px; right: -80px; animation-delay: -6s; }
+  @keyframes drift { from { transform: translate(0,0) scale(1); } to { transform: translate(60px,40px) scale(1.12); } }
+
+  /* сцена */
+  .stage { position: absolute; inset: 0; display: grid; place-items: center; opacity: 0; transition: opacity .45s ease; }
+  .stage.on { opacity: 1; }
+  .card { width: 1560px; padding: 64px 72px; border-radius: 36px;
+    background: linear-gradient(160deg, rgba(12,20,30,.92), rgba(7,13,20,.92));
+    border: 1px solid rgba(120,180,200,.22);
+    box-shadow: 0 40px 120px rgba(0,0,0,.55), 0 0 0 1px rgba(34,211,238,.06) inset;
+    transform: translateY(18px) scale(.985); transition: transform .6s cubic-bezier(.2,.8,.2,1);
+  }
+  .stage.on .card { transform: translateY(0) scale(1); }
+  .kicker { display: inline-flex; align-items: center; gap: 12px; font-size: 26px; letter-spacing: .16em;
+    text-transform: uppercase; color: #22d3ee; margin-bottom: 26px; }
+  .kicker::before { content: ""; width: 46px; height: 3px; background: linear-gradient(90deg,#22d3ee,#34d399); border-radius: 3px; }
+  h1 { font-size: 84px; line-height: 1.08; font-weight: 800; letter-spacing: -.01em; margin-bottom: 22px; }
+  h1 .accent { background: linear-gradient(90deg,#22d3ee,#34d399); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sub { font-size: 34px; color: #9fb2c8; line-height: 1.45; max-width: 1300px; }
+  .items { margin-top: 38px; display: flex; flex-direction: column; gap: 20px; }
+  .item { display: flex; gap: 20px; align-items: flex-start; font-size: 32px; color: #cfdcea; opacity: 0;
+    transform: translateX(-18px); transition: all .55s cubic-bezier(.2,.8,.2,1); }
+  .stage.on .item { opacity: 1; transform: translateX(0); }
+  .item .num { flex: none; width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center;
+    background: rgba(34,211,238,.14); border: 1px solid rgba(34,211,238,.38); color: #22d3ee; font-size: 24px; font-weight: 700; }
+  .item .tx b { color: #ffffff; }
+  .item .tx { line-height: 1.35; }
+  .bigicon { position: absolute; right: 90px; top: 80px; font-size: 200px; opacity: .14; }
+  .progress { position: absolute; left: 0; bottom: 0; height: 6px; background: linear-gradient(90deg,#22d3ee,#34d399); width: 0; }
+  .shot { position: absolute; inset: 0; opacity: 0; transition: opacity .5s ease; overflow: hidden; }
+  .shot.on { opacity: 1; }
+  .shot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    animation: kenburns 16s ease-out forwards; }
+  @keyframes kenburns { from { transform: scale(1.02) translate(0,0); } to { transform: scale(1.09) translate(-1.2%,-1.4%); } }
+  .shot-cap { position: absolute; left: 64px; bottom: 70px; padding: 18px 28px; border-radius: 18px;
+    background: rgba(6,12,20,.82); border: 1px solid rgba(34,211,238,.35); font-size: 38px; font-weight: 700;
+    backdrop-filter: blur(8px); }
+  .shot-cap small { display: block; font-size: 22px; font-weight: 400; color: #9fb2c8; margin-top: 6px; }
+  .brand { position: absolute; left: 64px; bottom: 44px; font-size: 24px; letter-spacing: .22em; text-transform: uppercase; color: #5f7186; }
+  .brand b { color: #22d3ee; }
+  .hint { position: absolute; right: 64px; bottom: 44px; font-size: 24px; color: #5f7186; }
+</style>
+</head>
+<body>
+  <div class="bg"></div><div class="grid"></div>
+  <div class="orb a"></div><div class="orb b"></div>
+  <div class="brand">Мои результаты · <b>ОТП</b></div>
+  <div class="hint" id="hint"></div>
+  <div class="progress" id="progress"></div>
+  <div id="stages"></div>
+<script>
+  const SCENES = window.VIDEO_SCENES || [];
+  const startAt = () => performance.now();
+  const stagesBox = document.getElementById("stages");
+  // создаём сцены
+  SCENES.forEach((s, i) => {
+    const d = document.createElement("div");
+    d.className = "stage";
+    d.dataset.idx = i;
+    if (s.img) {
+      d.innerHTML = `<div class="shot"><img src="${s.img}" alt=""><div class="shot-cap">${s.title || ""}${s.sub ? `<small>${s.sub}</small>` : ""}</div></div>`;
+      stagesBox.appendChild(d);
+      return;
+    }
+    const items = (s.items || []).map((t, n) =>
+      `<div class="item" style="transition-delay:${0.25 + n * 0.18}s"><span class="num">${n + 1}</span><span class="tx">${t}</span></div>`
+    ).join("");
+    d.innerHTML = `<div class="card">
+        ${s.icon ? `<div class="bigicon">${s.icon}</div>` : ""}
+        ${s.kicker ? `<div class="kicker">${s.kicker}</div>` : ""}
+        <h1>${s.title || ""}</h1>
+        ${s.sub ? `<div class="sub">${s.sub}</div>` : ""}
+        ${items ? `<div class="items">${items}</div>` : ""}
+      </div>`;
+    stagesBox.appendChild(d);
+  });
+
+  const prog = document.getElementById("progress");
+  const total = 2.6 + SCENES.reduce((a, s) => a + (s.dur || 3), 0);
+  let started = 0;
+
+  const PRE = 2.6; // кадр-заставка, совпадает с тишиной в аудио
+  function play() {
+    started = performance.now();
+    let offset = PRE * 1000;
+    SCENES.forEach((s, i) => {
+      const el = stagesBox.children[i];
+      const dur = (s.dur || 3) * 1000;
+      setTimeout(() => {
+        [...stagesBox.children].forEach((x) => { x.classList.remove("on"); const sh = x.querySelector(".shot"); if (sh) sh.classList.remove("on"); });
+        el.classList.add("on");
+        const sh = el.querySelector(".shot"); if (sh) sh.classList.add("on");
+        document.getElementById("hint").textContent = (s.hint || "");
+      }, offset);
+      offset += dur;
+    });
+    function tick() {
+      const t = performance.now() - started;
+      prog.style.width = Math.min(100, (t / (total * 1000)) * 100) + "%";
+      if (t < total * 1000 + 400) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+  window.startVideo = () => { play(); return total; };
+  document.addEventListener("DOMContentLoaded", () => {
+    if (!window.NO_AUTOSTART) window.startVideo();
+  });
+</script>
+</body>
+</html>

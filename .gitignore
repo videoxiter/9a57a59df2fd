@@ -9,3 +9,7 @@ node_modules/
 .DS_Store
 .verify/
 scripts/sql_out.txt
+
+# видеоинструкции: модели голоса и результаты рендера не храним в git
+video/piper/
+video/out/
