@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Моя команда ОТП — JSON API для внешних систем</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  body { font-family: "Segoe UI", Arial, sans-serif; color: #1a2230; font-size: 10.5pt; line-height: 1.55; }
+  h1 { font-size: 23pt; margin: 0 0 4px; color: #0b5f6b; }
+  h2 { font-size: 14.5pt; margin: 24px 0 8px; padding-bottom: 4px; border-bottom: 2px solid #22d3ee; color: #0b3b47; page-break-after: avoid; }
+  h3 { font-size: 11.5pt; margin: 14px 0 6px; color: #0b3b47; page-break-after: avoid; }
+  p { margin: 6px 0; }
+  code { font-family: Consolas, "Courier New", monospace; background: #eef4f7; padding: 1px 5px; border-radius: 4px; font-size: 9.5pt; }
+  pre { background: #0f1720; color: #d7e4ef; padding: 10px 12px; border-radius: 8px; font-size: 8.7pt;
+        line-height: 1.45; white-space: pre-wrap; page-break-inside: avoid; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; font-size: 9.2pt; page-break-inside: avoid; }
+  th, td { border: 1px solid #cbd6e0; padding: 5px 7px; text-align: left; vertical-align: top; }
+  th { background: #eaf3f7; }
+  .muted { color: #5b6b7c; }
+  .lead { font-size: 11pt; color: #33475b; }
+  .cover { border: 1px solid #cbd6e0; border-radius: 12px; padding: 16px 20px; margin-bottom: 12px; background: #f8fbfc; }
+</style>
+</head>
+<body>
+<div class="cover">
+  <h1>JSON API</h1>
+  <p class="lead">Интеграция «Моей команды ОТП» с внешними системами</p>
+  <p class="muted">Базовый адрес: <code>https://&lt;project&gt;.supabase.co</code> · Версия: 13.11.2026</p>
+</div>
+
+<h2>1. Способы доступа</h2>
+<table>
+  <tr><th>Способ</th><th>Адрес</th><th>Аутентификация</th></tr>
+  <tr><td>Прокси (рекомендуется)</td><td><code>POST /functions/v1/api</code></td><td>токен сессии (uuid) внутри JSON</td></tr>
+  <tr><td>Прямой REST</td><td><code>/rest/v1/...</code></td><td><code>apikey</code> + <code>Authorization: Bearer &lt;ключ&gt;</code></td></tr>
+</table>
+<p class="muted">Прокси держит service-role ключ на сервере; публичный ключ наружу не отдаётся. Прямой REST доступен, пока публичный ключ не отключён.</p>
+
+<h2>2. Прокси: формат запроса</h2>
+<pre>{
+  "token":  "8f3c...uuid сессии",
+  "path":   "otp_time_events?select=*&amp;day=eq.2026-11-12",
+  "method": "GET",          // GET | POST | PATCH
+  "body":   [ { ... } ]     // только для POST/PATCH
+}</pre>
+<p>Ответ — тело PostgREST как есть (JSON-массив объектов) и тот же HTTP-код.</p>
+<table>
+  <tr><th>Код</th><th>Что значит</th></tr>
+  <tr><td>200</td><td>успех</td></tr>
+  <tr><td>401</td><td><code>unauthorized</code> — токена нет или он просрочен</td></tr>
+  <tr><td>403</td><td><code>table not allowed</code> / <code>method not allowed</code> / <code>inactive</code></td></tr>
+  <tr><td>5xx</td><td>ошибка Supabase (проброс статуса)</td></tr>
+</table>
+<p>Разрешённые таблицы прокси: <code>otp_time_events</code> (GET/POST/PATCH), <code>otp_requests</code> (GET/PATCH), <code>otp_content</code> (GET), <code>otp_staff</code> (GET).</p>
+
+<h2>3. Каталог операций</h2>
+
+<h3>3.1. События времени за день</h3>
+<pre>path: "otp_time_events?select=*&amp;day=eq.2026-11-12&amp;order=at.asc"</pre>
+<pre>[{
+  "id": "ev-1794057858723-x1y2",
+  "empSlug": "e5d35a6fc921",
+  "empName": "Болгов Андрей Владимирович",
+  "day": "2026-11-12",
+  "type": "break_start",
+  "slot": "lunch",
+  "at": "2026-11-12T10:00:24.731+00:00",
+  "reason": null
+}]</pre>
+<p class="muted"><code>type</code>: shift_start, shift_stop, break_start, break_end, absence_start, absence_end. <code>slot</code>: tech1, tech2, lunch, absence.</p>
+
+<h3>3.2. Сводка по дням</h3>
+<pre>path: "otp_time_days?select=*&amp;day=eq.2026-11-12"</pre>
+<pre>[{ "empSlug": "e5d35a6fc921", "empName": "Болгов ...", "day": "2026-11-12",
+   "started": "2026-11-12T08:23:16+00:00", "stopped": null,
+   "worked_sec": 3589, "breaks": 4, "absences": 1 }]</pre>
+
+<h3>3.3. Текущий статус (POST /rpc)</h3>
+<pre>POST /rest/v1/rpc/otp_current_status   (тело: {})
+[{ "emp_slug": "e5d35a6fc921", "emp_name": "Болгов ...", "day": "2026-11-12",
+   "status": "work", "slot": null, "since": "...", "started": "...", "stopped": null,
+   "worked_sec": 3589 }]</pre>
+<p class="muted"><code>status</code>: work | tech1 | tech2 | lunch | absence | done.</p>
+
+<h3>3.4. Заявки (увольнительные, отгулы, корректировки)</h3>
+<pre>path: "otp_requests?select=*&amp;status=eq.approved&amp;order=date.desc"</pre>
+<pre>[{ "id": "rmv6sa6i5", "empSlug": "3def188ccc72", "empName": "Юрьев ...",
+   "type": "leave", "date": "2026-10-15", "from": "09:00", "to": "13:00",
+   "hours": 4, "status": "approved", "reason": "..." }]</pre>
+
+<h3>3.5. Контент сотрудника (бонусы, награды, зоны роста)</h3>
+<pre>POST /rest/v1/rpc/otp_content_list    body: {"p_emp":"bolgov"}</pre>
+<pre>[{ "id": "c-1794...", "section": "awards", "title": "Лучший результат месяца",
+   "body": "...", "value": "5 000 ₽", "on_date": "2026-11-01" }]</pre>
+
+<h3>3.6. Сотрудники</h3>
+<pre>POST /rest/v1/rpc/otp_staff_list      body: {}</pre>
+<pre>[{ "slug": "bolgov", "fio": "Болгов Андрей Владимирович", "login": "a.bolgov@ftech.io",
+   "is_admin": false, "avatar": null, "active": true, "has_pass": true }]</pre>
+
+<h3>3.7. Записать событие (POST)</h3>
+<pre>path: "otp_time_events"
+method: "POST"
+body: [{
+  "id": "ev-1794057999000-abcd",
+  "empSlug": "e5d35a6fc921",
+  "empName": "Болгов Андрей Владимирович",
+  "day": "2026-11-12",
+  "type": "shift_start",
+  "slot": null,
+  "at": "2026-11-12T09:00:00+03:00",
+  "reason": null
+}]</pre>
+<p class="muted"><code>id</code> должен быть уникальным (любая строка, например <code>ev-&lt;epoch&gt;-&lt;random4&gt;</code>).</p>
+
+<h2>4. Примеры</h2>
+<h3>4.1. Через прокси (curl)</h3>
+<pre>curl -X POST "https://&lt;project&gt;.supabase.co/functions/v1/api" \\
+  -H "Content-Type: application/json" \\
+  -d '{"token":"&lt;uuid&gt;","method":"GET","path":"otp_time_events?select=*&amp;day=eq.2026-11-12"}'</pre>
+
+<h3>4.2. Прямой REST (curl)</h3>
+<pre>curl "https://&lt;project&gt;.supabase.co/rest/v1/otp_time_events?select=*&amp;day=eq.2026-11-12" \\
+  -H "apikey: &lt;ключ&gt;" -H "Authorization: Bearer &lt;ключ&gt;"</pre>
+
+<h3>4.3. Python</h3>
+<pre>import requests
+r = requests.post(
+    "https://&lt;project&gt;.supabase.co/functions/v1/api",
+    json={"token": TOKEN, "method": "GET",
+          "path": "otp_time_days?select=*&amp;day=eq.2026-11-12"},
+    timeout=20,
+)
+for row in r.json():
+    print(row["empName"], row["worked_sec"])</pre>
+
+<h3>4.4. JavaScript</h3>
+<pre>const res = await fetch(`${SUPABASE}/functions/v1/api`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ token, method: "GET", path: "otp_current_status" }),
+});</pre>
+
+<h2>5. Аутентификация токеном</h2>
+<p>Токен сессии выдаёт <code>otp_login</code>:</p>
+<pre>POST /rest/v1/rpc/otp_login   body: {"p_slug":"admin","p_pass":"&lt;пароль&gt;"}
+→ {"ok":true,"token":"&lt;uuid&gt;","slug":"admin","admin":true}</pre>
+<p>Срок жизни — 60 дней. Проверка: <code>POST /rest/v1/rpc/otp_check_session</code> с <code>{"p_token":"&lt;uuid&gt;"}</code>.</p>
+
+<h2>6. Справочник полей</h2>
+<table>
+  <tr><th>Поле</th><th>Тип</th><th>Описание</th></tr>
+  <tr><td><code>day</code></td><td>string</td><td>дата <code>YYYY-MM-DD</code></td></tr>
+  <tr><td><code>at</code></td><td>ISO-8601</td><td>момент события (UTC)</td></tr>
+  <tr><td><code>worked_sec</code></td><td>int</td><td>отработанные секунды (без перерывов и увольнительной)</td></tr>
+  <tr><td><code>hours</code></td><td>number</td><td>часы в заявке (может быть отрицательным для корректировок)</td></tr>
+  <tr><td><code>section</code></td><td>enum</td><td>bonus | awards | growth | lvl | stats</td></tr>
+</table>
+
+<h2>7. Ограничения и правила</h2>
+<ul>
+  <li>Часовой пояс расчётов — <b>Europe/Moscow (UTC+3)</b>.</li>
+  <li>Норма дня — 7 ч 30 мин.</li>
+  <li>Прокси не разграничивает данные между сотрудниками — любой вошедший видит все разрешённые таблицы.</li>
+  <li>Прямой REST работает, пока публичный ключ не отключён; после включения прокси его следует убрать.</li>
+  <li>Идемпотентность событий — по <code>id</code>: повтор с тем же id вернёт ошибку уникальности.</li>
+</ul>
+</body>
+</html>

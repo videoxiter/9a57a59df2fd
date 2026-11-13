@@ -17,18 +17,18 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DASH = os.path.join(ROOT, "1bceb335668c")
 SRC = os.path.join(DASH, "index.html")
 SOURCE = os.path.join(ROOT, "scripts", "dashboard_source.html")   # неизменный исходник секций
-V = "189"
+V = "190"
 
 PAGES = [
-    ("", "Моя команда", "team", ["top", "best", "hr-sec", "hours", "rating"]),
+    ("", "Моя команда", "team", ["top", "now", "best", "hr-sec", "hours", "rating"]),
     ("dynamics", "Динамика", "chart-line", ["dynamics"]),
     ("people", "Специалисты", "users-three", ["team"]),
     ("duties", "График отдела", "calendar-check", ["duties"]),
     ("development", "Развитие отдела", "rocket-launch", ["grow"]),
     ("settings", "Настройки", "sliders", ["settings"]),
-    ("staff", "Сотрудники", "identification-card", ["staff"]),
+    ("staff", "Админка", "identification-card", ["staff"]),
 ]
-NAV_LABEL = {"": "Моя команда", "dynamics": "Динамика", "people": "Специалисты", "duties": "График отдела", "development": "Развитие", "settings": "Настройки", "staff": "Сотрудники"}
+NAV_LABEL = {"": "Моя команда", "dynamics": "Динамика", "people": "Специалисты", "duties": "График отдела", "development": "Развитие", "settings": "Настройки", "staff": "Админка"}
 
 BEST_SECTION = '''  <!-- ===== КТО ЛУЧШЕ ===== -->
   <section class="section" id="best" style="padding-top:8px">
@@ -108,8 +108,6 @@ def build_pages():
         # шапка с разделами
         nav = []
         for p, label, ic, _ in PAGES:
-            if p == "staff":
-                continue
             if p == path:
                 href = "./"                        # текущий раздел
             elif p == "":
