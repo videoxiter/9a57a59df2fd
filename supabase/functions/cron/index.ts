@@ -1,4 +1,4 @@
-// Supabase Edge Function `cron`: контроль опозданий и затянувшихся перерывов.
+﻿// Supabase Edge Function `cron`: контроль опозданий и затянувшихся перерывов.
 // Работает целиком в облаке — открытая вкладка сотрудника и чей-либо ПК не нужны.
 //
 // Деплой: Supabase → Edge Functions → New function → имя `cron` → вставить код.
@@ -46,9 +46,10 @@ async function sb(path: string, init?: RequestInit) {
   return text ? JSON.parse(text) : null;
 }
 
-async function send(text: string, login?: string, userId?: string) {
+async function send(text: string, login?: string, userId?: string, threadId?: number) {
   if (!BOT) return { ok: false, error: "secrets not set" };
   const body: Record<string, unknown> = { text };
+  if (threadId) body.thread_id = threadId;   // ответ внутри треда смены
   if (userId) body.user_id = userId;    // личное по UUID
   else if (login) body.login = login;   // личное по логину
   else {
@@ -107,14 +108,14 @@ Deno.serve(async () => {
 
     const out: string[] = [];
     const errors: string[] = [];
-    const notifyOnce = async (kind: string, emp: string, text: string, personal = false) => {
+    const notifyOnce = async (kind: string, emp: string, text: string, personal = false, threadId?: number) => {
       const id = `${today}:${kind}:${emp}`;
       if (sent.has(id)) return;
       const raw = personal ? LOGINS[String(emp).trim()] : undefined;
       // в TEAM_LOGINS можно писать логин ("a.melnikov") или UUID ("id:xxxxxxxx-...").
       const userId = raw && raw.startsWith("id:") ? raw.slice(3) : undefined;
       const login = raw && !raw.startsWith("id:") ? raw : undefined;
-      const res: any = await send(text, login, userId);
+      const res: any = await send(text, login, userId, threadId);
       if (res && res.ok !== false) {
         sent.add(id);
         await sb("otp_time_notices", {
@@ -127,7 +128,7 @@ Deno.serve(async () => {
         errors.push(`${kind}: ${emp}${raw ? " [" + raw + "]" : " [канал]"}: ${JSON.stringify(res).slice(0, 160)}`);
         // страховка: личное не доставлено (логин не найден) — пишем в канал, чтобы не потерять
         if (login) {
-          const res2: any = await send(text);
+          const res2: any = await send(text, undefined, undefined, threadId);
           if (res2 && res2.ok !== false) {
             sent.add(id);
             await sb("otp_time_notices", {
@@ -141,13 +142,19 @@ Deno.serve(async () => {
     };
 
     /* Уведомления о действиях сотрудников — из облака, а не из браузера.
-       Так сообщение уходит, даже если вкладка на телефоне была свёрнута. */
+       Начало смены открывает сообщение в канале, всё остальное идёт в его тред. */
     const SLOT_NAME: Record<string, string> = { tech1: "технологический перерыв №1", tech2: "технологический перерыв №2", lunch: "обед" };
+    // уже открытые треды смен на сегодня: сотрудник -> id сообщения
+    const threadRows = await sb(`otp_shift_threads?select=*&day=eq.${today}`).catch(() => []) || [];
+    const threads = new Map<string, number>();
+    for (const r of threadRows as any[]) if (r && r.emp && r.message_id) threads.set(String(r.emp), Number(r.message_id));
+
     for (const e of events) {
       const fio = String(e.empName || "").trim() || String(e.empSlug || "");
       const slot = String(e.slot || "");
+      const isStart = e.type === "shift_start";
       let text = "";
-      if (e.type === "shift_start") text = `🚀 ${fio} — начало смены`;
+      if (isStart) text = `🚀 ${fio} — начало смены`;
       else if (e.type === "shift_stop") text = `🏁 ${fio} — смена завершена`;
       else if (e.type === "break_start" && slot === "lunch") text = `🍽️ Обеденный перерыв — ${fio}, приятного аппетита!`;
       else if (e.type === "break_start") text = `☕ ${fio} — ${SLOT_NAME[slot] || "перерыв"}`;
@@ -157,7 +164,34 @@ Deno.serve(async () => {
       if (!text) continue;
       const at = new Date(e.at).getTime();
       if (!at || Date.now() - at > 12 * 3600 * 1000) continue;
-      await notifyOnce(`ev:${e.id}:${e.type}`, fio, text);
+
+      if (isStart) {
+        // начало смены — отдельное сообщение в канале, оно же становится тредом
+        const id = `${today}:ev:${e.id}:${e.type}:${fio}`;
+        if (sent.has(id)) continue;
+        const res: any = await send(text);
+        if (res && res.ok !== false && res.message_id) {
+          threads.set(fio, Number(res.message_id));
+          await sb("otp_shift_threads", {
+            method: "POST",
+            headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+            body: JSON.stringify([{ emp: fio, day: today, message_id: Number(res.message_id) }]),
+          }).catch(() => {});
+          sent.add(id);
+          await sb("otp_time_notices", {
+            method: "POST", headers: { Prefer: "return=minimal" },
+            body: JSON.stringify([{ id, day: today, kind: "shift_start", emp: fio }]),
+          }).catch(() => {});
+          out.push(`shift_start: ${fio} (тред ${res.message_id})`);
+        } else {
+          errors.push(`shift_start: ${fio}: ${JSON.stringify(res).slice(0, 160)}`);
+        }
+        continue;
+      }
+
+      // всё остальное — в тред смены этого сотрудника
+      const threadId = threads.get(fio);
+      await notifyOnce(`ev:${e.id}:${e.type}`, fio, text, false, threadId);
     }
 
     // 1. опоздание: смена по графику началась, а «Начало» не нажато
@@ -173,7 +207,7 @@ Deno.serve(async () => {
       const list = byEmp.get(fio) || [];
       const started = list.some((e) => e.type === "shift_start");
       if (!started && nowMs > startMs + 5 * 60000) {
-        await notifyOnce("late", fio, `⚠️ Зафиксировано опоздание! — ${fio}`);
+        await notifyOnce("late", fio, `⚠️ Зафиксировано опоздание! — ${fio}`, false, threads.get(fio));
       }
       // 3. напоминание о конце смены — через 5 минут после её окончания
       const endM = /[–-]\s*(\d{1,2}):(\d{2})/.exec(String(sh.time || ""));
@@ -199,7 +233,7 @@ Deno.serve(async () => {
       if (overMs >= 5 * 60000) {
         const kind = last.slot === "lunch" ? "lunch_over" : "break_over";
         const text = last.slot === "lunch" ? `⚠️ Обед затянулся! — ${emp}` : `⚠️ Перерыв затянулся! — ${emp}`;
-        await notifyOnce(kind, emp, text);
+        await notifyOnce(kind, emp, text, false, threads.get(emp));
         const name = last.slot === "lunch" ? "Обед" : "Перерыв";
         await notifyOnce(`back_${last.slot}`, emp,
           `⏳ ${name} идёт уже ${Math.round(overMs / 60000)} мин — пора возвращаться к работе.`, true);
