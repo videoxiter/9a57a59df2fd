@@ -14,11 +14,20 @@
       radial-gradient(900px 600px at 12% 8%, rgba(34,211,238,.16), transparent 60%),
       radial-gradient(900px 700px at 92% 92%, rgba(52,211,153,.14), transparent 62%),
       linear-gradient(135deg, #05080d 0%, #08111a 55%, #05131a 100%);
+    background-size: 160% 160%, 160% 160%, 200% 200%;
+    animation: bgshift 9s ease-in-out infinite alternate;
+  }
+  @keyframes bgshift {
+    from { background-position: 0% 0%, 100% 100%, 0% 50%; }
+    to   { background-position: 40% 30%, 60% 70%, 100% 50%; }
   }
   .grid { position: absolute; inset: 0; opacity: .18;
     background-image: linear-gradient(rgba(148,163,184,.25) 1px, transparent 1px),
                       linear-gradient(90deg, rgba(148,163,184,.25) 1px, transparent 1px);
     background-size: 64px 64px;
+    animation: gridmove 12s linear infinite;
+  }
+  @keyframes gridmove { from { background-position: 0 0; } to { background-position: 64px 64px; } }
     -webkit-mask-image: radial-gradient(circle at 50% 40%, #000 35%, transparent 78%);
   }
   .orb { position: absolute; border-radius: 50%; filter: blur(60px); opacity: .5; animation: drift 14s ease-in-out infinite alternate; }
@@ -29,7 +38,7 @@
   /* сцена */
   .stage { position: absolute; inset: 0; display: grid; place-items: center; opacity: 0; transition: opacity .45s ease; }
   .stage.on { opacity: 1; }
-  .card { width: 1560px; padding: 64px 72px; border-radius: 36px;
+  .card { width: 1560px; max-width: 1660px; padding: 64px 72px; border-radius: 36px;
     background: linear-gradient(160deg, rgba(12,20,30,.92), rgba(7,13,20,.92));
     border: 1px solid rgba(120,180,200,.22);
     box-shadow: 0 40px 120px rgba(0,0,0,.55), 0 0 0 1px rgba(34,211,238,.06) inset;
@@ -52,6 +61,51 @@
   .item .tx { line-height: 1.35; }
   .bigicon { position: absolute; right: 90px; top: 80px; font-size: 200px; opacity: .14; }
   .progress { position: absolute; left: 0; bottom: 0; height: 6px; background: linear-gradient(90deg,#22d3ee,#34d399); width: 0; }
+  .splash { position: absolute; inset: 0; display: grid; place-items: center; z-index: 5;
+    background: radial-gradient(900px 600px at 50% 45%, rgba(34,211,238,.16), transparent 65%), #05080d;
+    transition: opacity .5s ease; }
+  .splash.out { opacity: 0; }
+  .sp-in { text-align: center; animation: splash-in 1.1s cubic-bezier(.2,.8,.2,1) both; }
+  .sp-logo { font-size: 150px; font-weight: 900; letter-spacing: .06em;
+    color: #22d3ee; text-shadow: 0 0 60px rgba(34,211,238,.5); }
+  .sp-sub { margin-top: 10px; font-size: 34px; letter-spacing: .34em; text-transform: uppercase; color: #8fb2c6; }
+  @keyframes splash-in { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: scale(1); } }
+  .titlecard { position: absolute; inset: 0; z-index: 300; display: grid; place-items: center; text-align: center;
+    background: #05080d radial-gradient(900px 600px at 50% 45%, rgba(34,211,238,.18), transparent 65%); }
+  .tc-logo { font-size: 120px; font-weight: 900; letter-spacing: .06em;
+    color: #22d3ee;
+    text-shadow: 0 0 60px rgba(34,211,238,.55); animation: tc-in 1.2s cubic-bezier(.2,.8,.2,1) both; }
+  .tc-t { margin-top: 12px; font-size: 64px; font-weight: 800; letter-spacing: .02em; color: #eaf6ff; animation: tc-in .9s .1s cubic-bezier(.2,.8,.2,1) both; }
+  .tc-s { margin-top: 10px; font-size: 28px; letter-spacing: .12em; text-transform: uppercase; color: #9fc4d8; animation: tc-in .9s .25s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes tc-in { from { opacity: 0; transform: translateY(26px) scale(.94); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  .outro { position: absolute; inset: 0; display: grid; place-items: center; text-align: center;
+    background: radial-gradient(800px 600px at 50% 45%, rgba(34,211,238,.14), transparent 65%); }
+  .outro .logo { font-size: 132px; font-weight: 900; letter-spacing: .06em;
+    color: #22d3ee; text-shadow: 0 0 60px rgba(34,211,238,.5); animation: outro-pop .9s cubic-bezier(.2,.8,.2,1) both; }
+  .outro .t { margin-top: 14px; font-size: 40px; font-weight: 700; color: #e8eef7; animation: outro-pop .9s .15s cubic-bezier(.2,.8,.2,1) both; }
+  .outro .s { margin-top: 10px; font-size: 26px; color: #8fb2c6; letter-spacing: .06em; animation: outro-pop .9s .3s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes outro-pop { from { opacity: 0; transform: translateY(18px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  .single { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 18px; margin-top: 6px; }
+  .single .ic { font-size: 132px; line-height: 1; filter: drop-shadow(0 12px 40px rgba(34,211,238,.35)); }
+  .single b { font-size: 62px; line-height: 1.1; font-weight: 800; }
+  .single .cond { font-size: 30px; color: #22d3ee; max-width: 1200px; }
+  .single .desc { font-size: 26px; color: #9fb2c8; max-width: 1200px; line-height: 1.45; }
+  .single .cnt { position: absolute; top: -8px; right: 0; font-size: 22px; letter-spacing: .18em; color: #5f7186; }
+  .single .motive { font-size: 24px; color: #7f8a99; font-style: italic; max-width: 1100px; }
+  .single .lvlno { font-size: 22px; letter-spacing: .2em; text-transform: uppercase; color: #5f7186; }
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 34px; width: 1420px; }
+  .crd { display: flex; gap: 18px; align-items: center; padding: 20px 22px; border-radius: 20px;
+    background: linear-gradient(150deg, rgba(20,32,46,.92), rgba(9,15,24,.92));
+    border: 1px solid rgba(148,163,184,.2); opacity: 0; transform: translateY(16px) scale(.98);
+    transition: all .55s cubic-bezier(.2,.8,.2,1); }
+  .stage.on .crd { opacity: 1; transform: translateY(0) scale(1); }
+  .crd .ic { flex: none; width: 74px; height: 74px; border-radius: 18px; display: grid; place-items: center;
+    font-size: 38px; background: rgba(34,211,238,.1); border: 1px solid rgba(34,211,238,.28); }
+  .crd .tt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .crd .tt b { font-size: 27px; line-height: 1.15; }
+  .crd .tt span { font-size: 19px; color: #93a6bb; line-height: 1.3; }
+  .crd.hl { border-color: rgba(251,191,36,.55); box-shadow: 0 0 40px rgba(251,191,36,.12); }
+  .crd.hl .ic { background: rgba(251,191,36,.12); border-color: rgba(251,191,36,.4); }
   .shot { position: absolute; inset: 0; opacity: 0; transition: opacity .5s ease; overflow: hidden; }
   .shot.on { opacity: 1; }
   .shot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
@@ -61,6 +115,9 @@
     background: rgba(6,12,20,.82); border: 1px solid rgba(34,211,238,.35); font-size: 38px; font-weight: 700;
     backdrop-filter: blur(8px); }
   .shot-cap small { display: block; font-size: 22px; font-weight: 400; color: #9fb2c8; margin-top: 6px; }
+  /* постоянная перерисовка: иначе запись видео пропускает статичные кадры */
+  body { animation: always-paint 9s ease-in-out infinite alternate; }
+  @keyframes always-paint { from { filter: brightness(1); } to { filter: brightness(1.035); } }
   .brand { position: absolute; left: 64px; bottom: 44px; font-size: 24px; letter-spacing: .22em; text-transform: uppercase; color: #5f7186; }
   .brand b { color: #22d3ee; }
   .hint { position: absolute; right: 64px; bottom: 44px; font-size: 24px; color: #5f7186; }
@@ -69,6 +126,7 @@
 <body>
   <div class="bg"></div><div class="grid"></div>
   <div class="orb a"></div><div class="orb b"></div>
+  <div class="splash" id="splash"><div class="sp-in"><div class="sp-logo">ОТП</div><div class="sp-sub">Мои результаты</div></div></div>
   <div class="brand">Мои результаты · <b>ОТП</b></div>
   <div class="hint" id="hint"></div>
   <div class="progress" id="progress"></div>
@@ -82,6 +140,22 @@
     const d = document.createElement("div");
     d.className = "stage";
     d.dataset.idx = i;
+    if (s.kind === "intro" || s.kind === "outro") {
+      const isOutro = s.kind === "outro";
+      d.innerHTML = `<div class="titlecard"><div class="tc-logo">ОТП</div><div class="tc-t">${isOutro ? "Конец" : "Мои результаты"}</div><div class="tc-s">${isOutro ? "Спасибо за просмотр" : "Личный кабинет сотрудника"}</div></div>`;
+      stagesBox.appendChild(d);
+      return;
+    }
+    if (s.video) {
+      d.innerHTML = `<video src="${s.video}" autoplay muted playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onloadedmetadata="this.playbackRate=0.9"></video>`;
+      stagesBox.appendChild(d);
+      return;
+    }
+    if (s.outro) {
+      d.innerHTML = `<div class="outro"><div><div class="logo">ОТП</div><div class="t">${s.outro.title || "Мои результаты"}</div><div class="s">${s.outro.sub || ""}</div></div></div>`;
+      stagesBox.appendChild(d);
+      return;
+    }
     if (s.img) {
       d.innerHTML = `<div class="shot"><img src="${s.img}" alt=""><div class="shot-cap">${s.title || ""}${s.sub ? `<small>${s.sub}</small>` : ""}</div></div>`;
       stagesBox.appendChild(d);
@@ -90,12 +164,20 @@
     const items = (s.items || []).map((t, n) =>
       `<div class="item" style="transition-delay:${0.25 + n * 0.18}s"><span class="num">${n + 1}</span><span class="tx">${t}</span></div>`
     ).join("");
+    const single = s.single
+      ? `<div class="single">${s.single.cnt ? `<div class="cnt">${s.single.cnt}</div>` : ""}${s.single.lvlno ? `<div class="lvlno">${s.single.lvlno}</div>` : ""}<div class="ic"${s.single.color ? ` style="border-color:${s.single.color};color:${s.single.color}"` : ""}>${s.single.icon || ""}</div><b>${s.single.title || ""}</b>${s.single.cond ? `<div class="cond">${s.single.cond}</div>` : ""}${s.single.desc ? `<div class="desc">${s.single.desc}</div>` : ""}${s.single.motive ? `<div class="motive">${s.single.motive}</div>` : ""}</div>`
+      : "";
+    const cards = (s.cards || []).map((cd, n) =>
+      `<div class="crd${cd.hl ? " hl" : ""}" style="transition-delay:${0.2 + n * 0.1}s"><span class="ic">${cd.icon || ""}</span><span class="tt"><b>${cd.title || ""}</b><span>${cd.sub || ""}</span></span></div>`
+    ).join("");
     d.innerHTML = `<div class="card">
         ${s.icon ? `<div class="bigicon">${s.icon}</div>` : ""}
         ${s.kicker ? `<div class="kicker">${s.kicker}</div>` : ""}
         <h1>${s.title || ""}</h1>
         ${s.sub ? `<div class="sub">${s.sub}</div>` : ""}
         ${items ? `<div class="items">${items}</div>` : ""}
+        ${cards ? `<div class="cards">${cards}</div>` : ""}
+        ${single}
       </div>`;
     stagesBox.appendChild(d);
   });
@@ -107,6 +189,8 @@
   const PRE = 2.6; // кадр-заставка, совпадает с тишиной в аудио
   function play() {
     started = performance.now();
+    const sp = document.getElementById("splash");
+    if (sp) setTimeout(() => { sp.classList.add("out"); setTimeout(() => sp.remove(), 600); }, PRE * 1000);
     let offset = PRE * 1000;
     SCENES.forEach((s, i) => {
       const el = stagesBox.children[i];

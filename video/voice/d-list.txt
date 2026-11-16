@@ -1,0 +1,5 @@
+file 'G:/LMStudio/DeepSeek Harness/workspace/projects/otp-team/video/voice/d1.wav'
+file 'G:/LMStudio/DeepSeek Harness/workspace/projects/otp-team/video/voice/pause08.wav'
+file 'G:/LMStudio/DeepSeek Harness/workspace/projects/otp-team/video/voice/d2.wav'
+file 'G:/LMStudio/DeepSeek Harness/workspace/projects/otp-team/video/voice/pause08.wav'
+file 'G:/LMStudio/DeepSeek Harness/workspace/projects/otp-team/video/voice/d3.wav'

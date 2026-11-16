@@ -1,4 +1,4 @@
-﻿/* Логика персональных страниц: разделы «Бонусы / Мой LVL / Награды / Мой рост / Статистика / Правила» */
+/* Логика персональных страниц: разделы «Бонусы / Мой LVL / Награды / Мой рост / Статистика / Правила» */
 (function () {
   "use strict";
   const D = window.OTP_EMP;
@@ -1999,15 +1999,9 @@ function robotMenuHtml() {
   }
   const stLocal = () => { try { return JSON.parse(localStorage.getItem(ST_KEY) || "[]"); } catch (e) { return []; } };
   const stLocalSave = (list) => { try { localStorage.setItem(ST_KEY, JSON.stringify(list)); } catch (e) {} };
-  function stNotify(kind, meta) {
-    const c = ST_CLOUD();
-    if (!c || !c.url) return;
-    fetch(c.url.replace(/\/$/, "") + "/functions/v1/notify", {
-      method: "POST",
-      headers: { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json" },
-      body: JSON.stringify({ kind, fio: emp.fullName, meta: meta || {} }),
-    }).catch(() => {});
-  }
+  /* Уведомления в канал отправляет облачная функция cron по событиям в базе:
+     свёрнутая вкладка на телефоне теряла сообщение, уходившее из браузера. */
+  function stNotify() {}
   /* Облако — единственный источник истины: статусы и кнопки одинаковы на любом
      устройстве. Локальная копия работает только как офлайн-очередь и кэш. */
   const stReady = () => true;
@@ -2355,8 +2349,16 @@ function robotMenuHtml() {
         const slot = act.slice(5);
         const s = ST_SLOTS.find((x) => x.slot === slot);
         if (!s) return;
+        /* защита от случайного двойного нажатия и от расхождения устройств:
+           одно и то же действие в течение трёх секунд не повторяется */
+        const nowMsClick = Date.now();
+        if (window.__stLastAct && window.__stLastAct.act === act && nowMsClick - window.__stLastAct.at < 3000) return;
+        window.__stLastAct = { act, at: nowMsClick };
         const active = st.active && st.active.slot === slot && st.active.type === "break_start";
         if (active) {
+          /* перерыв открыт только что — закрытие скорее всего случайное */
+          const openedAt = st.active && st.active.at ? new Date(st.active.at).getTime() : 0;
+          if (openedAt && nowMsClick - openedAt < 10000) return;
           push({ ...base, type: "break_end", slot, at });
           stNotify("return");
         } else {
@@ -2423,6 +2425,15 @@ function robotMenuHtml() {
     events = events || [];
     loadLeaveWins().then((w) => { leaveWins = w; render(); }).catch(() => {});
     stEvents(today).then((rows) => { events = rows || []; render(); }).catch(() => {});
+    /* Синхронизация между устройствами: состояние и кнопки подтягиваются из облака,
+       поэтому нажатие на телефоне и на компьютере не расходится. */
+    const stSync = () => {
+      if (document.visibilityState && document.visibilityState !== "visible") return;
+      stEvents(today).then((rows) => { events = rows || []; render(); }).catch(() => {});
+    };
+    setInterval(stSync, 15000);
+    document.addEventListener("visibilitychange", stSync);
+    window.addEventListener("focus", stSync);
     /* мини-график за 7 дней */
     const weekEl = document.getElementById("st-week");
     if (weekEl) {
