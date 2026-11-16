@@ -2678,3 +2678,8 @@ html.auth-lock body > :not(.auth-gate):not(script):not(style) { display: none !i
 .self-msg.ok { color: #34d399; }
 .self-msg.err { color: #f87171; }
 .auth-hint { color: #9fb0c5; font-size: .85rem; margin: 6px 0 0; }
+
+/* Детализация перерывов в отчёте: кто, когда и сколько был в перерыве */
+.st-breaks { margin-top: 22px; }
+.st-breaks .hj-title { font-size: .8rem; font-weight: 700; margin-bottom: 10px; color: var(--text-dim); }
+.st-breaks .hj-title b { color: var(--text); }

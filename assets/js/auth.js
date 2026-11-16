@@ -1,4 +1,4 @@
-﻿/* Учётные записи: вход по slug + пароль, сессия в браузере (60 дней).
+/* Учётные записи: вход по slug + пароль, сессия в браузере (60 дней).
    Пароли проверяет Supabase (RPC otp_login), в браузере хранится только токен. */
 (function () {
   "use strict";
@@ -25,6 +25,14 @@
     token: tok,
     logout: clearTok,
     has: function (slug) { return !!tok(slug); },
+    /* Администратор (руководитель) видит страницы сотрудников без повторного пароля. */
+    isAdmin: function () {
+      var t = tok("admin");
+      if (!t) return Promise.resolve(false);
+      return rpc("otp_check_session", { p_token: t }).then(function (res) {
+        return !!(res && res.ok && res.admin);
+      }).catch(function () { return false; });
+    },
     login: function (slug, pass) {
       return rpc("otp_login", { p_slug: slug, p_pass: pass }).then(function (res) {
         if (res && res.ok && res.token) { setTok(slug, res.token); return res; }

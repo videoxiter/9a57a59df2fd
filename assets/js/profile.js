@@ -2093,6 +2093,45 @@ function robotMenuHtml() {
     const s = Math.max(0, Math.round(sec));
     return [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60].map((x) => String(x).padStart(2, "0")).join(":");
   };
+  /* Длительность перерывов: у техперерывов и обеда есть лимит, у отсутствия — нет. */
+  const ST_LIMIT_MIN = { tech1: 15, tech2: 15, lunch: 60 };
+  const stShort = (sec) => {
+    const s = Math.max(0, Math.round(sec));
+    const m = Math.floor(s / 60), ss = s % 60;
+    return `${m}:${String(ss).padStart(2, "0")}`;
+  };
+  /* Часы на кнопке активного перерыва: «осталось» для лимитированных, «прошло» для отсутствия. */
+  function stSlotClock(state, slot) {
+    const a = state && state.active;
+    if (!a || a.type !== "break_start" || a.slot !== slot) return "";
+    const elapsed = Math.max(0, Math.floor((Date.now() - (a.at || Date.now())) / 1000));
+    const limit = ST_LIMIT_MIN[slot];
+    if (!limit) return `прошло ${stShort(elapsed)}`;
+    const left = limit * 60 - elapsed;
+    return left >= 0 ? `осталось ${stShort(left)}` : `просрочено ${stShort(-left)}`;
+  }
+  const ST_SLOT_TITLE = { tech1: "Техперерыв №1", tech2: "Техперерыв №2", lunch: "Обед", absence: "Отсутствие" };
+  /* Журнал перерывов по событиям дня: пары «начало — конец», причина у отсутствия. */
+  function stBreakLog(events) {
+    const out = [];
+    const open = {};
+    for (const e of (events || []).slice().sort((a, b) => new Date(a.at) - new Date(b.at))) {
+      const t = new Date(e.at).getTime();
+      if (e.type === "break_start" || e.type === "absence_start") {
+        open[e.slot || "absence"] = { at: t, reason: e.reason || "" };
+      } else if (e.type === "break_end" || e.type === "absence_end") {
+        const k = e.slot || "absence";
+        const o = open[k];
+        if (!o) continue;
+        out.push({ slot: k, from: o.at, to: t, sec: Math.max(0, Math.round((t - o.at) / 1000)), reason: o.reason });
+        delete open[k];
+      }
+    }
+    for (const [k, o] of Object.entries(open)) {
+      out.push({ slot: k, from: o.at, to: null, sec: Math.max(0, Math.round((Date.now() - o.at) / 1000)), reason: o.reason, open: true });
+    }
+    return out;
+  }
   // время всегда московское (UTC+3), независимо от пояса браузера
   const stHm = (ms) => { const d = new Date(ms + 3 * 3600 * 1000); return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`; };
   /* смена и линия на конкретный день из графика */
@@ -2284,7 +2323,7 @@ function robotMenuHtml() {
         const used = st.used.has(s.slot);
         buttons.push(btn({
           act: "slot-" + s.slot, icon: isActive ? "ph-stop-circle" : s.icon,
-          label: isActive ? `${s.short} — Завершить` : s.label,
+          label: isActive ? `${s.short} · ${stSlotClock(st, s.slot)} — Завершить` : s.label,
           run: isActive,
           disabled: !canAct || (!isActive && (used || inPause)),
           used: used && !isActive,
@@ -2294,7 +2333,7 @@ function robotMenuHtml() {
       // отсутствие многоразовое: после завершения кнопка снова доступна
       buttons.push(btn({
         act: "absence", icon: absActive ? "ph-stop-circle" : "ph-walking",
-        label: absActive ? "Отсутствие — Завершить" : "Временное отсутствие",
+        label: absActive ? `Отсутствие · ${stSlotClock(st, "absence")} — Завершить` : "Временное отсутствие",
         run: absActive,
         disabled: !canAct || (!absActive && inPause),
       }));
@@ -2465,6 +2504,10 @@ function robotMenuHtml() {
 
     /* отчёт для руководителя/главного специалиста */
     if (emp.canManage) initStartReport();
+    /* администратор (руководитель) видит отчёт на любой странице сотрудника */
+    else if (window.OTP_AUTH && window.OTP_AUTH.isAdmin) {
+      window.OTP_AUTH.isAdmin().then((adm) => { if (adm) initStartReport(); });
+    }
   }
 
   function initStartReport() {
@@ -2527,6 +2570,35 @@ function robotMenuHtml() {
         <td class="num">${r.sec < ST_NORM_SEC ? "−" + stHms(ST_NORM_SEC - r.sec) : "—"}</td>
         <td class="num">${r.breaks}</td></tr>`).join("");
       if (empty) empty.hidden = rowsOut.length > 0;
+      /* Детализация перерывов: кто, когда, на каком и сколько (руководителю и главному специалисту). */
+      let brkHost = document.getElementById("st-breaks");
+      if (!brkHost) {
+        brkHost = document.createElement("div");
+        brkHost.id = "st-breaks";
+        brkHost.className = "st-breaks";
+        if (body && body.parentNode) body.parentNode.insertBefore(brkHost, body.nextSibling);
+      }
+      const details = [];
+      for (const r of rowsOut) {
+        for (const b of stBreakLog(r.ev)) details.push({ day: r.day, name: r.name, ...b });
+      }
+      details.sort((x, y) => String(y.day).localeCompare(String(x.day)) || x.from - y.from);
+      if (details.length) {
+        const totalBreak = details.reduce((s, d) => s + d.sec, 0);
+        const rowsHtml = details.map((d) => {
+          const end = d.to ? stHm(d.to) : "идёт";
+          return `<tr><td class="mono">${escHtml(d.day)}</td><td>${escHtml(String(d.name))}</td>` +
+            `<td>${escHtml(ST_SLOT_TITLE[d.slot] || d.slot)}</td>` +
+            `<td class="mono">${stHm(d.from)}</td><td class="mono">${end}</td>` +
+            `<td class="num">${stHms(d.sec)}</td><td>${escHtml(d.reason || "—")}</td></tr>`;
+        }).join("");
+        brkHost.innerHTML = `<div class="hj-title">Перерывы за период: <b>${details.length}</b> · всего <b>${stHms(totalBreak)}</b></div>
+          <div class="hj-table-wrap"><table class="hj-table"><thead><tr>
+            <th>Дата</th><th>Сотрудник</th><th>Перерыв</th><th>Начало</th><th>Конец</th><th>Длительность</th><th>Причина / комментарий</th>
+          </tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
+      } else {
+        brkHost.innerHTML = "";
+      }
       lastRows = rowsOut;
     };
 
@@ -3455,10 +3527,15 @@ function robotMenuHtml() {
     if (!A) return next();
     A.session(String(emp.id)).then((s) => {
       if (s) return next();
-      A.staffList().then((list) => {
-        const row = (list || []).find((x) => x.slug === emp.id);
-        if (!row || !row.has_pass) return showNoAccess();
-        showGate(next);
+      /* Руководитель (администратор) уже авторизован — страницы сотрудников открываются сразу */
+      const tryAdmin = A.isAdmin ? A.isAdmin() : Promise.resolve(false);
+      tryAdmin.then((adm) => {
+        if (adm) return next();
+        A.staffList().then((list) => {
+          const row = (list || []).find((x) => x.slug === emp.id);
+          if (!row || !row.has_pass) return showNoAccess();
+          showGate(next);
+        }).catch(() => next());
       }).catch(() => next());
     }).catch(() => next());
   }
