@@ -104,25 +104,6 @@ Deno.serve(async () => {
       byEmp.get(k)!.push(e);
     }
 
-    /* Уведомления о действиях сотрудников — из облака, а не из браузера.
-       Так сообщение уходит, даже если вкладка на телефоне была свёрнута. */
-    const SLOT_NAME: Record<string, string> = { tech1: "технологический перерыв №1", tech2: "технологический перерыв №2", lunch: "обед" };
-    for (const e of events) {
-      const fio = String(e.empName || "").trim() || String(e.empSlug || "");
-      const slot = String(e.slot || "");
-      let text = "";
-      if (e.type === "shift_start") text = `🚀 ${fio} — начало смены`;
-      else if (e.type === "shift_stop") text = `🏁 ${fio} — смена завершена`;
-      else if (e.type === "break_start" && slot === "lunch") text = `🍽️ Обеденный перерыв — ${fio}, приятного аппетита!`;
-      else if (e.type === "break_start") text = `☕ ${fio} — ${SLOT_NAME[slot] || "перерыв"}`;
-      else if (e.type === "break_end") text = `✅ ${fio} — снова в деле`;
-      else if (e.type === "absence_start") text = `🚶 ${fio} — временное отсутствие${e.reason ? ": " + e.reason : ""}`;
-      else if (e.type === "absence_end") text = `✅ ${fio} — вернулся`;
-      if (!text) continue;
-      const at = new Date(e.at).getTime();
-      if (!at || Date.now() - at > 12 * 3600 * 1000) continue;
-      await notifyOnce(`ev:${e.id}:${e.type}`, fio, text);
-    }
 
     const out: string[] = [];
     const errors: string[] = [];
@@ -158,6 +139,26 @@ Deno.serve(async () => {
         }
       }
     };
+
+    /* Уведомления о действиях сотрудников — из облака, а не из браузера.
+       Так сообщение уходит, даже если вкладка на телефоне была свёрнута. */
+    const SLOT_NAME: Record<string, string> = { tech1: "технологический перерыв №1", tech2: "технологический перерыв №2", lunch: "обед" };
+    for (const e of events) {
+      const fio = String(e.empName || "").trim() || String(e.empSlug || "");
+      const slot = String(e.slot || "");
+      let text = "";
+      if (e.type === "shift_start") text = `🚀 ${fio} — начало смены`;
+      else if (e.type === "shift_stop") text = `🏁 ${fio} — смена завершена`;
+      else if (e.type === "break_start" && slot === "lunch") text = `🍽️ Обеденный перерыв — ${fio}, приятного аппетита!`;
+      else if (e.type === "break_start") text = `☕ ${fio} — ${SLOT_NAME[slot] || "перерыв"}`;
+      else if (e.type === "break_end") text = `✅ ${fio} — снова в деле`;
+      else if (e.type === "absence_start") text = `🚶 ${fio} — временное отсутствие${e.reason ? ": " + e.reason : ""}`;
+      else if (e.type === "absence_end") text = `✅ ${fio} — вернулся`;
+      if (!text) continue;
+      const at = new Date(e.at).getTime();
+      if (!at || Date.now() - at > 12 * 3600 * 1000) continue;
+      await notifyOnce(`ev:${e.id}:${e.type}`, fio, text);
+    }
 
     // 1. опоздание: смена по графику началась, а «Начало» не нажато
     for (const [fio, days] of Object.entries(month.shifts || {})) {
