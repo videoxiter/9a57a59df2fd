@@ -2271,6 +2271,17 @@ function robotMenuHtml() {
       if (timerEl) timerEl.textContent = stHms(st.sec);
       if (barEl) barEl.style.width = (Math.min(1, st.sec / ST_NORM_SEC) * 100).toFixed(1) + "%";
       if (noteEl) noteEl.innerHTML = noteHtml(st.sec);
+      /* живой таймер на кнопке активного перерыва: обновляем только текст, без перерисовки */
+      const live = st.active && st.active.type === "break_start" ? st.active.slot
+        : (st.active && st.active.type === "absence_start" ? "absence" : "");
+      if (live) {
+        const actName = live === "absence" ? "absence" : "slot-" + live;
+        const span = box.querySelector(`.st-btn.is-run[data-act="${actName}"] span`);
+        if (span) {
+          const name = live === "absence" ? "Отсутствие" : ((ST_SLOTS.find((x) => x.slot === live) || {}).short || "Перерыв");
+          span.textContent = `${name} · ${stSlotClock(st, live)} — Завершить`;
+        }
+      }
     };
     const render = () => {
       const st = stCalc(events, Date.now(), winsNow());
