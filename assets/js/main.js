@@ -1,4 +1,4 @@
-/* Логика дашборда «Моя команда ОТП».
+﻿/* Логика дашборда «Моя команда ОТП».
    Один файл на все страницы: каждый блок срабатывает только если на странице есть его контейнер.
 
    index.html        — Моя команда · Кто лучше · Заявки · Рейтинг по KPI
@@ -669,6 +669,22 @@
       if (!byEmp.has(k)) byEmp.set(k, []);
       byEmp.get(k).push(e);
     }
+    /* Отпуска (из графика) и согласованные заявки (отгул, увольнительная) — чтобы
+       вместо «не начинал» было видно, почему человека нет на смене. */
+    const year = String(dt.getFullYear());
+    const vacAll = (D.schedule && D.schedule.vacations && D.schedule.vacations[year]) || {};
+    const vacOf = (fio) => {
+      const list = vacAll[fio] || [];
+      return list.find((v) => day >= v.from && day <= v.to) || null;
+    };
+    let reqs = [];
+    try {
+      reqs = await window.OTP_AUTH.api("admin", `otp_requests?select=*&status=eq.approved&date=eq.${day}`, "GET");
+      if (!Array.isArray(reqs)) reqs = [];
+    } catch (e) { reqs = []; }
+    const reqOf = (slug) => reqs.filter((r) => r.empSlug === slug || r.slug === slug);
+    const nowMin = dt.getHours() * 60 + dt.getMinutes();
+    const hhmmToMin = (s) => { const m = /^(\d{1,2}):(\d{2})/.exec(String(s || "")); return m ? +m[1] * 60 + +m[2] : null; };
     const escNow = (s) => String(s == null ? "" : s).replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
     const hms = (s) => [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60].map((x) => String(x).padStart(2, "0")).join(":");
     const hm = (ms) => { const d = new Date(ms + 3 * 3600 * 1000); return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`; };
@@ -715,9 +731,32 @@
       if (!(en > s)) return 0;
       return Math.max(0, Math.min(100, Math.round(((Date.now() - s) / (en - s)) * 100)));
     };
-    const order = { work: 0, pause: 1, done: 2, idle: 3 };
+    const order = { work: 0, pause: 1, done: 2, leave: 3, dayoff: 4, vacation: 5, idle: 6 };
+    /* Почему человека нет на смене: отпуск по графику, отгул или увольнительная по заявке. */
+    const absenceStatus = (emp) => {
+      const v = vacOf(emp.fullName);
+      if (v) return { kind: "vacation", label: `в отпуске до ${String(v.to).split("-").reverse().join(".")}`, icon: "ph-airplane", since: null, sec: 0 };
+      const rs = reqOf(emp.slug);
+      const dayoff = rs.find((r) => r.type === "dayoff");
+      if (dayoff) return { kind: "dayoff", label: "отгул за выходную смену", icon: "ph-calendar-minus", since: null, sec: 0 };
+      const leave = rs.find((r) => r.type === "leave");
+      if (leave) {
+        const a = hhmmToMin(leave.from), b = hhmmToMin(leave.to);
+        if (a != null && b != null && nowMin >= a && nowMin < b) {
+          return { kind: "leave", label: `увольнительная ${leave.from}–${leave.to}`, icon: "ph-door-open", since: null, sec: 0 };
+        }
+        if (a != null && nowMin < a) {
+          return { kind: "leave", label: `увольнительная с ${leave.from} до ${leave.to}`, icon: "ph-door-open", since: null, sec: 0 };
+        }
+      }
+      return null;
+    };
     const list = D.employees.filter((e) => e.status !== "left")
-      .map((e) => ({ emp: e, st: byEmp.has(e.slug) ? stateOf(byEmp.get(e.slug)) : { kind: "idle", label: "не начинал", icon: "ph-moon", since: null, sec: 0 } }))
+      .map((e) => {
+        const st = byEmp.has(e.slug) ? stateOf(byEmp.get(e.slug)) : { kind: "idle", label: "не начинал", icon: "ph-moon", since: null, sec: 0 };
+        if (st.kind === "idle") { const a = absenceStatus(e); if (a) return { emp: e, st: a }; }
+        return { emp: e, st };
+      })
       .sort((a, b) => order[a.st.kind] - order[b.st.kind] || String(a.emp.fullName).localeCompare(String(b.emp.fullName), "ru"));
     // кто сейчас отсутствует (последнее событие — начало отсутствия)
     const absNow = [];
@@ -750,6 +789,7 @@
           <span class="now-chip p"><b>${cnt("pause")}</b> на паузе</span>
           <span class="now-chip d"><b>${cnt("done")}</b> завершили</span>
           <span class="now-chip i"><b>${cnt("idle")}</b> не начинали</span>
+          ${(cnt("vacation") + cnt("dayoff") + cnt("leave")) ? `<span class="now-chip v"><b>${cnt("vacation") + cnt("dayoff") + cnt("leave")}</b> отпуск / отгул</span>` : ""}
         </span>
       </div>
       <div class="now-grid">

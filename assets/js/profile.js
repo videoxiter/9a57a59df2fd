@@ -2519,8 +2519,96 @@ function robotMenuHtml() {
     else if (window.OTP_AUTH && window.OTP_AUTH.isAdmin) {
       window.OTP_AUTH.isAdmin().then((adm) => { if (adm) initStartReport(); });
     }
+    /* блок «Сейчас на смене»: руководителю, главному специалисту и Андрею Болгову */
+    const wantNow = emp.canManage || emp.id === "bolgov";
+    const withNow = (yes) => { if (yes) initNowBoard(); };
+    if (wantNow) withNow(true);
+    else if (window.OTP_AUTH && window.OTP_AUTH.isAdmin) window.OTP_AUTH.isAdmin().then(withNow);
   }
 
+  /* Блок «Сейчас на смене» на личной странице: кто работает, кто на паузе,
+     кто в отпуске, на отгуле или в увольнительной. */
+  function initNowBoard() {
+    const host = document.getElementById("st-actions");
+    if (!host) return;
+    if (document.getElementById("now-personal")) return;
+    const sec = host.closest(".st-card") || host.parentNode;
+    const box = document.createElement("div");
+    box.id = "now-personal";
+    box.className = "now-block";
+    sec.appendChild(box);
+    const day = stIsoDate(new Date());
+    const esc2 = (s) => String(s == null ? "" : s).replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
+    const SLOT2 = { tech1: "тех.перерыв 1", tech2: "тех.перерыв 2", lunch: "обед", absence: "отсутствие" };
+    const stateOf = (ev) => {
+      let acc = 0, running = false, last = 0, started = 0, stopped = 0, active = null;
+      for (const e of ev) {
+        const t = Date.parse(e.at);
+        if (e.type === "shift_start") { started = t; running = true; last = t; }
+        else if (e.type === "shift_stop") { if (running) acc += t - last; running = false; stopped = t; }
+        else if (e.type === "break_start" || e.type === "absence_start") { if (running) acc += t - last; running = false; active = e; }
+        else if (e.type === "break_end" || e.type === "absence_end") { if (!running) { running = true; last = t; } active = null; }
+      }
+      if (running) acc += Date.now() - last;
+      const secs = Math.max(0, Math.round(acc / 1000));
+      if (stopped) return { kind: "done", label: "смена завершена", icon: "ph-check-circle", since: stopped, sec: secs };
+      if (active) return { kind: "pause", label: (SLOT2[active.slot] || "пауза") + (active.reason ? ": " + active.reason : ""), icon: "ph-pause", since: Date.parse(active.at), sec: secs };
+      if (started) return { kind: "work", label: "работает", icon: "ph-briefcase", since: last, sec: secs };
+      return { kind: "idle", label: "не начинал", icon: "ph-moon", since: null, sec: 0 };
+    };
+    const staffP = (window.OTP_AUTH && window.OTP_AUTH.staffList) ? window.OTP_AUTH.staffList().catch(() => []) : Promise.resolve([]);
+    Promise.all([
+      stApi(`otp_time_events?select=*&day=eq.${day}&order=at.asc`).catch(() => []),
+      stApi(`otp_requests?select=*&status=eq.approved&date=eq.${day}`).catch(() => []),
+      staffP,
+    ]).then(([evs, reqs, staff]) => {
+      const byEmp = new Map();
+      for (const e of (evs || [])) {
+        const k = e.empSlug || e.empName;
+        if (!byEmp.has(k)) byEmp.set(k, []);
+        byEmp.get(k).push(e);
+      }
+      const year = String(new Date().getFullYear());
+      const vacAll = (D.schedule && D.schedule.vacations && D.schedule.vacations[year]) || {};
+      const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+      const toMin = (s) => { const m = /^(\d{1,2}):(\d{2})/.exec(String(s || "")); return m ? +m[1] * 60 + +m[2] : null; };
+      const absent = (e) => {
+        const v = (vacAll[e.fullName] || []).find((x) => day >= x.from && day <= x.to);
+        if (v) return { kind: "vacation", label: `в отпуске до ${String(v.to).split("-").reverse().join(".")}`, icon: "ph-airplane", since: null, sec: 0 };
+        const rs = (reqs || []).filter((r) => r.empSlug === e.id || r.empSlug === e.slug);
+        if (rs.some((r) => r.type === "dayoff")) return { kind: "dayoff", label: "отгул за выходную смену", icon: "ph-calendar-minus", since: null, sec: 0 };
+        const lv = rs.find((r) => r.type === "leave" && toMin(r.from) != null && toMin(r.to) != null);
+        if (lv) return { kind: "leave", label: `увольнительная ${lv.from}–${lv.to}`, icon: "ph-door-open", since: null, sec: 0 };
+        return null;
+      };
+      const order = { work: 0, pause: 1, done: 2, leave: 3, dayoff: 4, vacation: 5, idle: 6 };
+      const src = (Array.isArray(staff) && staff.length)
+        ? staff.map((x) => ({ id: x.slug, slug: x.slug, fullName: x.fio || x.slug }))
+        : ((D.employees || []).slice());
+      const list = src.filter((e) => e.status !== "left").map((e) => {
+        const slug = e.slug || e.id;
+        const st = byEmp.has(slug) ? stateOf(byEmp.get(slug)) : { kind: "idle", label: "не начинал", icon: "ph-moon", since: null, sec: 0 };
+        if (st.kind === "idle") { const a = absent(e); if (a) return { emp: e, st: a }; }
+        return { emp: e, st };
+      }).sort((a, b) => order[a.st.kind] - order[b.st.kind] || String(a.emp.fullName).localeCompare(String(b.emp.fullName), "ru"));
+      const cnt = (k) => list.filter((x) => x.st.kind === k).length;
+      box.innerHTML = `<div class="now-head">
+        <h3><i class="ph-bold ph-broadcast"></i> Сейчас на смене</h3>
+        <span class="now-sum">
+          <span class="now-chip w"><b>${cnt("work")}</b> работают</span>
+          <span class="now-chip p"><b>${cnt("pause")}</b> на паузе</span>
+          <span class="now-chip d"><b>${cnt("done")}</b> завершили</span>
+          <span class="now-chip i"><b>${cnt("idle")}</b> не начинали</span>
+          ${(cnt("vacation") + cnt("dayoff") + cnt("leave")) ? `<span class="now-chip v"><b>${cnt("vacation") + cnt("dayoff") + cnt("leave")}</b> отпуск / отгул</span>` : ""}
+        </span>
+      </div>
+      <div class="now-grid">${list.map((x) => `<div class="now-card k-${x.st.kind}">
+        <i class="ph-bold ${x.st.icon}"></i>
+        <span class="now-body"><b>${esc2(x.emp.fullName)}</b><span>${esc2(x.st.label)}${x.st.since ? " · с " + stHm(x.st.since) : ""}</span></span>
+        <span class="now-time">${x.st.kind === "idle" ? "" : stHms(x.st.sec)}</span>
+      </div>`).join("")}</div>`;
+    }).catch(() => {});
+  }
   function initStartReport() {
     const from = document.getElementById("st-from");
     const to = document.getElementById("st-to");

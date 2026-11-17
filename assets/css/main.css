@@ -2683,3 +2683,12 @@ html.auth-lock body > :not(.auth-gate):not(script):not(style) { display: none !i
 .st-breaks { margin-top: 22px; }
 .st-breaks .hj-title { font-size: .8rem; font-weight: 700; margin-bottom: 10px; color: var(--text-dim); }
 .st-breaks .hj-title b { color: var(--text); }
+
+/* Статусы отсутствия в блоке «Сейчас на смене» */
+.now-card.k-vacation { border-color: rgba(129,140,248,.45); }
+.now-card.k-vacation > i { color: #818cf8; }
+.now-card.k-dayoff { border-color: rgba(251,191,36,.45); }
+.now-card.k-dayoff > i { color: #fbbf24; }
+.now-card.k-leave { border-color: rgba(56,189,248,.45); }
+.now-card.k-leave > i { color: #38bdf8; }
+.now-chip.v { color: #a5b4fc; }
