@@ -2001,6 +2001,18 @@ function robotMenuHtml() {
   const stLocalSave = (list) => { try { localStorage.setItem(ST_KEY, JSON.stringify(list)); } catch (e) {} };
   /* Уведомления в канал отправляет облачная функция cron по событиям в базе:
      свёрнутая вкладка на телефоне теряла сообщение, уходившее из браузера. */
+  /* Мгновенное уведомление: сразу после записи события в базу зовём облачную
+     функцию notify — она отправляет сообщение (в тред смены) и ставит отметку,
+     чтобы cron не отправил его повторно. Если вкладка свёрнута, отправит cron. */
+  function stNotifyEvent(ev) {
+    const c = ST_CLOUD();
+    if (!c || !c.url || !ev) return;
+    fetch(c.url.replace(/\/$/, "") + "/functions/v1/notify", {
+      method: "POST",
+      headers: { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json" },
+      body: JSON.stringify({ event: ev }),
+    }).catch(() => {});
+  }
   function stNotify() {}
   /* Облако — единственный источник истины: статусы и кнопки одинаковы на любом
      устройстве. Локальная копия работает только как офлайн-очередь и кэш. */
@@ -2037,6 +2049,7 @@ function robotMenuHtml() {
     }).then((r) => {
       // событие записалось в облако — из локальной очереди убираем
       stLocalSave(stLocal().filter((x) => x.id !== ev.id));
+      stNotifyEvent(ev);            // и сразу отправляем уведомление в канал
       return r;
     }).catch(() => null);
   }
