@@ -1984,7 +1984,7 @@ function robotMenuHtml() {
   const ST_NORM_SEC = 7.5 * 3600;
   const ST_RING_R = 62, ST_RING_C = 2 * Math.PI * ST_RING_R;
   const ST_CLOUD = () => (D.hrRules && D.hrRules.cloud) || null;
-  const stIsoDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const stIsoDate = (d) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Moscow", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
   const ST_MISS_KEY = "otp_time_missing_at";
   const stMissing = () => { try { return Date.now() - +(localStorage.getItem(ST_MISS_KEY) || 0) < 10 * 60 * 1000; } catch (e) { return false; } };
   /* Все запросы к данным идут через прокси (Edge Function api) с токеном сотрудника. */
@@ -1995,7 +1995,8 @@ function robotMenuHtml() {
     const method = (opts && opts.method) || "GET";
     let body = opts && opts.body;
     if (typeof body === "string") { try { body = JSON.parse(body); } catch (e) { body = []; } }
-    return A.api(String(emp.id), path, method, body);
+    const slug = A.token(String(emp.id)) ? String(emp.id) : (A.token("admin") ? "admin" : String(emp.id));
+    return A.api(slug, path, method, body);
   }
   const stLocal = () => { try { return JSON.parse(localStorage.getItem(ST_KEY) || "[]"); } catch (e) { return []; } };
   const stLocalSave = (list) => { try { localStorage.setItem(ST_KEY, JSON.stringify(list)); } catch (e) {} };
@@ -2095,7 +2096,7 @@ function robotMenuHtml() {
       if (r.type !== "leave" || r.status !== "approved") continue;
       const a = stHHMMmin(r.from), b = stHHMMmin(r.to);
       if (a == null || b == null || b <= a) continue;
-      const base = new Date(String(r.date) + "T00:00:00").getTime();
+      const base = new Date(String(r.date) + "T00:00:00+03:00").getTime();
       const key = `${r.empSlug}|${r.date}`;
       if (!map.has(key)) map.set(key, []);
       map.get(key).push({ id: r.id, from: base + a * 60000, to: base + b * 60000, fromTxt: r.from, toTxt: r.to });
@@ -2230,8 +2231,8 @@ function robotMenuHtml() {
     const noteEl = document.getElementById("st-note");
     if (!box || !statusEl) return;
 
-    const now = new Date();
-    const today = stIsoDate(now);
+    const today = stIsoDate(new Date());
+    const now = new Date(`${today}T12:00:00`);
     const shiftInfo = stShift(now);
     const dayKind = stDayKind(now, shiftInfo);
     const isWorkDay = dayKind.kind === "work";
@@ -2446,7 +2447,7 @@ function robotMenuHtml() {
         const lw = winsNow().find((w) => Date.now() >= w.from && Date.now() < w.to);
         if (!lw) return;
         const d = new Date();
-        const hhmm = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+        const hhmm = stHm(d.getTime());
         const cl = ST_CLOUD();
         if (cl && cl.url && lw.id) {
           fetch(`${cl.url.replace(/\/$/, "")}/rest/v1/otp_requests?id=eq.${lw.id}`, {
@@ -2550,77 +2551,83 @@ function robotMenuHtml() {
     box.id = "now-personal";
     box.className = "now-block";
     sec.appendChild(box);
-    const day = stIsoDate(new Date());
     const esc2 = (s) => String(s == null ? "" : s).replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
     const SLOT2 = { tech1: "тех.перерыв 1", tech2: "тех.перерыв 2", lunch: "обед", absence: "отсутствие" };
-    const stateOf = (ev) => {
-      let acc = 0, running = false, last = 0, started = 0, stopped = 0, active = null;
-      for (const e of ev) {
-        const t = Date.parse(e.at);
-        if (e.type === "shift_start") { started = t; running = true; last = t; }
-        else if (e.type === "shift_stop") { if (running) acc += t - last; running = false; stopped = t; }
-        else if (e.type === "break_start" || e.type === "absence_start") { if (running) acc += t - last; running = false; active = e; }
-        else if (e.type === "break_end" || e.type === "absence_end") { if (!running) { running = true; last = t; } active = null; }
-      }
-      if (running) acc += Date.now() - last;
-      const secs = Math.max(0, Math.round(acc / 1000));
-      if (stopped) return { kind: "done", label: "смена завершена", icon: "ph-check-circle", since: stopped, sec: secs };
-      if (active) return { kind: "pause", label: (SLOT2[active.slot] || "пауза") + (active.reason ? ": " + active.reason : ""), icon: "ph-pause", since: Date.parse(active.at), sec: secs };
-      if (started) return { kind: "work", label: "работает", icon: "ph-briefcase", since: last, sec: secs };
+    const stateOf = (ev, windows) => {
+      const now = Date.now();
+      const { sec, running, started, stopped, active } = stCalc(ev, now, windows);
+      if (stopped) return { kind: "done", label: "смена завершена", icon: "ph-check-circle", since: stopped, sec };
+      if (active) return { kind: "pause", label: (SLOT2[active.slot] || "пауза") + (active.reason ? ": " + active.reason : ""), icon: "ph-pause", since: active.at, sec, running };
+      const leave = (windows || []).find((w) => now >= w.from && now < w.to);
+      if (started && leave) return { kind: "leave", label: `увольнительная ${leave.fromTxt}–${leave.toTxt}`, icon: "ph-door-open", since: leave.from, sec };
+      if (started) return { kind: "work", label: "работает", icon: "ph-briefcase", since: started, sec, running };
       return { kind: "idle", label: "не начинал", icon: "ph-moon", since: null, sec: 0 };
     };
-    const staffP = (window.OTP_AUTH && window.OTP_AUTH.staffList) ? window.OTP_AUTH.staffList().catch(() => []) : Promise.resolve([]);
-    Promise.all([
-      stApi(`otp_time_events?select=*&day=eq.${day}&order=at.asc`).catch(() => []),
-      stApi(`otp_requests?select=*&status=eq.approved&date=eq.${day}`).catch(() => []),
-      staffP,
-    ]).then(([evs, reqs, staff]) => {
-      const byEmp = new Map();
-      for (const e of (evs || [])) {
-        const k = e.empSlug || e.empName;
-        if (!byEmp.has(k)) byEmp.set(k, []);
-        byEmp.get(k).push(e);
-      }
-      const year = String(new Date().getFullYear());
-      const vacAll = (D.schedule && D.schedule.vacations && D.schedule.vacations[year]) || {};
-      const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
-      const toMin = (s) => { const m = /^(\d{1,2}):(\d{2})/.exec(String(s || "")); return m ? +m[1] * 60 + +m[2] : null; };
-      const absent = (e) => {
-        const v = (vacAll[e.fullName] || []).find((x) => day >= x.from && day <= x.to);
-        if (v) return { kind: "vacation", label: `в отпуске до ${String(v.to).split("-").reverse().join(".")}`, icon: "ph-airplane", since: null, sec: 0 };
-        const rs = (reqs || []).filter((r) => r.empSlug === e.id || r.empSlug === e.slug);
-        if (rs.some((r) => r.type === "dayoff")) return { kind: "dayoff", label: "отгул за выходную смену", icon: "ph-calendar-minus", since: null, sec: 0 };
-        const lv = rs.find((r) => r.type === "leave" && toMin(r.from) != null && toMin(r.to) != null);
-        if (lv) return { kind: "leave", label: `увольнительная ${lv.from}–${lv.to}`, icon: "ph-door-open", since: null, sec: 0 };
-        return null;
-      };
-      const order = { work: 0, pause: 1, done: 2, leave: 3, dayoff: 4, vacation: 5, idle: 6 };
-      const src = (Array.isArray(staff) && staff.length)
-        ? staff.map((x) => ({ id: x.slug, slug: x.slug, fullName: x.fio || x.slug }))
-        : ((D.employees || []).slice());
-      const list = src.filter((e) => e.status !== "left").map((e) => {
-        const slug = e.slug || e.id;
-        const st = byEmp.has(slug) ? stateOf(byEmp.get(slug)) : { kind: "idle", label: "не начинал", icon: "ph-moon", since: null, sec: 0 };
-        if (st.kind === "idle") { const a = absent(e); if (a) return { emp: e, st: a }; }
-        return { emp: e, st };
-      }).sort((a, b) => order[a.st.kind] - order[b.st.kind] || String(a.emp.fullName).localeCompare(String(b.emp.fullName), "ru"));
-      const cnt = (k) => list.filter((x) => x.st.kind === k).length;
-      box.innerHTML = `<div class="now-head">
-        <h3><i class="ph-bold ph-broadcast"></i> Сейчас на смене</h3>
-        <span class="now-sum">
-          <span class="now-chip w"><b>${cnt("work")}</b> работают</span>
-          <span class="now-chip p"><b>${cnt("pause")}</b> на паузе</span>
-          <span class="now-chip d"><b>${cnt("done")}</b> завершили</span>
-          <span class="now-chip i"><b>${cnt("idle")}</b> не начинали</span>
-          ${(cnt("vacation") + cnt("dayoff") + cnt("leave")) ? `<span class="now-chip v"><b>${cnt("vacation") + cnt("dayoff") + cnt("leave")}</b> отпуск / отгул</span>` : ""}
-        </span>
-      </div>
-      <div class="now-grid">${list.map((x) => `<div class="now-card k-${x.st.kind}">
-        <i class="ph-bold ${x.st.icon}"></i>
-        <span class="now-body"><b>${esc2(x.emp.fullName)}</b><span>${esc2(x.st.label)}${x.st.since ? " · с " + stHm(x.st.since) : ""}</span></span>
-        <span class="now-time">${x.st.kind === "idle" ? "" : stHms(x.st.sec)}</span>
-      </div>`).join("")}</div>`;
-    }).catch(() => {});
+    const refresh = () => {
+      const day = stIsoDate(new Date());
+      const staffP = (window.OTP_AUTH && window.OTP_AUTH.staffList) ? window.OTP_AUTH.staffList().catch(() => []) : Promise.resolve([]);
+      Promise.all([
+        stApi(`otp_time_events?select=*&day=eq.${day}&order=at.asc`),
+        stApi(`otp_requests?select=*&status=eq.approved&date=eq.${day}`).catch(() => []),
+        staffP,
+      ]).then(([evs, reqs, staff]) => {
+        const byEmp = new Map();
+        for (const e of (evs || [])) {
+          for (const k of new Set([e.empSlug, e.empName].filter(Boolean))) {
+            if (!byEmp.has(k)) byEmp.set(k, []);
+            byEmp.get(k).push(e);
+          }
+        }
+        const year = day.slice(0, 4);
+        const vacAll = (D.schedule && D.schedule.vacations && D.schedule.vacations[year]) || {};
+        const nowMin = stHm(Date.now()).split(":").reduce((h, m) => h * 60 + Number(m), 0);
+        const toMin = (s) => { const m = /^(\d{1,2}):(\d{2})/.exec(String(s || "")); return m ? +m[1] * 60 + +m[2] : null; };
+        const absent = (e) => {
+          const v = (vacAll[e.fullName] || []).find((x) => day >= x.from && day <= x.to);
+          if (v) return { kind: "vacation", label: `в отпуске до ${String(v.to).split("-").reverse().join(".")}`, icon: "ph-airplane", since: null, sec: 0 };
+          const rs = (reqs || []).filter((r) => r.empSlug === e.id || r.empSlug === e.slug || r.empName === e.fullName);
+          if (rs.some((r) => r.type === "dayoff")) return { kind: "dayoff", label: "отгул за выходную смену", icon: "ph-calendar-minus", since: null, sec: 0 };
+          const lv = rs.find((r) => r.type === "leave" && toMin(r.from) != null && toMin(r.to) != null);
+          if (lv && nowMin >= toMin(lv.from) && nowMin < toMin(lv.to)) return { kind: "leave", label: `увольнительная ${lv.from}–${lv.to}`, icon: "ph-door-open", since: null, sec: 0 };
+          return null;
+        };
+        const order = { work: 0, pause: 1, done: 2, leave: 3, dayoff: 4, vacation: 5, idle: 6 };
+        const leaveByEmp = stLeaveWins(reqs);
+        const src = (Array.isArray(staff) && staff.length)
+          ? staff.map((x) => ({ id: x.slug, slug: x.slug, fullName: x.fio || x.slug }))
+          : ((D.employees || []).slice());
+        const list = src.filter((e) => e.status !== "left").map((e) => {
+          const slug = e.slug || e.id;
+          const events = byEmp.get(slug) || byEmp.get(e.fullName);
+          const st = events ? stateOf(events, leaveByEmp.get(`${events[0].empSlug}|${day}`)) : { kind: "idle", label: "не начинал", icon: "ph-moon", since: null, sec: 0 };
+          if (st.kind === "idle") { const a = absent(e); if (a) return { emp: e, st: a }; }
+          return { emp: e, st };
+        }).sort((a, b) => order[a.st.kind] - order[b.st.kind] || String(a.emp.fullName).localeCompare(String(b.emp.fullName), "ru"));
+        const cnt = (k) => list.filter((x) => x.st.kind === k).length;
+        box.innerHTML = `<div class="now-head">
+          <h3><i class="ph-bold ph-broadcast"></i> Сейчас на смене</h3>
+          <span class="now-sum">
+            <span class="now-chip w"><b>${cnt("work")}</b> работают</span>
+            <span class="now-chip p"><b>${cnt("pause")}</b> на паузе</span>
+            <span class="now-chip d"><b>${cnt("done")}</b> завершили</span>
+            <span class="now-chip i"><b>${cnt("idle")}</b> не начинали</span>
+            ${(cnt("vacation") + cnt("dayoff") + cnt("leave")) ? `<span class="now-chip v"><b>${cnt("vacation") + cnt("dayoff") + cnt("leave")}</b> отпуск / отгул</span>` : ""}
+          </span>
+        </div>
+        <div class="now-grid">${list.map((x) => `<div class="now-card k-${x.st.kind}">
+          <i class="ph-bold ${x.st.icon}"></i>
+          <span class="now-body"><b>${esc2(x.emp.fullName)}</b><span>${esc2(x.st.label)}${x.st.since ? " · с " + stHm(x.st.since) : ""}</span></span>
+          <span class="now-time"${x.st.running ? ` data-seconds="${x.st.sec}" data-since="${Date.now()}"` : ""}>${x.st.kind === "idle" ? "" : stHms(x.st.sec)}</span>
+        </div>`).join("")}</div>`;
+      }).catch(() => { if (!box.innerHTML) box.textContent = "Не удалось загрузить статусы смен. Проверьте подключение и вход."; });
+    };
+    refresh();
+    setInterval(refresh, 15000);
+    setInterval(() => {
+      box.querySelectorAll("[data-seconds]").forEach((el) => {
+        el.textContent = stHms(+el.dataset.seconds + Math.floor((Date.now() - +el.dataset.since) / 1000));
+      });
+    }, 1000);
   }
   function initStartReport() {
     const from = document.getElementById("st-from");

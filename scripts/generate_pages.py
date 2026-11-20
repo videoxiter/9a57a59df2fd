@@ -119,7 +119,7 @@ TEMPLATE = """<!DOCTYPE html>
   <script src="__PREFIX__assets/js/auth.js?v=__V__"></script>
   <script src="__PREFIX__assets/js/cloud.js?v=__V__"></script>
   <script src="__PREFIX__assets/js/themes.js?v=__V__"></script>
-  <script src="__PREFIX__assets/js/profile.js?v=__V__"></script>
+  <script src="__PREFIX__assets/js/profile.js?v=__V__-20261120"></script>
 </body>
 </html>
 """
