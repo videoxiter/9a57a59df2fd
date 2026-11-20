@@ -2008,9 +2008,12 @@ function robotMenuHtml() {
   function stNotifyEvent(ev) {
     const c = ST_CLOUD();
     if (!c || !c.url || !ev) return;
+    const headers = { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json" };
+    // v4: notify закрыта секретом x-otp-key (иначе в «ДисКо» может писать любой).
+    if (c.key) headers["x-otp-key"] = c.key;
     fetch(c.url.replace(/\/$/, "") + "/functions/v1/notify", {
       method: "POST",
-      headers: { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ event: ev }),
     }).catch(() => {});
   }
@@ -2450,10 +2453,12 @@ function robotMenuHtml() {
         const hhmm = stHm(d.getTime());
         const cl = ST_CLOUD();
         if (cl && cl.url && lw.id) {
-          fetch(`${cl.url.replace(/\/$/, "")}/rest/v1/otp_requests?id=eq.${lw.id}`, {
+          // v4: anon-PATCH закрыт — идём через прокси `api` со своим токеном.
+          // Фильтр empSlug=eq.<свой slug> обязателен: прокси разрешает PATCH
+          // только с такой привязкой к собственной заявке.
+          stApi(`otp_requests?id=eq.${lw.id}&empSlug=eq.${ME_SLUG}`, {
             method: "PATCH",
-            headers: { apikey: cl.key, Authorization: "Bearer " + cl.key, "Content-Type": "application/json", Prefer: "return=minimal" },
-            body: JSON.stringify({ to: hhmm }),
+            body: { to: hhmm },
           }).catch(() => {});
         }
         const all = loadReqs();
@@ -2837,8 +2842,8 @@ function robotMenuHtml() {
     const selfSay = (t, ok) => { if (!selfMsg) return; selfMsg.textContent = t; selfMsg.className = "self-msg " + (ok ? "ok" : "err"); };
     const AUTH = window.OTP_AUTH;
     if (AUTH) {
-      AUTH.staffList().then((list) => {
-        const row = (list || []).find((x) => x.slug === emp.id);
+      // v4: otp_staff закрыт — свой аватар берём по своему токену (otp_self_info)
+      (AUTH.selfInfo ? AUTH.selfInfo(String(emp.id)) : AUTH.staffList().then((l) => (l || []).find((x) => x.slug === emp.id))).then((row) => {
         const img = document.getElementById("self-ava-img");
         if (row && row.avatar && img) img.innerHTML = `<img src="${escHtml(row.avatar)}" alt="">`;
       }).catch(() => {});

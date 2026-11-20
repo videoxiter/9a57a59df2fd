@@ -47,7 +47,23 @@
         return res;
       }).catch(function () { return null; });
     },
-    staffList: function () { return rpc("otp_staff_list", {}).catch(function () { return []; }); },
+    /* Список сотрудников — только с админ-токеном (otp_staff закрыт от anon,
+       v4). Для обычного посетителя возвращает [] — аватары/пароли не светим. */
+    staffList: function () {
+      var t = tok("admin");
+      if (!t) return Promise.resolve([]);
+      return rpc("otp_staff_admin_list", { p_token: t }).then(function (res) {
+        return (res && res.ok && Array.isArray(res.list)) ? res.list : [];
+      }).catch(function () { return []; });
+    },
+    /* Свой slug + аватар по своему токену (v4: таблица otp_staff закрыта). */
+    selfInfo: function (slug) {
+      var t = tok(slug);
+      if (!t) return Promise.resolve(null);
+      return rpc("otp_self_info", { p_token: t }).then(function (res) {
+        return (res && res.ok) ? res : null;
+      }).catch(function () { return null; });
+    },
     /* запрос через прокси (Edge Function api) с токеном сессии */
     api: function (slug, path, method, body) {
       var c = CLOUD();

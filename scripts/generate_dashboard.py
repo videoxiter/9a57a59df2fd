@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Собирает дашборд руководителя из разделов.
 
   /                 — Моя команда · Кто лучше · Заявки · Рейтинг по KPI
@@ -12,12 +12,17 @@
 """
 import os
 import re
+import sys
+
+# вывод в консоли (Windows cp1251 не знает →)
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DASH = os.path.join(ROOT, "1bceb335668c")
 SRC = os.path.join(DASH, "index.html")
 SOURCE = os.path.join(ROOT, "scripts", "dashboard_source.html")   # неизменный исходник секций
-V = "208"
+V = "209"
 
 PAGES = [
     ("", "Моя команда", "team", ["top", "now", "best", "hr-sec", "hours", "rating"]),

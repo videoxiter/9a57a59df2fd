@@ -61,6 +61,27 @@ Deno.serve(async (req: Request) => {
   if (!ALLOWED[table]) return json({ ok: false, error: "table not allowed" }, 403);
   if (!ALLOWED[table].includes(method)) return json({ ok: false, error: "method not allowed for table" }, 403);
 
+  // v4: владение строками. Сотрудник пишет события только о себе (админ — о ком угодно);
+  // заявки решает только админ. (Без этого любой вошедший мог «завершить смену» коллеги
+  // или сам себе подтвердить переработку/увольнительную.)
+  if (table === "otp_time_events" && method === "POST") {
+    const rows: any[] = Array.isArray(p.body) ? p.body : [p.body];
+    for (const r of rows) {
+      if (!r || typeof r !== "object") return json({ ok: false, error: "bad row" }, 400);
+      if (!s.admin && String(r.empSlug || "") !== s.slug) {
+        return json({ ok: false, error: "not your event" }, 403);
+      }
+    }
+  }
+  if (table === "otp_requests" && method !== "GET" && !s.admin) {
+    // Сотрудник может PATCH только СВОЮ заявку: фильтр empSlug=eq.<свой slug>
+    // должен стоять в запросе — тогда PostgREST физически не тронет чужие строки.
+    const m = String(path).match(/empSlug=eq\.([^&]+)/);
+    if (!m || decodeURIComponent(m[1]) !== s.slug) {
+      return json({ ok: false, error: "not your request" }, 403);
+    }
+  }
+
   const h: Record<string, string> = {
     apikey: SRV,
     Authorization: `Bearer ${SRV}`,

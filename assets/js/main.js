@@ -1,4 +1,4 @@
-﻿/* Логика дашборда «Моя команда ОТП».
+/* Логика дашборда «Моя команда ОТП».
    Один файл на все страницы: каждый блок срабатывает только если на странице есть его контейнер.
 
    index.html        — Моя команда · Кто лучше · Заявки · Рейтинг по KPI
@@ -833,11 +833,8 @@
       const hhmm = `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
       b.disabled = true;
       try {
-        await fetch(`${c.url.replace(/\/$/, "")}/rest/v1/otp_requests?id=eq.${id}`, {
-          method: "PATCH",
-          headers: { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json", Prefer: "return=minimal" },
-          body: JSON.stringify({ to: hhmm }),
-        });
+        // v4: заявка — только через прокси `api` с админ-токеном (anon-запись закрыта)
+        await window.OTP_AUTH.api("admin", `otp_requests?id=eq.${id}`, "PATCH", { to: hhmm });
       } catch (e) {}
       renderNowBoard();
     }));
@@ -849,15 +846,12 @@
       const hhmm = `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
       b.disabled = true;
       try {
-        await fetch(`${c.url.replace(/\/$/, "")}/rest/v1/otp_time_events`, {
-          method: "POST",
-          headers: { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json", Prefer: "return=minimal" },
-          body: JSON.stringify([{
-            id: "mgr-" + Date.now() + "-" + String(slug).slice(0, 8),
-            empSlug: slug, empName: emp, day, type: "absence_end", slot: "absence",
-            at: new Date().toISOString(), reason: "закрыто руководителем",
-          }]),
-        });
+        // v4: событие — только через прокси `api` (anon-insert закрыт RLS)
+        await window.OTP_AUTH.api("admin", "otp_time_events", "POST", [{
+          id: "mgr-" + Date.now() + "-" + String(slug).slice(0, 8),
+          empSlug: slug, empName: emp, day, type: "absence_end", slot: "absence",
+          at: new Date().toISOString(), reason: "закрыто руководителем",
+        }]);
       } catch (e) {}
       renderNowBoard();
     }));
@@ -1206,8 +1200,9 @@
     }));
   }
 
-  /* аватар руководителя в шапке */
-  if (window.OTP_AUTH && D.hrRules && D.hrRules.cloud) {
+  /* аватар руководителя в шапке (v4: только если есть админ-сессия,
+     иначе otp_staff_admin_list вернёт forbidden — просто без аватара) */
+  if (window.OTP_AUTH && D.hrRules && D.hrRules.cloud && window.OTP_AUTH.token("admin")) {
     window.OTP_AUTH.staffList().then((list) => {
       const ad = (list || []).find((x) => x.slug === "admin");
       if (ad && ad.avatar) {

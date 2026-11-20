@@ -10,6 +10,9 @@ const SB = (Deno.env.get("SUPABASE_URL") || "").replace(/\/$/, "");
 const KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY") || "";
 const BOT = Deno.env.get("YANDEX_BOT_TOKEN") || "";
 const CHAT = Deno.env.get("DISCO_CHAT_ID") || "";
+// v4: секрет доступа. Сайт шлёт его в заголовке x-otp-key (берётся из hrRules.cloud.key).
+// Пока секрет не задан в Secrets — проверка выключена (для плавного деплоя).
+const SECRET = Deno.env.get("NOTIFY_KEY") || "";
 const API = "https://botapi.messenger.yandex.net/bot/v1/messages/sendText/";
 const TZ = 3 * 60 * 60 * 1000;
 
@@ -48,6 +51,10 @@ const SLOT: Record<string, string> = { tech1: "технологический п
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+  // v4: без секрета не принимаем (кроме периода, пока NOTIFY_KEY не задан в Secrets).
+  if (SECRET && req.headers.get("x-otp-key") !== SECRET) {
+    return json({ ok: false, error: "bad key" }, 401);
+  }
 
   let payload: any = {};
   try { payload = await req.json(); } catch { /* пусто */ }

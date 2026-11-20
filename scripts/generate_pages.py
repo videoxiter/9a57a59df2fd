@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Генерирует персональные страницы сотрудника: набор разделов.
 
 team/<slug>/           — Бонусы (KPI + денежная часть)
@@ -15,6 +15,11 @@ team/<slug>/rules/     — Правила (книга)
 import copy
 import json
 import os
+import sys
+
+# вывод в консоли (Windows cp1251 не знает → и ×)
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEAM_DIR = os.path.join(ROOT, "team")
@@ -124,7 +129,7 @@ TEMPLATE = """<!DOCTYPE html>
 </html>
 """
 
-V = "208"
+V = "209"
 
 # Турнирная таблица команды (данные коллег) отдаётся только этим сотрудникам.
 # У остальных в payload её нет вовсе — ни в разметке, ни в исходнике страницы.
