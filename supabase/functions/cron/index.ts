@@ -1,4 +1,4 @@
-﻿// Supabase Edge Function `cron`: контроль опозданий и затянувшихся перерывов.
+// Supabase Edge Function `cron`: контроль опозданий и затянувшихся перерывов.
 // Работает целиком в облаке — открытая вкладка сотрудника и чей-либо ПК не нужны.
 //
 // Деплой: Supabase → Edge Functions → New function → имя `cron` → вставить код.
@@ -78,9 +78,19 @@ Deno.serve(async () => {
     const dayNum = String(+today.slice(8, 10));
     const nowMs = Date.now();
 
-    const schedRes = await fetch(SCHEDULE_URL, { cache: "no-store", signal: T(TIMEOUT) });
-    if (!schedRes.ok) return json({ ok: false, error: "schedule " + schedRes.status }, 502);
-    const schedDoc = await schedRes.json();
+    // v5 (P1.5): график — сначала из БД (дашборд копирует туда актуальный
+    // график с действующей версии сайта): откат Pages не закрутит
+    // уведомления по старому графику. Pages — фолбэк, пока таблица пуста.
+    let schedDoc: any = null;
+    try {
+      const rows: any[] = (await sb("otp_schedule_cache?select=doc&order=fetched_at.desc&limit=1")) || [];
+      if (rows.length && rows[0] && rows[0].doc) schedDoc = rows[0].doc;
+    } catch { schedDoc = null; }
+    if (!schedDoc) {
+      const schedRes = await fetch(SCHEDULE_URL, { cache: "no-store", signal: T(TIMEOUT) });
+      if (!schedRes.ok) return json({ ok: false, error: "schedule " + schedRes.status }, 502);
+      schedDoc = await schedRes.json();
+    }
     const sched = schedDoc.schedule || {};
     // только действующие сотрудники нашего сайта — посторонние из выгрузки Confluence
     // (уволенные, другие отделы) в уведомления не попадают

@@ -73,6 +73,11 @@ Deno.serve(async (req: Request) => {
       }
     }
   }
+  // v5 (P1.2): правка журнала через прокси — только админ. До этого любая
+  // вошедшая сессия могла PATCH-нуть чужое событие (подменить время `at`).
+  if (table === "otp_time_events" && method === "PATCH" && !s.admin) {
+    return json({ ok: false, error: "admin only" }, 403);
+  }
   if (table === "otp_requests" && method !== "GET" && !s.admin) {
     // Сотрудник может PATCH только СВОЮ заявку: фильтр empSlug=eq.<свой slug>
     // должен стоять в запросе — тогда PostgREST физически не тронет чужие строки.

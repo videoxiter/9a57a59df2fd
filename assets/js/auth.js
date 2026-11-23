@@ -81,6 +81,19 @@
     selfUpdate: function (slug, pass, avatar) {
       return rpc("otp_self_update", { p_token: tok(slug), p_pass: pass || null, p_avatar: avatar || null });
     },
+    /* P1.5: копия текущего графика в БД (таблица otp_schedule_cache) — cron
+       читает график сначала оттуда. Нужен админ-токен; идемпотентно. */
+    scheduleSet: function (doc) {
+      return rpc("otp_schedule_set", { p_token: tok("admin"), p_doc: doc }).catch(function () { return { ok: false, error: "offline" }; });
+    },
+    /* P1.2: страховочная правка события из отчёта (только админ-сессия):
+       at — новое время (ISO) или null; del — удалить событие. */
+    eventFix: function (slug, id, at, del) {
+      return rpc("otp_event_fix", {
+        p_token: tok("admin") || tok(slug),
+        p_id: id, p_at: at || null, p_del: !!del,
+      });
+    },
     contentList: function (emp) {
       return rpc("otp_content_list", { p_emp: emp }).catch(function () { return []; });
     },

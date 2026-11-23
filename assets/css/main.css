@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    «Моя команда ОТП» — общая тема (тёмный tech)
    ============================================================ */
 :root {
@@ -2516,6 +2516,38 @@ html[data-theme="ocean"] .award-tile .medal {
   color: #cbd5e1; font-size: .72rem; padding: 4px 10px; border-radius: 8px; cursor: pointer; }
 .now-act:hover { background: rgba(220,38,38,.16); border-color: rgba(220,38,38,.5); color: #fca5a5; }
 .st-btn-leave { border-color: rgba(34,211,238,.45); }
+
+/* P1.3: индикатор синхронизации дашборда (последний успешный опрос / офлайн) */
+.now-sync { display: inline-flex; }
+.now-chip.s { display: inline-flex; gap: 6px; align-items: center; }
+.now-chip.s i { font-size: .85rem; }
+.now-chip.s.ok i { color: #34d399; }
+.now-chip.s.warn { color: #f87171; border-color: rgba(248,113,113,.45); background: rgba(248,113,113,.08); }
+.now-chip.s.warn i { color: #f87171; }
+
+/* P1.1: видимая офлайн-очередь на «Стартовой» */
+.st-outbox { display: flex; gap: 8px; align-items: center; margin-top: 12px; font-size: .78rem;
+  padding: 8px 12px; border-radius: 10px; border: 1px dashed rgba(251,191,36,.5);
+  color: #fbbf24; background: rgba(251,191,36,.08); }
+.st-outbox i { color: #fbbf24; }
+.hj-chip.warn { color: #fbbf24; border-color: rgba(251,191,36,.4); background: rgba(251,191,36,.08); }
+
+/* P1.2: страховочная правка событий в отчёте (руководитель) */
+.st-edit-cell { white-space: nowrap; }
+.st-ev { padding: 10px 12px; border: 1px dashed rgba(148,163,184,.3); border-radius: 12px;
+  display: grid; gap: 6px; background: rgba(148,163,184,.05); }
+.st-ev-title { font-size: .78rem; color: #9aa6b6; }
+.st-ev-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: .82rem; }
+.st-ev-type { font-weight: 600; color: #e8edf5; min-width: 160px; }
+.st-ev-reason { color: #8b96a8; flex: 1; min-width: 90px; }
+.st-ev-row input { padding: 5px 8px; border-radius: 8px; background: rgba(4,7,12,.8);
+  border: 1px solid rgba(148,163,184,.22); color: #e8edf5; font-size: .82rem; outline: none; }
+.st-ev-row .btn { font-size: .75rem; padding: 5px 10px; }
+.st-ev-del.st-ev-danger { background: rgba(239,68,68,.2); border-color: rgba(239,68,68,.6); color: #fecaca; }
+.st-ev-msg { font-size: .78rem; color: #34d399; }
+@media (max-width: 760px) {
+  .st-ev-type { min-width: 0; width: 100%; }
+}
 
 /* скелетоны загрузки */
 @keyframes skl-pulse { 0% { opacity: .35 } 50% { opacity: .8 } 100% { opacity: .35 } }

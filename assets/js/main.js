@@ -642,12 +642,44 @@
   renderNowBoard();
   setInterval(() => { if (!document.hidden) renderNowBoard(); }, 60000);
 
+  /* P1.5: зеркало графика в БД. Дашборд — единственная страница, где гарантированно
+     есть актуальный график И админ-сессия; раз в 10 минут копируем его в
+     otp_schedule_cache, а cron при старте читает график сначала оттуда.
+     Откат сайта к старой версии больше не закручивает уведомления. */
+  (function mirrorSchedule() {
+    const KEY = "otp_sched_mirror";
+    const push = () => {
+      if (!window.OTP_AUTH || !window.OTP_AUTH.token("admin")) return;
+      const doc = { generated: V, team: (D.schedule && D.schedule.people) || [], schedule: D.schedule || {} };
+      let last = 0;
+      try { last = +localStorage.getItem(KEY) || 0; } catch (e) {}
+      if (Date.now() - last < 10 * 60 * 1000) return;
+      try { localStorage.setItem(KEY, String(Date.now())); } catch (e) {}
+      window.OTP_AUTH.scheduleSet(doc).then((r) => {
+        if (r && r.ok) try { localStorage.setItem(KEY + "_ok", new Date().toISOString()); } catch (e) {}
+      }).catch(() => {});
+    };
+    push();
+    setInterval(push, 10 * 60 * 1000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) push(); });
+  })();
+
+  /* P1.3: индикатор синхронизации дашборда — результат последнего статус-опроса.
+     Обновляется на каждом renderNowBoard (60 с): «синхр. ЧЧ:ММ» / «офлайн». */
+  let __nowSyncOk = null;
+  function nowSyncSet(ok) { __nowSyncOk = ok; }
+  function nowSync() {
+    if (__nowSyncOk === null) return `<span class="now-chip s">… соединение</span>`;
+    if (__nowSyncOk) return `<span class="now-chip s ok" title="Данные подтягиваются из облака автоматически"><i class="ph-bold ph-check-circle"></i> синхр. ${new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</span>`;
+    return `<span class="now-chip s warn" title="Не удалось опросить данные (интернет или прокси). Статусы сотрудников на их экранах не зависят от этого."><i class="ph-bold ph-wifi-high-signal-slash"></i> офлайн</span>`;
+  }
+
   /* ---------- «Сейчас на смене»: статусы по событиям «Стартовой» ---------- */
   async function renderNowBoard() {
     const box = $("#now-board");
     if (!box) return;
     if (!box.dataset.loaded) {
-      box.innerHTML = `<div class="now-head"><h3><i class="ph-bold ph-broadcast"></i> Сейчас на смене</h3></div>
+      box.innerHTML = `<div class="now-head"><h3><i class="ph-bold ph-broadcast"></i> Сейчас на смене</h3>${nowSync()}</div>
         <div class="skl-grid">${Array.from({ length: 6 }).map(() => `<div class="skl-card"><div class="skl"></div><div class="skl"></div></div>`).join("")}</div>`;
     }
     const c = D.hrRules && D.hrRules.cloud;
@@ -660,8 +692,8 @@
     try {
       rows = await window.OTP_AUTH.api("admin", `otp_time_events?select=*&day=eq.${day}&order=at.asc`, "GET");
       if (!Array.isArray(rows)) rows = [];
-    } catch (e) { box.innerHTML = ""; return; }
-    if (!Array.isArray(rows)) return;
+    } catch (e) { nowSyncSet(false); return; }   // сеть/прокси недоступны — показываем offline-бейдж
+    if (!Array.isArray(rows)) { nowSyncSet(false); return; }
 
     const byEmp = new Map();
     for (const e of rows) {
@@ -778,12 +810,20 @@
         }).filter((x) => x && Date.now() >= x.start && Date.now() < x.end);
       }
     } catch (e) {}
-    if (!list.length) { box.innerHTML = ""; return; }
+    if (!list.length) {
+      nowSyncSet(false);
+      box.dataset.loaded = "1";
+      box.innerHTML = `<div class="now-head"><h3><i class="ph-bold ph-broadcast"></i> Сейчас на смене</h3>${nowSync()}</div>
+        <p class="muted">Сегодня событий пока нет — никто не нажимал кнопки.</p>`;
+      return;
+    }
+    nowSyncSet(true);
     box.dataset.loaded = "1";
     const cnt = (k) => list.filter((x) => x.st.kind === k).length;
     box.innerHTML = `
       <div class="now-head">
         <h3><i class="ph-bold ph-broadcast"></i> Сейчас на смене</h3>
+        <span class="now-sync">${nowSync()}</span>
         <span class="now-sum">
           <span class="now-chip w"><b>${cnt("work")}</b> работают</span>
           <span class="now-chip p"><b>${cnt("pause")}</b> на паузе</span>

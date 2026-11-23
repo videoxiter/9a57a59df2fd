@@ -1988,6 +1988,33 @@ function robotMenuHtml() {
   const ST_MISS_KEY = "otp_time_missing_at";
   const stMissing = () => { try { return Date.now() - +(localStorage.getItem(ST_MISS_KEY) || 0) < 10 * 60 * 1000; } catch (e) { return false; } };
   /* Все запросы к данным идут через прокси (Edge Function api) с токеном сотрудника. */
+  let __stPend = 0;
+  const stPendingInc = () => { __stPend++; };
+  function stPendingDec(n) { __stPend = Math.max(0, __stPend - (n || 1)); renderStOutbox(); }
+  /* P1.1: видимая офлайн-очередь. Пока событие летит в облако (или сеть
+     прервалась) — индикатор «⏳ не отправлено: N»; после успешного ответа —
+     «✓ синхронизировано ЧЧ:ММ». Закрытая вкладка догоняется автоматически:
+     событие ждёт в localStorage и улетает при следующем открытии «Стартовой». */
+  const renderStOutbox = () => {
+    const el = document.getElementById("st-outbox");
+    if (!el) return;
+    try {
+      const pend = stLocal().length;
+      if (__stPend > 0 || pend > 0) {
+        const last = +localStorage.getItem("otp_time_last_sync") || 0;
+        el.hidden = false;
+        el.innerHTML = `<i class="ph-bold ph-cloud-arrow-up"></i> <span>
+          ${__stPend > 0 || pend > 0 ? `события в пути — не отправлено: ${__stPend + pend}` : ""}
+          ${last ? ` · ${last < Date.now() ? "синхронизировано " : ""}${new Date(last).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} назад` : "синхронизация ещё не была"}</span>`;
+        return;
+      }
+      const last = +localStorage.getItem("otp_time_last_sync") || 0;
+      if (last) {
+        el.hidden = false;
+        el.innerHTML = `<i class="ph-bold ph-cloud-check"></i> <span>синхронизировано ${new Date(last).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</span>`;
+      } else { el.hidden = true; }
+    } catch (e) { el.hidden = true; }
+  };
   function stApi(path, opts) {
     const A = window.OTP_AUTH;
     const c = ST_CLOUD();
@@ -1996,7 +2023,11 @@ function robotMenuHtml() {
     let body = opts && opts.body;
     if (typeof body === "string") { try { body = JSON.parse(body); } catch (e) { body = []; } }
     const slug = A.token(String(emp.id)) ? String(emp.id) : (A.token("admin") ? "admin" : String(emp.id));
-    return A.api(slug, path, method, body);
+    const n = method === "POST" ? (Array.isArray(body) ? body.length : 1) : 0;
+    if (n) stPendingInc();
+    return A.api(slug, path, method, body)
+      .then((r) => { if (method === "POST") try { localStorage.setItem("otp_time_last_sync", String(Date.now())); } catch (e) {} renderStOutbox(); return r; })
+      .catch((e) => { stPendingDec(n); throw e; });
   }
   const stLocal = () => { try { return JSON.parse(localStorage.getItem(ST_KEY) || "[]"); } catch (e) { return []; } };
   const stLocalSave = (list) => { try { localStorage.setItem(ST_KEY, JSON.stringify(list)); } catch (e) {} };
@@ -2036,6 +2067,7 @@ function robotMenuHtml() {
           }).then(() => {
             const pend = new Set(pending.map((e) => e.id));
             stLocalSave(stLocal().filter((e) => !pend.has(e.id)));
+            renderStOutbox();   // очередь опустела — показываем «синхронизировано»
           }).catch(() => {});
           list.push(...pending);
         }
@@ -2046,6 +2078,7 @@ function robotMenuHtml() {
   function stAdd(ev) {
     const list = stLocal().filter((x) => x.id !== ev.id);
     list.push(ev); stLocalSave(list);
+    renderStOutbox();   // «события в пути» стало на одно больше
     return stApi("otp_time_events", {
       method: "POST",
       headers: { Prefer: "return=minimal" },
@@ -2206,6 +2239,7 @@ function robotMenuHtml() {
         <div class="st-timer-wrap"><div class="st-timer" id="st-timer">00:00:00</div><div class="st-bar"><div class="st-bar-fg" id="st-bar"></div></div><span class="st-timer-h">отработано за день · норма 7:30 · МСК</span></div>
       </div>
       <div class="st-actions" id="st-actions"></div>
+      <div class="st-outbox" id="st-outbox" hidden></div>
       <div class="st-note" id="st-note"></div>
       <div class="st-week" id="st-week"></div>
     </section>
@@ -2221,7 +2255,7 @@ function robotMenuHtml() {
       </div>
       <div class="st-sum" id="st-sum"></div>
       <div class="st-table-wrap"><table class="hj-table st-table"><thead><tr>
-        <th>Дата</th><th>Сотрудник</th><th>Начало</th><th>Конец</th><th class="num">Отработано</th><th class="num">Недоработка</th><th class="num">Перерывы</th>
+        <th>Дата</th><th>Сотрудник</th><th>Начало</th><th>Конец</th><th class="num">Отработано</th><th class="num">Недоработка</th><th class="num">Перерывы</th><th class="num" id="st-edit-th" hidden>Правка</th>
       </tr></thead><tbody id="st-body"></tbody></table></div>
       <p class="muted" id="st-empty" hidden>За выбранный период записей нет.</p>
     </section>` : ""}`;
@@ -2246,9 +2280,11 @@ function robotMenuHtml() {
       const c = ST_CLOUD();
       const local = () => stLeaveWins(loadReqs().filter((r) => r.date === today)).get(`${ME_SLUG}|${today}`) || [];
       if (!c || !c.url) return Promise.resolve(local());
-      return fetch(`${c.url.replace(/\/$/, "")}/rest/v1/otp_requests?select=*&empSlug=eq.${ME_SLUG}&type=eq.leave&status=eq.approved&date=eq.${today}`, {
-        cache: "no-store", headers: { apikey: c.key, Authorization: "Bearer " + c.key },
-      }).then((r) => (r.ok ? r.json() : [])).then((rows) => stLeaveWins(rows || []).get(`${ME_SLUG}|${today}`) || []).catch(local);
+      // v5 (P1.4): чтение — только через прокси `api` со своим токеном;
+      // anon-ключ больше не участвует в REST напрямую.
+      return stApi(`otp_requests?select=*&empSlug=eq.${ME_SLUG}&type=eq.leave&status=eq.approved&date=eq.${today}`)
+        .then((rows) => stLeaveWins(Array.isArray(rows) ? rows : []).get(`${ME_SLUG}|${today}`) || [])
+        .catch(local);
     };
     let events = [];
     let timer = null;
@@ -2492,13 +2528,14 @@ function robotMenuHtml() {
 
     render();
     events = events || [];
+    renderStOutbox();
     loadLeaveWins().then((w) => { leaveWins = w; render(); }).catch(() => {});
     stEvents(today).then((rows) => { events = rows || []; render(); }).catch(() => {});
     /* Синхронизация между устройствами: состояние и кнопки подтягиваются из облака,
        поэтому нажатие на телефоне и на компьютере не расходится. */
     const stSync = () => {
       if (document.visibilityState && document.visibilityState !== "visible") return;
-      stEvents(today).then((rows) => { events = rows || []; render(); }).catch(() => {});
+      stEvents(today).then((rows) => { events = rows || []; render(); renderStOutbox(); }).catch(() => {});
     };
     setInterval(stSync, 15000);
     document.addEventListener("visibilitychange", stSync);
@@ -2643,6 +2680,8 @@ function robotMenuHtml() {
     const empty = document.getElementById("st-empty");
     const show = document.getElementById("st-show");
     if (!from || !body) return;
+    const ST_EV_NAME = { shift_start: "Начало смены", shift_stop: "Завершение смены", break_start: "Начало перерыва", break_end: "Конец перерыва", absence_start: "Начало отсутствия", absence_end: "Конец отсутствия" };
+    const pad2 = (x) => String(x).padStart(2, "0");
     const now = new Date();
     // по умолчанию — сегодня; последний выбранный период запоминаем
     let savedPeriod = null;
@@ -2656,17 +2695,32 @@ function robotMenuHtml() {
       .sort((a, b) => String(a[1]).localeCompare(String(b[1]), "ru"))
       .map(([slug, name]) => `<option value="${escHtml(slug)}">${escHtml(name)}</option>`).join("");
 
+    // P1.2: отчёт со всеми сотрудниками и правкой событий — только с админ-токеном
+    // (прокси `api` отдаёт журналы всем, но PATCH — только админу). Без входа —
+    // локальная очередь этого браузера, чтобы страница не была пустой.
+    const adminOk = !!(window.OTP_AUTH && window.OTP_AUTH.token("admin"));
     const load = () => {
       const a = from.value || stIsoDate(now), b = to.value || a;
+      if (!adminOk) {
+        return Promise.resolve({
+          ev: stLocal().filter((e) => e.day >= a && e.day <= b),
+          lv: loadReqs().filter((r) => r.date >= a && r.date <= b),
+          localOnly: true,
+        });
+      }
       const q = `otp_time_events?select=*&day=gte.${a}&day=lte.${b}&order=day.asc,at.asc`;
       const ev = stApi(q).catch(() => stLocal().filter((e) => e.day >= a && e.day <= b));
       // увольнительные за период — их время вычитается из отработанного
       const lv = stApi(`otp_requests?select=*&type=eq.leave&status=eq.approved&date=gte.${a}&date=lte.${b}`).catch(() => []);
-      return Promise.all([ev, lv]).then(([e, l]) => ({ ev: e || [], lv: l || [] }));
+      return Promise.all([ev, lv]).then(([e, l]) => ({ ev: e || [], lv: l || [], localOnly: false }));
     };
 
     let lastRows = [];                 // для выгрузки CSV
+    let evIndex = new Map();           // slug|day -> события (для правки, P1.2)
+    let evEditCtx = null;              // открытая строка редактора {day, slug, host}
     const paint = (data) => {
+      if (evEditCtx) { try { evEditCtx.host.remove(); } catch (e) {} evEditCtx = null; }
+      const localOnly = !!(data && data.localOnly);
       const rows = (data && data.ev) || [];
       const winsBy = stLeaveWins((data && data.lv) || []);
       const pick = empSel.value;
@@ -2681,18 +2735,23 @@ function robotMenuHtml() {
         const st = stCalc(d.ev, Date.now(), winsBy.get(`${d.slug}|${d.day}`) || []);
         return { ...d, sec: st.sec, started: st.started, stopped: st.stopped, breaks: st.used.size };
       }).sort((x, y) => y.day.localeCompare(x.day) || String(x.name).localeCompare(String(y.name), "ru"));
+      for (const d of byDay.values()) evIndex.set(d.slug + "|" + d.day, d.ev);
       const total = rowsOut.reduce((s, r) => s + r.sec, 0);
       const deficit = rowsOut.reduce((s, r) => s + Math.max(0, ST_NORM_SEC - r.sec), 0);
+      const editTh = document.getElementById("st-edit-th");
+      if (editTh) editTh.hidden = !adminOk;
       if (sumEl) sumEl.innerHTML = `<span class="hj-chip">дней: <b>${rowsOut.length}</b></span>
         <span class="hj-chip plus">отработано: <b>${stHms(total)}</b></span>
-        <span class="hj-chip minus">недоработка: <b>${stHms(deficit)}</b></span>`;
+        <span class="hj-chip minus">недоработка: <b>${stHms(deficit)}</b></span>`
+        + (localOnly ? `<span class="hj-chip warn">только локальная очередь этого браузера — отчёт по всем и правка событий видны после входа в админ-сессию (дашборд)</span>` : "");
       body.innerHTML = rowsOut.slice(0, 200).map((r) => `<tr class="${r.sec < ST_NORM_SEC ? "neg" : "pos"}">
         <td class="mono">${escHtml(r.day)}</td><td>${escHtml(String(r.name))}</td>
         <td class="mono">${r.started ? stHm(r.started) : "—"}</td>
         <td class="mono">${r.stopped ? stHm(r.stopped) : "—"}</td>
         <td class="num">${stHms(r.sec)}</td>
         <td class="num">${r.sec < ST_NORM_SEC ? "−" + stHms(ST_NORM_SEC - r.sec) : "—"}</td>
-        <td class="num">${r.breaks}</td></tr>`).join("");
+        <td class="num">${r.breaks}</td>
+        <td class="num st-edit-cell">${adminOk ? `<button class="btn btn-ghost st-ev-toggle" type="button" data-evday="${escHtml(r.slug)}|${escHtml(r.day)}" title="Показать события дня и поправить время/удалить лишнее">✎</button>` : ""}</td></tr>`).join("");
       if (empty) empty.hidden = rowsOut.length > 0;
       /* Детализация перерывов: кто, когда, на каком и сколько (руководителю и главному специалисту). */
       let brkHost = document.getElementById("st-breaks");
@@ -2722,6 +2781,83 @@ function robotMenuHtml() {
           </tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
       } else {
         brkHost.innerHTML = "";
+      }
+      /* P1.2: страховочная правка журнала. Кнопка ✎ у строки дня раскрывает
+         список событий: поменять время (at) или удалить лишнее. Только админ;
+         пишет RPC otp_event_fix (админ-токен), после — отчёт пересобирается. */
+      const evsHtml = (evs, day) => {
+        const rows = evs.slice().sort((a, b) => String(a.at).localeCompare(String(b.at))).map((e) => {
+          const ms = (Date.parse(e.at) + 3 * 3600 * 1000) % 86400000;   // время МСК
+          return `<div class="st-ev-row" data-evid="${escHtml(e.id)}">
+            <span class="st-ev-type">${escHtml(ST_EV_NAME[e.type] || e.type)}${e.slot && e.slot !== "break" ? " · " + escHtml(ST_SLOT_TITLE[e.slot] || e.slot) : ""}</span>
+            <span class="st-ev-reason">${escHtml(e.reason || "")}</span>
+            <input type="time" class="st-ev-time" step="1" value="${pad2(Math.floor(ms / 60000))}:${pad2(Math.floor((ms % 3600000) / 60000))}:00">
+            <button class="btn btn-ghost st-ev-save" type="button">Сохранить</button>
+            <button class="btn btn-ghost st-ev-del" type="button" title="Удалить событие из журнала (например, телефон «нажал сам» в кармане)">✕</button>
+          </div>`;
+        }).join("");
+        return rows || '<p class="muted">Событий нет.</p>';
+      };
+      const evFlash = (row, txt) => {
+        let f = row.querySelector(".st-ev-msg");
+        if (!f) { f = document.createElement("span"); f.className = "st-ev-msg"; row.appendChild(f); }
+        f.textContent = txt;
+        clearTimeout(f._t);
+        f._t = setTimeout(() => { f.textContent = ""; }, 3000);
+      };
+      if (adminOk) {
+        for (const t of body.querySelectorAll(".st-ev-toggle")) {
+          t.addEventListener("click", () => {
+            const key = t.getAttribute("data-evday");
+            const [slug, day] = key.split("|");
+            const evs = evIndex.get(key) || [];
+            const old = document.getElementById("st-ev-host");
+            if (old) old.remove();
+            if (evEditCtx && evEditCtx.key === key) { evEditCtx = null; return; }
+            const host = document.createElement("tr");
+            host.id = "st-ev-host";
+            host.innerHTML = `<td colspan="8"><div class="st-ev">
+              <div class="st-ev-title">События за ${escHtml(day)} — время в МСК. «✕» = удалить событие (нужен второй клик по тому же «✕»)</div>
+              ${evsHtml(evs, day)}</div></td>`;
+            const tr = t.closest("tr");
+            if (tr) tr.parentNode.insertBefore(host, tr.nextSibling);
+            evEditCtx = { key, host, slug, day };
+            const A = window.OTP_AUTH;
+            host.querySelectorAll(".st-ev-row").forEach((row) => {
+              const id = row.getAttribute("data-evid");
+              row.querySelector(".st-ev-save").addEventListener("click", async () => {
+                const m = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(String(row.querySelector(".st-ev-time").value || ""));
+                if (!m) { evFlash(row, "время не распознано"); return; }
+                const btn = row.querySelector(".st-ev-save");
+                btn.disabled = true;
+                const iso = `${day}T${m[1].padStart(2, "0")}:${m[2].padStart(2, "0")}:${(m[3] || "00").padStart(2, "0")}`;
+                const r = await A.eventFix(slug, id, iso, false).catch(() => null);
+                btn.disabled = false;
+                if (r && r.ok) { evFlash(row, "✓ сохранено"); show.click(); }
+                else evFlash(row, "не удалось — проверь вход");
+              });
+              row.querySelector(".st-ev-del").addEventListener("click", () => {
+                const btn = row.querySelector(".st-ev-del");
+                if (btn.dataset.arm) {
+                  delete btn.dataset.arm;
+                  btn.textContent = "✕";
+                  btn.classList.remove("st-ev-danger");
+                  A.eventFix(slug, id, null, true).then((r) => {
+                    if (r && r.ok) { evFlash(row, "удалено"); show.click(); }
+                    else evFlash(row, "не удалось");
+                  }).catch(() => evFlash(row, "не удалось"));
+                } else {
+                  btn.dataset.arm = "1";
+                  btn.textContent = "Точно удалить?";
+                  btn.classList.add("st-ev-danger");
+                  setTimeout(() => {
+                    if (btn.isConnected) { delete btn.dataset.arm; btn.textContent = "✕"; btn.classList.remove("st-ev-danger"); }
+                  }, 4000);
+                }
+              });
+            });
+          });
+        }
       }
       lastRows = rowsOut;
     };
