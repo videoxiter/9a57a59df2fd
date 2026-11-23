@@ -1,0 +1,234 @@
+{
+  "runId": "selftest-mwpbmmoq-f1fbd5",
+  "root": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП",
+  "mode": "check",
+  "startedAt": "2026-11-20T18:37:10.336Z",
+  "finishedAt": "2026-11-20T18:37:12.042Z",
+  "durationMs": 1704,
+  "sinceMinutes": 10,
+  "files": [
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\assets\\css\\main.css",
+      "rel": "assets/css/main.css",
+      "source": "git",
+      "signature": {
+        "size": 185969,
+        "mtimeMs": 1795199789273,
+        "sha": "158825f124b3ffc7"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\assets\\js\\auth.js",
+      "rel": "assets/js/auth.js",
+      "source": "git",
+      "signature": {
+        "size": 7728,
+        "mtimeMs": 1795199547008,
+        "sha": "0978a03e557ba024"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\assets\\js\\main.js",
+      "rel": "assets/js/main.js",
+      "source": "git",
+      "signature": {
+        "size": 80452,
+        "mtimeMs": 1795199359424,
+        "sha": "26a2b4e836401ca8"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\assets\\js\\profile.js",
+      "rel": "assets/js/profile.js",
+      "source": "git",
+      "signature": {
+        "size": 265259,
+        "mtimeMs": 1795199759157,
+        "sha": "a8a488413745d3b6"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\docs\\ПЛАН-ДОРАБОТОК.md",
+      "rel": "docs/ПЛАН-ДОРАБОТОК.md",
+      "source": "git",
+      "signature": {
+        "size": 30660,
+        "mtimeMs": 1795199825263,
+        "sha": "4afc0d4fec9c30fa"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\scripts\\supabase_v5_reliability.sql",
+      "rel": "scripts/supabase_v5_reliability.sql",
+      "source": "git",
+      "signature": {
+        "size": 4718,
+        "mtimeMs": 1795199546990,
+        "sha": "a6c48b09ad846847"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\supabase\\functions\\api\\index.ts",
+      "rel": "supabase/functions/api/index.ts",
+      "source": "git",
+      "signature": {
+        "size": 5263,
+        "mtimeMs": 1795199290464,
+        "sha": "de5239ecb71fd13a"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\supabase\\functions\\cron\\index.ts",
+      "rel": "supabase/functions/cron/index.ts",
+      "source": "git",
+      "signature": {
+        "size": 16984,
+        "mtimeMs": 1795199290480,
+        "sha": "eca17d145cc81a86"
+      }
+    }
+  ],
+  "sources": {
+    "gitAvailable": true,
+    "gitError": null,
+    "scanned": 998,
+    "truncated": false,
+    "depthLimited": false
+  },
+  "skipped": [
+    {
+      "file": "assets/css/main.css",
+      "reason": "Unknown extension .css"
+    },
+    {
+      "file": "docs/ПЛАН-ДОРАБОТОК.md",
+      "reason": "Unknown extension .md"
+    },
+    {
+      "file": "scripts/supabase_v5_reliability.sql",
+      "reason": "Unknown extension .sql"
+    }
+  ],
+  "missing": [],
+  "groups": {
+    "ps1": 0,
+    "js": 3,
+    "json": 0,
+    "ts": 2,
+    "py": 0,
+    "sh": 0,
+    "yaml": 0,
+    "other": 3
+  },
+  "plannedSteps": [
+    {
+      "id": "js:batch",
+      "kind": "command",
+      "title": "JavaScript syntax + imports (3 files)",
+      "command": "C:\\Program Files\\nodejs\\node.EXE --no-warnings --experimental-vm-modules G:\\LMStudio\\dsh-home\\profiles\\desktop\\node_modules\\dsh-selftest\\lib\\parse-js.mjs -ListFile <temp list file>"
+    },
+    {
+      "id": "ts:g:\\lmstudio\\vscode\\projects\\сайт отп\\supabase\\functions\\api\\index.ts",
+      "kind": "inline",
+      "title": "supabase/functions/api/index.ts",
+      "command": null
+    },
+    {
+      "id": "ts:g:\\lmstudio\\vscode\\projects\\сайт отп\\supabase\\functions\\cron\\index.ts",
+      "kind": "inline",
+      "title": "supabase/functions/cron/index.ts",
+      "command": null
+    }
+  ],
+  "results": [
+    {
+      "id": "js:g:\\lmstudio\\vscode\\projects\\сайт отп\\assets\\js\\auth.js",
+      "title": "assets/js/auth.js",
+      "file": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\assets\\js\\auth.js",
+      "family": "js",
+      "status": "pass",
+      "exitCode": 0,
+      "ms": 1159,
+      "detail": "",
+      "output": ""
+    },
+    {
+      "id": "js:g:\\lmstudio\\vscode\\projects\\сайт отп\\assets\\js\\main.js",
+      "title": "assets/js/main.js",
+      "file": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\assets\\js\\main.js",
+      "family": "js",
+      "status": "pass",
+      "exitCode": 0,
+      "ms": 1159,
+      "detail": "",
+      "output": ""
+    },
+    {
+      "id": "js:g:\\lmstudio\\vscode\\projects\\сайт отп\\assets\\js\\profile.js",
+      "title": "assets/js/profile.js",
+      "file": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\assets\\js\\profile.js",
+      "family": "js",
+      "status": "pass",
+      "exitCode": 0,
+      "ms": 1159,
+      "detail": "",
+      "output": ""
+    },
+    {
+      "id": "ts:g:\\lmstudio\\vscode\\projects\\сайт отп\\supabase\\functions\\api\\index.ts",
+      "title": "supabase/functions/api/index.ts",
+      "file": null,
+      "family": "check",
+      "status": "skip",
+      "exitCode": null,
+      "ms": 0,
+      "detail": "No TypeScript compiler configured (cfg.tsc is empty)",
+      "output": "No TypeScript compiler configured (cfg.tsc is empty)",
+      "timedOut": false
+    },
+    {
+      "id": "ts:g:\\lmstudio\\vscode\\projects\\сайт отп\\supabase\\functions\\cron\\index.ts",
+      "title": "supabase/functions/cron/index.ts",
+      "file": null,
+      "family": "check",
+      "status": "skip",
+      "exitCode": null,
+      "ms": 0,
+      "detail": "No TypeScript compiler configured (cfg.tsc is empty)",
+      "output": "No TypeScript compiler configured (cfg.tsc is empty)",
+      "timedOut": false
+    }
+  ],
+  "counts": {
+    "total": 5,
+    "pass": 3,
+    "fail": 0,
+    "skip": 2
+  },
+  "verdict": "partial",
+  "checks": [
+    {
+      "id": "selftest",
+      "kind": "command",
+      "title": "selftest passed: G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП (all changed files)",
+      "command": "\"C:\\Program Files\\nodejs\\node.EXE\" \"G:\\LMStudio\\dsh-home\\profiles\\desktop\\node_modules\\dsh-selftest\\lib\\cli.js\" --root \"G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\" --no-persist --quiet",
+      "required": true
+    }
+  ],
+  "claimChecks": [
+    {
+      "id": "selftest",
+      "kind": "command",
+      "title": "selftest passed: G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП (all changed files)",
+      "command": "\"C:\\Program Files\\nodejs\\node.EXE\" \"G:\\LMStudio\\dsh-home\\profiles\\desktop\\node_modules\\dsh-selftest\\lib\\cli.js\" --root \"G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\" --no-persist --quiet",
+      "required": true
+    }
+  ],
+  "artifactPath": null,
+  "artifactError": null,
+  "coverage": {
+    "truncated": false,
+    "depthLimited": false,
+    "skippedTools": 2
+  }
+}

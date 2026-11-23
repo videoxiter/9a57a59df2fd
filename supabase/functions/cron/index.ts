@@ -96,8 +96,12 @@ Deno.serve(async () => {
     // (уволенные, другие отделы) в уведомления не попадают
     const team = new Set((schedDoc.team || []).map((t: any) => String(t.fio || "").trim()));
     const onlyTeam = (fio: string) => (team.size ? team.has(String(fio).trim()) : true);
-    const month = (sched.months || {})[monthKey];
-    if (!month) return json({ ok: true, today, note: "нет графика на месяц" });
+    // ВАЖНО: отсутствие графика за месяц не отключает уведомления о событиях —
+    // «перерыв начался/закончился» и т.п. должны доходить в любой месяц.
+    // Раньше здесь был return до скана событий: месяц без графика в docs
+    // (например, декабрь, пока в Confluence нет новых смен) молчал полностью,
+    // пока дашборд не зеркалил график в otp_schedule_cache.
+    const month = (sched.months || {})[monthKey] || {};
 
     const events = await sb(`otp_time_events?select=*&day=eq.${today}&order=at.asc`) || [];
     const sent = new Set((await sb(`otp_time_notices?select=id&day=eq.${today}`) || []).map((n: any) => n.id));

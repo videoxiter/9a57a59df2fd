@@ -1,0 +1,522 @@
+{
+  "generatedAt": "2026-11-23 12:28:21",
+  "workspace": {
+    "id": "b539ffcf-4bd3-47f6-86fe-9612f12dc6c5",
+    "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП",
+    "title": "Сайт ОТП"
+  },
+  "dshHome": "G:\\LMStudio\\dsh-home",
+  "dshVersion": null,
+  "profile": {
+    "profileDir": "G:\\LMStudio\\dsh-home\\profiles\\desktop",
+    "bundles": [
+      "@deepseek-ai/dsh-base",
+      "@deepseek-ai/dsh-web-app",
+      "@deepseek-ai/dsh-experimental-plugin-market-bundle",
+      "@deepseek-ai/dsh-experimental-session-titles-bundle",
+      "@deepseek-ai/dsh-experimental-badge-skill-bundle",
+      "@deepseek-ai/dsh-experimental-auto-review",
+      "@deepseek-ai/dsh-deepseek-chat-import",
+      "@deepseek-ai/dsh-experimental-session-search",
+      "@deepseek-ai/dsh-experimental-inspector-profile",
+      "@deepseek-ai/dsh-experimental-ralph-bundle",
+      "dotnet-skills",
+      "@chtholly-fan/dsh-cpp-optimization",
+      "dsh-ffmpeg",
+      "dsh-univer-office",
+      "@jonahwu/dsh-bg-carousel",
+      "dsh-mermaid-plus",
+      "dsh-sidebar-plantuml",
+      "dsh-typst",
+      "dsh-remotion",
+      "dsh-image-gen",
+      "dsh-python-env",
+      "dsh-test-autofix",
+      "dsh-selftest",
+      "dsh-drawio-chat",
+      "dsh-builtin-browser",
+      "dsh-genui",
+      "@goodandready/dsh-russian-lang",
+      "dsh-pdf2md",
+      "dsh-plugin-insight-charts",
+      "dsh-laocai-editing",
+      "dsh-skill-security-review",
+      "dsh-papercut",
+      "dsh-video-studio",
+      "dsh-scan2md",
+      "dsh-web-artifact-designer",
+      "dsh-primer",
+      "dsh-squares"
+    ],
+    "dependencies": {
+      "@chtholly-fan/dsh-cpp-optimization": "1.1.0",
+      "@goodandready/dsh-russian-lang": "0.4.30",
+      "@jonahwu/dsh-bg-carousel": "0.3.0",
+      "dotnet-skills": "0.2.5",
+      "dsh-builtin-browser": "0.5.8",
+      "dsh-drawio-chat": "0.4.0",
+      "dsh-ffmpeg": "0.7.7",
+      "dsh-genui": "0.3.3",
+      "dsh-image-gen": "0.11.3",
+      "dsh-laocai-editing": "0.1.2",
+      "dsh-mermaid-plus": "0.6.1",
+      "dsh-papercut": "0.1.3",
+      "dsh-pdf2md": "0.1.2",
+      "dsh-plugin-insight-charts": "0.1.0",
+      "dsh-primer": "0.4.7",
+      "dsh-python-env": "0.1.2",
+      "dsh-remotion": "0.10.7",
+      "dsh-scan2md": "0.1.1",
+      "dsh-selftest": "0.3.4",
+      "dsh-sidebar-plantuml": "0.1.0",
+      "dsh-skill-security-review": "0.1.0",
+      "dsh-squares": "0.1.0",
+      "dsh-stand": "link:G:/LMStudio/dsh-workspace/Main/plugins/dsh-stand",
+      "dsh-stand-themes": "link:G:/LMStudio/dsh-workspace/Main/plugins/dsh-stand-themes",
+      "dsh-test-autofix": "0.1.3",
+      "dsh-typst": "0.1.0",
+      "dsh-univer-office": "0.4.0",
+      "dsh-video-studio": "0.4.3",
+      "dsh-web-artifact-designer": "1.0.0"
+    },
+    "inserts": [
+      {
+        "id": "stand",
+        "name": "dsh-stand"
+      },
+      {
+        "id": "stand-themes",
+        "name": "dsh-stand-themes"
+      },
+      {
+        "id": "mcp-brain",
+        "name": "@deepseek-ai/dsh-mcp-client"
+      }
+    ],
+    "overrides": {
+      "ui-chat": {
+        "disabled": null,
+        "has_config": true,
+        "name": "@deepseek-ai/dsh-client-ui-chat"
+      },
+      "ui-settings": {
+        "disabled": null,
+        "has_config": true,
+        "name": "@deepseek-ai/dsh-client-ui-settings"
+      },
+      "ui-settings-account": {
+        "disabled": null,
+        "has_config": true,
+        "name": "@deepseek-ai/dsh-client-ui-settings-account"
+      },
+      "ui-theme": {
+        "disabled": null,
+        "has_config": true,
+        "name": "@deepseek-ai/dsh-client-ui-theme"
+      },
+      "permission": {
+        "disabled": null,
+        "has_config": true,
+        "name": "@deepseek-ai/dsh-permission-presets"
+      },
+      "ui-settings-general": {
+        "disabled": null,
+        "has_config": true,
+        "name": "@deepseek-ai/dsh-client-ui-settings-general"
+      },
+      "llm-pi-ai": {
+        "disabled": null,
+        "has_config": true,
+        "name": "@deepseek-ai/dsh-llm-pi-ai"
+      },
+      "tool-fs": {
+        "disabled": false,
+        "has_config": false,
+        "name": null
+      },
+      "tool-fs-search": {
+        "disabled": false,
+        "has_config": false,
+        "name": null
+      },
+      "fs-observation-policy": {
+        "disabled": false,
+        "has_config": false,
+        "name": null
+      },
+      "tool-pwsh": {
+        "disabled": false,
+        "has_config": false,
+        "name": null
+      },
+      "bash-sandbox": {
+        "disabled": true,
+        "has_config": false,
+        "name": null
+      },
+      "tool-jobs": {
+        "disabled": false,
+        "has_config": false,
+        "name": null
+      },
+      "tool-todo": {
+        "disabled": false,
+        "has_config": false,
+        "name": null
+      },
+      "tool-web": {
+        "disabled": false,
+        "has_config": false,
+        "name": null
+      },
+      "tool-plugin-manager": {
+        "disabled": false,
+        "has_config": false,
+        "name": null
+      },
+      "tool-skill": {
+        "disabled": false,
+        "has_config": false,
+        "name": null
+      },
+      "skill-filesystem": {
+        "disabled": false,
+        "has_config": false,
+        "name": null
+      },
+      "agent-instructions": {
+        "disabled": false,
+        "has_config": false,
+        "name": null
+      },
+      "command-goal": {
+        "disabled": false,
+        "has_config": false,
+        "name": null
+      },
+      "plan-mode": {
+        "disabled": false,
+        "has_config": false,
+        "name": null
+      },
+      "tool-goal": {
+        "disabled": false,
+        "has_config": false,
+        "name": null
+      },
+      "compaction-basic": {
+        "disabled": false,
+        "has_config": false,
+        "name": null
+      },
+      "command-compact": {
+        "disabled": false,
+        "has_config": false,
+        "name": null
+      },
+      "tool-result-pruner": {
+        "disabled": false,
+        "has_config": false,
+        "name": null
+      },
+      "tool-subagent-control": {
+        "disabled": false,
+        "has_config": false,
+        "name": null
+      },
+      "workflow-ptc": {
+        "disabled": false,
+        "has_config": false,
+        "name": null
+      },
+      "tool-workflow": {
+        "disabled": false,
+        "has_config": false,
+        "name": null
+      },
+      "tool-subagent": {
+        "disabled": false,
+        "has_config": false,
+        "name": null
+      },
+      "tool-subagent-fork": {
+        "disabled": false,
+        "has_config": false,
+        "name": null
+      },
+      "agent-default-model": {
+        "disabled": null,
+        "has_config": true,
+        "name": "@deepseek-ai/dsh-agent-default-model"
+      },
+      "genui": {
+        "disabled": null,
+        "has_config": true,
+        "name": "dsh-genui"
+      }
+    },
+    "mcpServers": [
+      {
+        "id": "mcp-brain",
+        "serverName": "brain",
+        "transport": "stdio",
+        "command": "C:\\Python313\\python.exe",
+        "args": [
+          "G:\\LMStudio\\dsh-workspace\\Main\\memory\\brain\\server.py"
+        ]
+      }
+    ],
+    "standConfig": {},
+    "patchPath": "G:\\LMStudio\\dsh-home\\profiles\\desktop\\cordis.patch.yml",
+    "packagePath": "G:\\LMStudio\\dsh-home\\profiles\\desktop\\package.json"
+  },
+  "secrets": {
+    "registry": null,
+    "envFile": null,
+    "credentialsStore": "G:\\LMStudio\\dsh-home\\.credentials.yaml",
+    "refs": [],
+    "variables": [],
+    "counts": {
+      "refs": 0,
+      "variables": 0
+    }
+  },
+  "brain": {
+    "db": "G:\\LMStudio\\dsh-home\\memory\\brain.db",
+    "bytes": 267685888,
+    "scopes": {
+      "decisions": 86,
+      "notes": 2,
+      "projects": 1983,
+      "sessions": 1561,
+      "skills": 22179
+    }
+  },
+  "backups": [],
+  "sessions": [
+    {
+      "id": "session-0a838f9f-ff7f-4f8e-8566-398f9c1fadc7",
+      "title": "Проанализируй проект.",
+      "turns": 12,
+      "lastPrompt": "1. Сама кнопка жёлтой не становилась на сколько-т…",
+      "cwd": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП",
+      "tokens": {
+        "uncachedInput": 1426864,
+        "cacheRead": 17979200,
+        "output": 336070
+      },
+      "model": "llmux/Qwen3.8-27B",
+      "preset": "standard",
+      "logBytes": 2475224,
+      "logUpdated": "2026-11-23 12:28",
+      "logDir": "G:\\LMStudio\\dsh-home\\sessions\\--G-LMStudio-VSCode-Projects-~0421~0430~0439~0442~0020~041E~0422~041F--\\session-0a838f9f-ff7f-4f8e-8566-398f9c1fadc7"
+    },
+    {
+      "id": "session-f8579263-6d67-46bb-81f7-8f3414c6c933",
+      "title": "Анализ проекта",
+      "turns": 1,
+      "lastPrompt": "Проанализируй проект",
+      "cwd": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП",
+      "tokens": {
+        "uncachedInput": 0,
+        "cacheRead": 0,
+        "output": 0
+      },
+      "model": "groq/openai/gpt-oss-120b",
+      "preset": "minimal",
+      "logBytes": 86727,
+      "logUpdated": "2026-11-20 12:10",
+      "logDir": "G:\\LMStudio\\dsh-home\\sessions\\--G-LMStudio-VSCode-Projects-~0421~0430~0439~0442~0020~041E~0422~041F--\\session-f8579263-6d67-46bb-81f7-8f3414c6c933"
+    },
+    {
+      "id": "session-6d520141-21c9-4bfe-99ed-cd2040563597",
+      "title": "Анализ проекта",
+      "turns": 1,
+      "lastPrompt": "Проанализируй проект.",
+      "cwd": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП",
+      "tokens": {
+        "uncachedInput": 0,
+        "cacheRead": 0,
+        "output": 0
+      },
+      "model": "groq/openai/gpt-oss-120b",
+      "preset": "standard",
+      "logBytes": 46687,
+      "logUpdated": "2026-11-20 00:23",
+      "logDir": "G:\\LMStudio\\dsh-home\\sessions\\--G-LMStudio-VSCode-Projects-~0421~0430~0439~0442~0020~041E~0422~041F--\\session-6d520141-21c9-4bfe-99ed-cd2040563597"
+    },
+    {
+      "id": "session-1fbd45a7-5c9b-467a-8e0b-eef3ef42dbea",
+      "title": "Проанализируй проект.",
+      "turns": 12,
+      "lastPrompt": "Что я просил сделать?",
+      "cwd": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП",
+      "tokens": {
+        "uncachedInput": 3156154,
+        "cacheRead": 0,
+        "output": 9789
+      },
+      "model": "lmstudio/qwen3.5-9b",
+      "preset": "standard",
+      "logBytes": 337620,
+      "logUpdated": "2026-11-19 16:37",
+      "logDir": "G:\\LMStudio\\dsh-home\\sessions\\--G-LMStudio-VSCode-Projects-~0421~0430~0439~0442~0020~041E~0422~041F--\\session-1fbd45a7-5c9b-467a-8e0b-eef3ef42dbea"
+    }
+  ],
+  "skills": {
+    "total": 148,
+    "bySource": {
+      "user-agents": 148
+    },
+    "names": [
+      "agent-introspection-debugging",
+      "agent-self-evaluation",
+      "agent-sort",
+      "ai-regression-testing",
+      "architecture-decision-records",
+      "browser-qa",
+      "canvas-design",
+      "ck",
+      "click-path-audit",
+      "code-tour",
+      "codebase-onboarding",
+      "codehealth-mcp",
+      "config-gc",
+      "configure-ecc",
+      "context-budget",
+      "continuous-learning",
+      "continuous-learning-v2",
+      "council",
+      "council-multi-model",
+      "delivery-gate",
+      "design-taste-frontend",
+      "dev-team",
+      "diploma-antiplag",
+      "diploma-defense",
+      "diploma-format",
+      "dubbing",
+      "e2e-testing",
+      "ecc-guide",
+      "ecc-recipes",
+      "edge-tts",
+      "error-handling",
+      "eval-harness",
+      "ffmpeg-skill",
+      "figma",
+      "frontend-design",
+      "git-workflow",
+      "growth-log",
+      "hookify-rules",
+      "hyperframes",
+      "hyperframes-cli",
+      "hyperframes-registry",
+      "inherit-legacy-style",
+      "intent-driven-development",
+      "iterative-retrieval",
+      "living-docs-governance",
+      "loop-design-check",
+      "media-use",
+      "music",
+      "plan-canvas",
+      "plankton-code-quality",
+      "product-lens",
+      "production-audit",
+      "remotion-best-practices",
+      "remotion-captions",
+      "remotion-create",
+      "remotion-docs",
+      "remotion-interactivity",
+      "remotion-maps",
+      "remotion-markup",
+      "remotion-multimedia",
+      "remotion-render",
+      "remotion-saas",
+      "remotion-studio",
+      "remotion-to-hyperframes",
+      "remotion-upgrade",
+      "repo-scan",
+      "rules-distill",
+      "russian-voiceover",
+      "santa-method",
+      "setup-api-key",
+      "skill-comply",
+      "skill-scout",
+      "skill-stocktake",
+      "slideshow",
+      "slidev",
+      "sound-effects",
+      "source-command-aside",
+      "source-command-auto-update",
+      "source-command-build-fix",
+      "source-command-cost-report",
+      "source-command-cpp-build",
+      "source-command-cpp-review",
+      "source-command-cpp-test",
+      "source-command-ecc-guide",
+      "source-command-epic-claim",
+      "source-command-epic-decompose",
+      "source-command-epic-publish",
+      "source-command-epic-review",
+      "source-command-epic-sync",
+      "source-command-epic-unblock",
+      "source-command-epic-validate",
+      "source-command-evolve",
+      "source-command-fastapi-review",
+      "source-command-feature-dev",
+      "source-command-flutter-build",
+      "source-command-flutter-review",
+      "source-command-flutter-test",
+      "source-command-go-build",
+      "source-command-go-review",
+      "source-command-gradle-build",
+      "source-command-hookify",
+      "source-command-hookify-configure",
+      "source-command-hookify-help",
+      "source-command-hookify-list",
+      "source-command-instinct-export",
+      "source-command-instinct-import",
+      "source-command-instinct-status",
+      "source-command-jira",
+      "source-command-kotlin-build",
+      "source-command-kotlin-test",
+      "source-command-learn",
+      "source-command-learn-eval",
+      "source-command-marketing-campaign",
+      "source-command-plan",
+      "source-command-plan-canvas",
+      "source-command-project-init",
+      "source-command-projects",
+      "source-command-promote",
+      "source-command-prune",
+      "source-command-python-review",
+      "source-command-react-test",
+      "source-command-refactor-clean",
+      "source-command-resume-session",
+      "source-command-review-pr",
+      "source-command-rust-build",
+      "source-command-rust-review",
+      "source-command-save-session",
+      "source-command-setup-pm",
+      "source-command-skill-create",
+      "source-command-skill-health",
+      "source-command-test-coverage",
+      "source-command-update-codemaps",
+      "source-command-update-docs",
+      "source-command-vue-review",
+      "speech-to-text",
+      "strategic-compact",
+      "subtitle-skill",
+      "tdd-workflow",
+      "text-to-speech",
+      "theme-factory",
+      "transcription-skill",
+      "unified-memory",
+      "verification-before-completion",
+      "verification-loop",
+      "video-use",
+      "voice-changer",
+      "voice-isolator",
+      "windows-desktop-e2e"
+    ]
+  }
+}

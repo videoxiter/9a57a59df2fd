@@ -2002,10 +2002,11 @@ function robotMenuHtml() {
       const pend = stLocal().length;
       if (__stPend > 0 || pend > 0) {
         const last = +localStorage.getItem("otp_time_last_sync") || 0;
+        const hhmm = (t) => new Date(t).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
         el.hidden = false;
         el.innerHTML = `<i class="ph-bold ph-cloud-arrow-up"></i> <span>
-          ${__stPend > 0 || pend > 0 ? `события в пути — не отправлено: ${__stPend + pend}` : ""}
-          ${last ? ` · ${last < Date.now() ? "синхронизировано " : ""}${new Date(last).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} назад` : "синхронизация ещё не была"}</span>`;
+          события в пути — не отправлено: ${__stPend + pend}
+          ${last ? ` · синхронизировано в ${hhmm(last)}` : " · синхронизация ещё не была"}</span>`;
         return;
       }
       const last = +localStorage.getItem("otp_time_last_sync") || 0;
@@ -2026,8 +2027,16 @@ function robotMenuHtml() {
     const n = method === "POST" ? (Array.isArray(body) ? body.length : 1) : 0;
     if (n) stPendingInc();
     return A.api(slug, path, method, body)
-      .then((r) => { if (method === "POST") try { localStorage.setItem("otp_time_last_sync", String(Date.now())); } catch (e) {} renderStOutbox(); return r; })
-      .catch((e) => { stPendingDec(n); throw e; });
+      .then((r) => {
+        // успех: счётчик «в пути» снимаем ровно на то число, что приросло,
+        // иначе «события в пути» висит навсегда (был баг: dec только в catch).
+        // if (n): только для POST (n=0) — иначе каждый GET уводит счётчик вниз.
+        if (n) stPendingDec(n);
+        if (method === "POST") try { localStorage.setItem("otp_time_last_sync", String(Date.now())); } catch (e) {}
+        renderStOutbox();
+        return r;
+      })
+      .catch((e) => { if (n) stPendingDec(n); throw e; });
   }
   const stLocal = () => { try { return JSON.parse(localStorage.getItem(ST_KEY) || "[]"); } catch (e) { return []; } };
   const stLocalSave = (list) => { try { localStorage.setItem(ST_KEY, JSON.stringify(list)); } catch (e) {} };
@@ -2791,7 +2800,7 @@ function robotMenuHtml() {
           return `<div class="st-ev-row" data-evid="${escHtml(e.id)}">
             <span class="st-ev-type">${escHtml(ST_EV_NAME[e.type] || e.type)}${e.slot && e.slot !== "break" ? " · " + escHtml(ST_SLOT_TITLE[e.slot] || e.slot) : ""}</span>
             <span class="st-ev-reason">${escHtml(e.reason || "")}</span>
-            <input type="time" class="st-ev-time" step="1" value="${pad2(Math.floor(ms / 60000))}:${pad2(Math.floor((ms % 3600000) / 60000))}:00">
+            <input type="time" class="st-ev-time" step="1" value="${pad2(Math.floor(ms / 3600000))}:${pad2(Math.floor((ms % 3600000) / 60000))}:${pad2(Math.floor((ms % 60000) / 1000))}">
             <button class="btn btn-ghost st-ev-save" type="button">Сохранить</button>
             <button class="btn btn-ghost st-ev-del" type="button" title="Удалить событие из журнала (например, телефон «нажал сам» в кармане)">✕</button>
           </div>`;
@@ -2830,7 +2839,9 @@ function robotMenuHtml() {
                 if (!m) { evFlash(row, "время не распознано"); return; }
                 const btn = row.querySelector(".st-ev-save");
                 btn.disabled = true;
-                const iso = `${day}T${m[1].padStart(2, "0")}:${m[2].padStart(2, "0")}:${(m[3] || "00").padStart(2, "0")}`;
+                // +03:00 — время в поле это МСК; без зоны БД посчитала бы UTC
+                // и событие сдвинулось бы на 3 часа (14:05 МСК → 17:05).
+                const iso = `${day}T${m[1].padStart(2, "0")}:${m[2].padStart(2, "0")}:${(m[3] || "00").padStart(2, "0")}+03:00`;
                 const r = await A.eventFix(slug, id, iso, false).catch(() => null);
                 btn.disabled = false;
                 if (r && r.ok) { evFlash(row, "✓ сохранено"); show.click(); }

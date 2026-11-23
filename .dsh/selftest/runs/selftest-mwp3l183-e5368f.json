@@ -1,0 +1,1956 @@
+{
+  "runId": "selftest-mwp3l183-e5368f",
+  "root": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП",
+  "mode": "check",
+  "startedAt": "2026-11-20T14:51:58.427Z",
+  "finishedAt": "2026-11-20T14:52:01.039Z",
+  "durationMs": 2611,
+  "sinceMinutes": 10,
+  "files": [
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\1bceb335668c\\index.html",
+      "rel": "1bceb335668c/index.html",
+      "source": "git",
+      "signature": {
+        "size": 9090,
+        "mtimeMs": 1795186276258,
+        "sha": "33948ef2be006365"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\assets\\js\\auth.js",
+      "rel": "assets/js/auth.js",
+      "source": "git",
+      "signature": {
+        "size": 6887,
+        "mtimeMs": 1795186093312,
+        "sha": "0bce7bd9e3611c20"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\assets\\js\\main.js",
+      "rel": "assets/js/main.js",
+      "source": "git",
+      "signature": {
+        "size": 77682,
+        "mtimeMs": 1795186111527,
+        "sha": "b6996fa9447c82df"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\assets\\js\\profile.js",
+      "rel": "assets/js/profile.js",
+      "source": "git",
+      "signature": {
+        "size": 255254,
+        "mtimeMs": 1795186118837,
+        "sha": "f3e6ba8f4b39f858"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\scripts\\generate_dashboard.py",
+      "rel": "scripts/generate_dashboard.py",
+      "source": "git",
+      "signature": {
+        "size": 8897,
+        "mtimeMs": 1795186292864,
+        "sha": "3bcaddb917517b1c"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\scripts\\generate_pages.py",
+      "rel": "scripts/generate_pages.py",
+      "source": "git",
+      "signature": {
+        "size": 11757,
+        "mtimeMs": 1795186292848,
+        "sha": "e8b94d664c3f23e4"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\scripts\\supabase_v4_security.sql",
+      "rel": "scripts/supabase_v4_security.sql",
+      "source": "git",
+      "signature": {
+        "size": 16590,
+        "mtimeMs": 1795186069032,
+        "sha": "f7d69b4b46547cc6"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\supabase\\functions\\api\\index.ts",
+      "rel": "supabase/functions/api/index.ts",
+      "source": "git",
+      "signature": {
+        "size": 4490,
+        "mtimeMs": 1795186207579,
+        "sha": "f431bb0151c457a5"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\supabase\\functions\\notify\\index.ts",
+      "rel": "supabase/functions/notify/index.ts",
+      "source": "git",
+      "signature": {
+        "size": 6389,
+        "mtimeMs": 1795186217214,
+        "sha": "7573cedc2786365f"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\114778baa83f\\awards\\index.html",
+      "rel": "team/114778baa83f/awards/index.html",
+      "source": "git",
+      "signature": {
+        "size": 511985,
+        "mtimeMs": 1795186275599,
+        "sha": "7f3a5b77c324609b"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\114778baa83f\\graph\\index.html",
+      "rel": "team/114778baa83f/graph/index.html",
+      "source": "git",
+      "signature": {
+        "size": 511988,
+        "mtimeMs": 1795186275609,
+        "sha": "64d9fc3c51679ba5"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\114778baa83f\\growth\\index.html",
+      "rel": "team/114778baa83f/growth/index.html",
+      "source": "git",
+      "signature": {
+        "size": 511986,
+        "mtimeMs": 1795186275604,
+        "sha": "443852d4ea026d4d"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\114778baa83f\\hours\\index.html",
+      "rel": "team/114778baa83f/hours/index.html",
+      "source": "git",
+      "signature": {
+        "size": 511992,
+        "mtimeMs": 1795186275630,
+        "sha": "2c5df9cf6b1f3d41"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\114778baa83f\\income\\index.html",
+      "rel": "team/114778baa83f/income/index.html",
+      "source": "git",
+      "signature": {
+        "size": 511996,
+        "mtimeMs": 1795186275618,
+        "sha": "3dd418860ad9f65b"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\114778baa83f\\index.html",
+      "rel": "team/114778baa83f/index.html",
+      "source": "git",
+      "signature": {
+        "size": 511865,
+        "mtimeMs": 1795186275589,
+        "sha": "53c86cae37f229c7"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\114778baa83f\\links\\index.html",
+      "rel": "team/114778baa83f/links/index.html",
+      "source": "git",
+      "signature": {
+        "size": 511981,
+        "mtimeMs": 1795186275635,
+        "sha": "042f6a8f86d8cb0d"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\114778baa83f\\lvl\\index.html",
+      "rel": "team/114778baa83f/lvl/index.html",
+      "source": "git",
+      "signature": {
+        "size": 511975,
+        "mtimeMs": 1795186275594,
+        "sha": "f8777df9f96e079c"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\114778baa83f\\rules\\index.html",
+      "rel": "team/114778baa83f/rules/index.html",
+      "source": "git",
+      "signature": {
+        "size": 511983,
+        "mtimeMs": 1795186275624,
+        "sha": "f40ad4f7e7d76c4b"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\114778baa83f\\settings\\index.html",
+      "rel": "team/114778baa83f/settings/index.html",
+      "source": "git",
+      "signature": {
+        "size": 511993,
+        "mtimeMs": 1795186275640,
+        "sha": "7e3428fc2d43e2f2"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\114778baa83f\\start\\index.html",
+      "rel": "team/114778baa83f/start/index.html",
+      "source": "git",
+      "signature": {
+        "size": 511987,
+        "mtimeMs": 1795186275585,
+        "sha": "78848b739057dc81"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\114778baa83f\\stats\\index.html",
+      "rel": "team/114778baa83f/stats/index.html",
+      "source": "git",
+      "signature": {
+        "size": 511989,
+        "mtimeMs": 1795186275613,
+        "sha": "a4a7b476f75ede93"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\3def188ccc72\\awards\\index.html",
+      "rel": "team/3def188ccc72/awards/index.html",
+      "source": "git",
+      "signature": {
+        "size": 527023,
+        "mtimeMs": 1795186275533,
+        "sha": "34c0214e0a077f96"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\3def188ccc72\\graph\\index.html",
+      "rel": "team/3def188ccc72/graph/index.html",
+      "source": "git",
+      "signature": {
+        "size": 527026,
+        "mtimeMs": 1795186275543,
+        "sha": "a8d44de205e1e577"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\3def188ccc72\\growth\\index.html",
+      "rel": "team/3def188ccc72/growth/index.html",
+      "source": "git",
+      "signature": {
+        "size": 527024,
+        "mtimeMs": 1795186275538,
+        "sha": "56bf53655386caff"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\3def188ccc72\\hours\\index.html",
+      "rel": "team/3def188ccc72/hours/index.html",
+      "source": "git",
+      "signature": {
+        "size": 527030,
+        "mtimeMs": 1795186275563,
+        "sha": "8816715686b877d0"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\3def188ccc72\\income\\index.html",
+      "rel": "team/3def188ccc72/income/index.html",
+      "source": "git",
+      "signature": {
+        "size": 527034,
+        "mtimeMs": 1795186275553,
+        "sha": "3c7fa7bdca3cf151"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\3def188ccc72\\index.html",
+      "rel": "team/3def188ccc72/index.html",
+      "source": "git",
+      "signature": {
+        "size": 526903,
+        "mtimeMs": 1795186275523,
+        "sha": "c2ac9ad8b781316e"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\3def188ccc72\\links\\index.html",
+      "rel": "team/3def188ccc72/links/index.html",
+      "source": "git",
+      "signature": {
+        "size": 527019,
+        "mtimeMs": 1795186275568,
+        "sha": "4c53bc063331c5de"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\3def188ccc72\\lvl\\index.html",
+      "rel": "team/3def188ccc72/lvl/index.html",
+      "source": "git",
+      "signature": {
+        "size": 527013,
+        "mtimeMs": 1795186275528,
+        "sha": "4f210db228a077d7"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\3def188ccc72\\rules\\index.html",
+      "rel": "team/3def188ccc72/rules/index.html",
+      "source": "git",
+      "signature": {
+        "size": 527021,
+        "mtimeMs": 1795186275558,
+        "sha": "6093009ecc81a645"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\3def188ccc72\\settings\\index.html",
+      "rel": "team/3def188ccc72/settings/index.html",
+      "source": "git",
+      "signature": {
+        "size": 527031,
+        "mtimeMs": 1795186275573,
+        "sha": "71bf5292ff2cbbb1"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\3def188ccc72\\start\\index.html",
+      "rel": "team/3def188ccc72/start/index.html",
+      "source": "git",
+      "signature": {
+        "size": 527025,
+        "mtimeMs": 1795186275518,
+        "sha": "396f5cd01151dfd2"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\3def188ccc72\\stats\\index.html",
+      "rel": "team/3def188ccc72/stats/index.html",
+      "source": "git",
+      "signature": {
+        "size": 527027,
+        "mtimeMs": 1795186275548,
+        "sha": "10070f888a4686c0"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\5414335d1bd0\\awards\\index.html",
+      "rel": "team/5414335d1bd0/awards/index.html",
+      "source": "git",
+      "signature": {
+        "size": 534094,
+        "mtimeMs": 1795186275466,
+        "sha": "0301c93cb2541551"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\5414335d1bd0\\graph\\index.html",
+      "rel": "team/5414335d1bd0/graph/index.html",
+      "source": "git",
+      "signature": {
+        "size": 534097,
+        "mtimeMs": 1795186275476,
+        "sha": "eaa4f7bf269c76be"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\5414335d1bd0\\growth\\index.html",
+      "rel": "team/5414335d1bd0/growth/index.html",
+      "source": "git",
+      "signature": {
+        "size": 534095,
+        "mtimeMs": 1795186275471,
+        "sha": "fdc4579400ca513e"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\5414335d1bd0\\hours\\index.html",
+      "rel": "team/5414335d1bd0/hours/index.html",
+      "source": "git",
+      "signature": {
+        "size": 534101,
+        "mtimeMs": 1795186275495,
+        "sha": "9086e583a78be88d"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\5414335d1bd0\\income\\index.html",
+      "rel": "team/5414335d1bd0/income/index.html",
+      "source": "git",
+      "signature": {
+        "size": 534105,
+        "mtimeMs": 1795186275485,
+        "sha": "be48ec7fb979f20f"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\5414335d1bd0\\index.html",
+      "rel": "team/5414335d1bd0/index.html",
+      "source": "git",
+      "signature": {
+        "size": 533974,
+        "mtimeMs": 1795186275456,
+        "sha": "472f5f7c83510b3a"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\5414335d1bd0\\links\\index.html",
+      "rel": "team/5414335d1bd0/links/index.html",
+      "source": "git",
+      "signature": {
+        "size": 534090,
+        "mtimeMs": 1795186275500,
+        "sha": "0ac93d8ea9ff4d98"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\5414335d1bd0\\lvl\\index.html",
+      "rel": "team/5414335d1bd0/lvl/index.html",
+      "source": "git",
+      "signature": {
+        "size": 534084,
+        "mtimeMs": 1795186275461,
+        "sha": "cc7d7f75360ee6b6"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\5414335d1bd0\\rules\\index.html",
+      "rel": "team/5414335d1bd0/rules/index.html",
+      "source": "git",
+      "signature": {
+        "size": 534092,
+        "mtimeMs": 1795186275491,
+        "sha": "1e2e0d88ea40a1e0"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\5414335d1bd0\\settings\\index.html",
+      "rel": "team/5414335d1bd0/settings/index.html",
+      "source": "git",
+      "signature": {
+        "size": 534102,
+        "mtimeMs": 1795186275505,
+        "sha": "b1aa906cb0ca6194"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\5414335d1bd0\\start\\index.html",
+      "rel": "team/5414335d1bd0/start/index.html",
+      "source": "git",
+      "signature": {
+        "size": 534096,
+        "mtimeMs": 1795186275451,
+        "sha": "36088ab30f4de7e9"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\5414335d1bd0\\stats\\index.html",
+      "rel": "team/5414335d1bd0/stats/index.html",
+      "source": "git",
+      "signature": {
+        "size": 534098,
+        "mtimeMs": 1795186275480,
+        "sha": "1e07fed144ea563e"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\8b36020d00c7\\awards\\index.html",
+      "rel": "team/8b36020d00c7/awards/index.html",
+      "source": "git",
+      "signature": {
+        "size": 519300,
+        "mtimeMs": 1795186275958,
+        "sha": "86aac2fcf28bf252"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\8b36020d00c7\\graph\\index.html",
+      "rel": "team/8b36020d00c7/graph/index.html",
+      "source": "git",
+      "signature": {
+        "size": 519303,
+        "mtimeMs": 1795186275968,
+        "sha": "177a67a494c720ed"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\8b36020d00c7\\growth\\index.html",
+      "rel": "team/8b36020d00c7/growth/index.html",
+      "source": "git",
+      "signature": {
+        "size": 519301,
+        "mtimeMs": 1795186275963,
+        "sha": "bcbae5780a462d68"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\8b36020d00c7\\hours\\index.html",
+      "rel": "team/8b36020d00c7/hours/index.html",
+      "source": "git",
+      "signature": {
+        "size": 519307,
+        "mtimeMs": 1795186275987,
+        "sha": "dd5985d41210ac1d"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\8b36020d00c7\\income\\index.html",
+      "rel": "team/8b36020d00c7/income/index.html",
+      "source": "git",
+      "signature": {
+        "size": 519311,
+        "mtimeMs": 1795186275977,
+        "sha": "7b74c00c22deb4c5"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\8b36020d00c7\\index.html",
+      "rel": "team/8b36020d00c7/index.html",
+      "source": "git",
+      "signature": {
+        "size": 519180,
+        "mtimeMs": 1795186275948,
+        "sha": "04eeade7af8f87e2"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\8b36020d00c7\\links\\index.html",
+      "rel": "team/8b36020d00c7/links/index.html",
+      "source": "git",
+      "signature": {
+        "size": 519296,
+        "mtimeMs": 1795186275993,
+        "sha": "5a4029405ded4c82"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\8b36020d00c7\\lvl\\index.html",
+      "rel": "team/8b36020d00c7/lvl/index.html",
+      "source": "git",
+      "signature": {
+        "size": 519290,
+        "mtimeMs": 1795186275953,
+        "sha": "dca1ed8d86ab8601"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\8b36020d00c7\\rules\\index.html",
+      "rel": "team/8b36020d00c7/rules/index.html",
+      "source": "git",
+      "signature": {
+        "size": 519298,
+        "mtimeMs": 1795186275982,
+        "sha": "bd0b40c251eb979a"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\8b36020d00c7\\settings\\index.html",
+      "rel": "team/8b36020d00c7/settings/index.html",
+      "source": "git",
+      "signature": {
+        "size": 519308,
+        "mtimeMs": 1795186275997,
+        "sha": "fa3aa234443c7ada"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\8b36020d00c7\\start\\index.html",
+      "rel": "team/8b36020d00c7/start/index.html",
+      "source": "git",
+      "signature": {
+        "size": 519302,
+        "mtimeMs": 1795186275943,
+        "sha": "e174ff9921051eb3"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\8b36020d00c7\\stats\\index.html",
+      "rel": "team/8b36020d00c7/stats/index.html",
+      "source": "git",
+      "signature": {
+        "size": 519304,
+        "mtimeMs": 1795186275973,
+        "sha": "39e4db87d29aa33d"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\9f4f056f3e64\\awards\\index.html",
+      "rel": "team/9f4f056f3e64/awards/index.html",
+      "source": "git",
+      "signature": {
+        "size": 522011,
+        "mtimeMs": 1795186275667,
+        "sha": "e5713e52afdcd103"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\9f4f056f3e64\\graph\\index.html",
+      "rel": "team/9f4f056f3e64/graph/index.html",
+      "source": "git",
+      "signature": {
+        "size": 522014,
+        "mtimeMs": 1795186275677,
+        "sha": "066f7dec0083871f"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\9f4f056f3e64\\growth\\index.html",
+      "rel": "team/9f4f056f3e64/growth/index.html",
+      "source": "git",
+      "signature": {
+        "size": 522012,
+        "mtimeMs": 1795186275672,
+        "sha": "2bbc9acd5e892e44"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\9f4f056f3e64\\hours\\index.html",
+      "rel": "team/9f4f056f3e64/hours/index.html",
+      "source": "git",
+      "signature": {
+        "size": 522018,
+        "mtimeMs": 1795186275697,
+        "sha": "ddc41579f2c5f4a4"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\9f4f056f3e64\\income\\index.html",
+      "rel": "team/9f4f056f3e64/income/index.html",
+      "source": "git",
+      "signature": {
+        "size": 522022,
+        "mtimeMs": 1795186275686,
+        "sha": "9651524de48fb0e0"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\9f4f056f3e64\\index.html",
+      "rel": "team/9f4f056f3e64/index.html",
+      "source": "git",
+      "signature": {
+        "size": 521891,
+        "mtimeMs": 1795186275657,
+        "sha": "86031adfb7498f08"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\9f4f056f3e64\\links\\index.html",
+      "rel": "team/9f4f056f3e64/links/index.html",
+      "source": "git",
+      "signature": {
+        "size": 522007,
+        "mtimeMs": 1795186275702,
+        "sha": "0a9d2883813ddd10"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\9f4f056f3e64\\lvl\\index.html",
+      "rel": "team/9f4f056f3e64/lvl/index.html",
+      "source": "git",
+      "signature": {
+        "size": 522001,
+        "mtimeMs": 1795186275662,
+        "sha": "b49358afaee9d280"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\9f4f056f3e64\\rules\\index.html",
+      "rel": "team/9f4f056f3e64/rules/index.html",
+      "source": "git",
+      "signature": {
+        "size": 522009,
+        "mtimeMs": 1795186275692,
+        "sha": "d75c034c9e515e37"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\9f4f056f3e64\\settings\\index.html",
+      "rel": "team/9f4f056f3e64/settings/index.html",
+      "source": "git",
+      "signature": {
+        "size": 522019,
+        "mtimeMs": 1795186275707,
+        "sha": "ce7ed21be3a45d91"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\9f4f056f3e64\\start\\index.html",
+      "rel": "team/9f4f056f3e64/start/index.html",
+      "source": "git",
+      "signature": {
+        "size": 522013,
+        "mtimeMs": 1795186275652,
+        "sha": "a053b94a65175502"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\9f4f056f3e64\\stats\\index.html",
+      "rel": "team/9f4f056f3e64/stats/index.html",
+      "source": "git",
+      "signature": {
+        "size": 522015,
+        "mtimeMs": 1795186275682,
+        "sha": "24987a232c7b0256"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\a9cb0e50ea70\\awards\\index.html",
+      "rel": "team/a9cb0e50ea70/awards/index.html",
+      "source": "git",
+      "signature": {
+        "size": 506835,
+        "mtimeMs": 1795186275808,
+        "sha": "0f90977704785a1d"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\a9cb0e50ea70\\graph\\index.html",
+      "rel": "team/a9cb0e50ea70/graph/index.html",
+      "source": "git",
+      "signature": {
+        "size": 506838,
+        "mtimeMs": 1795186275818,
+        "sha": "dc86d54c1ec142ab"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\a9cb0e50ea70\\growth\\index.html",
+      "rel": "team/a9cb0e50ea70/growth/index.html",
+      "source": "git",
+      "signature": {
+        "size": 506836,
+        "mtimeMs": 1795186275813,
+        "sha": "64ec3e4100d2c7f8"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\a9cb0e50ea70\\hours\\index.html",
+      "rel": "team/a9cb0e50ea70/hours/index.html",
+      "source": "git",
+      "signature": {
+        "size": 506842,
+        "mtimeMs": 1795186275838,
+        "sha": "5dade5b8413cb4a9"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\a9cb0e50ea70\\income\\index.html",
+      "rel": "team/a9cb0e50ea70/income/index.html",
+      "source": "git",
+      "signature": {
+        "size": 506846,
+        "mtimeMs": 1795186275828,
+        "sha": "f61dcdb8b0989355"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\a9cb0e50ea70\\index.html",
+      "rel": "team/a9cb0e50ea70/index.html",
+      "source": "git",
+      "signature": {
+        "size": 506715,
+        "mtimeMs": 1795186275797,
+        "sha": "f4e1015c05c98cfe"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\a9cb0e50ea70\\links\\index.html",
+      "rel": "team/a9cb0e50ea70/links/index.html",
+      "source": "git",
+      "signature": {
+        "size": 506831,
+        "mtimeMs": 1795186275843,
+        "sha": "f62b5f3be8bd2d52"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\a9cb0e50ea70\\lvl\\index.html",
+      "rel": "team/a9cb0e50ea70/lvl/index.html",
+      "source": "git",
+      "signature": {
+        "size": 506825,
+        "mtimeMs": 1795186275803,
+        "sha": "5c325334e9762532"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\a9cb0e50ea70\\rules\\index.html",
+      "rel": "team/a9cb0e50ea70/rules/index.html",
+      "source": "git",
+      "signature": {
+        "size": 506833,
+        "mtimeMs": 1795186275833,
+        "sha": "8692a937a5ffda07"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\a9cb0e50ea70\\settings\\index.html",
+      "rel": "team/a9cb0e50ea70/settings/index.html",
+      "source": "git",
+      "signature": {
+        "size": 506843,
+        "mtimeMs": 1795186275847,
+        "sha": "d847e4163ce51595"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\a9cb0e50ea70\\start\\index.html",
+      "rel": "team/a9cb0e50ea70/start/index.html",
+      "source": "git",
+      "signature": {
+        "size": 506837,
+        "mtimeMs": 1795186275793,
+        "sha": "1a77f4f69ee4dbf8"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\a9cb0e50ea70\\stats\\index.html",
+      "rel": "team/a9cb0e50ea70/stats/index.html",
+      "source": "git",
+      "signature": {
+        "size": 506839,
+        "mtimeMs": 1795186275823,
+        "sha": "92d5a6c54b0cc854"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\d2b44b366961\\awards\\index.html",
+      "rel": "team/d2b44b366961/awards/index.html",
+      "source": "git",
+      "signature": {
+        "size": 523369,
+        "mtimeMs": 1795186276025,
+        "sha": "51cee2ffb9133126"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\d2b44b366961\\graph\\index.html",
+      "rel": "team/d2b44b366961/graph/index.html",
+      "source": "git",
+      "signature": {
+        "size": 523372,
+        "mtimeMs": 1795186276035,
+        "sha": "c5bf1a87accd5c2c"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\d2b44b366961\\growth\\index.html",
+      "rel": "team/d2b44b366961/growth/index.html",
+      "source": "git",
+      "signature": {
+        "size": 523370,
+        "mtimeMs": 1795186276030,
+        "sha": "a5aabc85b2f61f61"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\d2b44b366961\\hours\\index.html",
+      "rel": "team/d2b44b366961/hours/index.html",
+      "source": "git",
+      "signature": {
+        "size": 523376,
+        "mtimeMs": 1795186276056,
+        "sha": "149a64ba920fc529"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\d2b44b366961\\income\\index.html",
+      "rel": "team/d2b44b366961/income/index.html",
+      "source": "git",
+      "signature": {
+        "size": 523380,
+        "mtimeMs": 1795186276046,
+        "sha": "ecf48035d6adce94"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\d2b44b366961\\index.html",
+      "rel": "team/d2b44b366961/index.html",
+      "source": "git",
+      "signature": {
+        "size": 523249,
+        "mtimeMs": 1795186276015,
+        "sha": "de7c4a01bd01270e"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\d2b44b366961\\links\\index.html",
+      "rel": "team/d2b44b366961/links/index.html",
+      "source": "git",
+      "signature": {
+        "size": 523365,
+        "mtimeMs": 1795186276061,
+        "sha": "9cc3b437355ff903"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\d2b44b366961\\lvl\\index.html",
+      "rel": "team/d2b44b366961/lvl/index.html",
+      "source": "git",
+      "signature": {
+        "size": 523359,
+        "mtimeMs": 1795186276020,
+        "sha": "64128ae4662eba25"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\d2b44b366961\\rules\\index.html",
+      "rel": "team/d2b44b366961/rules/index.html",
+      "source": "git",
+      "signature": {
+        "size": 523367,
+        "mtimeMs": 1795186276051,
+        "sha": "38de10f36d0bf64c"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\d2b44b366961\\settings\\index.html",
+      "rel": "team/d2b44b366961/settings/index.html",
+      "source": "git",
+      "signature": {
+        "size": 523377,
+        "mtimeMs": 1795186276066,
+        "sha": "e995b5f9a4e4af10"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\d2b44b366961\\start\\index.html",
+      "rel": "team/d2b44b366961/start/index.html",
+      "source": "git",
+      "signature": {
+        "size": 523371,
+        "mtimeMs": 1795186276010,
+        "sha": "a54d3acdbac2299f"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\d2b44b366961\\stats\\index.html",
+      "rel": "team/d2b44b366961/stats/index.html",
+      "source": "git",
+      "signature": {
+        "size": 523373,
+        "mtimeMs": 1795186276041,
+        "sha": "04e676bc188895bc"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\e5d35a6fc921\\awards\\index.html",
+      "rel": "team/e5d35a6fc921/awards/index.html",
+      "source": "git",
+      "signature": {
+        "size": 546316,
+        "mtimeMs": 1795186275880,
+        "sha": "ec75ede8a6a0ab8d"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\e5d35a6fc921\\graph\\index.html",
+      "rel": "team/e5d35a6fc921/graph/index.html",
+      "source": "git",
+      "signature": {
+        "size": 546319,
+        "mtimeMs": 1795186275891,
+        "sha": "3100902286fb1885"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\e5d35a6fc921\\growth\\index.html",
+      "rel": "team/e5d35a6fc921/growth/index.html",
+      "source": "git",
+      "signature": {
+        "size": 546317,
+        "mtimeMs": 1795186275886,
+        "sha": "7dd93998e40f2014"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\e5d35a6fc921\\hours\\index.html",
+      "rel": "team/e5d35a6fc921/hours/index.html",
+      "source": "git",
+      "signature": {
+        "size": 546323,
+        "mtimeMs": 1795186275916,
+        "sha": "d95456566ee89fd7"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\e5d35a6fc921\\income\\index.html",
+      "rel": "team/e5d35a6fc921/income/index.html",
+      "source": "git",
+      "signature": {
+        "size": 546327,
+        "mtimeMs": 1795186275903,
+        "sha": "473c04cb7b632e30"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\e5d35a6fc921\\index.html",
+      "rel": "team/e5d35a6fc921/index.html",
+      "source": "git",
+      "signature": {
+        "size": 546196,
+        "mtimeMs": 1795186275868,
+        "sha": "e7151fae06e418aa"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\e5d35a6fc921\\links\\index.html",
+      "rel": "team/e5d35a6fc921/links/index.html",
+      "source": "git",
+      "signature": {
+        "size": 546312,
+        "mtimeMs": 1795186275922,
+        "sha": "abdfda668ac0549e"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\e5d35a6fc921\\lvl\\index.html",
+      "rel": "team/e5d35a6fc921/lvl/index.html",
+      "source": "git",
+      "signature": {
+        "size": 546306,
+        "mtimeMs": 1795186275874,
+        "sha": "3b3efc4717008e21"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\e5d35a6fc921\\rules\\index.html",
+      "rel": "team/e5d35a6fc921/rules/index.html",
+      "source": "git",
+      "signature": {
+        "size": 546314,
+        "mtimeMs": 1795186275909,
+        "sha": "7ab7fbe3f9ca537d"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\e5d35a6fc921\\settings\\index.html",
+      "rel": "team/e5d35a6fc921/settings/index.html",
+      "source": "git",
+      "signature": {
+        "size": 546324,
+        "mtimeMs": 1795186275928,
+        "sha": "64eaf20b8baf0a6a"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\e5d35a6fc921\\start\\index.html",
+      "rel": "team/e5d35a6fc921/start/index.html",
+      "source": "git",
+      "signature": {
+        "size": 546318,
+        "mtimeMs": 1795186275861,
+        "sha": "d24b8905d4994fb5"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\e5d35a6fc921\\stats\\index.html",
+      "rel": "team/e5d35a6fc921/stats/index.html",
+      "source": "git",
+      "signature": {
+        "size": 546320,
+        "mtimeMs": 1795186275897,
+        "sha": "7666089ae999c88f"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\f20f3afe5d45\\awards\\index.html",
+      "rel": "team/f20f3afe5d45/awards/index.html",
+      "source": "git",
+      "signature": {
+        "size": 519365,
+        "mtimeMs": 1795186275737,
+        "sha": "54f88276b9726716"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\f20f3afe5d45\\graph\\index.html",
+      "rel": "team/f20f3afe5d45/graph/index.html",
+      "source": "git",
+      "signature": {
+        "size": 519368,
+        "mtimeMs": 1795186275747,
+        "sha": "c7a0fabf82d2c210"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\f20f3afe5d45\\growth\\index.html",
+      "rel": "team/f20f3afe5d45/growth/index.html",
+      "source": "git",
+      "signature": {
+        "size": 519366,
+        "mtimeMs": 1795186275742,
+        "sha": "fd6f405b64a0cf74"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\f20f3afe5d45\\hours\\index.html",
+      "rel": "team/f20f3afe5d45/hours/index.html",
+      "source": "git",
+      "signature": {
+        "size": 519372,
+        "mtimeMs": 1795186275769,
+        "sha": "2b1bec853a5eb645"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\f20f3afe5d45\\income\\index.html",
+      "rel": "team/f20f3afe5d45/income/index.html",
+      "source": "git",
+      "signature": {
+        "size": 519376,
+        "mtimeMs": 1795186275758,
+        "sha": "d323a6f2b788d37b"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\f20f3afe5d45\\index.html",
+      "rel": "team/f20f3afe5d45/index.html",
+      "source": "git",
+      "signature": {
+        "size": 519245,
+        "mtimeMs": 1795186275727,
+        "sha": "1d1a99ccd8fe4add"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\f20f3afe5d45\\links\\index.html",
+      "rel": "team/f20f3afe5d45/links/index.html",
+      "source": "git",
+      "signature": {
+        "size": 519361,
+        "mtimeMs": 1795186275775,
+        "sha": "3067273c9f72880b"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\f20f3afe5d45\\lvl\\index.html",
+      "rel": "team/f20f3afe5d45/lvl/index.html",
+      "source": "git",
+      "signature": {
+        "size": 519355,
+        "mtimeMs": 1795186275732,
+        "sha": "472bc065c79b8659"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\f20f3afe5d45\\rules\\index.html",
+      "rel": "team/f20f3afe5d45/rules/index.html",
+      "source": "git",
+      "signature": {
+        "size": 519363,
+        "mtimeMs": 1795186275764,
+        "sha": "7ad00a517f705102"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\f20f3afe5d45\\settings\\index.html",
+      "rel": "team/f20f3afe5d45/settings/index.html",
+      "source": "git",
+      "signature": {
+        "size": 519373,
+        "mtimeMs": 1795186275780,
+        "sha": "e0c575f07304cff8"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\f20f3afe5d45\\start\\index.html",
+      "rel": "team/f20f3afe5d45/start/index.html",
+      "source": "git",
+      "signature": {
+        "size": 519367,
+        "mtimeMs": 1795186275722,
+        "sha": "cd5b03516edb1f8d"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\f20f3afe5d45\\stats\\index.html",
+      "rel": "team/f20f3afe5d45/stats/index.html",
+      "source": "git",
+      "signature": {
+        "size": 519369,
+        "mtimeMs": 1795186275753,
+        "sha": "16726459da9f2ce5"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\f3da30046c28\\awards\\index.html",
+      "rel": "team/f3da30046c28/awards/index.html",
+      "source": "git",
+      "signature": {
+        "size": 437200,
+        "mtimeMs": 1795186276089,
+        "sha": "2a0e631e294f2285"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\f3da30046c28\\graph\\index.html",
+      "rel": "team/f3da30046c28/graph/index.html",
+      "source": "git",
+      "signature": {
+        "size": 437203,
+        "mtimeMs": 1795186276097,
+        "sha": "9206d35fcc3c79ca"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\f3da30046c28\\growth\\index.html",
+      "rel": "team/f3da30046c28/growth/index.html",
+      "source": "git",
+      "signature": {
+        "size": 437201,
+        "mtimeMs": 1795186276093,
+        "sha": "2390ea7001bb5c6c"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\f3da30046c28\\hours\\index.html",
+      "rel": "team/f3da30046c28/hours/index.html",
+      "source": "git",
+      "signature": {
+        "size": 437207,
+        "mtimeMs": 1795186276115,
+        "sha": "1ac53281e8733364"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\f3da30046c28\\income\\index.html",
+      "rel": "team/f3da30046c28/income/index.html",
+      "source": "git",
+      "signature": {
+        "size": 437211,
+        "mtimeMs": 1795186276106,
+        "sha": "36ed3df7c46c0139"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\f3da30046c28\\index.html",
+      "rel": "team/f3da30046c28/index.html",
+      "source": "git",
+      "signature": {
+        "size": 437080,
+        "mtimeMs": 1795186276080,
+        "sha": "6badd6d8d4c3d8e2"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\f3da30046c28\\links\\index.html",
+      "rel": "team/f3da30046c28/links/index.html",
+      "source": "git",
+      "signature": {
+        "size": 437196,
+        "mtimeMs": 1795186276119,
+        "sha": "a1edce3b15e562af"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\f3da30046c28\\lvl\\index.html",
+      "rel": "team/f3da30046c28/lvl/index.html",
+      "source": "git",
+      "signature": {
+        "size": 437190,
+        "mtimeMs": 1795186276084,
+        "sha": "322a742d39cbd4a2"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\f3da30046c28\\rules\\index.html",
+      "rel": "team/f3da30046c28/rules/index.html",
+      "source": "git",
+      "signature": {
+        "size": 437198,
+        "mtimeMs": 1795186276111,
+        "sha": "aa8800d3dd8b6367"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\f3da30046c28\\settings\\index.html",
+      "rel": "team/f3da30046c28/settings/index.html",
+      "source": "git",
+      "signature": {
+        "size": 437208,
+        "mtimeMs": 1795186276124,
+        "sha": "bca50aec7e1b0b12"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\f3da30046c28\\start\\index.html",
+      "rel": "team/f3da30046c28/start/index.html",
+      "source": "git",
+      "signature": {
+        "size": 437202,
+        "mtimeMs": 1795186276076,
+        "sha": "550a15dfa3be736f"
+      }
+    },
+    {
+      "path": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\team\\f3da30046c28\\stats\\index.html",
+      "rel": "team/f3da30046c28/stats/index.html",
+      "source": "git",
+      "signature": {
+        "size": 437204,
+        "mtimeMs": 1795186276102,
+        "sha": "4d3af8ee453eecfd"
+      }
+    }
+  ],
+  "sources": {
+    "gitAvailable": true,
+    "gitError": null,
+    "scanned": 996,
+    "truncated": false,
+    "depthLimited": false
+  },
+  "skipped": [
+    {
+      "file": "1bceb335668c/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "scripts/supabase_v4_security.sql",
+      "reason": "Unknown extension .sql"
+    },
+    {
+      "file": "team/114778baa83f/awards/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/114778baa83f/graph/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/114778baa83f/growth/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/114778baa83f/hours/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/114778baa83f/income/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/114778baa83f/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/114778baa83f/links/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/114778baa83f/lvl/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/114778baa83f/rules/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/114778baa83f/settings/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/114778baa83f/start/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/114778baa83f/stats/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/3def188ccc72/awards/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/3def188ccc72/graph/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/3def188ccc72/growth/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/3def188ccc72/hours/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/3def188ccc72/income/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/3def188ccc72/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/3def188ccc72/links/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/3def188ccc72/lvl/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/3def188ccc72/rules/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/3def188ccc72/settings/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/3def188ccc72/start/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/3def188ccc72/stats/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/5414335d1bd0/awards/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/5414335d1bd0/graph/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/5414335d1bd0/growth/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/5414335d1bd0/hours/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/5414335d1bd0/income/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/5414335d1bd0/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/5414335d1bd0/links/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/5414335d1bd0/lvl/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/5414335d1bd0/rules/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/5414335d1bd0/settings/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/5414335d1bd0/start/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/5414335d1bd0/stats/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/8b36020d00c7/awards/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/8b36020d00c7/graph/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/8b36020d00c7/growth/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/8b36020d00c7/hours/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/8b36020d00c7/income/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/8b36020d00c7/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/8b36020d00c7/links/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/8b36020d00c7/lvl/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/8b36020d00c7/rules/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/8b36020d00c7/settings/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/8b36020d00c7/start/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/8b36020d00c7/stats/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/9f4f056f3e64/awards/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/9f4f056f3e64/graph/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/9f4f056f3e64/growth/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/9f4f056f3e64/hours/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/9f4f056f3e64/income/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/9f4f056f3e64/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/9f4f056f3e64/links/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/9f4f056f3e64/lvl/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/9f4f056f3e64/rules/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/9f4f056f3e64/settings/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/9f4f056f3e64/start/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/9f4f056f3e64/stats/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/a9cb0e50ea70/awards/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/a9cb0e50ea70/graph/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/a9cb0e50ea70/growth/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/a9cb0e50ea70/hours/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/a9cb0e50ea70/income/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/a9cb0e50ea70/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/a9cb0e50ea70/links/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/a9cb0e50ea70/lvl/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/a9cb0e50ea70/rules/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/a9cb0e50ea70/settings/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/a9cb0e50ea70/start/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/a9cb0e50ea70/stats/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/d2b44b366961/awards/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/d2b44b366961/graph/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/d2b44b366961/growth/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/d2b44b366961/hours/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/d2b44b366961/income/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/d2b44b366961/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/d2b44b366961/links/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/d2b44b366961/lvl/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/d2b44b366961/rules/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/d2b44b366961/settings/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/d2b44b366961/start/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/d2b44b366961/stats/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/e5d35a6fc921/awards/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/e5d35a6fc921/graph/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/e5d35a6fc921/growth/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/e5d35a6fc921/hours/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/e5d35a6fc921/income/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/e5d35a6fc921/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/e5d35a6fc921/links/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/e5d35a6fc921/lvl/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/e5d35a6fc921/rules/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/e5d35a6fc921/settings/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/e5d35a6fc921/start/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/e5d35a6fc921/stats/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/f20f3afe5d45/awards/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/f20f3afe5d45/graph/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/f20f3afe5d45/growth/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/f20f3afe5d45/hours/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/f20f3afe5d45/income/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/f20f3afe5d45/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/f20f3afe5d45/links/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/f20f3afe5d45/lvl/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/f20f3afe5d45/rules/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/f20f3afe5d45/settings/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/f20f3afe5d45/start/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/f20f3afe5d45/stats/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/f3da30046c28/awards/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/f3da30046c28/graph/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/f3da30046c28/growth/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/f3da30046c28/hours/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/f3da30046c28/income/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/f3da30046c28/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/f3da30046c28/links/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/f3da30046c28/lvl/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/f3da30046c28/rules/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/f3da30046c28/settings/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/f3da30046c28/start/index.html",
+      "reason": "Unknown extension .html"
+    },
+    {
+      "file": "team/f3da30046c28/stats/index.html",
+      "reason": "Unknown extension .html"
+    }
+  ],
+  "missing": [],
+  "groups": {
+    "ps1": 0,
+    "js": 3,
+    "json": 0,
+    "ts": 2,
+    "py": 2,
+    "sh": 0,
+    "yaml": 0,
+    "other": 122
+  },
+  "plannedSteps": [
+    {
+      "id": "js:batch",
+      "kind": "command",
+      "title": "JavaScript syntax + imports (3 files)",
+      "command": "C:\\Program Files\\nodejs\\node.EXE --no-warnings --experimental-vm-modules G:\\LMStudio\\dsh-home\\profiles\\desktop\\node_modules\\dsh-selftest\\lib\\parse-js.mjs -ListFile <temp list file>"
+    },
+    {
+      "id": "ts:g:\\lmstudio\\vscode\\projects\\сайт отп\\supabase\\functions\\api\\index.ts",
+      "kind": "inline",
+      "title": "supabase/functions/api/index.ts",
+      "command": null
+    },
+    {
+      "id": "ts:g:\\lmstudio\\vscode\\projects\\сайт отп\\supabase\\functions\\notify\\index.ts",
+      "kind": "inline",
+      "title": "supabase/functions/notify/index.ts",
+      "command": null
+    },
+    {
+      "id": "py:g:\\lmstudio\\vscode\\projects\\сайт отп\\scripts\\generate_dashboard.py",
+      "kind": "command",
+      "title": "scripts/generate_dashboard.py",
+      "command": "G:\\LMStudio\\dsh-home\\dsh-runtimes\\dsh-primary-runtime\\dependencies\\python\\python.exe -m py_compile G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\scripts\\generate_dashboard.py"
+    },
+    {
+      "id": "py:g:\\lmstudio\\vscode\\projects\\сайт отп\\scripts\\generate_pages.py",
+      "kind": "command",
+      "title": "scripts/generate_pages.py",
+      "command": "G:\\LMStudio\\dsh-home\\dsh-runtimes\\dsh-primary-runtime\\dependencies\\python\\python.exe -m py_compile G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\scripts\\generate_pages.py"
+    }
+  ],
+  "results": [
+    {
+      "id": "js:g:\\lmstudio\\vscode\\projects\\сайт отп\\assets\\js\\auth.js",
+      "title": "assets/js/auth.js",
+      "file": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\assets\\js\\auth.js",
+      "family": "js",
+      "status": "pass",
+      "exitCode": 0,
+      "ms": 1128,
+      "detail": "",
+      "output": ""
+    },
+    {
+      "id": "js:g:\\lmstudio\\vscode\\projects\\сайт отп\\assets\\js\\main.js",
+      "title": "assets/js/main.js",
+      "file": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\assets\\js\\main.js",
+      "family": "js",
+      "status": "pass",
+      "exitCode": 0,
+      "ms": 1128,
+      "detail": "",
+      "output": ""
+    },
+    {
+      "id": "js:g:\\lmstudio\\vscode\\projects\\сайт отп\\assets\\js\\profile.js",
+      "title": "assets/js/profile.js",
+      "file": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\assets\\js\\profile.js",
+      "family": "js",
+      "status": "pass",
+      "exitCode": 0,
+      "ms": 1128,
+      "detail": "",
+      "output": ""
+    },
+    {
+      "id": "ts:g:\\lmstudio\\vscode\\projects\\сайт отп\\supabase\\functions\\api\\index.ts",
+      "title": "supabase/functions/api/index.ts",
+      "file": null,
+      "family": "check",
+      "status": "skip",
+      "exitCode": null,
+      "ms": 0,
+      "detail": "No TypeScript compiler configured (cfg.tsc is empty)",
+      "output": "No TypeScript compiler configured (cfg.tsc is empty)",
+      "timedOut": false
+    },
+    {
+      "id": "ts:g:\\lmstudio\\vscode\\projects\\сайт отп\\supabase\\functions\\notify\\index.ts",
+      "title": "supabase/functions/notify/index.ts",
+      "file": null,
+      "family": "check",
+      "status": "skip",
+      "exitCode": null,
+      "ms": 0,
+      "detail": "No TypeScript compiler configured (cfg.tsc is empty)",
+      "output": "No TypeScript compiler configured (cfg.tsc is empty)",
+      "timedOut": false
+    },
+    {
+      "id": "py:g:\\lmstudio\\vscode\\projects\\сайт отп\\scripts\\generate_dashboard.py",
+      "title": "scripts/generate_dashboard.py",
+      "file": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\scripts\\generate_dashboard.py",
+      "family": "check",
+      "status": "pass",
+      "exitCode": 0,
+      "ms": 110,
+      "detail": "",
+      "output": "",
+      "timedOut": false
+    },
+    {
+      "id": "py:g:\\lmstudio\\vscode\\projects\\сайт отп\\scripts\\generate_pages.py",
+      "title": "scripts/generate_pages.py",
+      "file": "G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\\scripts\\generate_pages.py",
+      "family": "check",
+      "status": "pass",
+      "exitCode": 0,
+      "ms": 110,
+      "detail": "",
+      "output": "",
+      "timedOut": false
+    }
+  ],
+  "counts": {
+    "total": 7,
+    "pass": 5,
+    "fail": 0,
+    "skip": 2
+  },
+  "verdict": "partial",
+  "checks": [
+    {
+      "id": "selftest",
+      "kind": "command",
+      "title": "selftest passed: G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП (all changed files)",
+      "command": "\"C:\\Program Files\\nodejs\\node.EXE\" \"G:\\LMStudio\\dsh-home\\profiles\\desktop\\node_modules\\dsh-selftest\\lib\\cli.js\" --root \"G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\" --no-persist --quiet",
+      "required": true
+    }
+  ],
+  "claimChecks": [
+    {
+      "id": "selftest",
+      "kind": "command",
+      "title": "selftest passed: G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП (all changed files)",
+      "command": "\"C:\\Program Files\\nodejs\\node.EXE\" \"G:\\LMStudio\\dsh-home\\profiles\\desktop\\node_modules\\dsh-selftest\\lib\\cli.js\" --root \"G:\\LMStudio\\VSCode\\Projects\\Сайт ОТП\" --no-persist --quiet",
+      "required": true
+    }
+  ],
+  "artifactPath": null,
+  "artifactError": null,
+  "coverage": {
+    "truncated": false,
+    "depthLimited": false,
+    "skippedTools": 2
+  }
+}

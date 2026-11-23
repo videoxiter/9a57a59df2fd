@@ -648,9 +648,16 @@
      Откат сайта к старой версии больше не закручивает уведомления. */
   (function mirrorSchedule() {
     const KEY = "otp_sched_mirror";
+    // Версия сайта — из href тега <link main.css?v=N> (в HTML её печатает генератор).
+    // Раньше здесь стояла переменная V, которой в main.js нет → ReferenceError
+    // синхронно рвал весь скрипт для админа: не рендерились «Сейчас на смене»,
+    // «Настройка» и «Админка». Теперь версия читается из DOM; если тега нет —
+    // «runtime» (поле информационное, без него ничего не ломается).
+    const mVer = /v=(\d+)/.exec((document.querySelector('link[href*="main.css"]') || {}).href || "");
+    const VER = mVer ? "v" + mVer[1] : "runtime";
     const push = () => {
       if (!window.OTP_AUTH || !window.OTP_AUTH.token("admin")) return;
-      const doc = { generated: V, team: (D.schedule && D.schedule.people) || [], schedule: D.schedule || {} };
+      const doc = { generated: VER, team: (D.schedule && D.schedule.people) || [], schedule: D.schedule || {} };
       let last = 0;
       try { last = +localStorage.getItem(KEY) || 0; } catch (e) {}
       if (Date.now() - last < 10 * 60 * 1000) return;
