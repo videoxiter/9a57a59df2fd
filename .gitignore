@@ -1,3 +1,8 @@
+# Локальные артефакты (DSH-инструменты, рабочие файлы) — не в git
+.dsh/
+README-DSH.md
+OTP-JSON-API.pdf
+
 # Промежуточные и локальные артефакты
 scripts/extracted.json
 scripts/*.json
