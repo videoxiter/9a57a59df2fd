@@ -1133,7 +1133,54 @@
     }
     function close() { modal.hidden = true; curType = null; }
 
-    document.querySelectorAll(".op-actions [data-op]").forEach((b) => b.addEventListener("click", () => open(b.getAttribute("data-op"))));
+    /* --- синхронизация графика с Confluence (кнопка на главной) ---
+       Кнопка только пишет запрос в otp_sync_flags; сам график забирает локальный
+       агент из Confluence (интранет): scripts/sync_schedule.py --if-requested. */
+    const cloudCfg = () => (D.hrRules && D.hrRules.cloud) || null;
+    function syncStateText(f) {
+      const gen = D.schedule && D.schedule.generated
+        ? new Date(D.schedule.generated + "T00:00:00").toLocaleDateString("ru-RU") : "—";
+      if (!f || !f.done_at) return `график от ${gen}`;
+      const t = new Date(f.done_at).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+      return `график от ${gen} · синхронизирован ${t}` + (f.ok === false ? ` (ошибка: ${f.message || ""})` : "");
+    }
+    async function renderSyncState() {
+      const el = $("#op-sync-state");
+      if (!el) return;
+      const c = cloudCfg();
+      el.textContent = syncStateText(null);
+      if (!c || !c.url) return;
+      try {
+        const r = await fetch(`${c.url.replace(/\/$/, "")}/rest/v1/otp_sync_flags?id=eq.schedule&select=*`, {
+          headers: { apikey: c.key, Authorization: "Bearer " + c.key },
+        });
+        const rows = await r.json();
+        el.textContent = syncStateText(Array.isArray(rows) ? rows[0] : null);
+      } catch (e) {}
+    }
+    function requestSync() {
+      const el = $("#op-sync-state");
+      const c = cloudCfg();
+      if (!el) return;
+      if (!c || !c.url || !c.key) { el.textContent = "Синхронизация недоступна: нет конфигурации облака."; return; }
+      el.textContent = "Отправляю запрос…";
+      fetch(`${c.url.replace(/\/$/, "")}/rest/v1/otp_sync_flags?id=eq.schedule`, {
+        method: "PATCH",
+        headers: { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({ requested_at: new Date().toISOString(), requested_by: window.OTP_ACTOR || "Руководитель" }),
+      }).then((r) => {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        el.textContent = "Синхронизация запрошена — ПК заберёт график из Confluence в течение пары минут.";
+        setTimeout(renderSyncState, 90000);
+      }).catch(() => { el.textContent = "Не удалось запросить синхронизацию — проверь связь."; });
+    }
+    renderSyncState();
+
+    document.querySelectorAll(".op-actions [data-op]").forEach((b) => b.addEventListener("click", () => {
+      const op = b.getAttribute("data-op");
+      if (op === "sync") { requestSync(); return; }
+      open(op);
+    }));
     const x = $("#op-modal-x");
     if (x) x.addEventListener("click", close);
     modal.addEventListener("click", (e) => { if (e.target === modal) close(); });

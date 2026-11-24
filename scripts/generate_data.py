@@ -5,7 +5,7 @@
 рекомендации с фактами (тикетами), заголовок «Мои результаты».
 Запуск: PYTHONUTF8=1 python scripts/generate_data.py
 """
-import json, os, re
+import json, os, re, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EXT = os.path.join(ROOT, "scripts", "extracted.json")
@@ -1267,7 +1267,57 @@ def build():
                        "noTania": bool(inc.get("noTania")), "noTransport": bool(inc.get("noTransport"))}
     return data
 
+def schedule_only():
+    """Обновляет ТОЛЬКО график в data.js и assets/data/schedule.json.
+
+    Полная сборка (build) требует scripts/extracted.json и itogi/*.txt — их на
+    рабочей машине может не быть. Ежедневной синхронизации графика нужен только
+    этот режим: остальные данные уже лежат в data.js.
+    """
+    path = OUT
+    raw = open(path, encoding="utf-8").read()
+    mark = "window.OTP_DATA = "
+    start = raw.index(mark) + len(mark)
+    data = json.loads(raw[start:].strip().rstrip(";"))
+    sched = load_schedule()
+    if not sched:
+        raise SystemExit("scripts/schedule.json не найден — сначала запусти fetch_confluence.py")
+    # ВАЖНО: свежий график из Confluence содержит только текущий (и, если есть,
+    # следующий) месяц. Прошлые месяцы и отпуска сохраняем из data.js, иначе
+    # ежедневная синхронизация стирает историю.
+    old = data.get("schedule") or {}
+    for kind in ("months", "vacations"):
+        merged = dict(old.get(kind) or {})
+        merged.update(sched.get(kind) or {})
+        sched[kind] = merged
+    years = {str(y.get("year")): y for y in (old.get("vacationYears") or []) if y.get("year")}
+    years.update({str(y.get("year")): y for y in (sched.get("vacationYears") or []) if y.get("year")})
+    sched["vacationYears"] = [years[k] for k in sorted(years)]
+    if not sched.get("generated"):
+        sched["generated"] = old.get("generated")
+    data["schedule"] = sched
+    head = raw[:raw.index(mark)]
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(head + mark + json.dumps(data, ensure_ascii=False, indent=2) + ";\n")
+    print(f"OK -> {path} (только график)")
+    # публичный JSON с графиком (его читает cron с GitHub Pages)
+    sched_out = os.path.join(ROOT, "assets", "data", "schedule.json")
+    os.makedirs(os.path.dirname(sched_out), exist_ok=True)
+    active_ids = {e["id"] for e in data["employees"] if e.get("status") != "left"}
+    team = [{"fio": p.get("fio"), "id": p.get("slug")}
+            for p in ((data.get("schedule") or {}).get("people") or [])
+            if p.get("slug") in active_ids]
+    gen = (data.get("schedule") or {}).get("generated") or data.get("meta", {}).get("updated")
+    with open(sched_out, "w", encoding="utf-8") as f:
+        json.dump({"generated": gen, "team": team, "schedule": data.get("schedule")},
+                  f, ensure_ascii=False)
+    print(f"OK -> {sched_out}")
+
+
 def main():
+    if "--schedule-only" in sys.argv:
+        schedule_only()
+        return
     data = build()
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     js = f"/* РЕАЛЬНЫЕ данные ({data['meta']['updated']}). Источник: scripts/extracted.json + itogi/*.txt */\n"

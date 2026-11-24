@@ -2601,6 +2601,7 @@ html[data-theme="ocean"] .award-tile .medal {
 .op-preview.is-err { color: #fca5a5; background: rgba(248,113,113,.08); border-color: rgba(248,113,113,.4); }
 .op-form-foot { display: flex; gap: 8px; flex-wrap: wrap; }
 .op-form-err { margin-top: 10px; font-size: .82rem; color: #fca5a5; min-height: 1.1em; }
+.op-sync-state { font-size: .78rem; color: var(--muted); margin: -4px 0 12px; min-height: 1.1em; }
 @media (max-width: 640px) {
   .op-tr { grid-template-columns: minmax(0,1.5fr) minmax(0,1fr) 74px; }
   .op-th span:nth-child(3), .op-tr .op-since, .op-tr .op-go { display: none; }

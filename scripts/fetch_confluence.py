@@ -274,6 +274,22 @@ def main():
         print(f"отпуска {year}: {len(data['vacations'][str(year)])} сотрудников")
     data["vacationYears"].sort(key=lambda x: x["year"])
 
+    # Слияние с уже сохранённым графиком: забираем только заказанные месяцы, а
+    # прошлые месяцы и прошлые годы отпусков сохраняем. Иначе ежедневная
+    # синхронизация «съедала» историю (в файл писались лишь текущий и следующий месяц).
+    if os.path.exists(OUT):
+        try:
+            prev = json.load(open(OUT, encoding="utf-8"))
+            for kind in ("months", "vacations"):
+                merged = dict(prev.get(kind) or {})
+                merged.update(data.get(kind) or {})
+                data[kind] = merged
+            years = {str(y.get("year")): y for y in (prev.get("vacationYears") or []) if y.get("year")}
+            years.update({str(y.get("year")): y for y in (data.get("vacationYears") or []) if y.get("year")})
+            data["vacationYears"] = [years[k] for k in sorted(years)]
+        except Exception as e:
+            print("не удалось слить с предыдущим графиком:", e)
+
     with open(OUT, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=1)
     print("записано:", OUT)
