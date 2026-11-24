@@ -2447,7 +2447,7 @@ function robotMenuHtml() {
         const label = isPend ? `${pendingLabel(pending)} · ${pendLeft(pending)} с` : opts.label;
         const icon = isPend ? "ph-hourglass" : opts.icon;
         return `<button class="st-btn${opts.run ? " is-run" : ""}${opts.used && !isPend ? " is-used" : ""}${isPend ? " is-pending" : ""}" data-act="${opts.act}" ${dis ? "disabled" : ""}${isPend ? ' title="Повторный клик — применить сразу"' : ""}>
-        <i class="ph-bold ${icon}"></i><span>${escHtml(label)}</span>${(opts.used && !isPend) ? '<i class="ph-bold ph-x st-x"></i>' : ""}${isPend ? '<i class="st-pend-bar"></i>' : ""}</button>`;
+        <i class="ph-bold ${icon}" aria-hidden="true"></i><span>${escHtml(label)}</span>${(opts.used && !isPend) ? '<i class="ph-bold ph-x st-x" aria-hidden="true"></i>' : ""}${isPend ? '<i class="st-pend-bar"></i>' : ""}</button>`;
       };
       const startedUsed = !!st.started;
       const stopApplied = !!st.stopped;
@@ -2479,14 +2479,14 @@ function robotMenuHtml() {
       if (lwNowActive) {
         const lwPend = !!pending && pending.act === "leave-end";
         const lwDis = pending && !lwPend;
-        buttons.push(`<button class="st-btn st-btn-leave${lwPend ? " is-pending" : ""}" data-act="leave-end" ${lwDis ? "disabled" : ""}${lwPend ? ' title="Повторный клик — применить сразу"' : ""}><i class="ph-bold ${lwPend ? "ph-hourglass" : "ph-door-open"}"></i><span>${escHtml(lwPend ? `${pendingLabel(pending)} · ${pendLeft(pending)} с` : "Завершить увольнительную")}</span>${lwPend ? '<i class="st-pend-bar"></i>' : ""}</button>`);
+        buttons.push(`<button class="st-btn st-btn-leave${lwPend ? " is-pending" : ""}" data-act="leave-end" ${lwDis ? "disabled" : ""}${lwPend ? ' title="Повторный клик — применить сразу"' : ""}><i class="ph-bold ${lwPend ? "ph-hourglass" : "ph-door-open"}" aria-hidden="true"></i><span>${escHtml(lwPend ? `${pendingLabel(pending)} · ${pendLeft(pending)} с` : "Завершить увольнительную")}</span>${lwPend ? '<i class="st-pend-bar"></i>' : ""}</button>`);
       }
       buttons.push(btn({
         act: "stop", icon: "ph-sign-out", label: "Завершить смену",
         disabled: !canAct || !working || inPause, used: stopApplied,
       }));
       if (pending) {
-        buttons.push(`<button class="st-btn st-pend-cancel" data-act="cancel-pending"><i class="ph-bold ph-x"></i><span>Отмена</span></button>`);
+        buttons.push(`<button class="st-btn st-pend-cancel" data-act="cancel-pending"><i class="ph-bold ph-x" aria-hidden="true"></i><span>Отмена</span></button>`);
       }
       if (absenceOpen) {
         buttons.push(`<div class="st-absence">

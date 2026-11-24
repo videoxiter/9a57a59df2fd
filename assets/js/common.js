@@ -82,8 +82,16 @@
     };
     window.addEventListener("scroll", forceShow, { passive: true });
     setTimeout(forceShow, 900);
+    // Watchdog крутим ограниченно (30 с): дальше всё, что попадает в экран,
+    // ловит слушатель scroll. Иначе таймер жил бы до закрытия вкладки и
+    // каждые 700 мс пересчитывал getBoundingClientRect у всех блоков (батарея).
     clearInterval(window.__otpRevealWatch);
     window.__otpRevealWatch = setInterval(forceShow, 700);
+    clearTimeout(window.__otpRevealWatchStop);
+    window.__otpRevealWatchStop = setTimeout(() => {
+      clearInterval(window.__otpRevealWatch);
+      window.__otpRevealWatch = null;
+    }, 30000);
   }
 
   /* ---------- nav ---------- */

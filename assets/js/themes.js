@@ -50,7 +50,13 @@ window.OTP_THEME = (function () {
     document.body.appendChild(canvas);
     ctx = canvas.getContext("2d");
     resize();
-    window.addEventListener("resize", resize);
+    // debounce 250 мс: при перетаскивании окна resize шлётся десятки раз,
+    // а resize() пересоздаёт частицы (reseed) — это заметно грузит CPU
+    let resizeT = 0;
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeT);
+      resizeT = setTimeout(resize, 250);
+    });
   }
   function resize() {
     if (!canvas) return;
@@ -304,25 +310,41 @@ window.OTP_THEME = (function () {
     el.dataset.theme = th.id;
   }
 
+  /* Уважаем системную настройку «уменьшить движение»: при ней фоновую
+     анимацию не запускаем, даже если в настройках сайта она включена. */
+  const reduceMotion = () => {
+    try { return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }
+    catch (e) { return false; }
+  };
+
   function apply(next) {
     state = Object.assign({}, state, next || {});
     save(state);
     const th = themeOf(state.theme);
+    const anim = state.animOn && !reduceMotion();
     document.documentElement.dataset.theme = th.id;
     document.body.dataset.theme = th.id;
     document.documentElement.style.setProperty("--th-accent", th.accent || "#fbbf24");
     setEmblem(th);
-    if (state.animOn && th.video) { setVideo(th.video); stopAnim(); }
+    if (anim && th.video) { setVideo(th.video); stopAnim(); }
     else {
       setVideo(null);
-      if (state.animOn && th.anim) startAnim(th.anim);
+      if (anim && th.anim) startAnim(th.anim);
       else stopAnim();
     }
     window.dispatchEvent(new CustomEvent("otp-theme", { detail: state }));
     return state;
   }
 
-  const init = () => { state = get(); apply(state); };
+  const init = () => {
+    state = get();
+    apply(state);
+    /* смена системной настройки на лету — перерисовываем фон без перезагрузки */
+    try {
+      const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+      if (mq && mq.addEventListener) mq.addEventListener("change", () => apply({}));
+    } catch (e) {}
+  };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 
