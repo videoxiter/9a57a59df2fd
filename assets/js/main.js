@@ -1157,29 +1157,22 @@
     async function renderSyncState() {
       const el = $("#op-sync-state");
       if (!el) return;
-      const c = cloudCfg();
       el.textContent = syncStateText(null);
-      if (!c || !c.url) return;
+      if (!window.OTP_AUTH || !window.OTP_AUTH.token("admin")) return;
       try {
-        const r = await fetch(`${c.url.replace(/\/$/, "")}/rest/v1/otp_sync_flags?id=eq.schedule&select=*`, {
-          headers: { apikey: c.key, Authorization: "Bearer " + c.key },
-        });
-        const rows = await r.json();
+        const rows = await window.OTP_AUTH.api("admin", "otp_sync_flags?select=*&id=eq.schedule", "GET");
         el.textContent = syncStateText(Array.isArray(rows) ? rows[0] : null);
       } catch (e) {}
     }
     function requestSync() {
       const el = $("#op-sync-state");
-      const c = cloudCfg();
       if (!el) return;
-      if (!c || !c.url || !c.key) { el.textContent = "Синхронизация недоступна: нет конфигурации облака."; return; }
+      if (!window.OTP_AUTH || !window.OTP_AUTH.token("admin")) { el.textContent = "Синхронизация недоступна: нужен вход."; return; }
       el.textContent = "Отправляю запрос…";
-      fetch(`${c.url.replace(/\/$/, "")}/rest/v1/otp_sync_flags?id=eq.schedule`, {
-        method: "PATCH",
-        headers: { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json", Prefer: "return=minimal" },
-        body: JSON.stringify({ requested_at: new Date().toISOString(), requested_by: window.OTP_ACTOR || "Руководитель" }),
-      }).then((r) => {
-        if (!r.ok) throw new Error("HTTP " + r.status);
+      window.OTP_AUTH.api("admin", "otp_sync_flags?id=eq.schedule", "PATCH", {
+        requested_at: new Date().toISOString(),
+        requested_by: window.OTP_ACTOR || "Руководитель",
+      }).then(() => {
         el.textContent = "Синхронизация запрошена — ПК заберёт график из Confluence в течение пары минут.";
         setTimeout(renderSyncState, 90000);
       }).catch(() => { el.textContent = "Не удалось запросить синхронизацию — проверь связь."; });

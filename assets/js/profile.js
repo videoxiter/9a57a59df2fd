@@ -2257,6 +2257,7 @@ function robotMenuHtml() {
       <div class="st-outbox" id="st-outbox" hidden></div>
       <div class="st-note" id="st-note"></div>
       <div class="st-week" id="st-week"></div>
+      ${emp.canManage ? '<div class="st-sync" id="st-sync" hidden></div>' : ""}
     </section>
     ${emp.canManage ? `<section class="p-sec" id="st-report-sec">
       <div class="p-sec-head"><h2><i class="ph-bold ph-chart-bar"></i> Отчёт по рабочему времени</h2>
@@ -2275,6 +2276,58 @@ function robotMenuHtml() {
       <p class="muted" id="st-empty" hidden>За выбранный период записей нет.</p>
     </section>` : ""}`;
   }
+  /* Синхронизация графика с Confluence — для главного специалиста (canManage).
+     Право проверяет сервер (otp_staff.can_sync), поэтому чужой запрос вернёт отказ. */
+  function initStartSync() {
+    const el = document.getElementById("st-sync");
+    if (!el || !emp.canManage) return;
+    const fmtGen = () => {
+      const g = (D.schedule && D.schedule.generated) || "";
+      if (!g) return "—";
+      const s = String(g);
+      const d = new Date(s.length <= 10 ? s + "T00:00:00" : s);
+      if (isNaN(d.getTime())) return s;
+      return s.includes("T")
+        ? d.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+        : d.toLocaleDateString("ru-RU");
+    };
+    const label = (f) => {
+      const gen = fmtGen();
+      if (!f || !f.done_at) return `График от ${gen}. Синхронизация ещё не запускалась отсюда.`;
+      const t = new Date(f.done_at).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+      return `График от ${gen} · синхронизирован ${t}` + (f.ok === false ? ` (ошибка: ${f.message || ""})` : "");
+    };
+    const go = async () => {
+      const b = document.getElementById("st-sync-go");
+      const t = el.querySelector(".st-sync-t");
+      if (b) b.disabled = true;
+      if (t) t.textContent = "Отправляю запрос…";
+      try {
+        await stApi("otp_sync_flags?id=eq.schedule", {
+          method: "PATCH",
+          body: { requested_at: new Date().toISOString(), requested_by: emp.fullName },
+        });
+        if (t) t.textContent = "Синхронизация запрошена — ПК заберёт график из Confluence в течение пары минут.";
+        setTimeout(load, 90000);
+      } catch (e) {
+        if (t) t.textContent = "Не удалось запросить синхронизацию: нет прав или связи.";
+      }
+      if (b) b.disabled = false;
+    };
+    const paint = (f) => {
+      el.hidden = false;
+      el.innerHTML = `<div class="st-sync-h"><i class="ph-bold ph-arrows-clockwise"></i> График смен из Confluence</div>
+        <div class="st-sync-t">${escHtml(label(f))}</div>
+        <button class="btn btn-ghost" id="st-sync-go" type="button"><i class="ph-bold ph-arrows-clockwise"></i> Синхронизировать</button>`;
+      const b = document.getElementById("st-sync-go");
+      if (b) b.addEventListener("click", go);
+    };
+    const load = () => stApi("otp_sync_flags?select=*&id=eq.schedule")
+      .then((rows) => paint((Array.isArray(rows) ? rows[0] : null)))
+      .catch(() => paint(null));
+    load();
+  }
+
   function initStart() {
     const box = document.getElementById("st-actions");
     const statusEl = document.getElementById("st-status");
@@ -2655,6 +2708,7 @@ function robotMenuHtml() {
     render();
     events = events || [];
     renderStOutbox();
+    if (emp.canManage) initStartSync();   // главный специалист: синхронизация графика
     loadLeaveWins().then((w) => { leaveWins = w; render(); }).catch(() => {});
     stEvents(today).then((rows) => { events = rows || []; render(); }).catch(() => {});
     /* Синхронизация между устройствами: состояние и кнопки подтягиваются из облака,

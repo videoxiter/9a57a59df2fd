@@ -23,6 +23,9 @@ const ALLOWED: Record<string, string[]> = {
   otp_requests: ["GET", "PATCH"],
   otp_content: ["GET"],
   otp_staff: ["GET"],
+  // v8: флаг «синхронизировать график» — читают и пишут только админ/главный
+  // специалист (can_sync). Анонимные политики на таблице закрыты.
+  otp_sync_flags: ["GET", "PATCH"],
 };
 
 async function session(token: string) {
@@ -34,13 +37,15 @@ async function session(token: string) {
   const rows = await r.json();
   if (!Array.isArray(rows) || !rows.length) return null;
   const slug = rows[0].slug;
-  const a = await fetch(`${SB}/rest/v1/otp_staff?select=is_admin,active&slug=eq.${slug}`, {
+  const a = await fetch(`${SB}/rest/v1/otp_staff?select=is_admin,active,can_sync&slug=eq.${slug}`, {
     headers: { apikey: SRV, Authorization: `Bearer ${SRV}` },
   });
   const st = a.ok ? await a.json() : [];
   const admin = !!(st && st[0] && st[0].is_admin);
   const active = !(st && st[0] && st[0].active === false);
-  return { slug, admin, active };
+  // v8: право запрашивать синхронизацию графика (главный специалист)
+  const canSync = !!(st && st[0] && st[0].can_sync);
+  return { slug, admin, active, canSync };
 }
 
 Deno.serve(async (req: Request) => {
@@ -77,6 +82,22 @@ Deno.serve(async (req: Request) => {
   // вошедшая сессия могла PATCH-нуть чужое событие (подменить время `at`).
   if (table === "otp_time_events" && method === "PATCH" && !s.admin) {
     return json({ ok: false, error: "admin only" }, 403);
+  }
+  // v8: флаг синхронизации графика — только админ или главный специалист
+  // с правом can_sync. Кнопка на его странице работает без админ-пароля.
+  if (table === "otp_sync_flags") {
+    if (!s.admin && !s.canSync) return json({ ok: false, error: "sync not allowed" }, 403);
+    // пишем только служебные поля, чужие данные не принимаем
+    if (method === "PATCH") {
+      const row: any = Array.isArray(p.body) ? p.body[0] : (p.body || {});
+      p.body = {
+        requested_at: row.requested_at ?? null,
+        requested_by: row.requested_by ?? null,
+        done_at: row.done_at ?? null,
+        ok: row.ok ?? null,
+        message: row.message ?? null,
+      };
+    }
   }
   if (table === "otp_requests" && method !== "GET" && !s.admin) {
     // Сотрудник может PATCH только СВОЮ заявку: фильтр empSlug=eq.<свой slug>

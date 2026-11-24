@@ -2640,6 +2640,14 @@ html[data-theme="ocean"] .award-tile .medal {
   color: #fbbf24; background: rgba(251,191,36,.08); }
 .st-outbox i { color: #fbbf24; }
 .st-outbox[hidden] { display: none; }
+
+/* Синхронизация графика с Confluence — блок для главного специалиста */
+.st-sync { margin-top: 12px; padding: 12px 14px; border-radius: 12px;
+  border: 1px solid rgba(34,211,238,.25); background: rgba(34,211,238,.05);
+  display: grid; gap: 8px; }
+.st-sync-h { font-size: .82rem; font-weight: 600; display: flex; gap: 8px; align-items: center; }
+.st-sync-t { font-size: .8rem; color: var(--muted); }
+.st-sync .btn { justify-self: start; }
 .hj-chip.warn { color: #fbbf24; border-color: rgba(251,191,36,.4); background: rgba(251,191,36,.08); }
 
 /* P1.2: страховочная правка событий в отчёте (руководитель) */
