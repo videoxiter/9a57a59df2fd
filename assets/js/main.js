@@ -20,6 +20,8 @@
     if (t > 0) return "/" + parts.slice(0, t).join("/") + "/";
     return parts.length > 1 ? "/" + parts[0] + "/" : "/";
   })();
+  /* Корень дашборда (страницы «Моя команда», «Журнал», …) — для ссылок из JS. */
+  const DASH_BASE = location.pathname.replace(/\/(dynamics|people|duties|development|settings|staff|hours)\/.*$/, "/");
 
   const bySurname = (fio) => (D.employees || []).find((e) => (e.fullName || "").split(" ")[0] === String(fio).split(" ")[0]) || null;
   const MKEYS = ["quality", "learnability", "initiative", "engagement", "discipline"];
@@ -1002,6 +1004,7 @@
         ${leaveRows.length ? notes(leaveRows.slice(0, 3)) : '<p class="muted op-empty">Пока нет.</p>'}
         <div class="op-sub">Переработки · ${overTotal} ч</div>
         ${overRows.length ? notes(overRows.slice(0, 3)) : '<p class="muted op-empty">Пока нет.</p>'}
+        <a class="op-more" href="${DASH_BASE}hours/">Полный журнал часов →</a>
       </section>`;
   }
 
@@ -1013,7 +1016,7 @@
       const d = new Date();
       dateEl.textContent = `${d.toLocaleDateString("ru-RU", { day: "numeric", month: "long" })} · обновлено ${d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} МСК`;
     }
-    const hr = $("#hr-sec"), hours = $("#hours");
+    const hr = $("#hr-sec"), hours = $("#hours-form");
     document.querySelectorAll(".op-actions [data-op]").forEach((b) => b.addEventListener("click", () => {
       const target = b.getAttribute("data-op") === "overtime" ? hours : hr;
       if (!target) return;

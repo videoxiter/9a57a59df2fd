@@ -41,9 +41,10 @@ def _version():
 V = _version()
 
 PAGES = [
-    # Оперативная главная (план 24.11.2026): команда + уведомления + месяц.
-    # Hero/KPI/рейтинг переехали в «Динамику», отчёт — в «Стартовую» сотрудника.
-    ("", "Моя команда", "team", ["home", "hr-sec", "hours"]),
+    # Оперативная главная (план 24.11.2026): команда + уведомления + форма занесения.
+    # Полный журнал часов — отдельной страницей «Журнал» (ссылка с главной).
+    ("", "Моя команда", "team", ["home", "hr-sec", "hours-form"]),
+    ("hours", "Журнал", "clock-counter-clockwise", ["hours"]),
     ("dynamics", "Динамика", "chart-line", ["top", "best", "rating", "dynamics"]),
     ("people", "Специалисты", "users-three", ["team"]),
     ("duties", "График отдела", "calendar-check", ["duties"]),
@@ -51,7 +52,7 @@ PAGES = [
     ("settings", "Настройки", "sliders", ["settings"]),
     ("staff", "Админка", "identification-card", ["staff"]),
 ]
-NAV_LABEL = {"": "Моя команда", "dynamics": "Динамика", "people": "Специалисты", "duties": "График отдела", "development": "Развитие", "settings": "Настройки", "staff": "Админка"}
+NAV_LABEL = {"": "Моя команда", "hours": "Журнал", "dynamics": "Динамика", "people": "Специалисты", "duties": "График отдела", "development": "Развитие", "settings": "Настройки", "staff": "Админка"}
 
 BEST_SECTION = '''  <!-- ===== КТО ЛУЧШЕ ===== -->
   <section class="section" id="best" style="padding-top:8px">
