@@ -72,14 +72,43 @@ LEGEND = {
 }
 
 
-def env(path=ENV):
+def env_file():
+    """Где искать файл с логином Confluence (кросс-платформенно).
+
+    Порядок: переменная OTP_CONFLUENCE_ENV → ~/.otp/confluence.env →
+    scripts/.env рядом с проектом → старый путь Hermes (только Windows).
+    На маке и на Windows можно просто положить scripts/.env (он в .gitignore).
+    """
+    here = os.path.dirname(os.path.abspath(__file__))
+    cand = []
+    if os.environ.get("OTP_CONFLUENCE_ENV"):
+        cand.append(os.environ["OTP_CONFLUENCE_ENV"])
+    cand += [
+        os.path.expanduser("~/.otp/confluence.env"),
+        os.path.join(here, ".env"),
+    ]
+    if os.name == "nt":
+        cand.append(r"G:\LMStudio\Hermes\data\.env")
+    for c in cand:
+        if c and os.path.exists(c):
+            return c
+    return None
+
+
+def env(path=None):
+    path = path or env_file()
     data = {}
-    for line in open(path, encoding="utf-8", errors="replace"):
-        if "=" in line and not line.strip().startswith("#"):
-            k, v = line.split("=", 1)
-            data[k.strip().lstrip("\ufeff")] = v.strip().strip('"').strip("'")
-    login = data.get("СONFLUENCE_LOGIN") or data.get("CONFLUENCE_LOGIN")
-    pwd = data.get("СONFLUENCE_PASSWORD") or data.get("CONFLUENCE_PASSWORD")
+    if path:
+        for line in open(path, encoding="utf-8", errors="replace"):
+            if "=" in line and not line.strip().startswith("#"):
+                k, v = line.split("=", 1)
+                data[k.strip().lstrip("\ufeff")] = v.strip().strip('"').strip("'")
+    # переменные окружения важнее файла — удобно для CI или одноразового запуска
+    login = os.environ.get("CONFLUENCE_LOGIN") or data.get("СONFLUENCE_LOGIN") or data.get("CONFLUENCE_LOGIN")
+    pwd = os.environ.get("CONFLUENCE_PASSWORD") or data.get("СONFLUENCE_PASSWORD") or data.get("CONFLUENCE_PASSWORD")
+    if not login or not pwd:
+        raise SystemExit("Нет логина/пароля Confluence: заполни scripts/.env (CONFLUENCE_LOGIN, CONFLUENCE_PASSWORD) "
+                         "или задай OTP_CONFLUENCE_ENV / переменные окружения CONFLUENCE_LOGIN, CONFLUENCE_PASSWORD")
     return login, pwd
 
 

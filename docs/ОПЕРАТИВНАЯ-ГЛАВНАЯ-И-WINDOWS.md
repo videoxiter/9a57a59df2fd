@@ -42,6 +42,25 @@
 - Ограничение: кнопка срабатывает только когда включён ПК с задачами планировщика —
   Confluence во внутренней сети, из облака до него не достучаться.
 
+### Агент на второй машине (macOS и Windows) — резерв
+
+Чтобы процесс не останавливался, когда ваш ПК выключен, тот же агент ставится
+на вторую машину (MacBook заместителя):
+
+- **Windows**: `scripts/install_sync_tasks.cmd` (или `.ps1`) — две задачи
+  планировщика, `pythonw.exe`, без окон.
+- **macOS**: `bash scripts/macos/install_macos_agent.command` — два LaunchAgent'а
+  (`com.otp.schedule.daily` в 07:30 и `com.otp.schedule.watch` каждые 5 минут),
+  логи в `/tmp/otp-schedule-*.log`, удаление — `scripts/macos/uninstall_macos_agent.command`.
+- **Логин Confluence** на каждой машине свой: файл `scripts/.env`
+  (`CONFLUENCE_LOGIN`, `CONFLUENCE_PASSWORD`), `~/.otp/confluence.env`
+  или переменные окружения. Существующий файл Hermes на Windows тоже подхватывается.
+  Ключи в git не попадают (`scripts/.env` в `.gitignore`).
+- Для публикации изменений машине нужен доступ на push в репозиторий
+  (свой git-логин или отдельный токен только на этот репозиторий).
+- SQL: `scripts/supabase_v9_sync_agent.sql` — агенту нужны политики чтения/записи
+  флага `otp_sync_flags`; кнопка на сайте при этом остаётся под правом `can_sync`.
+
 ## 1. Что есть в проекте
 
 | Участок | Текущее состояние и вывод |
