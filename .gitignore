@@ -22,3 +22,10 @@ video/out/
 
 # готовые архивы для передачи (собираются scripts/build_pavel_bundles.py)
 dist/
+
+# окружения Python и артефакты сборки приложения
+.venv/
+.dsh-pyenv/
+app/tray/build/
+app/tray/dist/
+*.spec
