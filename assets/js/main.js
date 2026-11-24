@@ -646,6 +646,8 @@
   let nowFilter = null;
   /* План 24.11.2026: поиск по таблице команды на оперативной главной. */
   let nowSearch = "";
+  /* Сообщение, которое покажем после перезагрузки списка в «Админке». */
+  let __staffMsg = "";
   function nowSyncSet(ok) { __nowSyncOk = ok; }
   function nowSync() {
     if (__nowSyncOk === null) return `<span class="now-chip s">… соединение</span>`;
@@ -1394,6 +1396,15 @@
         hasPass: !!s.has_pass,
       };
     });
+    // сотрудники, которых нет в data.js (добавлены вручную в админке) — тоже показываем
+    for (const s of (staff || [])) {
+      if (!s || !s.slug || s.slug === "admin") continue;
+      if (rows.some((r) => r.slug === s.slug)) continue;
+      rows.push({
+        slug: s.slug, hash: s.slug, fio: s.fio || s.slug, login: s.login || "", pass: "",
+        avatar: s.avatar || "", active: s.active !== false, hasPass: !!s.has_pass, manual: true,
+      });
+    }
     // администратор — первым
     const admin = bySlug.get("admin");
     if (admin) rows.unshift({ slug: "admin", fio: admin.fio || "Руководитель", login: admin.login || "", pass: admin.pass || "", avatar: admin.avatar || "", active: admin.active !== false, hasPass: !!admin.has_pass });
@@ -1401,6 +1412,20 @@
     app.innerHTML = `<div class="staff-head">
         <h3><i class="ph-bold ph-identification-card"></i> Сотрудники и доступы</h3>
         <button class="btn btn-ghost" id="staff-out">Выйти</button>
+      </div>
+      <div class="staff-add">
+        <h4><i class="ph-bold ph-user-plus"></i> Добавить сотрудника</h4>
+        <div class="staff-add-grid">
+          <label>ФИО<input id="sa-fio" placeholder="Иванов Иван Иванович"></label>
+          <label>Код страницы<input id="sa-slug" placeholder="пусто — сгенерировать"></label>
+          <label>Логин<input id="sa-login" placeholder="имя@ftech.io"></label>
+          <label>Пароль<input id="sa-pass" type="password" placeholder="не короче 6 символов"></label>
+          <label>Аватар (ссылка)<input id="sa-avatar" placeholder="https://..."></label>
+        </div>
+        <div class="staff-add-foot">
+          <button class="btn btn-primary" id="sa-add" type="button"><i class="ph-bold ph-plus" aria-hidden="true"></i> Добавить</button>
+          <span class="staff-hint" id="sa-msg"></span>
+        </div>
       </div>
       <p class="staff-hint">Пароль: если оставить пустым — не меняется. Логин — для личных сообщений в Мессенджере (например, a.bolgov@ftech.io).</p>
       <div class="staff-list">
@@ -1443,6 +1468,39 @@
       </div>
       <div class="sc-list" id="sc-list"></div>
     </div>`);    $("#staff-out").addEventListener("click", () => { A.logout("admin"); initStaffPage(); });
+
+    /* Добавление сотрудника: создаёт/обновляет запись otp_staff (логин, пароль).
+       Если код страницы новый — страница появится после добавления в данные сайта. */
+    const saAdd = $("#sa-add");
+    if (saAdd) saAdd.addEventListener("click", async () => {
+      const fio = ($("#sa-fio") || {}).value.trim();
+      const pass = ($("#sa-pass") || {}).value;
+      let slug = ($("#sa-slug") || {}).value.trim();
+      const login = ($("#sa-login") || {}).value.trim();
+      const avatar = ($("#sa-avatar") || {}).value.trim();
+      const msg = $("#sa-msg");
+      if (!msg) return;
+      if (fio.length < 3) { msg.textContent = "Укажи ФИО."; return; }
+      if (pass.length < 6) { msg.textContent = "Пароль не короче 6 символов."; return; }
+      if (!slug) {
+        const buf = new Uint8Array(6);
+        crypto.getRandomValues(buf);
+        slug = Array.from(buf, (b) => b.toString(16).padStart(2, "0")).join("");
+      }
+      saAdd.disabled = true;
+      const res = await A.saveStaff({ slug, fio, login, pass, avatar, active: true }).catch(() => null);
+      saAdd.disabled = false;
+      if (!res || !res.ok) {
+        msg.textContent = "Не удалось сохранить: " + ((res && res.error) || "ошибка связи");
+        return;
+      }
+      const known = D.employees.some((e) => (e.slug || e.id) === slug);
+      __staffMsg = known
+        ? `Сохранено: ${fio}.`
+        : `Сохранено: ${fio}. Страница: ${location.origin}${SITE_ROOT}team/${slug}/start/ — появится после добавления сотрудника в данные сайта.`;
+      initStaffPage();
+    });
+    if (__staffMsg) { const m = $("#sa-msg"); if (m) m.textContent = __staffMsg; __staffMsg = ""; }
     const scList = $("#sc-list");
     const scEmp = $("#sc-emp");
     const escX = (s) => String(s == null ? "" : s).replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "\"": "&quot;" }[c]));

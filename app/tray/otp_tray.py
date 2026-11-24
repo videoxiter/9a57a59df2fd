@@ -26,6 +26,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
+VERSION = "1.0"
 POLL_SECONDS = 20
 CONFIRM_SECONDS = 10
 TZ = timezone(timedelta(hours=3))          # Москва, UTC+3
@@ -48,6 +49,17 @@ def config_dir() -> Path:
 
 
 CONFIG_PATH = config_dir() / "config.json"
+LOG_PATH = config_dir() / "app.log"
+
+
+def log(msg: str) -> None:
+    """Простой журнал рядом с настройками — помогает разбирать проблемы сотрудника."""
+    try:
+        CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  {msg}\n")
+    except Exception:
+        pass
 
 
 def load_config() -> dict:
@@ -248,6 +260,8 @@ class App:
             Menu.SEPARATOR,
             MenuItem("Открыть мою страницу", lambda: webbrowser.open(self.page_url())),
             MenuItem("Обновить", lambda: self.refresh()),
+            MenuItem("Журнал приложения", lambda: webbrowser.open(LOG_PATH.as_uri())),
+            MenuItem(f"ОТП · версия {VERSION}", None, enabled=False),
             MenuItem("Выход", lambda: self.quit_app()),
         )
 
@@ -311,7 +325,8 @@ class App:
                 slot = name[5:]
                 act = self.state.get("active") or {}
                 self._post("break_end" if act.get("slot") == slot else "break_start", slot)
-        except Exception:
+        except Exception as e:
+            log("ошибка действия %s: %r" % (name, e))
             self.state = dict(self.state, kind="offline", label="Нет связи")
         self.refresh()
         self.update_icon()
@@ -332,7 +347,8 @@ class App:
     def refresh(self):
         try:
             self.state = compute_state(self.api.events_today())
-        except Exception:
+        except Exception as e:
+            log("нет связи при обновлении: %r" % (e,))
             self.state = dict(self.state, kind="offline", label="Нет связи")
         self.update_icon()
         return self.state
