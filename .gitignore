@@ -19,3 +19,6 @@ scripts/sql_out.txt
 # видеоинструкции: модели голоса и результаты рендера не храним в git
 video/piper/
 video/out/
+
+# готовые архивы для передачи (собираются scripts/build_pavel_bundles.py)
+dist/
