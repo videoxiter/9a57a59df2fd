@@ -2308,23 +2308,45 @@ function robotMenuHtml() {
     let absenceReason = "";
     let customReason = "";
 
-    /* P2.1: защита от missclick. Опасное действие (завершить смену/перерыв/
-       отсутствие/увольнительную) применяется через 10 секунд с видимым
-       отсчётом и «Отмена». Pending живёт только в памяти вкладки: закрыл или
-       обновил страницу в окне отсчёта — действие не применено, события нет. */
+    /* P2.1: защита от missclick. И опасные завершения, И запуск (начало смены,
+       открытие перерыва/обеда, отметка отсутствия) применяются через 10 секунд
+       с видимым отсчётом и «Отмена». Pending живёт только в памяти вкладки:
+       закрыл или обновил страницу в окне отсчёта — действие не применено.
+       Повторный клик по той же кнопке — применить сейчас (без ожидания). */
     const ST_CONFIRM_MS = 10000;
-    let pending = null;   // { act, until }
-    const PEND_LABEL = { stop: "Смена завершится", absence: "Отсутствие завершится", "leave-end": "Увольнительная завершится" };
-    const pendingLabel = (p) => PEND_LABEL[p.act] || (String(p.act).startsWith("slot-") ? "Перерыв завершится" : "Действие применится");
+    let pending = null;   // { act, dir: "open"|"close", until, extra? }
+    const pendingLabel = (p) => {
+      const open = p.dir === "open";
+      if (p.act === "start") return "Смена начнётся";
+      if (p.act === "stop") return "Смена завершится";
+      if (p.act === "leave-end") return "Увольнительная завершится";
+      if (p.act === "absence" || p.act === "absence-ok") return open ? "Отсутствие начнётся" : "Отсутствие завершится";
+      if (String(p.act).startsWith("slot-")) {
+        const lunch = p.act === "slot-lunch";
+        return lunch ? (open ? "Обед начнётся" : "Обед завершится") : (open ? "Перерыв начнётся" : "Перерыв завершится");
+      }
+      return "Действие применится";
+    };
     const pendLeft = (p) => Math.max(0, Math.ceil((p.until - Date.now()) / 1000));
-    const isConfirmable = (act, st) => {
-      if (act === "stop" || act === "leave-end") return true;
-      if (act === "absence") return !!(st.active && st.active.type === "absence_start");
+    /* что входит в отсчёт: начало смены, открытие/закрытие перерыва, отметка
+       отсутствия, его завершение и завершение увольнительной. Открытие формы
+       отсутствия — без отсчёта: форма сама по себе шаг подтверждения, а сама
+       отметка («Отметить») уже под защитой. */
+    const isConfirmable = (act, st) => (
+      act === "start" || act === "stop" || act === "absence-ok" || act === "leave-end" ||
+      (act === "absence" && !!(st.active && st.active.type === "absence_start")) ||
+      String(act).startsWith("slot-")
+    );
+    /* направление: открываем или закрываем состояние */
+    const pendDir = (act, st) => {
+      if (act === "start" || act === "absence-ok") return "open";
+      if (act === "stop" || act === "leave-end") return "close";
       if (String(act).startsWith("slot-")) {
         const slot = act.slice(5);
-        return !!(st.active && st.active.slot === slot && st.active.type === "break_start");
+        return (st.active && st.active.slot === slot && st.active.type === "break_start") ? "close" : "open";
       }
-      return false;
+      if (act === "absence") return (st.active && st.active.type === "absence_start") ? "close" : "open";
+      return "open";
     };
 
     /* шапка: смена, линия, перерывы, обед */
@@ -2374,11 +2396,11 @@ function robotMenuHtml() {
       if (pending) {
         const span = box.querySelector(".st-btn.is-pending span");
         if (span) span.textContent = `${pendingLabel(pending)} · ${pendLeft(pending)} с`;
-        if (statusEl) statusEl.innerHTML = `<span class="st-si k-pause"><i class="ph-bold ph-hourglass"></i></span><span class="st-st-txt">⏳ ${escHtml(pendingLabel(pending))} через ${pendLeft(pending)} с — можно отменить</span>`;
+        if (statusEl) statusEl.innerHTML = `<span class="st-si k-pause"><i class="ph-bold ph-hourglass"></i></span><span class="st-st-txt">⏳ ${escHtml(pendingLabel(pending))} через ${pendLeft(pending)} с — «Отмена» рядом или повторный клик</span>`;
         if (Date.now() >= pending.until) {
           const p = pending;
           pending = null;
-          execute(p.act);
+          execute(p.act, p.extra);
         }
       }
     };
@@ -2414,7 +2436,7 @@ function robotMenuHtml() {
         cls = "pause";
       } else if (!st.started) { icon = "ph-alarm"; text = "Ожидание начала смены"; cls = "wait"; }
       else { icon = "ph-briefcase"; text = "Работа"; cls = "work"; }
-      if (pending) { icon = "ph-hourglass"; cls = "pause"; text = `⏳ ${pendingLabel(pending)} через ${pendLeft(pending)} с — можно отменить`; }
+      if (pending) { icon = "ph-hourglass"; cls = "pause"; text = `⏳ ${pendingLabel(pending)} через ${pendLeft(pending)} с — «Отмена» рядом или повторный клик`; }
       if (statusEl) statusEl.innerHTML = `<span class="st-si k-${cls}"><i class="ph-bold ${icon}"></i></span><span class="st-st-txt">${escHtml(text)}</span>`;
       if (timerEl) timerEl.textContent = stHms(st.sec);
 
@@ -2424,7 +2446,7 @@ function robotMenuHtml() {
         const dis = opts.disabled || (pending && !isPend);   // во время отсчёта — всё, кроме этой
         const label = isPend ? `${pendingLabel(pending)} · ${pendLeft(pending)} с` : opts.label;
         const icon = isPend ? "ph-hourglass" : opts.icon;
-        return `<button class="st-btn${opts.run ? " is-run" : ""}${opts.used && !isPend ? " is-used" : ""}${isPend ? " is-pending" : ""}" data-act="${opts.act}" ${dis ? "disabled" : ""}>
+        return `<button class="st-btn${opts.run ? " is-run" : ""}${opts.used && !isPend ? " is-used" : ""}${isPend ? " is-pending" : ""}" data-act="${opts.act}" ${dis ? "disabled" : ""}${isPend ? ' title="Повторный клик — применить сразу"' : ""}>
         <i class="ph-bold ${icon}"></i><span>${escHtml(label)}</span>${(opts.used && !isPend) ? '<i class="ph-bold ph-x st-x"></i>' : ""}${isPend ? '<i class="st-pend-bar"></i>' : ""}</button>`;
       };
       const startedUsed = !!st.started;
@@ -2457,7 +2479,7 @@ function robotMenuHtml() {
       if (lwNowActive) {
         const lwPend = !!pending && pending.act === "leave-end";
         const lwDis = pending && !lwPend;
-        buttons.push(`<button class="st-btn st-btn-leave${lwPend ? " is-pending" : ""}" data-act="leave-end" ${lwDis ? "disabled" : ""}><i class="ph-bold ${lwPend ? "ph-hourglass" : "ph-door-open"}"></i><span>${escHtml(lwPend ? `${pendingLabel(pending)} · ${pendLeft(pending)} с` : "Завершить увольнительную")}</span>${lwPend ? '<i class="st-pend-bar"></i>' : ""}</button>`);
+        buttons.push(`<button class="st-btn st-btn-leave${lwPend ? " is-pending" : ""}" data-act="leave-end" ${lwDis ? "disabled" : ""}${lwPend ? ' title="Повторный клик — применить сразу"' : ""}><i class="ph-bold ${lwPend ? "ph-hourglass" : "ph-door-open"}"></i><span>${escHtml(lwPend ? `${pendingLabel(pending)} · ${pendLeft(pending)} с` : "Завершить увольнительную")}</span>${lwPend ? '<i class="st-pend-bar"></i>' : ""}</button>`);
       }
       buttons.push(btn({
         act: "stop", icon: "ph-sign-out", label: "Завершить смену",
@@ -2484,8 +2506,10 @@ function robotMenuHtml() {
       /* опоздания и затянувшиеся перерывы проверяет облачная функция cron — без участия браузера */
     };
 
-    /* действия: execute() — прежняя логика без изменений (её же зовёт отсчёт) */
-    const execute = async (act) => {
+    /* действия: execute() — прежняя логика без изменений (её же зовёт отсчёт).
+       extra передаётся из окна отсчёта: для отсутствия — выбранная причина
+       (форма к моменту срабатывания уже перерисована, DOM читать нельзя). */
+    const execute = async (act, extra) => {
       const st = stCalc(events, Date.now(), winsNow());
       const at = new Date().toISOString();
       const base = { id: "t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), empSlug: ME_SLUG, empName: emp.fullName, day: today };
@@ -2560,12 +2584,16 @@ function robotMenuHtml() {
         return;
       }
       if (act === "absence-ok") {
-        const sel = document.getElementById("st-reason");
-        const custom = document.getElementById("st-custom");
-        const baseReason = sel ? sel.value : "Без заявки";
-        const note = custom ? custom.value.trim() : "";
-        // «Иное» — только текст; иначе основа + уточнение из поля
-        const reason = baseReason === "Иное" && note ? note : (note ? `${baseReason} — ${note}` : baseReason);
+        // причина зафиксирована в момент клика (extra.reason), иначе читаем форму
+        let reason = extra && extra.reason;
+        if (!reason) {
+          const sel = document.getElementById("st-reason");
+          const custom = document.getElementById("st-custom");
+          const baseReason = sel ? sel.value : "Без заявки";
+          const note = custom ? custom.value.trim() : "";
+          // «Иное» — только текст; иначе основа + уточнение из поля
+          reason = baseReason === "Иное" && note ? note : (note ? `${baseReason} — ${note}` : baseReason);
+        }
         customReason = "";
         absenceOpen = false;
         push({ ...base, type: "absence_start", slot: "absence", at, reason });
@@ -2574,21 +2602,48 @@ function robotMenuHtml() {
       }
     };
 
-    /* P2.1: клик → опасное действие уходит в 10-секундный отсчёт с «Отмена»,
-       безопасное выполняется сразу. Анти-двойной-клик 3 с остаётся в execute(). */
+    /* P2.1: клик → любое действие учёта времени уходит в 10-секундный отсчёт
+       с «Отмена». Повторный клик по той же кнопке — применить сразу, не ждать.
+       Анти-двойной-клик 3 с остаётся внутри execute(). */
     box.addEventListener("click", (e) => {
       const b = e.target.closest("[data-act]");
       if (!b) return;
       const act = b.dataset.act;
-      if (act === "cancel-pending") { pending = null; render(); return; }
-      if (pending) return;                        // кнопки disabled, но подстрахуемся
-      const st = stCalc(events, Date.now(), winsNow());
-      if (isConfirmable(act, st)) {
-        pending = { act, until: Date.now() + ST_CONFIRM_MS };
+      if (act === "cancel-pending") {
+        // отмена отметки отсутствия — возвращаем форму с выбранной причиной
+        if (pending && pending.act === "absence-ok") absenceOpen = true;
+        pending = null;
         render();
         return;
       }
-      execute(act);
+      if (pending) {
+        // второй клик по той же кнопке = подтверждаю немедленно
+        if (act === pending.act) {
+          const p = pending;
+          pending = null;
+          render();
+          execute(p.act, p.extra);
+        }
+        return;                                   // остальные кнопки disabled
+      }
+      const st = stCalc(events, Date.now(), winsNow());
+      /* причина отсутствия снимается ДО отсчёта: кнопка «Отметить» исчезнет
+         при перерисовке, а через 10 секунд форму уже не прочитать */
+      let extra = null;
+      if (act === "absence-ok") {
+        const sel = document.getElementById("st-reason");
+        const custom = document.getElementById("st-custom");
+        const baseReason = sel ? sel.value : "Без заявки";
+        const note = custom ? custom.value.trim() : "";
+        extra = { reason: baseReason === "Иное" && note ? note : (note ? `${baseReason} — ${note}` : baseReason) };
+        absenceOpen = false;
+      }
+      if (isConfirmable(act, st)) {
+        pending = { act, dir: pendDir(act, st), until: Date.now() + ST_CONFIRM_MS, extra };
+        render();
+        return;
+      }
+      execute(act, extra);
     });
 
     box.addEventListener("change", (e) => {
