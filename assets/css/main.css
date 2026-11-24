@@ -2510,6 +2510,13 @@ html[data-theme="ocean"] .award-tile .medal {
 .now-alert h4 { margin: 0 0 10px; font-size: .9rem; display: flex; gap: 8px; align-items: center; color: #fbbf24; }
 .now-card.k-abs { border-color: rgba(251,191,36,.45); }
 .now-card.k-abs i { color: #fbbf24; }
+/* P2.2: «не вышел к смене» — по графику смена началась, «Начало» не нажато */
+.now-card.k-late { border-color: rgba(248,113,113,.55); }
+.now-card.k-late > i { color: #f87171; }
+/* P2.2: плашки-итоги стали фильтром списка */
+.now-sum .now-chip { cursor: pointer; user-select: none; transition: outline-color .15s; outline: 2px solid transparent; }
+.now-sum .now-chip:hover { background: rgba(148,163,184,.22); }
+.now-sum .now-chip.is-on { outline-color: currentColor; }
 .now-card.k-leave { border-color: rgba(34,211,238,.45); }
 .now-card.k-leave i { color: #22d3ee; }
 .now-act { flex: none; border: 1px solid rgba(148,163,184,.28); background: rgba(148,163,184,.08);

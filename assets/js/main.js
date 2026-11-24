@@ -640,6 +640,8 @@
      renderNowBoard(), иначе первый же рендер падал на TDZ (let __nowSyncOk)
      и плашки «Сейчас на смене» появлялись только со второго тика (60 с). */
   let __nowSyncOk = null;
+  /* P2.2: активный фильтр списка сотрудников по статусу (null — все). */
+  let nowFilter = null;
   function nowSyncSet(ok) { __nowSyncOk = ok; }
   function nowSync() {
     if (__nowSyncOk === null) return `<span class="now-chip s">… соединение</span>`;
@@ -818,6 +820,26 @@
         }).filter((x) => x && Date.now() >= x.start && Date.now() < x.end);
       }
     } catch (e) {}
+    /* P2.2: кто должен был начать смену, но «Начало» не нажал (порог 5 минут,
+       как у cron). График уже в памяти страницы — отдельный запрос не нужен. */
+    const monSched = (D.schedule && D.schedule.months && D.schedule.months[day.slice(0, 7)]) || null;
+    const dayNum = String(+day.slice(8, 10));
+    const WORK_KINDS = new Set(["shift", "weekend", "duty", "extra"]);
+    const shiftOf = (emp) => {
+      const sh = monSched && monSched.shifts ? (monSched.shifts[fioOf(emp.id)] || monSched.shifts[emp.fullName]) : null;
+      const s = sh && sh[dayNum];
+      if (!s || !WORK_KINDS.has(String(s.kind))) return null;
+      const m = /^(\d{1,2}):(\d{2})/.exec(String(s.time || ""));
+      if (!m) return null;
+      return { start: +m[1] * 60 + +m[2], time: String(s.time).trim() };
+    };
+    const late = list
+      .filter((x) => x.st.kind === "idle" && (() => { const s = shiftOf(x.emp); return !!s && nowMin > s.start + 5; })())
+      .map((x) => ({ emp: x.emp, s: shiftOf(x.emp) }));
+    const shown = !nowFilter ? list
+      : list.filter((x) => nowFilter === "v"
+        ? ["vacation", "dayoff", "leave"].includes(x.st.kind)
+        : x.st.kind === nowFilter);
     if (!list.length) {
       nowSyncSet(false);
       box.dataset.loaded = "1";
@@ -833,23 +855,27 @@
         <h3><i class="ph-bold ph-broadcast"></i> Сейчас на смене</h3>
         <span class="now-sync">${nowSync()}</span>
         <span class="now-sum">
-          <span class="now-chip w"><b>${cnt("work")}</b> работают</span>
-          <span class="now-chip p"><b>${cnt("pause")}</b> на паузе</span>
-          <span class="now-chip d"><b>${cnt("done")}</b> завершили</span>
-          <span class="now-chip i"><b>${cnt("idle")}</b> не начинали</span>
-          ${(cnt("vacation") + cnt("dayoff") + cnt("leave")) ? `<span class="now-chip v"><b>${cnt("vacation") + cnt("dayoff") + cnt("leave")}</b> отпуск / отгул</span>` : ""}
+          <span class="now-chip w${nowFilter === "work" ? " is-on" : ""}" data-f="work" title="Показать только работающих"><b>${cnt("work")}</b> работают</span>
+          <span class="now-chip p${nowFilter === "pause" ? " is-on" : ""}" data-f="pause" title="Показать только на паузе"><b>${cnt("pause")}</b> на паузе</span>
+          <span class="now-chip d${nowFilter === "done" ? " is-on" : ""}" data-f="done" title="Показать только завершивших"><b>${cnt("done")}</b> завершили</span>
+          <span class="now-chip i${nowFilter === "idle" ? " is-on" : ""}" data-f="idle" title="Показать только тех, кто ещё не начинал"><b>${cnt("idle")}</b> не начинали</span>
+          ${(cnt("vacation") + cnt("dayoff") + cnt("leave")) ? `<span class="now-chip v${nowFilter === "v" ? " is-on" : ""}" data-f="v" title="Показать только отсутствующих по плану"><b>${cnt("vacation") + cnt("dayoff") + cnt("leave")}</b> отпуск / отгул</span>` : ""}
         </span>
       </div>
       <div class="now-grid">
-        ${list.map((x) => `<div class="now-card k-${x.st.kind}" data-ns="${escNow(x.emp.id)}">
+        ${shown.length ? shown.map((x) => `<div class="now-card k-${x.st.kind}" data-ns="${escNow(x.emp.id)}">
           <i class="ph-bold ${x.st.icon}"></i>
           <span class="now-body"><b>${escNow(x.emp.fullName)}</b><span>${escNow(x.st.label)}${x.st.since ? " · с " + hm(x.st.since) : ""}</span><span class="now-line"><i style="width:${shiftPct(x.emp)}%"></i></span></span>
           <span class="now-time">${x.st.kind === "idle" ? "" : hms(x.st.sec)}</span>
-        </div>`).join("")}
+        </div>`).join("") : '<p class="muted">В этой группе сейчас никого нет — нажми на плашку ещё раз, чтобы показать всех.</p>'}
       </div>
-      ${(absNow.length || leaveNow.length) ? `<div class="now-alert">
+      ${(absNow.length || leaveNow.length || late.length) ? `<div class="now-alert">
         <h4><i class="ph-bold ph-warning-circle"></i> Требуют внимания</h4>
         <div class="now-grid">
+          ${late.map((l) => `<div class="now-card k-late">
+            <i class="ph-bold ph-alarm"></i>
+            <span class="now-body"><b>${escNow(l.emp.fullName)}</b><span>не вышел(а): смена ${escNow(l.s.time)} · «Начало» не нажато</span></span>
+          </div>`).join("")}
           ${absNow.map((a) => `<div class="now-card k-abs">
             <i class="ph-bold ph-walking"></i>
             <span class="now-body"><b>${escNow(a.emp)}</b><span>отсутствует${a.reason ? " · " + escNow(a.reason) : ""} · с ${hm(Date.parse(a.at))}</span></span>
@@ -874,6 +900,11 @@
         }
       }, 1000);
     }
+    box.querySelectorAll(".now-sum .now-chip[data-f]").forEach((c) => c.addEventListener("click", () => {
+      const f = c.getAttribute("data-f");
+      nowFilter = nowFilter === f ? null : f;
+      renderNowBoard();
+    }));
     box.querySelectorAll("[data-leave]").forEach((b) => b.addEventListener("click", async () => {
       const id = b.getAttribute("data-leave");
       if (!id) return;
