@@ -94,6 +94,52 @@ def git(*args):
                           capture_output=True, text=True)
 
 
+def pending_tasks():
+    """Задачи из админки (otp_tasks), которые ещё не выполнены."""
+    try:
+        return sb("GET", "otp_tasks?done_at=is.null&order=requested_at.asc&limit=5") or []
+    except Exception as e:
+        log("очередь задач недоступна:", e)
+        return []
+
+
+def mark_task(task_id, ok, message):
+    try:
+        sb("PATCH", f"otp_tasks?id=eq.{task_id}", {
+            "done_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "ok": bool(ok),
+            "message": str(message)[:400],
+        })
+    except Exception as e:
+        log("не удалось отметить задачу:", e)
+
+
+def process_tasks():
+    """Выполняет отложенные задачи: создание страниц сотруднику."""
+    tasks = pending_tasks()
+    if not tasks:
+        return
+    for t in tasks:
+        kind = t.get("kind")
+        payload = t.get("payload") or {}
+        tid = t.get("id")
+        log(f"=== задача {kind} {tid}")
+        try:
+            if kind == "add_employee":
+                fio = str(payload.get("fio") or "").strip()
+                slug = str(payload.get("slug") or "").strip()
+                if not fio or not slug:
+                    raise RuntimeError("нет ФИО или кода страницы")
+                run("add_employee.py", "--fio", fio, "--slug", slug,
+                    "--role", str(payload.get("role") or "Специалист ТП"))
+                mark_task(tid, True, "страницы созданы и опубликованы")
+            else:
+                raise RuntimeError("неизвестный тип задачи: " + str(kind))
+        except Exception as e:
+            log("ошибка задачи:", e)
+            mark_task(tid, False, str(e))
+
+
 def sync(tag):
     log(f"=== синхронизация графика ({tag}) {datetime.datetime.now():%d.%m.%Y %H:%M}")
     run("fetch_confluence.py")
@@ -122,6 +168,9 @@ def main():
     ap.add_argument("--if-requested", action="store_true", help="синхронизировать только по запросу с сайта")
     ap.add_argument("--no-push", action="store_true", help="не пушить в git")
     args = ap.parse_args()
+
+    # очередь задач из админки (создание страниц сотруднику) — в любом режиме
+    process_tasks()
 
     if args.if_requested:
         flag = read_flag()

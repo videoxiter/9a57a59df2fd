@@ -1424,6 +1424,7 @@
         </div>
         <div class="staff-add-foot">
           <button class="btn btn-primary" id="sa-add" type="button"><i class="ph-bold ph-plus" aria-hidden="true"></i> Добавить</button>
+          <label class="staff-add-check"><input type="checkbox" id="sa-pages" checked> создать страницы сразу</label>
           <span class="staff-hint" id="sa-msg"></span>
         </div>
       </div>
@@ -1495,9 +1496,29 @@
         return;
       }
       const known = D.employees.some((e) => (e.slug || e.id) === slug);
+      let queued = false;
+      if (!known) {
+        const chk = $("#sa-pages");
+        const c = D.hrRules && D.hrRules.cloud;
+        if (chk && chk.checked && c && c.url && c.key) {
+          fetch(`${c.url.replace(/\/$/, "")}/rest/v1/otp_tasks`, {
+            method: "POST",
+            headers: { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json", Prefer: "return=minimal" },
+            body: JSON.stringify([{
+              id: "task-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
+              kind: "add_employee",
+              payload: { fio, slug },
+              requested_by: window.OTP_ACTOR || "Руководитель",
+            }]),
+          }).catch(() => {});
+          queued = true;
+        }
+      }
       __staffMsg = known
         ? `Сохранено: ${fio}.`
-        : `Сохранено: ${fio}. Страница: ${location.origin}${SITE_ROOT}team/${slug}/start/ — появится после добавления сотрудника в данные сайта.`;
+        : `Сохранено: ${fio}. ` + (queued
+          ? "Страница создаётся — появится в течение 5 минут."
+          : `Страница появится после добавления в данные сайта: ${location.origin}${SITE_ROOT}team/${slug}/start/`);
       initStaffPage();
     });
     if (__staffMsg) { const m = $("#sa-msg"); if (m) m.textContent = __staffMsg; __staffMsg = ""; }
