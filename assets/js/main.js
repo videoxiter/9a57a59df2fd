@@ -1428,6 +1428,26 @@
           <span class="staff-hint" id="sa-msg"></span>
         </div>
       </div>
+      <div class="staff-add">
+        <h4><i class="ph-bold ph-chart-line"></i> KPI и бонусы за месяц</h4>
+        <div class="staff-add-grid">
+          <label>Сотрудник<select id="kpi-emp">${rows.filter((r) => r.slug !== "admin")
+            .map((r) => `<option value="${escNow(r.slug)}">${escNow(r.fio)}</option>`).join("")}</select></label>
+          <label>Месяц<select id="kpi-month">${(D.employees.find((e) => e.history && e.history.length) || { history: [] })
+            .history.map((h) => `<option value="${escNow(h.key)}">${escNow(h.month || h.key)}</option>`).join("")}</select></label>
+          <label>Качество<input id="kpi-quality" type="number" min="0" max="10" step="1"></label>
+          <label>Обучаемость<input id="kpi-learnability" type="number" min="0" max="10" step="1"></label>
+          <label>Инициатива<input id="kpi-initiative" type="number" min="0" max="10" step="1"></label>
+          <label>Вовлечённость<input id="kpi-engagement" type="number" min="0" max="10" step="1"></label>
+          <label>Дисциплина<input id="kpi-discipline" type="number" min="0" max="10" step="1"></label>
+          <label>Бонус, ₽<input id="kpi-bonus" type="number" min="0" step="100"></label>
+          <label>Комментарий<input id="kpi-note" placeholder="необязательно"></label>
+        </div>
+        <div class="staff-add-foot">
+          <button class="btn btn-primary" id="kpi-save" type="button"><i class="ph-bold ph-check" aria-hidden="true"></i> Сохранить и применить</button>
+          <span class="staff-hint" id="kpi-msg"></span>
+        </div>
+      </div>
       <p class="staff-hint">Пароль: если оставить пустым — не меняется. Логин — для личных сообщений в Мессенджере (например, a.bolgov@ftech.io).</p>
       <div class="staff-list">
         ${rows.map((r) => `<div class="staff-row" data-slug="${escNow(r.slug)}">
@@ -1520,6 +1540,63 @@
           ? "Страница создаётся — появится в течение 5 минут."
           : `Страница появится после добавления в данные сайта: ${location.origin}${SITE_ROOT}team/${slug}/start/`);
       initStaffPage();
+    });
+    /* KPI за месяц: сохраняем в otp_kpi и ставим задачу агенту (он применит к data.js) */
+    const kpiEmp = $("#kpi-emp"), kpiMonth = $("#kpi-month");
+    const KPI_KEYS = ["quality", "learnability", "initiative", "engagement", "discipline"];
+    const kpiFill = () => {
+      if (!kpiEmp || !kpiMonth) return;
+      const e = D.employees.find((x) => (x.slug || x.id) === kpiEmp.value);
+      const h = e && (e.history || []).find((x) => x.key === kpiMonth.value);
+      KPI_KEYS.forEach((k) => { const el = $("#kpi-" + k); if (el) el.value = (h && h[k] != null) ? h[k] : ""; });
+      const b = $("#kpi-bonus"); if (b) b.value = (h && h.bonus != null) ? h.bonus : "";
+      const n = $("#kpi-note"); if (n) n.value = "";
+    };
+    if (kpiEmp) kpiEmp.addEventListener("change", kpiFill);
+    if (kpiMonth) kpiMonth.addEventListener("change", kpiFill);
+    kpiFill();
+    const kpiSave = $("#kpi-save");
+    if (kpiSave) kpiSave.addEventListener("click", async () => {
+      const msg = $("#kpi-msg");
+      const emp = D.employees.find((x) => (x.slug || x.id) === (kpiEmp ? kpiEmp.value : ""));
+      if (!emp || !msg || !kpiMonth) return;
+      const month = kpiMonth.value;
+      const val = (id) => { const el = $(id); return el && el.value !== "" ? +el.value : null; };
+      const row = {
+        id: (emp.slug || emp.id) + ":" + month,
+        emp_slug: emp.slug || emp.id,
+        month,
+        quality: val("#kpi-quality"), learnability: val("#kpi-learnability"),
+        initiative: val("#kpi-initiative"), engagement: val("#kpi-engagement"),
+        discipline: val("#kpi-discipline"), bonus: val("#kpi-bonus"),
+        note: ($("#kpi-note") || {}).value || "",
+        updated_by: window.OTP_ACTOR || "Руководитель",
+      };
+      const c = D.hrRules && D.hrRules.cloud;
+      if (!c || !c.url || !c.key) { msg.textContent = "Нет конфигурации облака."; return; }
+      const base = c.url.replace(/\/$/, "");
+      const headers = { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json", Prefer: "return=minimal" };
+      kpiSave.disabled = true;
+      try {
+        const r = await fetch(`${base}/rest/v1/otp_kpi`, {
+          method: "POST",
+          headers: { ...headers, Prefer: "resolution=merge-duplicates,return=minimal" },
+          body: JSON.stringify([row]),
+        });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        await fetch(`${base}/rest/v1/otp_tasks`, {
+          method: "POST", headers,
+          body: JSON.stringify([{
+            id: "task-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
+            kind: "apply_kpi", payload: { emp_slug: row.emp_slug, month },
+            requested_by: row.updated_by,
+          }]),
+        });
+        msg.textContent = "Сохранено. Применится к сайту в течение 5 минут.";
+      } catch (e) {
+        msg.textContent = "Не удалось сохранить: " + e.message;
+      }
+      kpiSave.disabled = false;
     });
     if (__staffMsg) { const m = $("#sa-msg"); if (m) m.textContent = __staffMsg; __staffMsg = ""; }
     const scList = $("#sc-list");

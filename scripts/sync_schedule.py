@@ -133,6 +133,9 @@ def process_tasks():
                 run("add_employee.py", "--fio", fio, "--slug", slug,
                     "--role", str(payload.get("role") or "Специалист ТП"))
                 mark_task(tid, True, "страницы созданы и опубликованы")
+            elif kind == "apply_kpi":
+                run("apply_kpi.py")
+                mark_task(tid, True, "KPI применены и опубликованы")
             else:
                 raise RuntimeError("неизвестный тип задачи: " + str(kind))
         except Exception as e:
@@ -147,6 +150,11 @@ def sync(tag):
     run("generate_data.py", "--schedule-only")
     run("generate_pages.py")
     run("generate_dashboard.py")
+    # ручные KPI/бонусы из админки применяем поверх — после пересборки
+    try:
+        run("apply_kpi.py", "--no-push")
+    except Exception as e:
+        log("KPI не применены:", e)
     if not args.no_push:
         git("add", "-A")
         st = git("status", "--porcelain").stdout.strip()
