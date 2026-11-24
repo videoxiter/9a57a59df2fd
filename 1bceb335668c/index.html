@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="../assets/vendor/phosphor/fill/style.css">
   <link rel="stylesheet" href="../assets/vendor/phosphor/bold/style.css">
 
-  <link rel="stylesheet" href="../assets/css/main.css?v=29b6e1cd">
+  <link rel="stylesheet" href="../assets/css/main.css?v=7f56f7ab">
 </head>
 
 <body data-page="home">
@@ -43,6 +43,17 @@
         <div id="home-side"></div>
       </aside>
     </div>
+    <!-- Модальные формы занесения: увольнительная, отгул, переработка -->
+    <div class="op-modal" id="op-modal" hidden>
+      <div class="op-modal-box" role="dialog" aria-modal="true" aria-labelledby="op-modal-title">
+        <div class="op-modal-h">
+          <h3 id="op-modal-title"></h3>
+          <button class="op-modal-x" id="op-modal-x" type="button" aria-label="Закрыть"><i class="ph-bold ph-x" aria-hidden="true"></i></button>
+        </div>
+        <form id="op-form" novalidate></form>
+        <div class="op-form-err" id="op-form-err" role="status"></div>
+      </div>
+    </div>
   </section>
 <section class="wrap sec" id="hr-sec">
     <div id="hr-requests" class="hr-block"></div>
@@ -59,17 +70,17 @@
       <div style="font-family:var(--font-mono);font-size:.78rem">обновлено: <span id="foot-updated">…</span></div>
     </div>
   </footer>
-  <script src="../assets/vendor/gsap.min.js?v=29b6e1cd"></script>
-  <script src="../assets/vendor/ScrollTrigger.min.js?v=29b6e1cd"></script>
-  <script src="../assets/vendor/lenis.min.js?v=29b6e1cd"></script>
-  <script src="../assets/vendor/chart.umd.min.js?v=29b6e1cd"></script>
-  <script src="../assets/js/themes.js?v=29b6e1cd"></script>
-  <script src="../assets/js/data.js?v=29b6e1cd"></script>
-  <script src="../assets/js/auth.js?v=29b6e1cd"></script>
+  <script src="../assets/vendor/gsap.min.js?v=7f56f7ab"></script>
+  <script src="../assets/vendor/ScrollTrigger.min.js?v=7f56f7ab"></script>
+  <script src="../assets/vendor/lenis.min.js?v=7f56f7ab"></script>
+  <script src="../assets/vendor/chart.umd.min.js?v=7f56f7ab"></script>
+  <script src="../assets/js/themes.js?v=7f56f7ab"></script>
+  <script src="../assets/js/data.js?v=7f56f7ab"></script>
+  <script src="../assets/js/auth.js?v=7f56f7ab"></script>
   <script>window.OTP_AUTH && window.OTP_AUTH.protect("admin", true);</script>
-  <script src="../assets/js/common.js?v=29b6e1cd"></script>
-  <script src="../assets/js/cloud.js?v=29b6e1cd"></script>
-  <script src="../assets/js/hr.js?v=29b6e1cd"></script>
-  <script src="../assets/js/main.js?v=29b6e1cd"></script>
+  <script src="../assets/js/common.js?v=7f56f7ab"></script>
+  <script src="../assets/js/cloud.js?v=7f56f7ab"></script>
+  <script src="../assets/js/hr.js?v=7f56f7ab"></script>
+  <script src="../assets/js/main.js?v=7f56f7ab"></script>
 </body>
 </html>

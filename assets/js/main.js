@@ -1008,22 +1008,157 @@
       </section>`;
   }
 
-  /* Кнопки-действия и дата в шапке оперативной главной. Полные формы — этап 2;
-     пока кнопки плавно ведут к блокам заявок и журнала ниже. */
+  /* Шапка оперативной главной + формы занесения (план 24.11.2026, этап 2). */
   (function initHomeChrome() {
     const dateEl = $("#op-date");
     if (dateEl) {
       const d = new Date();
       dateEl.textContent = `${d.toLocaleDateString("ru-RU", { day: "numeric", month: "long" })} · обновлено ${d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} МСК`;
     }
-    const hr = $("#hr-sec"), hours = $("#hours-form");
-    document.querySelectorAll(".op-actions [data-op]").forEach((b) => b.addEventListener("click", () => {
-      const target = b.getAttribute("data-op") === "overtime" ? hours : hr;
-      if (!target) return;
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
-      target.classList.add("op-flash");
-      setTimeout(() => target.classList.remove("op-flash"), 1400);
-    }));
+
+    const modal = $("#op-modal"), form = $("#op-form"), titleEl = $("#op-modal-title"), errEl = $("#op-form-err");
+    if (!modal || !form) return;
+    const LABEL = { leave: "Увольнительная", dayoff: "Отгул", overtime: "Начисление переработки" };
+    const ICON = { leave: "ph-door-open", dayoff: "ph-calendar-minus", overtime: "ph-plus-circle" };
+    const FIELDS = {
+      leave: [["date", "Дата", "date", true], ["from", "Время с", "time", true], ["to", "Время до", "time", true], ["reason", "Причина", "textarea", true]],
+      dayoff: [["date", "Дата отгула", "date", true], ["date2", "Дата выходной смены", "date", true], ["reason", "Комментарий", "textarea", false]],
+      overtime: [["date", "Дата работы", "date", true], ["hours", "Часы", "number", true], ["reason", "Какие задачи выполнялись", "textarea", true]],
+    };
+    const todayIso = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+    const parseHM = (s) => { const m = /^(\d{1,2}):(\d{2})$/.exec(String(s || "")); return m ? +m[1] * 60 + +m[2] : null; };
+    const hm = (min) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+    let curType = null;
+    let busy = false;
+
+    const empOptions = () => (D.employees || []).filter((e) => e.status !== "left")
+      .map((e) => `<option value="${escAttr(e.slug || e.id)}">${escAttr(e.fullName)}</option>`).join("");
+    const escAttr = (s) => String(s == null ? "" : s).replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
+
+    /* Собирает заявку из формы: {rec} или {err}. Часы — из времени или поля. */
+    function buildRec() {
+      const fd = Object.fromEntries(new FormData(form).entries());
+      const emp = (D.employees || []).find((e) => (e.slug || e.id) === fd.emp);
+      if (!emp) return { err: "Выбери сотрудника." };
+      let hours = null;
+      if (curType === "dayoff") hours = 8;
+      else if (curType === "overtime") hours = Number(String(fd.hours || "").replace(",", "."));
+      else {
+        const a = parseHM(fd.from), b = parseHM(fd.to);
+        hours = (a != null && b != null && b > a) ? Math.round((b - a) / 6) / 10 : null;
+        if (hours == null) return { err: "Проверь время: конец должен быть позже начала." };
+      }
+      if (!fd.date) return { err: "Укажи дату." };
+      const max = (D.hrRules && D.hrRules.leaveMaxHours) || 4;
+      if (curType === "leave" && hours > max) return { err: `Увольнительная больше ${max} ч в день невозможна.` };
+      if (curType === "overtime" && !(hours > 0 && hours <= 24)) return { err: "Часы должны быть от 0,5 до 24." };
+      if (curType === "dayoff" && !fd.date2) return { err: "Укажи дату выходной смены." };
+      const nowIso = new Date().toISOString();
+      const rec = {
+        id: "req-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
+        empSlug: emp.slug || emp.id, empName: emp.fullName, type: curType,
+        date: fd.date, date2: fd.date2 || "", from: fd.from || "", to: fd.to || "",
+        hours, reason: String(fd.reason || "").trim(), status: "approved",
+        created: nowIso, decided: nowIso, decidedBy: window.OTP_ACTOR || "Руководитель",
+      };
+      if (curType === "leave" && fd.noDeduct) rec.noDeduct = true;
+      return { rec };
+    }
+
+    /* Расчёт по действующим правилам (otp.reqDelta): что произойдёт с часами. */
+    function deltaText(rec) {
+      if (!window.otp || !otp.reqDelta) return "";
+      const d = otp.reqDelta(rec);
+      if (rec.type === "dayoff") return "отгул часы не двигает";
+      if (rec.type === "leave") return rec.noDeduct ? "часы не спишутся (решение руководителя)" : (d < 0 ? `спишется ${Math.abs(d)} ч` : "часы не спишутся");
+      return d > 0 ? `начислится ${d} ч` : "часы не изменятся";
+    }
+
+    function preview() {
+      const box = $("#op-preview");
+      if (!box) return;
+      const r = buildRec();
+      if (r.err) { box.textContent = r.err; box.className = "op-preview is-err"; return; }
+      box.textContent = `Итог: ${deltaText(r.rec)}`;
+      box.className = "op-preview";
+    }
+
+    /* Пересечения: та же дата у того же сотрудника (для увольнительной — по времени). */
+    async function conflict(rec) {
+      try {
+        const rows = await window.OTP_AUTH.api("admin", `otp_requests?select=*&empSlug=eq.${encodeURIComponent(rec.empSlug)}&type=eq.${rec.type}&date=eq.${rec.date}`, "GET");
+        const list = (Array.isArray(rows) ? rows : []).filter((r) => r.status !== "rejected" && r.status !== "cancelled");
+        for (const r of list) {
+          if (rec.type === "leave") {
+            const a1 = parseHM(rec.from), b1 = parseHM(rec.to), a2 = parseHM(r.from), b2 = parseHM(r.to);
+            if (a1 != null && b1 != null && a2 != null && b2 != null && a1 < b2 && a2 < b1) {
+              return `Пересечение с увольнительной ${hm(a2)}–${hm(b2)} в этот день.`;
+            }
+            if (r.noDeduct === true && !rec.noDeduct) return "На эту дату уже есть увольнительная без списания.";
+          } else if (rec.type === "dayoff") {
+            if (String(r.date2 || "") === String(rec.date2 || "")) return "Отгул за эту выходную смену уже зарегистрирован.";
+            if (String(r.date || "") === String(rec.date || "")) return "На эту дату отгул уже есть.";
+          } else {
+            return "Переработка на эту дату уже зарегистрирована.";
+          }
+        }
+      } catch (e) { /* нет связи — не блокируем, сервер всё равно проверит */ }
+      return "";
+    }
+
+    function open(type) {
+      curType = type;
+      titleEl.innerHTML = `<i class="ph-bold ${ICON[type]}" aria-hidden="true"></i> ${LABEL[type]}`;
+      errEl.textContent = "";
+      const fields = FIELDS[type].map(([name, label, kind, req]) => {
+        if (kind === "textarea") return `<label class="op-f"><span>${label}</span><textarea name="${name}" rows="2" ${req ? "required" : ""}></textarea></label>`;
+        if (kind === "number") return `<label class="op-f"><span>${label}</span><input type="number" name="${name}" step="0.5" min="0.5" max="24" ${req ? "required" : ""}></label>`;
+        return `<label class="op-f"><span>${label}</span><input type="${kind}" name="${name}" value="${kind === "date" ? todayIso() : ""}" ${req ? "required" : ""}></label>`;
+      }).join("");
+      form.innerHTML = `<label class="op-f"><span>Сотрудник</span><select name="emp">${empOptions()}</select></label>
+        ${fields}
+        ${type === "leave" ? `<label class="op-check"><input type="checkbox" name="noDeduct"> <span>Не списывать часы</span></label>
+          <div class="op-note">Увольнительная — не больше ${(D.hrRules && D.hrRules.leaveMaxHours) || 4} ч в день.</div>` : ""}
+        <div class="op-preview" id="op-preview"></div>
+        <div class="op-form-foot">
+          <button class="btn btn-primary" type="submit"><i class="ph-bold ph-check" aria-hidden="true"></i> Зарегистрировать</button>
+          <button class="btn btn-ghost" type="button" id="op-cancel">Отмена</button>
+        </div>`;
+      modal.hidden = false;
+      $("#op-cancel").addEventListener("click", close);
+      form.querySelectorAll("input,select,textarea").forEach((el) => el.addEventListener("input", preview));
+      preview();
+      const first = form.querySelector("select");
+      if (first) first.focus();
+    }
+    function close() { modal.hidden = true; curType = null; }
+
+    document.querySelectorAll(".op-actions [data-op]").forEach((b) => b.addEventListener("click", () => open(b.getAttribute("data-op"))));
+    const x = $("#op-modal-x");
+    if (x) x.addEventListener("click", close);
+    modal.addEventListener("click", (e) => { if (e.target === modal) close(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !modal.hidden) close(); });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (busy) return;                       // двойное нажатие = одна операция
+      const r = buildRec();
+      if (r.err) { errEl.textContent = r.err; return; }
+      busy = true;
+      errEl.textContent = "Проверяю пересечения…";
+      const bad = await conflict(r.rec);
+      if (bad) { errEl.textContent = bad; busy = false; return; }
+      errEl.textContent = "Сохраняю…";
+      try {
+        if (window.OTP_CLOUD) await window.OTP_CLOUD.upsert(r.rec);
+        close();
+        renderNowBoard();                    // обновить таблицу и правую колонку
+        if (window.otpRefreshHours) window.otpRefreshHours();
+      } catch (err) {
+        errEl.textContent = "Не удалось сохранить — проверь связь и попробуй ещё раз.";
+      }
+      busy = false;
+    });
   })();
 
   /* ---------- графики (страница «Динамика») ---------- */

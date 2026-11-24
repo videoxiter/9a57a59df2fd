@@ -55,6 +55,17 @@
         <div id="home-side"></div>
       </aside>
     </div>
+    <!-- Модальные формы занесения: увольнительная, отгул, переработка -->
+    <div class="op-modal" id="op-modal" hidden>
+      <div class="op-modal-box" role="dialog" aria-modal="true" aria-labelledby="op-modal-title">
+        <div class="op-modal-h">
+          <h3 id="op-modal-title"></h3>
+          <button class="op-modal-x" id="op-modal-x" type="button" aria-label="Закрыть"><i class="ph-bold ph-x" aria-hidden="true"></i></button>
+        </div>
+        <form id="op-form" novalidate></form>
+        <div class="op-form-err" id="op-form-err" role="status"></div>
+      </div>
+    </div>
   </section>
 
     <section class="wrap sec" id="hr-sec">
