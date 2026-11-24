@@ -2666,6 +2666,16 @@ function robotMenuHtml() {
     setInterval(stSync, 15000);
     document.addEventListener("visibilitychange", stSync);
     window.addEventListener("focus", stSync);
+    /* P3: Realtime — если событие появилось с другого устройства (или админ
+       поправил журнал), статус обновится сразу, а не через 15 с. Опрос выше
+       остаётся страховкой: при выключенном Realtime всё работает как раньше. */
+    if (window.otp && otp.realtime) {
+      let rtT = 0;
+      otp.realtime("otp_time_events", () => {
+        clearTimeout(rtT);
+        rtT = setTimeout(stSync, 400);   // пачка изменений — одно обновление
+      }, ST_CLOUD());
+    }
     /* мини-график за 7 дней */
     const weekEl = document.getElementById("st-week");
     if (weekEl) {

@@ -15,6 +15,7 @@ team/<slug>/rules/     — Правила (книга)
 import copy
 import json
 import os
+import subprocess
 import sys
 
 # вывод в консоли (Windows cp1251 не знает → и ×)
@@ -129,7 +130,21 @@ TEMPLATE = """<!DOCTYPE html>
 </html>
 """
 
-V = "209"
+def _version():
+    """Версия для ?v= в ссылках на ассеты: короткий git-хеш (кэш сбрасывается сам).
+    Если git недоступен — время сборки. Ручной инкремент больше не нужен."""
+    try:
+        h = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"],
+                                    cwd=ROOT, text=True, stderr=subprocess.DEVNULL).strip()
+        if h:
+            return h
+    except Exception:
+        pass
+    import datetime
+    return datetime.datetime.now().strftime("%Y%m%d%H%M")
+
+
+V = _version()
 
 # Турнирная таблица команды (данные коллег) отдаётся только этим сотрудникам.
 # У остальных в payload её нет вовсе — ни в разметке, ни в исходнике страницы.

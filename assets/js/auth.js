@@ -94,6 +94,15 @@
         p_id: id, p_at: at || null, p_del: !!del,
       });
     },
+    /* P3: метрики — неудачные попытки входа (таблицу otp_login_fails пишет
+       otp_login). Нужна админ-сессия; без неё — пустой список. */
+    loginFails: function () {
+      var t = tok("admin");
+      if (!t) return Promise.resolve([]);
+      return rpc("otp_login_fails_list", { p_token: t }).then(function (res) {
+        return (res && res.ok && Array.isArray(res.list)) ? res.list : [];
+      }).catch(function () { return []; });
+    },
     contentList: function (emp) {
       return rpc("otp_content_list", { p_emp: emp }).catch(function () { return []; });
     },

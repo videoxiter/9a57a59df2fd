@@ -684,6 +684,17 @@
     document.addEventListener("visibilitychange", () => { if (!document.hidden) push(); });
   })();
 
+  /* P3: Realtime на дашборде — «Сейчас на смене» обновляется по факту события
+     (с любого устройства), а не только раз в минуту. Если Realtime выключен
+     в Supabase, подписка молча ничего не делает — опрос 60 с работает как раньше. */
+  if (otp.realtime) {
+    let rtT = 0;
+    otp.realtime("otp_time_events", () => {
+      clearTimeout(rtT);
+      rtT = setTimeout(() => { if (!document.hidden) renderNowBoard(); }, 1200);
+    });
+  }
+
   /* ---------- «Сейчас на смене»: статусы по событиям «Стартовой» ---------- */
   async function renderNowBoard() {
     const box = $("#now-board");
@@ -1138,6 +1149,16 @@
           <div class="staff-cell staff-save"><button class="btn btn-primary" data-save>Сохранить</button><button type="button" class="btn btn-ghost" data-access>Текст доступа</button><span class="staff-ok" hidden>сохранено</span></div>
         </div>`).join("")}
       </div>`;
+    /* P3: метрики — неудачные попытки входа за последние 15 минут (скрипт
+       scripts/supabase_v6_realtime.sql). Показываем тихо, не мешая работе. */
+    A.loginFails().then((list) => {
+      if (!Array.isArray(list) || !list.length) return;
+      const total = list.reduce((s, x) => s + (+x.fails || 0), 0);
+      const head = app.querySelector(".staff-head");
+      if (head && !document.getElementById("staff-fails")) {
+        head.insertAdjacentHTML("afterend", `<p class="staff-hint" id="staff-fails">🔒 Неудачные входы (за 15 мин): <b>${total}</b> — ${list.map((x) => escNow(x.slug) + " ×" + (+x.fails || 0)).join(", ")}</p>`);
+      }
+    }).catch(() => {});
     app.insertAdjacentHTML("beforeend", `<div class="sc-wrap">
       <h3><i class="ph-bold ph-medal"></i> Достижения, бонусы и зоны роста</h3>
       <p class="staff-hint">Записи появляются на личной странице сотрудника в соответствующем разделе.</p>

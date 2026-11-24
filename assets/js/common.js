@@ -223,6 +223,55 @@
     if (r.type === "overtime") return `начислено ${h(d)} ч`;
     return "";
   };
+  /* ---------- Supabase Realtime (push-события вместо опроса) ----------
+     Подписка на изменения таблицы через WebSocket Supabase. Нужен публичный
+     apikey и включённый Realtime на таблице (scripts/supabase_v6_realtime.sql).
+     Если Realtime выключен/недоступен, вызов просто ничего не делает —
+     страницы продолжают работать на обычном опросе (fallback).
+     onChange(data) вызывается на INSERT/UPDATE/DELETE; сам решает, что делать. */
+  function realtime(table, onChange, cfg) {
+    try {
+      if (typeof WebSocket === "undefined") return;
+      const c = cfg || (window.OTP_DATA && window.OTP_DATA.hrRules && window.OTP_DATA.hrRules.cloud);
+      if (!c || !c.url || !c.key) return;
+      let ws = null, ref = 0, hb = 0, closed = false, retry = 0;
+      const url = c.url.replace(/^http/, "ws").replace(/\/$/, "") +
+        "/realtime/v1/websocket?apikey=" + encodeURIComponent(c.key) + "&vsn=1.0.0";
+      const send = (obj) => { try { if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); } catch (e) {} };
+      const connect = () => {
+        try { ws = new WebSocket(url); } catch (e) { return; }
+        ws.onopen = () => {
+          retry = 0;
+          send({
+            topic: "realtime:" + table, event: "phx_join",
+            payload: { config: { broadcast: { self: false }, presence: { key: "" },
+              postgres_changes: [{ event: "*", schema: "public", table: table }] } },
+            ref: String(++ref),
+          });
+          clearInterval(hb);
+          hb = setInterval(() => send({ topic: "phoenix", event: "heartbeat", payload: {}, ref: String(++ref) }), 25000);
+        };
+        ws.onmessage = (ev) => {
+          try {
+            const m = JSON.parse(ev.data);
+            if (m && m.event === "postgres_changes") onChange(m.payload && m.payload.data);
+          } catch (e) {}
+        };
+        ws.onclose = () => {
+          clearInterval(hb);
+          if (closed) return;
+          retry = Math.min(retry + 1, 6);
+          setTimeout(connect, 3000 * retry);   // 3…18 с, потом ровно 18 с
+        };
+      };
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden && ws && ws.readyState !== 1) { try { ws.close(); } catch (e) {} connect(); }
+      });
+      window.addEventListener("beforeunload", () => { closed = true; try { ws && ws.close(); } catch (e) {} });
+      connect();
+    } catch (e) {}
+  }
+  otp.realtime = realtime;
   otp.reveal = reveal;
 
   /* первичное раскрытие статики */

@@ -1,0 +1,54 @@
+name: Проверка сайта
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Синтаксис JavaScript
+        run: |
+          fail=0
+          for f in assets/js/*.js; do
+            if ! node --check "$f"; then fail=1; fi
+          done
+          exit $fail
+
+      - name: Данные data.js — валидный JSON
+        run: |
+          node -e "
+          const fs = require('fs');
+          const raw = fs.readFileSync('assets/js/data.js', 'utf8');
+          const mark = 'window.OTP_DATA = ';
+          const start = raw.indexOf(mark) + mark.length;
+          const payload = raw.slice(start).trim().replace(/;\s*$/, '');
+          const d = JSON.parse(payload);
+          if (!Array.isArray(d.employees) || !d.employees.length) throw new Error('нет списка сотрудников');
+          console.log('data.js OK: сотрудников', d.employees.length);
+          "
+
+      - name: Генераторы Python компилируются
+        run: python -m py_compile scripts/generate_pages.py scripts/generate_dashboard.py
+
+      - name: Уведомить «ДисКо» при падении
+        if: failure()
+        env:
+          BOT: ${{ secrets.YANDEX_BOT_TOKEN }}
+          CHAT: ${{ secrets.DISCO_CHAT_ID }}
+        run: |
+          if [ -z "$BOT" ] || [ -z "$CHAT" ]; then
+            echo "Секреты YANDEX_BOT_TOKEN / DISCO_CHAT_ID не заданы — уведомление пропущено"
+            exit 0
+          fi
+          curl -s -X POST https://botapi.messenger.yandex.net/bot/v1/messages/sendText/ \
+            -H "Authorization: OAuth $BOT" \
+            -H 'Content-Type: application/json' \
+            -d "{\"chat_id\":\"$CHAT\",\"text\":\"⚠️ Проверка сайта упала: ${{ github.repository }} · коммит ${{ github.sha }}\"}"

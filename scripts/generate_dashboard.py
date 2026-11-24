@@ -12,6 +12,7 @@
 """
 import os
 import re
+import subprocess
 import sys
 
 # вывод в консоли (Windows cp1251 не знает →)
@@ -22,7 +23,22 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DASH = os.path.join(ROOT, "1bceb335668c")
 SRC = os.path.join(DASH, "index.html")
 SOURCE = os.path.join(ROOT, "scripts", "dashboard_source.html")   # неизменный исходник секций
-V = "209"
+
+
+def _version():
+    """Версия для ?v=: короткий git-хеш, иначе время сборки (ручной инкремент не нужен)."""
+    try:
+        h = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"],
+                                    cwd=ROOT, text=True, stderr=subprocess.DEVNULL).strip()
+        if h:
+            return h
+    except Exception:
+        pass
+    import datetime
+    return datetime.datetime.now().strftime("%Y%m%d%H%M")
+
+
+V = _version()
 
 PAGES = [
     ("", "Моя команда", "team", ["top", "now", "best", "hr-sec", "hours", "rating"]),

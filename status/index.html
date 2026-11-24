@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Статус сайта · Мои результаты</title>
+  <meta name="robots" content="noindex">
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: #0b1218; color: #e6edf3; padding: 32px 20px; }
+    .wrap { max-width: 760px; margin: 0 auto; }
+    h1 { font-size: 22px; margin: 0 0 6px; }
+    .sub { color: #9aa6b6; margin: 0 0 24px; font-size: 14px; }
+    .row { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px;
+      border: 1px solid rgba(148,163,184,.18); background: rgba(148,163,184,.05); margin-bottom: 10px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: #64748b; flex: none; }
+    .dot.ok { background: #34d399; box-shadow: 0 0 10px rgba(52,211,153,.6); }
+    .dot.bad { background: #f87171; box-shadow: 0 0 10px rgba(248,113,113,.6); }
+    .dot.wait { background: #fbbf24; }
+    .name { font-weight: 600; }
+    .detail { margin-left: auto; color: #9aa6b6; font-size: 13px; text-align: right; }
+    .foot { margin-top: 22px; font-size: 13px; color: #64748b; line-height: 1.6; }
+    a { color: #67e8f9; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code { color: #cbd5e1; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Статус сайта</h1>
+    <p class="sub">Проверка доступности сервисов в браузере. Обнови страницу, чтобы повторить.</p>
+
+    <div class="row"><span class="dot wait" id="d-assets"></span><span class="name">Файлы сайта (GitHub Pages)</span><span class="detail" id="t-assets">проверяю…</span></div>
+    <div class="row"><span class="dot wait" id="d-sched"></span><span class="name">График отдела (schedule.json)</span><span class="detail" id="t-sched">проверяю…</span></div>
+    <div class="row"><span class="dot wait" id="d-cloud"></span><span class="name">Облако Supabase (база учёта времени)</span><span class="detail" id="t-cloud">проверяю…</span></div>
+
+    <div class="foot">
+      Версия страниц — <code id="ver">—</code><br>
+      Время проверки: <span id="ts">—</span><br><br>
+      <a href="../1bceb335668c/">Дашборд команды</a> ·
+      <a href="../">На главную</a>
+    </div>
+  </div>
+  <script>
+    (function () {
+      "use strict";
+      var SB_URL = "https://qfhjkynkvltquzyskfgi.supabase.co";
+      var SB_KEY = "sb_publishable_L_KQNO6S3tK2df7DhgGywQ_wt_U41Hd"; // публичный ключ сайта
+      var $ = function (id) { return document.getElementById(id); };
+      var set = function (id, ok, text) {
+        $("d-" + id).className = "dot " + (ok ? "ok" : "bad");
+        $("t-" + id).textContent = text;
+      };
+      document.getElementById("ts").textContent = new Date().toLocaleString("ru-RU");
+      set("assets", null, "проверяю…");
+      // 1) файлы сайта
+      fetch("../assets/css/main.css", { method: "HEAD", cache: "no-store" })
+        .then(function (r) { set("assets", r.ok, r.ok ? "доступны" : "HTTP " + r.status); })
+        .catch(function () { set("assets", false, "недоступны"); });
+      // 2) график отдела
+      fetch("../assets/data/schedule.json", { cache: "no-store" })
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+        .then(function (j) {
+          var g = (j && (j.generated || (j.schedule && j.schedule.generated))) || "?";
+          set("sched", true, "от " + g);
+        })
+        .catch(function (e) { set("sched", false, "ошибка " + e); });
+      // 3) облако
+      fetch(SB_URL + "/rest/v1/otp_time_events?select=day&limit=1", {
+        headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY },
+        cache: "no-store",
+      })
+        .then(function (r) { set("cloud", r.ok, r.ok ? "отвечает (HTTP " + r.status + ")" : "HTTP " + r.status); })
+        .catch(function () { set("cloud", false, "нет ответа"); });
+      // версия страниц — из ссылки на main.css (там ?v=<хеш>)
+      try {
+        var link = document.querySelector('link[href*="main.css"]');
+        if (link) {
+          var m = /v=([\w.-]+)/.exec(link.getAttribute("href") || "");
+          if (m) $("ver").textContent = m[1];
+        }
+      } catch (e) {}
+      // на этой странице main.css не подключён — подтянем версию из дашборда
+      fetch("../1bceb335668c/index.html", { cache: "no-store" })
+        .then(function (r) { return r.ok ? r.text() : ""; })
+        .then(function (html) {
+          if ($("ver").textContent !== "—") return;
+          var m = /main\.css\?v=([\w.-]+)/.exec(html || "");
+          if (m) $("ver").textContent = m[1];
+        })
+        .catch(function () {});
+    })();
+  </script>
+</body>
+</html>
