@@ -636,6 +636,17 @@
     renderDuty();
   }
 
+  /* P1.3: индикатор синхронизации дашборда. Объявлен ДО первого вызова
+     renderNowBoard(), иначе первый же рендер падал на TDZ (let __nowSyncOk)
+     и плашки «Сейчас на смене» появлялись только со второго тика (60 с). */
+  let __nowSyncOk = null;
+  function nowSyncSet(ok) { __nowSyncOk = ok; }
+  function nowSync() {
+    if (__nowSyncOk === null) return `<span class="now-chip s">… соединение</span>`;
+    if (__nowSyncOk) return `<span class="now-chip s ok" title="Данные подтягиваются из облака автоматически"><i class="ph-bold ph-check-circle"></i> синхр. ${new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</span>`;
+    return `<span class="now-chip s warn" title="Не удалось опросить данные (интернет или прокси). Статусы сотрудников на их экранах не зависят от этого."><i class="ph-bold ph-wifi-high-signal-slash"></i> офлайн</span>`;
+  }
+
   otp.reveal(document);
   hydrateHours();
   renderHoursJournal();
@@ -670,16 +681,6 @@
     setInterval(push, 10 * 60 * 1000);
     document.addEventListener("visibilitychange", () => { if (!document.hidden) push(); });
   })();
-
-  /* P1.3: индикатор синхронизации дашборда — результат последнего статус-опроса.
-     Обновляется на каждом renderNowBoard (60 с): «синхр. ЧЧ:ММ» / «офлайн». */
-  let __nowSyncOk = null;
-  function nowSyncSet(ok) { __nowSyncOk = ok; }
-  function nowSync() {
-    if (__nowSyncOk === null) return `<span class="now-chip s">… соединение</span>`;
-    if (__nowSyncOk) return `<span class="now-chip s ok" title="Данные подтягиваются из облака автоматически"><i class="ph-bold ph-check-circle"></i> синхр. ${new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</span>`;
-    return `<span class="now-chip s warn" title="Не удалось опросить данные (интернет или прокси). Статусы сотрудников на их экранах не зависят от этого."><i class="ph-bold ph-wifi-high-signal-slash"></i> офлайн</span>`;
-  }
 
   /* ---------- «Сейчас на смене»: статусы по событиям «Стартовой» ---------- */
   async function renderNowBoard() {

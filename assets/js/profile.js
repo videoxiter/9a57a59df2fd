@@ -1991,29 +1991,18 @@ function robotMenuHtml() {
   let __stPend = 0;
   const stPendingInc = () => { __stPend++; };
   function stPendingDec(n) { __stPend = Math.max(0, __stPend - (n || 1)); renderStOutbox(); }
-  /* P1.1: видимая офлайн-очередь. Пока событие летит в облако (или сеть
-     прервалась) — индикатор «⏳ не отправлено: N»; после успешного ответа —
-     «✓ синхронизировано ЧЧ:ММ». Закрытая вкладка догоняется автоматически:
-     событие ждёт в localStorage и улетает при следующем открытии «Стартовой». */
+  /* P1.1: очередь неотправленных событий. Показываем строку ТОЛЬКО когда
+     реально что-то не ушло (нет связи) — в обычной работе её не видно.
+     Закрытая вкладка догоняется автоматически: событие ждёт в localStorage
+     и улетает при следующем открытии «Стартовой». */
   const renderStOutbox = () => {
     const el = document.getElementById("st-outbox");
     if (!el) return;
     try {
       const pend = stLocal().length;
-      if (__stPend > 0 || pend > 0) {
-        const last = +localStorage.getItem("otp_time_last_sync") || 0;
-        const hhmm = (t) => new Date(t).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
-        el.hidden = false;
-        el.innerHTML = `<i class="ph-bold ph-cloud-arrow-up"></i> <span>
-          события в пути — не отправлено: ${__stPend + pend}
-          ${last ? ` · синхронизировано в ${hhmm(last)}` : " · синхронизация ещё не была"}</span>`;
-        return;
-      }
-      const last = +localStorage.getItem("otp_time_last_sync") || 0;
-      if (last) {
-        el.hidden = false;
-        el.innerHTML = `<i class="ph-bold ph-cloud-check"></i> <span>синхронизировано ${new Date(last).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</span>`;
-      } else { el.hidden = true; }
+      if (!pend) { el.hidden = true; return; }
+      el.hidden = false;
+      el.innerHTML = `<i class="ph-bold ph-cloud-arrow-up"></i> <span>не отправлено: ${pend} — уйдёт само, как только появится связь</span>`;
     } catch (e) { el.hidden = true; }
   };
   function stApi(path, opts) {
@@ -2062,24 +2051,40 @@ function robotMenuHtml() {
      устройстве. Локальная копия работает только как офлайн-очередь и кэш. */
   const stReady = () => true;
   const stMarkReady = () => {};
+  /* Досылаем всё, что лежит в локальной очереди, — включая события прошлых
+     дней. Раньше досылались только «сегодняшние», поэтому вчерашние залипшие
+     события навсегда оставляли счётчик «не отправлено». Уже записанные в базу
+     id отфильтровываем по базе — дублей не будет. */
+  function stFlush() {
+    const pend = stLocal();
+    if (!pend.length) { renderStOutbox(); return; }
+    const ids = pend.map((e) => e.id).filter(Boolean);
+    if (!ids.length) { stLocalSave([]); renderStOutbox(); return; }
+    stApi(`otp_time_events?select=id&id=in.(${ids.map((x) => encodeURIComponent(x)).join(",")})`)
+      .then((rows) => {
+        const have = new Set((Array.isArray(rows) ? rows : []).map((r) => r.id));
+        const left = pend.filter((e) => !have.has(e.id));
+        if (!left.length) { stLocalSave([]); renderStOutbox(); return; }
+        return stApi("otp_time_events", {
+          method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify(left),
+        }).then(() => {
+          const done = new Set(left.map((e) => e.id));
+          stLocalSave(stLocal().filter((e) => !done.has(e.id)));
+          renderStOutbox();
+        }).catch(() => {});
+      })
+      .catch(() => {});
+  }
   function stEvents(day) {
     const mine = (l) => l.filter((e) => e.empSlug === ME_SLUG && e.day === day);
+    stFlush();   // догоняем очередь (в т.ч. прошлых дней), не ждём её
     return stApi(`otp_time_events?select=*&day=eq.${day}&empSlug=eq.${ME_SLUG}`)
       .then((rows) => {
         const list = Array.isArray(rows) ? rows : [];
-        // досылаем в облако локальные события, которые не успели уйти (офлайн)
+        // события, которые ещё не ушли, показываем сразу (они в локальной очереди)
         const ids = new Set(list.map((e) => e.id));
         const pending = mine(stLocal()).filter((e) => !ids.has(e.id));
-        if (pending.length) {
-          stApi("otp_time_events", {
-            method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify(pending),
-          }).then(() => {
-            const pend = new Set(pending.map((e) => e.id));
-            stLocalSave(stLocal().filter((e) => !pend.has(e.id)));
-            renderStOutbox();   // очередь опустела — показываем «синхронизировано»
-          }).catch(() => {});
-          list.push(...pending);
-        }
+        if (pending.length) list.push(...pending);
         return mine(list);
       })
       .catch(() => mine(stLocal()));
@@ -2087,7 +2092,8 @@ function robotMenuHtml() {
   function stAdd(ev) {
     const list = stLocal().filter((x) => x.id !== ev.id);
     list.push(ev); stLocalSave(list);
-    renderStOutbox();   // «события в пути» стало на одно больше
+    // строку «не отправлено» не мигаем на каждое нажатие: она появится,
+    // только если отправка реально не удалась (see stApi catch)
     return stApi("otp_time_events", {
       method: "POST",
       headers: { Prefer: "return=minimal" },
@@ -2302,6 +2308,25 @@ function robotMenuHtml() {
     let absenceReason = "";
     let customReason = "";
 
+    /* P2.1: защита от missclick. Опасное действие (завершить смену/перерыв/
+       отсутствие/увольнительную) применяется через 10 секунд с видимым
+       отсчётом и «Отмена». Pending живёт только в памяти вкладки: закрыл или
+       обновил страницу в окне отсчёта — действие не применено, события нет. */
+    const ST_CONFIRM_MS = 10000;
+    let pending = null;   // { act, until }
+    const PEND_LABEL = { stop: "Смена завершится", absence: "Отсутствие завершится", "leave-end": "Увольнительная завершится" };
+    const pendingLabel = (p) => PEND_LABEL[p.act] || (String(p.act).startsWith("slot-") ? "Перерыв завершится" : "Действие применится");
+    const pendLeft = (p) => Math.max(0, Math.ceil((p.until - Date.now()) / 1000));
+    const isConfirmable = (act, st) => {
+      if (act === "stop" || act === "leave-end") return true;
+      if (act === "absence") return !!(st.active && st.active.type === "absence_start");
+      if (String(act).startsWith("slot-")) {
+        const slot = act.slice(5);
+        return !!(st.active && st.active.slot === slot && st.active.type === "break_start");
+      }
+      return false;
+    };
+
     /* шапка: смена, линия, перерывы, обед */
     if (shiftEl) {
       const sh = dayKind.sh || (shiftInfo && shiftInfo.sh) || null;
@@ -2344,6 +2369,18 @@ function robotMenuHtml() {
           span.textContent = `${name} · ${stSlotClock(st, live)} — Завершить`;
         }
       }
+      /* P2.1: отсчёт pending — секунды обновляем только в тексте кнопки,
+         по истечении применяем действие (execute) и перерисовываем. */
+      if (pending) {
+        const span = box.querySelector(".st-btn.is-pending span");
+        if (span) span.textContent = `${pendingLabel(pending)} · ${pendLeft(pending)} с`;
+        if (statusEl) statusEl.innerHTML = `<span class="st-si k-pause"><i class="ph-bold ph-hourglass"></i></span><span class="st-st-txt">⏳ ${escHtml(pendingLabel(pending))} через ${pendLeft(pending)} с — можно отменить</span>`;
+        if (Date.now() >= pending.until) {
+          const p = pending;
+          pending = null;
+          execute(p.act);
+        }
+      }
     };
     const render = () => {
       const st = stCalc(events, Date.now(), winsNow());
@@ -2377,12 +2414,19 @@ function robotMenuHtml() {
         cls = "pause";
       } else if (!st.started) { icon = "ph-alarm"; text = "Ожидание начала смены"; cls = "wait"; }
       else { icon = "ph-briefcase"; text = "Работа"; cls = "work"; }
+      if (pending) { icon = "ph-hourglass"; cls = "pause"; text = `⏳ ${pendingLabel(pending)} через ${pendLeft(pending)} с — можно отменить`; }
       if (statusEl) statusEl.innerHTML = `<span class="st-si k-${cls}"><i class="ph-bold ${icon}"></i></span><span class="st-st-txt">${escHtml(text)}</span>`;
       if (timerEl) timerEl.textContent = stHms(st.sec);
 
       /* кнопки */
-      const btn = (opts) => `<button class="st-btn${opts.run ? " is-run" : ""}${opts.used ? " is-used" : ""}" data-act="${opts.act}" ${opts.disabled ? "disabled" : ""}>
-        <i class="ph-bold ${opts.icon}"></i><span>${escHtml(opts.label)}</span>${opts.used ? '<i class="ph-bold ph-x st-x"></i>' : ""}</button>`;
+      const btn = (opts) => {
+        const isPend = !!pending && opts.act === pending.act;
+        const dis = opts.disabled || (pending && !isPend);   // во время отсчёта — всё, кроме этой
+        const label = isPend ? `${pendingLabel(pending)} · ${pendLeft(pending)} с` : opts.label;
+        const icon = isPend ? "ph-hourglass" : opts.icon;
+        return `<button class="st-btn${opts.run ? " is-run" : ""}${opts.used && !isPend ? " is-used" : ""}${isPend ? " is-pending" : ""}" data-act="${opts.act}" ${dis ? "disabled" : ""}>
+        <i class="ph-bold ${icon}"></i><span>${escHtml(label)}</span>${(opts.used && !isPend) ? '<i class="ph-bold ph-x st-x"></i>' : ""}${isPend ? '<i class="st-pend-bar"></i>' : ""}</button>`;
+      };
       const startedUsed = !!st.started;
       const stopApplied = !!st.stopped;
       const inPause = !!st.active;
@@ -2411,12 +2455,17 @@ function robotMenuHtml() {
         disabled: !canAct || (!absActive && inPause),
       }));
       if (lwNowActive) {
-        buttons.push(`<button class="st-btn st-btn-leave" data-act="leave-end"><i class="ph-bold ph-door-open"></i> Завершить увольнительную</button>`);
+        const lwPend = !!pending && pending.act === "leave-end";
+        const lwDis = pending && !lwPend;
+        buttons.push(`<button class="st-btn st-btn-leave${lwPend ? " is-pending" : ""}" data-act="leave-end" ${lwDis ? "disabled" : ""}><i class="ph-bold ${lwPend ? "ph-hourglass" : "ph-door-open"}"></i><span>${escHtml(lwPend ? `${pendingLabel(pending)} · ${pendLeft(pending)} с` : "Завершить увольнительную")}</span>${lwPend ? '<i class="st-pend-bar"></i>' : ""}</button>`);
       }
       buttons.push(btn({
         act: "stop", icon: "ph-sign-out", label: "Завершить смену",
         disabled: !canAct || !working || inPause, used: stopApplied,
       }));
+      if (pending) {
+        buttons.push(`<button class="st-btn st-pend-cancel" data-act="cancel-pending"><i class="ph-bold ph-x"></i><span>Отмена</span></button>`);
+      }
       if (absenceOpen) {
         buttons.push(`<div class="st-absence">
           <label><span>Причина отсутствия</span>
@@ -2435,11 +2484,8 @@ function robotMenuHtml() {
       /* опоздания и затянувшиеся перерывы проверяет облачная функция cron — без участия браузера */
     };
 
-    /* действия */
-    box.addEventListener("click", async (e) => {
-      const b = e.target.closest("[data-act]");
-      if (!b) return;
-      const act = b.dataset.act;
+    /* действия: execute() — прежняя логика без изменений (её же зовёт отсчёт) */
+    const execute = async (act) => {
       const st = stCalc(events, Date.now(), winsNow());
       const at = new Date().toISOString();
       const base = { id: "t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), empSlug: ME_SLUG, empName: emp.fullName, day: today };
@@ -2468,9 +2514,8 @@ function robotMenuHtml() {
         window.__stLastAct = { act, at: nowMsClick };
         const active = st.active && st.active.slot === slot && st.active.type === "break_start";
         if (active) {
-          /* перерыв открыт только что — закрытие скорее всего случайное */
-          const openedAt = st.active && st.active.at ? new Date(st.active.at).getTime() : 0;
-          if (openedAt && nowMsClick - openedAt < 10000) return;
+          // P2.1: молчаливый игнор «закрытие < 10 с после открытия» убран —
+          // вместо него видимый отсчёт с «Отмена» (см. pending/click).
           push({ ...base, type: "break_end", slot, at });
           stNotify("return");
         } else {
@@ -2527,6 +2572,23 @@ function robotMenuHtml() {
         stNotify("absence", { reason });
         return;
       }
+    };
+
+    /* P2.1: клик → опасное действие уходит в 10-секундный отсчёт с «Отмена»,
+       безопасное выполняется сразу. Анти-двойной-клик 3 с остаётся в execute(). */
+    box.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-act]");
+      if (!b) return;
+      const act = b.dataset.act;
+      if (act === "cancel-pending") { pending = null; render(); return; }
+      if (pending) return;                        // кнопки disabled, но подстрахуемся
+      const st = stCalc(events, Date.now(), winsNow());
+      if (isConfirmable(act, st)) {
+        pending = { act, until: Date.now() + ST_CONFIRM_MS };
+        render();
+        return;
+      }
+      execute(act);
     });
 
     box.addEventListener("change", (e) => {

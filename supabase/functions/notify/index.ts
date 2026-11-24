@@ -18,7 +18,10 @@ const TZ = 3 * 60 * 60 * 1000;
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, apikey, content-type",
+  // x-otp-key обязателен: без него браузер режет preflight, и мгновенное
+  // уведомление молча не уходит — сообщение доходило только через cron
+  // каждую минуту (те самые 30-50 секунд задержки).
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-otp-key",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 const json = (b: unknown, s = 200) =>
