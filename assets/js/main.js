@@ -642,6 +642,8 @@
   let __nowSyncOk = null;
   /* P2.2: активный фильтр списка сотрудников по статусу (null — все). */
   let nowFilter = null;
+  /* План 24.11.2026: поиск по таблице команды на оперативной главной. */
+  let nowSearch = "";
   function nowSyncSet(ok) { __nowSyncOk = ok; }
   function nowSync() {
     if (__nowSyncOk === null) return `<span class="now-chip s">… соединение</span>`;
@@ -847,58 +849,55 @@
     const late = list
       .filter((x) => x.st.kind === "idle" && (() => { const s = shiftOf(x.emp); return !!s && nowMin > s.start + 5; })())
       .map((x) => ({ emp: x.emp, s: shiftOf(x.emp) }));
-    const shown = !nowFilter ? list
-      : list.filter((x) => nowFilter === "v"
+    /* Таблица команды (план 24.11.2026): ФИО ведёт в профиль, «Стартовая» — в учёт.
+       Фильтр по статусу + поиск. Данные те же, что раньше рисовались карточками. */
+    const filterList = (l) => l.filter((x) => {
+      const byF = !nowFilter || (nowFilter === "v"
         ? ["vacation", "dayoff", "leave"].includes(x.st.kind)
         : x.st.kind === nowFilter);
+      const byS = !nowSearch || String(x.emp.fullName).toLowerCase().includes(nowSearch);
+      return byF && byS;
+    });
+    const opLink = (x, sec) => SITE_ROOT + "team/" + (x.emp.slug || x.emp.id) + "/" + (sec || "");
+    const rowsHtml = (l) => filterList(l).map((x) => `<div class="op-tr k-${x.st.kind}" data-ns="${escNow(x.emp.id)}" role="row">
+      <a class="op-name" href="${opLink(x)}" title="Открыть профиль">${escNow(x.emp.fullName)} <i class="ph-bold ph-arrow-up-right" aria-hidden="true"></i></a>
+      <span class="op-st"><i class="ph-bold ${x.st.icon}" aria-hidden="true"></i> ${escNow(x.st.label)}</span>
+      <span class="op-since">${x.st.since ? hm(x.st.since) : "—"}</span>
+      <span class="op-time${x.st.kind === "idle" ? " is-idle" : ""}">${x.st.kind === "idle" ? "—" : hms(x.st.sec)}</span>
+      <a class="op-go" href="${opLink(x, "start/")}" title="«Стартовая»: смена, перерывы, отсутствие">Стартовая</a>
+    </div>`).join("") || '<p class="muted op-empty">Никого не найдено — измени фильтр или поиск.</p>';
+    const tableHtml = (l) => `<div class="op-table" role="table" aria-label="Сотрудники">
+      <div class="op-tr op-th" role="row"><span>ФИО</span><span>Статус</span><span>С</span><span>Таймер</span><span>Учёт</span></div>
+      ${rowsHtml(l)}
+    </div>`;
+    const repaintTable = () => {
+      const tbl = box.querySelector(".op-table");
+      if (tbl) tbl.outerHTML = tableHtml(window.__nowList || []);
+    };
     if (!list.length) {
       nowSyncSet(false);
       box.dataset.loaded = "1";
-      box.innerHTML = `<div class="now-head"><h3><i class="ph-bold ph-broadcast"></i> Сейчас на смене</h3>${nowSync()}</div>
-        <p class="muted">Сегодня событий пока нет — никто не нажимал кнопки.</p>`;
+      box.innerHTML = `<p class="muted">Сегодня событий пока нет — никто не нажимал кнопки.</p>`;
+      renderHomeSide({ late, absNow, leaveNow, list });
       return;
     }
     nowSyncSet(true);
     box.dataset.loaded = "1";
     const cnt = (k) => list.filter((x) => x.st.kind === k).length;
+    window.__nowList = list;
     box.innerHTML = `
-      <div class="now-head">
-        <h3><i class="ph-bold ph-broadcast"></i> Сейчас на смене</h3>
-        <span class="now-sync">${nowSync()}</span>
-        <span class="now-sum">
-          <span class="now-chip w${nowFilter === "work" ? " is-on" : ""}" data-f="work" title="Показать только работающих"><b>${cnt("work")}</b> работают</span>
-          <span class="now-chip p${nowFilter === "pause" ? " is-on" : ""}" data-f="pause" title="Показать только на паузе"><b>${cnt("pause")}</b> на паузе</span>
-          <span class="now-chip d${nowFilter === "done" ? " is-on" : ""}" data-f="done" title="Показать только завершивших"><b>${cnt("done")}</b> завершили</span>
-          <span class="now-chip i${nowFilter === "idle" ? " is-on" : ""}" data-f="idle" title="Показать только тех, кто ещё не начинал"><b>${cnt("idle")}</b> не начинали</span>
-          ${(cnt("vacation") + cnt("dayoff") + cnt("leave")) ? `<span class="now-chip v${nowFilter === "v" ? " is-on" : ""}" data-f="v" title="Показать только отсутствующих по плану"><b>${cnt("vacation") + cnt("dayoff") + cnt("leave")}</b> отпуск / отгул</span>` : ""}
+      <div class="op-tools">
+        <input class="op-search" id="op-search" type="search" placeholder="Поиск сотрудника" value="${escNow(nowSearch)}" aria-label="Поиск сотрудника">
+        <span class="op-filters">
+          <button class="op-chip${!nowFilter ? " is-on" : ""}" data-f="">Все <b>${list.length}</b></button>
+          <button class="op-chip${nowFilter === "work" ? " is-on" : ""}" data-f="work">Работают <b>${cnt("work")}</b></button>
+          <button class="op-chip${nowFilter === "pause" ? " is-on" : ""}" data-f="pause">На паузе <b>${cnt("pause")}</b></button>
+          <button class="op-chip${nowFilter === "idle" ? " is-on" : ""}" data-f="idle">Не начали <b>${cnt("idle")}</b></button>
         </span>
+        ${nowSync()}
       </div>
-      <div class="now-grid">
-        ${shown.length ? shown.map((x) => `<div class="now-card k-${x.st.kind}" data-ns="${escNow(x.emp.id)}">
-          <i class="ph-bold ${x.st.icon}"></i>
-          <span class="now-body"><b>${escNow(x.emp.fullName)}</b><span>${escNow(x.st.label)}${x.st.since ? " · с " + hm(x.st.since) : ""}</span><span class="now-line"><i style="width:${shiftPct(x.emp)}%"></i></span></span>
-          <span class="now-time">${x.st.kind === "idle" ? "" : hms(x.st.sec)}</span>
-        </div>`).join("") : '<p class="muted">В этой группе сейчас никого нет — нажми на плашку ещё раз, чтобы показать всех.</p>'}
-      </div>
-      ${(absNow.length || leaveNow.length || late.length) ? `<div class="now-alert">
-        <h4><i class="ph-bold ph-warning-circle"></i> Требуют внимания</h4>
-        <div class="now-grid">
-          ${late.map((l) => `<div class="now-card k-late">
-            <i class="ph-bold ph-alarm"></i>
-            <span class="now-body"><b>${escNow(l.emp.fullName)}</b><span>не вышел(а): смена ${escNow(l.s.time)} · «Начало» не нажато</span></span>
-          </div>`).join("")}
-          ${absNow.map((a) => `<div class="now-card k-abs">
-            <i class="ph-bold ph-walking"></i>
-            <span class="now-body"><b>${escNow(a.emp)}</b><span>отсутствует${a.reason ? " · " + escNow(a.reason) : ""} · с ${hm(Date.parse(a.at))}</span></span>
-            <button class="now-act" data-abs="${escNow(a.slug)}" data-emp="${escNow(a.emp)}">Завершить</button>
-          </div>`).join("")}
-          ${leaveNow.map((l) => `<div class="now-card k-leave">
-            <i class="ph-bold ph-door-open"></i>
-            <span class="now-body"><b>${escNow(l.fio)}</b><span>увольнительная ${escNow(l.fromTxt)}–${escNow(l.toTxt)}</span></span>
-            <button class="now-act" data-leave="${escNow(l.id)}" data-fio="${escNow(l.fio)}">Отменить</button>
-          </div>`).join("")}
-        </div>
-      </div>` : ""}`;
+      ${tableHtml(list)}`;
+    renderHomeSide({ late, absNow, leaveNow, list });
     window.__nowState = list.map((x) => ({ slug: x.emp.id, sec: x.st.sec, running: x.st.kind === "work", base: Date.now() }));
     if (!box.dataset.tick) {
       box.dataset.tick = "1";
@@ -906,16 +905,26 @@
         if (document.hidden) return;
         for (const s of (window.__nowState || [])) {
           if (!s.running) continue;
-          const el = box.querySelector(`[data-ns="${s.slug}"] .now-time`);
+          const el = box.querySelector(`[data-ns="${s.slug}"] .op-time`);
           if (el) el.textContent = hms(Math.max(0, Math.round(s.sec + (Date.now() - s.base) / 1000)));
         }
       }, 1000);
     }
-    box.querySelectorAll(".now-sum .now-chip[data-f]").forEach((c) => c.addEventListener("click", () => {
-      const f = c.getAttribute("data-f");
+    box.querySelectorAll(".op-filters .op-chip").forEach((c) => c.addEventListener("click", () => {
+      const f = c.getAttribute("data-f") || null;
       nowFilter = nowFilter === f ? null : f;
-      renderNowBoard();
+      box.querySelectorAll(".op-filters .op-chip").forEach((x) => x.classList.toggle("is-on", (x.getAttribute("data-f") || null) === nowFilter));
+      repaintTable();
     }));
+    const opSearch = box.querySelector("#op-search");
+    if (opSearch) {
+      let t = 0;
+      opSearch.addEventListener("input", () => {
+        nowSearch = String(opSearch.value || "").trim().toLowerCase();
+        clearTimeout(t);
+        t = setTimeout(repaintTable, 250);
+      });
+    }
     box.querySelectorAll("[data-leave]").forEach((b) => b.addEventListener("click", async () => {
       const id = b.getAttribute("data-leave");
       if (!id) return;
@@ -946,6 +955,73 @@
       renderNowBoard();
     }));
   }
+
+  /* ---------- Правая колонка оперативной главной (план 24.11.2026) ---------- */
+  async function renderHomeSide(att) {
+    const box = $("#home-side");
+    if (!box) return;
+    if (!window.OTP_AUTH || !window.OTP_AUTH.token("admin")) { box.innerHTML = ""; return; }
+    const dt = new Date();
+    const day = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+    const monthStart = day.slice(0, 8) + "01";
+    let pending = [], monthReqs = [];
+    try {
+      pending = await window.OTP_AUTH.api("admin", "otp_requests?select=*&status=eq.pending&order=date.asc", "GET");
+      monthReqs = await window.OTP_AUTH.api("admin", `otp_requests?select=*&date=gte.${monthStart}&date=lte.${day}&status=eq.approved&order=date.desc`, "GET");
+    } catch (e) {}
+    if (!Array.isArray(pending)) pending = [];
+    if (!Array.isArray(monthReqs)) monthReqs = [];
+    const esc = (s) => String(s == null ? "" : s).replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
+    const TYPE = { leave: "Увольнительная", dayoff: "Отгул", overtime: "Переработка", adjust: "Корректировка" };
+    const hhmm = (s) => String(s || "").slice(0, 5);
+    const hrs = (r) => (r.hours != null ? +r.hours || 0 : 0);
+    const short = (fio) => { const p = String(fio || "").split(" "); return p[0] + (p[1] ? " " + p[1].slice(0, 1) + "." : ""); };
+    const notes = (rows) => rows.map((r) => `<a class="op-note" href="#hr-sec">
+        <span class="op-note-t">${esc(TYPE[r.type] || r.type)} · ${esc(r.empName)}</span>
+        <span class="op-note-d">${esc(r.date)}${r.from ? " · " + esc(hhmm(r.from)) + "–" + esc(hhmm(r.to)) : ""}${(r.type === "overtime" || r.type === "adjust") ? " · " + esc(hrs(r)) + " ч" : ""}</span></a>`).join("")
+      || '<p class="muted op-empty">Пока нет.</p>';
+    const attn = [];
+    if (att && att.late && att.late.length) attn.push({ icon: "ph-alarm", cls: "late", text: `Не вышли к смене: ${att.late.map((l) => short(l.emp.fullName)).join(", ")}` });
+    if (att && att.absNow && att.absNow.length) attn.push({ icon: "ph-walking", cls: "abs", text: `Отсутствуют: ${att.absNow.map((a) => short(a.emp)).join(", ")}` });
+    const longPause = ((att && att.list) || []).filter((x) => x.st.kind === "pause" && x.st.sec > 15 * 60);
+    if (longPause.length) attn.push({ icon: "ph-pause", cls: "pause", text: `Пауза больше 15 минут: ${longPause.map((x) => short(x.emp.fullName)).join(", ")}` });
+    const leaveRows = monthReqs.filter((r) => r.type === "leave" || r.type === "dayoff");
+    const overRows = monthReqs.filter((r) => r.type === "overtime" || r.type === "adjust");
+    const overTotal = overRows.reduce((s, r) => s + hrs(r), 0);
+    box.innerHTML = `
+      <section class="op-block">
+        <h3>Требуют внимания</h3>
+        ${attn.length ? attn.map((a) => `<div class="op-alert k-${a.cls}"><i class="ph-bold ${a.icon}" aria-hidden="true"></i><span>${esc(a.text)}</span></div>`).join("") : '<p class="muted op-empty">Отклонений нет.</p>'}
+        <div class="op-sub">Заявки к решению${pending.length ? ` <b>${pending.length}</b>` : ""}</div>
+        ${pending.length ? notes(pending.slice(0, 4)) : '<p class="muted op-empty">Заявок к решению нет.</p>'}
+        ${pending.length > 4 ? '<a class="op-more" href="#hr-sec">Все заявки →</a>' : ""}
+      </section>
+      <section class="op-block">
+        <h3>В этом месяце</h3>
+        <div class="op-sub">Увольнительные и отгулы <b>${leaveRows.length}</b></div>
+        ${leaveRows.length ? notes(leaveRows.slice(0, 3)) : '<p class="muted op-empty">Пока нет.</p>'}
+        <div class="op-sub">Переработки · ${overTotal} ч</div>
+        ${overRows.length ? notes(overRows.slice(0, 3)) : '<p class="muted op-empty">Пока нет.</p>'}
+      </section>`;
+  }
+
+  /* Кнопки-действия и дата в шапке оперативной главной. Полные формы — этап 2;
+     пока кнопки плавно ведут к блокам заявок и журнала ниже. */
+  (function initHomeChrome() {
+    const dateEl = $("#op-date");
+    if (dateEl) {
+      const d = new Date();
+      dateEl.textContent = `${d.toLocaleDateString("ru-RU", { day: "numeric", month: "long" })} · обновлено ${d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} МСК`;
+    }
+    const hr = $("#hr-sec"), hours = $("#hours");
+    document.querySelectorAll(".op-actions [data-op]").forEach((b) => b.addEventListener("click", () => {
+      const target = b.getAttribute("data-op") === "overtime" ? hours : hr;
+      if (!target) return;
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      target.classList.add("op-flash");
+      setTimeout(() => target.classList.remove("op-flash"), 1400);
+    }));
+  })();
 
   /* ---------- графики (страница «Динамика») ---------- */
   if (!window.Chart) return;

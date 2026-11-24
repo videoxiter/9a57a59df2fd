@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
@@ -36,6 +36,27 @@
   </header>
 
   <!-- ===== HERO ===== -->
+  <!-- ===== ОПЕРАТИВНАЯ ГЛАВНАЯ: команда + уведомления (план 24.11.2026) ===== -->
+  <section class="section op-home" id="home">
+    <div class="wrap op-grid">
+      <div class="op-main">
+        <div class="op-head">
+          <h2>Моя команда</h2>
+          <span class="op-date" id="op-date"></span>
+        </div>
+        <div class="op-actions">
+          <button class="btn btn-primary" data-op="leave"><i class="ph-bold ph-door-open"></i> Увольнительная</button>
+          <button class="btn btn-ghost" data-op="dayoff"><i class="ph-bold ph-calendar-minus"></i> Отгул</button>
+          <button class="btn btn-ghost" data-op="overtime"><i class="ph-bold ph-plus-circle"></i> Начислить переработку</button>
+        </div>
+        <div class="now-board" id="now-board"></div>
+      </div>
+      <aside class="op-side">
+        <div id="home-side"></div>
+      </aside>
+    </div>
+  </section>
+
     <section class="wrap sec" id="hr-sec">
     <div id="hr-requests" class="hr-block"></div>
   </section>

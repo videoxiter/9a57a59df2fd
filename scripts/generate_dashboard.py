@@ -41,8 +41,10 @@ def _version():
 V = _version()
 
 PAGES = [
-    ("", "Моя команда", "team", ["top", "now", "best", "hr-sec", "hours", "rating"]),
-    ("dynamics", "Динамика", "chart-line", ["dynamics"]),
+    # Оперативная главная (план 24.11.2026): команда + уведомления + месяц.
+    # Hero/KPI/рейтинг переехали в «Динамику», отчёт — в «Стартовую» сотрудника.
+    ("", "Моя команда", "team", ["home", "hr-sec", "hours"]),
+    ("dynamics", "Динамика", "chart-line", ["top", "best", "rating", "dynamics"]),
     ("people", "Специалисты", "users-three", ["team"]),
     ("duties", "График отдела", "calendar-check", ["duties"]),
     ("development", "Развитие отдела", "rocket-launch", ["grow"]),

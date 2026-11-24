@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="../../assets/vendor/phosphor/fill/style.css">
   <link rel="stylesheet" href="../../assets/vendor/phosphor/bold/style.css">
 
-  <link rel="stylesheet" href="../../assets/css/main.css?v=d748ff10">
+  <link rel="stylesheet" href="../../assets/css/main.css?v=d6bd71ee">
 </head>
 
 <body data-page="dynamics">
@@ -25,6 +25,77 @@
       <nav class="nav-links dash-links"><a class="nav-chip" href="../index.html"><i class="ph-bold ph-team"></i> Моя команда</a><a class="nav-chip is-now" href="./"><i class="ph-bold ph-chart-line"></i> Динамика</a><a class="nav-chip" href="../people/"><i class="ph-bold ph-users-three"></i> Специалисты</a><a class="nav-chip" href="../duties/"><i class="ph-bold ph-calendar-check"></i> График отдела</a><a class="nav-chip" href="../development/"><i class="ph-bold ph-rocket-launch"></i> Развитие</a><a class="nav-chip" href="../settings/"><i class="ph-bold ph-sliders"></i> Настройки</a><a class="nav-chip" href="../staff/"><i class="ph-bold ph-identification-card"></i> Админка</a></nav>
     </div>
   </header>
+<section class="hero" id="top">
+    <div class="wrap hero-grid">
+      <div data-reveal>
+        <span class="kicker">Отдел технической поддержки</span>
+        <h1>Моя команда<br><span class="grad-text">ОТП</span></h1>
+        <p class="sub">Интерактивная аналитика эффективности: KPI, динамика по месяцам и персональные страницы роста для каждого специалиста.</p>
+        <div class="meta-row">
+          <span class="badge"><i class="ph ph-users-three"></i><span id="meta-count">…</span> специалистов</span>
+          <span class="badge"><i class="ph ph-calendar-blank"></i><span id="meta-month">…</span></span>
+        </div>
+        <div class="hero-stats">
+          <div class="hstat"><div class="v" id="stat-avg">—</div><div class="l">средний KPI команды</div></div>
+          <div class="hstat"><div class="v" id="stat-top">—</div><div class="l">лидер рейтинга</div></div>
+          <div class="hstat"><div class="v" id="stat-bonus">—</div><div class="l">бонусы за месяц</div></div>
+        </div>
+        <div id="adapt-strip" class="adapt-strip"></div>
+      </div>
+
+      <div class="hero-visual" data-parallax="0.08">
+        <div class="robot-wrap">
+          <div class="robot-ring"></div>
+          <svg viewBox="0 0 240 264" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Робот-аналитик ОТП">
+            <defs>
+              <linearGradient id="rb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1b2735"/><stop offset="1" stop-color="#0e141d"/></linearGradient>
+              <linearGradient id="rb2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#0e7490"/></linearGradient>
+              <linearGradient id="screen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#08121a"/><stop offset="1" stop-color="#0d1b26"/></linearGradient>
+              <radialGradient id="glow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#a5f3fc"/><stop offset=".5" stop-color="#22d3ee"/><stop offset="1" stop-color="#22d3ee" stop-opacity="0"/></radialGradient>
+            </defs>
+            <line x1="120" y1="24" x2="120" y2="52" stroke="#33465a" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="120" cy="20" r="13" fill="url(#glow)"/><circle cx="120" cy="20" r="5.5" fill="#67e8f9"/>
+            <rect x="58" y="50" width="124" height="92" rx="28" fill="url(#rb)" stroke="#2a3543" stroke-width="1.5"/>
+            <circle cx="97" cy="90" r="16" fill="url(#glow)"/><circle cx="97" cy="90" r="7" fill="#e0faff"/>
+            <circle cx="143" cy="90" r="16" fill="url(#glow)"/><circle cx="143" cy="90" r="7" fill="#e0faff"/>
+            <rect x="104" y="118" width="32" height="6" rx="3" fill="#22d3ee" opacity=".85"/>
+            <rect x="106" y="140" width="28" height="14" rx="4" fill="#0b1118"/>
+            <rect x="46" y="152" width="148" height="82" rx="22" fill="url(#rb)" stroke="#2a3543" stroke-width="1.5"/>
+            <rect x="82" y="168" width="76" height="44" rx="12" fill="url(#screen)" stroke="#1f2733"/>
+            <polyline points="90,193 105,193 111,181 120,203 128,185 134,193 150,193" fill="none" stroke="#22d3ee" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="60" cy="168" r="3" fill="#34d399"/><circle cx="72" cy="168" r="3" fill="#22d3ee"/><circle cx="84" cy="168" r="3" fill="#22d3ee" opacity=".5"/>
+            <rect x="20" y="160" width="24" height="58" rx="12" fill="url(#rb)" stroke="#2a3543" stroke-width="1.5"/>
+            <rect x="196" y="160" width="24" height="58" rx="12" fill="url(#rb)" stroke="#2a3543" stroke-width="1.5"/>
+            <circle cx="32" cy="226" r="10" fill="url(#rb2)"/><circle cx="208" cy="226" r="10" fill="url(#rb2)"/>
+            <rect x="78" y="236" width="38" height="16" rx="8" fill="url(#rb)" stroke="#2a3543" stroke-width="1.5"/>
+            <rect x="124" y="236" width="38" height="16" rx="8" fill="url(#rb)" stroke="#2a3543" stroke-width="1.5"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+<!-- ===== КТО ЛУЧШЕ ===== -->
+  <section class="section" id="best" style="padding-top:8px">
+    <div class="wrap">
+      <div class="section-head" data-reveal>
+        <span class="kicker">Лучший результат</span>
+        <h2>Кто лучше всех в этом месяце</h2>
+        <p>Высший средний KPI по пяти метрикам. Нажми на имя — откроется персональная страница.</p>
+      </div>
+      <div class="best-card" id="best-card" data-reveal></div>
+    </div>
+  </section>
+<section class="section" id="rating">
+    <div class="wrap">
+      <div class="section-head" data-reveal>
+        <span class="kicker">Leaderboard</span>
+        <h2>Рейтинг по среднему KPI</h2>
+        <p>Позиция строится по среднему из пяти метрик за текущий месяц. Стрелка — тренд за год.</p>
+      </div>
+      <div class="lb" id="leaderboard" data-stagger></div>
+      <div id="my-awards" class="my-awards"></div>
+    </div>
+  </section>
 <section class="section" id="dynamics">
     <div class="wrap">
       <div class="section-head" data-reveal>
@@ -67,17 +138,17 @@
       <div style="font-family:var(--font-mono);font-size:.78rem">обновлено: <span id="foot-updated">…</span></div>
     </div>
   </footer>
-  <script src="../../assets/vendor/gsap.min.js?v=d748ff10"></script>
-  <script src="../../assets/vendor/ScrollTrigger.min.js?v=d748ff10"></script>
-  <script src="../../assets/vendor/lenis.min.js?v=d748ff10"></script>
-  <script src="../../assets/vendor/chart.umd.min.js?v=d748ff10"></script>
-  <script src="../../assets/js/themes.js?v=d748ff10"></script>
-  <script src="../../assets/js/data.js?v=d748ff10"></script>
-  <script src="../../assets/js/auth.js?v=d748ff10"></script>
+  <script src="../../assets/vendor/gsap.min.js?v=d6bd71ee"></script>
+  <script src="../../assets/vendor/ScrollTrigger.min.js?v=d6bd71ee"></script>
+  <script src="../../assets/vendor/lenis.min.js?v=d6bd71ee"></script>
+  <script src="../../assets/vendor/chart.umd.min.js?v=d6bd71ee"></script>
+  <script src="../../assets/js/themes.js?v=d6bd71ee"></script>
+  <script src="../../assets/js/data.js?v=d6bd71ee"></script>
+  <script src="../../assets/js/auth.js?v=d6bd71ee"></script>
   <script>window.OTP_AUTH && window.OTP_AUTH.protect("admin", true);</script>
-  <script src="../../assets/js/common.js?v=d748ff10"></script>
-  <script src="../../assets/js/cloud.js?v=d748ff10"></script>
-  <script src="../../assets/js/hr.js?v=d748ff10"></script>
-  <script src="../../assets/js/main.js?v=d748ff10"></script>
+  <script src="../../assets/js/common.js?v=d6bd71ee"></script>
+  <script src="../../assets/js/cloud.js?v=d6bd71ee"></script>
+  <script src="../../assets/js/hr.js?v=d6bd71ee"></script>
+  <script src="../../assets/js/main.js?v=d6bd71ee"></script>
 </body>
 </html>
