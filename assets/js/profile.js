@@ -2257,7 +2257,7 @@ function robotMenuHtml() {
       <div class="st-outbox" id="st-outbox" hidden></div>
       <div class="st-note" id="st-note"></div>
       <div class="st-week" id="st-week"></div>
-      ${emp.canManage ? '<div class="st-sync" id="st-sync" hidden></div>' : ""}
+      ${emp.canManage ? '<div class="st-sync" id="st-sync" hidden></div><div class="st-reg" id="st-reg" hidden></div>' : ""}
     </section>
     ${emp.canManage ? `<section class="p-sec" id="st-report-sec">
       <div class="p-sec-head"><h2><i class="ph-bold ph-chart-bar"></i> Отчёт по рабочему времени</h2>
@@ -2326,6 +2326,81 @@ function robotMenuHtml() {
       .then((rows) => paint((Array.isArray(rows) ? rows[0] : null)))
       .catch(() => paint(null));
     load();
+  }
+
+  /* Регистрация заявок для команды — главному специалисту (как на «Стартовой»
+     руководителя, но без доступа ко всему журналу). Запись уходит подтверждённой,
+     автором указывается он. Список сотрудников есть только у canManage. */
+  function initStartRegister() {
+    const host = document.getElementById("st-reg");
+    if (!host || !emp.canManage) return;
+    const list = (D.employeesList && D.employeesList.length)
+      ? D.employeesList : [{ slug: emp.slug || emp.id, name: emp.fullName }];
+    host.hidden = false;
+    host.innerHTML = `<div class="st-reg-h"><i class="ph-bold ph-clipboard-text"></i> Заявки и начисления</div>
+      <div class="st-reg-actions">
+        <button class="btn btn-ghost" data-reg="leave" type="button"><i class="ph-bold ph-door-open"></i> Увольнительная</button>
+        <button class="btn btn-ghost" data-reg="dayoff" type="button"><i class="ph-bold ph-calendar-minus"></i> Отгул</button>
+        <button class="btn btn-ghost" data-reg="overtime" type="button"><i class="ph-bold ph-plus-circle"></i> Переработка</button>
+      </div>
+      <form class="st-reg-form" id="st-reg-form" hidden></form>
+      <div class="st-reg-msg" id="st-reg-msg"></div>`;
+    const form = document.getElementById("st-reg-form");
+    const msg = document.getElementById("st-reg-msg");
+    const FIELDS = {
+      leave: [["date", "Дата", "date"], ["from", "Время с", "time"], ["to", "Время до", "time"], ["reason", "Причина", "textarea"]],
+      dayoff: [["date", "Дата отгула", "date"], ["date2", "Дата выходной смены", "date"], ["reason", "Комментарий", "textarea"]],
+      overtime: [["date", "Дата работы", "date"], ["hours", "Часы", "number"], ["reason", "Какие задачи выполнялись", "textarea"]],
+    };
+    const maxLeave = (D.hrRules && D.hrRules.leaveMaxHours) || 4;
+    const open = (type) => {
+      msg.textContent = "";
+      const opts = list.map((e) => `<option value="${escHtml(e.slug)}">${escHtml(e.name)}</option>`).join("");
+      const fields = FIELDS[type].map(([n, l, k]) => k === "textarea"
+        ? `<label class="st-reg-f"><span>${l}</span><textarea name="${n}" rows="2"></textarea></label>`
+        : `<label class="st-reg-f"><span>${l}</span><input type="${k}" name="${n}" ${k === "date" ? `value="${stIsoDate(new Date())}"` : ""}></label>`).join("");
+      form.innerHTML = `<label class="st-reg-f"><span>Сотрудник</span><select name="emp">${opts}</select></label>
+        ${fields}
+        ${type === "leave" ? `<label class="st-reg-check"><input type="checkbox" name="noDeduct"> <span>Не списывать часы</span></label>` : ""}
+        <div class="st-reg-foot"><button class="btn btn-primary" type="submit"><i class="ph-bold ph-check"></i> Зарегистрировать</button></div>`;
+      form.hidden = false;
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+        const fd = Object.fromEntries(new FormData(form).entries());
+        const who = list.find((x) => x.slug === fd.emp) || list[0];
+        if (!who) { msg.textContent = "Выбери сотрудника."; return; }
+        let hours = null;
+        if (type === "dayoff") hours = 8;
+        else if (type === "overtime") hours = Number(String(fd.hours || "").replace(",", "."));
+        else {
+          const p = (x) => { const m = /^(\d{1,2}):(\d{2})$/.exec(String(x || "")); return m ? +m[1] * 60 + +m[2] : null; };
+          const a = p(fd.from), b = p(fd.to);
+          hours = (a != null && b != null && b > a) ? Math.round((b - a) / 6) / 10 : null;
+          if (hours == null) { msg.textContent = "Проверь время: конец должен быть позже начала."; return; }
+          if (hours > maxLeave) { msg.textContent = `Увольнительная больше ${maxLeave} ч в день невозможна.`; return; }
+        }
+        if (type === "overtime" && !(hours > 0 && hours <= 24)) { msg.textContent = "Часы должны быть от 0,5 до 24."; return; }
+        if (type === "dayoff" && !fd.date2) { msg.textContent = "Укажи дату выходной смены."; return; }
+        if (!fd.date) { msg.textContent = "Укажи дату."; return; }
+        const nowIso = new Date().toISOString();
+        const rec = {
+          id: "reg-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
+          empSlug: who.slug, empName: who.name, type,
+          date: fd.date, date2: fd.date2 || "", from: fd.from || "", to: fd.to || "",
+          hours, reason: String(fd.reason || "").trim(), status: "approved",
+          created: nowIso, decided: nowIso, decidedBy: emp.fullName,
+        };
+        if (type === "leave" && fd.noDeduct) rec.noDeduct = true;
+        try {
+          if (window.OTP_CLOUD) await window.OTP_CLOUD.upsert(rec);
+          msg.textContent = "Зарегистрировано: " + (window.otp && otp.reqDelta ? (otp.reqDelta(rec) < 0 ? `спишется ${Math.abs(otp.reqDelta(rec))} ч` : otp.reqDelta(rec) > 0 ? `начислится ${otp.reqDelta(rec)} ч` : "часы не изменятся") : "сохранено");
+          form.hidden = true;
+        } catch (err) {
+          msg.textContent = "Не удалось сохранить — проверь связь.";
+        }
+      };
+    };
+    host.querySelectorAll("[data-reg]").forEach((b) => b.addEventListener("click", () => open(b.getAttribute("data-reg"))));
   }
 
   function initStart() {
@@ -2759,12 +2834,15 @@ function robotMenuHtml() {
     timer = setInterval(tickLive, 1000);
     window.addEventListener("beforeunload", () => clearInterval(timer));
 
-    /* отчёт для руководителя/главного специалиста */
-    if (emp.canManage) initStartReport();
-    /* администратор (руководитель) видит отчёт на любой странице сотрудника */
-    else if (window.OTP_AUTH && window.OTP_AUTH.isAdmin) {
-      window.OTP_AUTH.isAdmin().then((adm) => { if (adm) initStartReport(); });
-    }
+    /* Отчёт по всему отделу (журнал всех сотрудников) — только администратору.
+       Главный специалист (Павел) видит свои заявки и формы регистрации,
+       без доступа ко всему журналу. */
+    const reportSec = document.getElementById("st-report-sec");
+    const hideReport = () => { if (reportSec) reportSec.hidden = true; };
+    if (window.OTP_AUTH && window.OTP_AUTH.isAdmin) {
+      window.OTP_AUTH.isAdmin().then((adm) => { if (adm) initStartReport(); else hideReport(); }).catch(hideReport);
+    } else hideReport();
+    if (emp.canManage) initStartRegister();
     /* блок «Сейчас на смене»: руководителю, главному специалисту и Андрею Болгову */
     const wantNow = emp.canManage || emp.id === "bolgov";
     const withNow = (yes) => { if (yes) initNowBoard(); };
