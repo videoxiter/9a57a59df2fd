@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import base64
+import datetime
 import json
 import os
 import re
@@ -248,7 +249,8 @@ def main():
         nxt = (t.replace(day=1) + __import__("datetime").timedelta(days=32))
         want.append(f"{nxt.year:04d}-{nxt.month:02d}")
 
-    data = {"generated": date.today().isoformat(), "legend": LEGEND, "months": {}, "vacations": {}, "vacationYears": []}
+    # время синхронизации с точностью до минуты — его показывает кнопка на главной
+    data = {"generated": datetime.datetime.now().isoformat(timespec="minutes"), "legend": LEGEND, "months": {}, "vacations": {}, "vacationYears": []}
     for iso in want:
         y, m = int(iso[:4]), int(iso[5:7])
         title = None

@@ -1138,8 +1138,18 @@
        агент из Confluence (интранет): scripts/sync_schedule.py --if-requested. */
     const cloudCfg = () => (D.hrRules && D.hrRules.cloud) || null;
     function syncStateText(f) {
-      const gen = D.schedule && D.schedule.generated
-        ? new Date(D.schedule.generated + "T00:00:00").toLocaleDateString("ru-RU") : "—";
+      /* «график от» показывает дату и время, когда Confluence отдал график
+         (старые schedule.json содержат только дату — их тоже понимаем). */
+      const g = (D.schedule && D.schedule.generated) || "";
+      let gen = "—";
+      if (g) {
+        const s = String(g);
+        const d = new Date(s.length <= 10 ? s + "T00:00:00" : s);
+        if (isNaN(d.getTime())) gen = s;
+        else gen = s.includes("T")
+          ? d.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+          : d.toLocaleDateString("ru-RU");
+      }
       if (!f || !f.done_at) return `график от ${gen}`;
       const t = new Date(f.done_at).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
       return `график от ${gen} · синхронизирован ${t}` + (f.ok === false ? ` (ошибка: ${f.message || ""})` : "");
