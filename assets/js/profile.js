@@ -4157,20 +4157,36 @@ function robotMenuHtml() {
     ov.innerHTML = `<div class="auth-box">
       <h3><i class="ph-bold ph-lock-key"></i> Вход</h3>
       <p>${escHtml(emp.fullName)}</p>
-      <input id="ag-pass" type="password" placeholder="пароль" autocomplete="current-password">
+      <div class="auth-pass">
+        <input id="ag-pass" type="password" placeholder="пароль" autocomplete="current-password">
+        <button class="auth-eye" id="ag-eye" type="button" title="Показать пароль" aria-label="Показать пароль"><i class="ph-bold ph-eye"></i></button>
+      </div>
       <button class="btn btn-primary" id="ag-go" type="button">Войти</button>
       <span class="auth-err" id="ag-err"></span></div>`;
     document.body.appendChild(ov);
+    /* «глазик»: показать/скрыть введённый пароль — чтобы не вводить вслепую */
+    const eye = ov.querySelector("#ag-eye");
+    if (eye) eye.addEventListener("click", () => {
+      const inp = document.getElementById("ag-pass");
+      if (!inp) return;
+      const show = inp.type === "password";
+      inp.type = show ? "text" : "password";
+      eye.innerHTML = `<i class="ph-bold ${show ? "ph-eye-slash" : "ph-eye"}"></i>`;
+      eye.title = show ? "Скрыть пароль" : "Показать пароль";
+      inp.focus();
+    });
     const go = () => {
       const pass = (document.getElementById("ag-pass") || {}).value || "";
-      const err = () => { const e = document.getElementById("ag-err"); if (e) e.textContent = "Неверный пароль"; };
+      let blockMsg = "";
+      const err = (msg) => { const e = document.getElementById("ag-err"); if (e) e.textContent = msg || blockMsg || "Неверный пароль или для профиля ещё не задан пароль"; };
       const ids = [String(emp.id)];
       if (emp.slug && emp.slug !== emp.id) ids.push(String(emp.slug));
       const attempt = (i) => {
         if (i >= ids.length) { err(); return; }
         window.OTP_AUTH.login(ids[i], pass).then((res) => {
-          if (res && res.ok) { ov.remove(); next(); }
-          else attempt(i + 1);
+          if (res && res.ok) { ov.remove(); next(); return; }
+          if (res && res.error === "too_many_attempts") blockMsg = "Слишком много попыток. Подождите 15 минут — или попросите руководителя сбросить блокировку.";
+          attempt(i + 1);
         }).catch(() => attempt(i + 1));
       };
       attempt(0);

@@ -1643,8 +1643,9 @@
       const info = rows.find((x) => x.slug === slug) || {};
       const typedPass = ((row.querySelector(`[data-f="pass"]`) || {}).value || "").trim();
       /* Если пароль введён прямо сейчас — сначала сохраняем его, чтобы в тексте
-         оказался рабочий пароль, а не «на будущее». */
+         оказался рабочий пароль. Не сохранился — пароль в текст не попадёт. */
       if (typedPass) {
+        if (typedPass.length < 6) { toast("Пароль короче 6 символов — сервер его не примет"); return; }
         const saved = await A.saveStaff({
           slug,
           fio: (row.querySelector(`[data-f="fio"]`) || {}).value.trim() || info.fio,
@@ -1653,11 +1654,13 @@
           avatar: (row.querySelector(`[data-f="avatar"]`) || {}).value.trim(),
           active: true,
         }).catch(() => null);
-        if (saved && saved.ok) {
-          __sessionPass.set(slug, typedPass);
-          const fld = row.querySelector(`[data-f="pass"]`);
-          if (fld) fld.value = "";
+        if (!saved || !saved.ok) {
+          toast("Не удалось сохранить пароль: " + ((saved && saved.error) || "ошибка связи"));
+          return;
         }
+        __sessionPass.set(slug, typedPass);
+        const fld = row.querySelector(`[data-f="pass"]`);
+        if (fld) fld.value = "";
       }
       const pass = typedPass || __sessionPass.get(slug) || __sessionPass.get(info.fio) || info.pass || "";
       if (!pass) {
