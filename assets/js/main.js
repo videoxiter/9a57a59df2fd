@@ -1,44 +1,44 @@
-/* Р›РѕРіРёРєР° РґР°С€Р±РѕСЂРґР° В«РњРѕСЏ РєРѕРјР°РЅРґР° РћРўРџВ».
-   РћРґРёРЅ С„Р°Р№Р» РЅР° РІСЃРµ СЃС‚СЂР°РЅРёС†С‹: РєР°Р¶РґС‹Р№ Р±Р»РѕРє СЃСЂР°Р±Р°С‚С‹РІР°РµС‚ С‚РѕР»СЊРєРѕ РµСЃР»Рё РЅР° СЃС‚СЂР°РЅРёС†Рµ РµСЃС‚СЊ РµРіРѕ РєРѕРЅС‚РµР№РЅРµСЂ.
+/* Логика дашборда «Моя команда ОТП».
+   Один файл на все страницы: каждый блок срабатывает только если на странице есть его контейнер.
 
-   index.html        вЂ” РњРѕСЏ РєРѕРјР°РЅРґР° В· РљС‚Рѕ Р»СѓС‡С€Рµ В· Р—Р°СЏРІРєРё В· Р РµР№С‚РёРЅРі РїРѕ KPI
-   dynamics/         вЂ” Р”РёРЅР°РјРёРєР° РєРѕРјР°РЅРґС‹ (РіСЂР°С„РёРєРё)
-   people/           вЂ” РЎРїРµС†РёР°Р»РёСЃС‚С‹ (РєР°СЂС‚РѕС‡РєРё)
-   duties/           вЂ” Р“СЂР°С„РёРє РѕС‚РґРµР»Р° (СЃРјРµРЅС‹ Рё РѕС‚РїСѓСЃРєР°)
-   development/      вЂ” Р Р°Р·РІРёС‚РёРµ РѕС‚РґРµР»Р°
+   index.html        — Моя команда · Кто лучше · Заявки · Рейтинг по KPI
+   dynamics/         — Динамика команды (графики)
+   people/           — Специалисты (карточки)
+   duties/           — График отдела (смены и отпуска)
+   development/      — Развитие отдела
 */
 (function () {
   "use strict";
   const D = window.OTP_DATA;
-  if (!D) return console.error("OTP_DATA РЅРµ Р·Р°РіСЂСѓР¶РµРЅ");
+  if (!D) return console.error("OTP_DATA не загружен");
   const bySlug = (s) => (D.employees || []).find((e) => e.slug === s) || null;
-  /* РљРѕСЂРµРЅСЊ СЃР°Р№С‚Р° (С‚Р°Рј Р»РµР¶РёС‚ assets/): РїСѓС‚СЊ РґРѕ /team/ Р»РёР±Рѕ РїРµСЂРІС‹Р№ СЃРµРіРјРµРЅС‚ Р°РґСЂРµСЃР°.
-     РЎС‚СЂР°РЅРёС†С‹ РґР°С€Р±РѕСЂРґР° Р»РµР¶Р°С‚ РЅР° СѓСЂРѕРІРµРЅСЊ РіР»СѓР±Р¶Рµ РєРѕСЂРЅСЏ вЂ” РЅРµР»СЊР·СЏ СЂРµР·Р°С‚СЊ РїРѕ РїРѕСЃР»РµРґРЅРµРјСѓ СЃР»СЌС€Сѓ. */
+  /* Корень сайта (там лежит assets/): путь до /team/ либо первый сегмент адреса.
+     Страницы дашборда лежат на уровень глубже корня — нельзя резать по последнему слэшу. */
   const SITE_ROOT = (() => {
     const parts = location.pathname.split("/").filter(Boolean);
     const t = parts.indexOf("team");
     if (t > 0) return "/" + parts.slice(0, t).join("/") + "/";
     return parts.length > 1 ? "/" + parts[0] + "/" : "/";
   })();
-  /* РљРѕСЂРµРЅСЊ РґР°С€Р±РѕСЂРґР° (СЃС‚СЂР°РЅРёС†С‹ В«РњРѕСЏ РєРѕРјР°РЅРґР°В», В«Р–СѓСЂРЅР°Р»В», вЂ¦) вЂ” РґР»СЏ СЃСЃС‹Р»РѕРє РёР· JS. */
+  /* Корень дашборда (страницы «Моя команда», «Журнал», …) — для ссылок из JS. */
   const DASH_BASE = location.pathname.replace(/\/(dynamics|people|duties|development|settings|staff|hours)\/.*$/, "/");
 
   const bySurname = (fio) => (D.employees || []).find((e) => (e.fullName || "").split(" ")[0] === String(fio).split(" ")[0]) || null;
   const MKEYS = ["quality", "learnability", "initiative", "engagement", "discipline"];
-  const ACTIVE = D.employees.filter((e) => e.status !== "left");   // СѓРІРѕР»РµРЅРЅС‹С… РЅРµ РїРѕРєР°Р·С‹РІР°РµРј
+  const ACTIVE = D.employees.filter((e) => e.status !== "left");   // уволенных не показываем
   const $ = (s) => document.querySelector(s);
-  const WD_SHORT = ["РІСЃ", "РїРЅ", "РІС‚", "СЃСЂ", "С‡С‚", "РїС‚", "СЃР±"];
-  const WD_FULL = ["РІРѕСЃРєСЂРµСЃРµРЅСЊРµ", "РїРѕРЅРµРґРµР»СЊРЅРёРє", "РІС‚РѕСЂРЅРёРє", "СЃСЂРµРґР°", "С‡РµС‚РІРµСЂРі", "РїСЏС‚РЅРёС†Р°", "СЃСѓР±Р±РѕС‚Р°"];
-  const MON_GEN = ["СЏРЅРІР°СЂСЏ", "С„РµРІСЂР°Р»СЏ", "РјР°СЂС‚Р°", "Р°РїСЂРµР»СЏ", "РјР°СЏ", "РёСЋРЅСЏ", "РёСЋР»СЏ", "Р°РІРіСѓСЃС‚Р°", "СЃРµРЅС‚СЏР±СЂСЏ", "РѕРєС‚СЏР±СЂСЏ", "РЅРѕСЏР±СЂСЏ", "РґРµРєР°Р±СЂСЏ"];
+  const WD_SHORT = ["вс", "пн", "вт", "ср", "чт", "пт", "сб"];
+  const WD_FULL = ["воскресенье", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота"];
+  const MON_GEN = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
   const isoOf = (dt) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}`;
   const addDays = (dt, n) => { const d = new Date(dt.getTime()); d.setDate(d.getDate() + n); return d; };
-  const surname = (f) => String(f || "").split(" ")[0].toLowerCase().replace("С‘", "Рµ");
+  const surname = (f) => String(f || "").split(" ")[0].toLowerCase().replace("ё", "е");
   const samePerson = (a, b) => !!a && !!b && surname(a) === surname(b);
 
-  /* ---------- РЅР°РєРѕРїР»РµРЅРЅС‹Рµ С‡Р°СЃС‹ ----------
-     РџСЂР°РІРёР»Рѕ РѕРґРЅРѕ РЅР° РІРµСЃСЊ СЃР°Р№С‚ (otp.reqDelta): СѓРІРѕР»СЊРЅРёС‚РµР»СЊРЅР°СЏ СЃРїРёСЃС‹РІР°РµС‚ РґРѕ 4 С‡, РµСЃР»Рё
-     СЂСѓРєРѕРІРѕРґРёС‚РµР»СЊ РЅРµ РїРѕСЃС‚Р°РІРёР» В«РЅРµ СЃРїРёСЃС‹РІР°С‚СЊВ»; РєРѕСЂСЂРµРєС‚РёСЂРѕРІРєР° вЂ” РїРѕ Р·РЅР°РєСѓ; РѕС‚РіСѓР» Р·Р°
-     РІС‹С…РѕРґРЅСѓСЋ СЃРјРµРЅСѓ Рё РїСЂРѕС‡РµРµ С‡Р°СЃС‹ РЅРµ РґРІРёРіР°СЋС‚. РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРёС… РёСЃРєР»СЋС‡РµРЅРёР№ РїРѕ KPI РЅРµС‚. */
+  /* ---------- накопленные часы ----------
+     Правило одно на весь сайт (otp.reqDelta): увольнительная списывает до 4 ч, если
+     руководитель не поставил «не списывать»; корректировка — по знаку; отгул за
+     выходную смену и прочее часы не двигают. Автоматических исключений по KPI нет. */
   const hoursOfReq = (r) => otp.reqHours(r);
   function balanceOf(emp, reqs) {
     if (!emp) return null;
@@ -49,18 +49,18 @@
     }
     return { balance: Math.round(sum * 10) / 10 };
   }
-  const fmtH = (h) => (Math.round(h * 10) / 10).toString().replace(".", ",") + " С‡";
+  const fmtH = (h) => (Math.round(h * 10) / 10).toString().replace(".", ",") + " ч";
   function hoursChip(emp, reqs) {
     const b = balanceOf(emp, reqs);
     if (!b) return "";
-    return `<span class="hr-hours ${b.balance >= 0 ? "pos" : "neg"}" title="РЅР°РєРѕРїР»РµРЅРЅР°СЏ РїРµСЂРµСЂР°Р±РѕС‚РєР° РёР»Рё РґРѕР»Рі РїРѕ С‡Р°СЃР°Рј">
-      <i class="ph-bold ph-hourglass-high"></i> ${b.balance >= 0 ? "+" : "в€’"}${fmtH(Math.abs(b.balance))} ${b.balance >= 0 ? "РЅР°РєРѕРїР»РµРЅРѕ" : "РґРѕР»Р¶РµРЅ"}</span>`;
+    return `<span class="hr-hours ${b.balance >= 0 ? "pos" : "neg"}" title="накопленная переработка или долг по часам">
+      <i class="ph-bold ph-hourglass-high"></i> ${b.balance >= 0 ? "+" : "−"}${fmtH(Math.abs(b.balance))} ${b.balance >= 0 ? "накоплено" : "должен"}</span>`;
   }
-  /* Р§Р°СЃС‹ Рё СЃС‚Р°С‚СѓСЃС‹: СЃРЅР°С‡Р°Р»Р° СЂРёСЃСѓРµРј РїРѕ Р»РѕРєР°Р»СЊРЅРѕР№ РєРѕРїРёРё (РјРіРЅРѕРІРµРЅРЅРѕ), РїРѕС‚РѕРј СѓС‚РѕС‡РЅСЏРµРј РїРѕ РѕР±Р»Р°РєСѓ.
-     Р’Р°Р¶РЅРѕ РЅРµ Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ РѕС‚СЂРёСЃРѕРІРєСѓ РѕР¶РёРґР°РЅРёРµРј СЃРµС‚Рё вЂ” РёРЅР°С‡Рµ СЃС‚СЂР°РЅРёС†Р° РѕСЃС‚Р°С‘С‚СЃСЏ РїСѓСЃС‚РѕР№. */
+  /* Часы и статусы: сначала рисуем по локальной копии (мгновенно), потом уточняем по облаку.
+     Важно не блокировать отрисовку ожиданием сети — иначе страница остаётся пустой. */
   let hydrating = false;
 
-  /* ---------- Р–СѓСЂРЅР°Р» С‡Р°СЃРѕРІ: РІСЃРµ СЃРѕС‚СЂСѓРґРЅРёРєРё, РєС‚Рѕ РїРѕСЃС‚Р°РІРёР»/РѕРґРѕР±СЂРёР» + CSV ---------- */
+  /* ---------- Журнал часов: все сотрудники, кто поставил/одобрил + CSV ---------- */
   async function renderHoursJournal() {
     const box = $("#hours-journal");
     if (!box || box.dataset.ready === "1") return;
@@ -70,26 +70,26 @@
     let list = [];
     try { list = (cloud && (await cloud.all())) || []; } catch (e) { list = []; }
     if (!Array.isArray(list)) list = [];
-    const isGone = (r) => r.empSlug === "deleted" || /^\[(СѓРґР°Р»РµРЅРѕ|С‚РµСЃС‚)\]/.test(String(r.reason || "")) || /^DIAG TEST/i.test(String(r.reason || ""));
+    const isGone = (r) => r.empSlug === "deleted" || /^\[(удалено|тест)\]/.test(String(r.reason || "")) || /^DIAG TEST/i.test(String(r.reason || ""));
     list = list.filter((r) => !isGone(r));
-    const TYPE = { adjust: "РљРѕСЂСЂРµРєС‚РёСЂРѕРІРєР° (СЂСѓРєРѕРІРѕРґРёС‚РµР»СЊ)", overtime: "РџРµСЂРµСЂР°Р±РѕС‚РєР°", leave: "РЈРІРѕР»СЊРЅРёС‚РµР»СЊРЅР°СЏ", dayoff: "РћС‚РіСѓР» Р·Р° РІС‹С…. СЃРјРµРЅСѓ" };
-    const ST = { approved: "РїРѕРґС‚РІРµСЂР¶РґРµРЅРѕ", pending: "РЅР° СЂР°СЃСЃРјРѕС‚СЂРµРЅРёРё", cancelled: "РѕС‚РјРµРЅРµРЅРѕ", rejected: "РѕС‚РєР»РѕРЅРµРЅРѕ" };
+    const TYPE = { adjust: "Корректировка (руководитель)", overtime: "Переработка", leave: "Увольнительная", dayoff: "Отгул за вых. смену" };
+    const ST = { approved: "подтверждено", pending: "на рассмотрении", cancelled: "отменено", rejected: "отклонено" };
     const signed = (r) => otp.reqDelta(r);
     const names = [...new Set(list.map((r) => r.empName).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), "ru"));
     const years = [...new Set(list.map((r) => String(r.date || "").slice(0, 4)).filter(Boolean))].sort().reverse();
     box.innerHTML = `
-      <h3 class="hr-block-h"><i class="ph-bold ph-clock-counter-clockwise"></i> Р–СѓСЂРЅР°Р» С‡Р°СЃРѕРІ вЂ” РІСЃРµ СЃРѕС‚СЂСѓРґРЅРёРєРё</h3>
+      <h3 class="hr-block-h"><i class="ph-bold ph-clock-counter-clockwise"></i> Журнал часов — все сотрудники</h3>
       <div class="hj-filters">
-        <label class="hj-f"><span>РЎРѕС‚СЂСѓРґРЅРёРє</span><select id="hjx-emp"><option value="">Р’СЃРµ</option>${names.map((n) => `<option value="${escJ(n)}">${n}</option>`).join("")}</select></label>
-        <label class="hj-f"><span>РћРїРµСЂР°С†РёРё</span><select id="hjx-kind"><option value="">Р’СЃРµ</option><option value="plus">РќР°С‡РёСЃР»РµРЅРёСЏ</option><option value="minus">РЎРїРёСЃР°РЅРёСЏ</option></select></label>
-        <label class="hj-f"><span>РСЃС‚РѕС‡РЅРёРє</span><select id="hjx-src"><option value="">Р’СЃРµ</option><option value="boss">Р СѓРєРѕРІРѕРґРёС‚РµР»СЊ/РіР»Р°РІРЅС‹Р№</option><option value="emp">Р—Р°СЏРІРєР° СЃРѕС‚СЂСѓРґРЅРёРєР°</option></select></label>
-        <label class="hj-f"><span>РџРµСЂРёРѕРґ</span><select id="hjx-year"><option value="">Р’СЃС‘ РІСЂРµРјСЏ</option>${years.map((y) => `<option value="${y}">${y}</option>`).join("")}</select></label>
-        <label class="hj-f"><span>РЎС‚Р°С‚СѓСЃ</span><select id="hjx-status"><option value="">Р’СЃРµ</option><option value="approved">РџРѕРґС‚РІРµСЂР¶РґРµРЅРѕ</option><option value="pending">РќР° СЂР°СЃСЃРјРѕС‚СЂРµРЅРёРё</option><option value="cancelled">РћС‚РјРµРЅРµРЅРѕ</option></select></label>
-        <button class="btn btn-primary" type="button" id="hjx-csv"><i class="ph-bold ph-download-simple"></i> Р’С‹РіСЂСѓР·РёС‚СЊ CSV</button>
+        <label class="hj-f"><span>Сотрудник</span><select id="hjx-emp"><option value="">Все</option>${names.map((n) => `<option value="${escJ(n)}">${n}</option>`).join("")}</select></label>
+        <label class="hj-f"><span>Операции</span><select id="hjx-kind"><option value="">Все</option><option value="plus">Начисления</option><option value="minus">Списания</option></select></label>
+        <label class="hj-f"><span>Источник</span><select id="hjx-src"><option value="">Все</option><option value="boss">Руководитель/главный</option><option value="emp">Заявка сотрудника</option></select></label>
+        <label class="hj-f"><span>Период</span><select id="hjx-year"><option value="">Всё время</option>${years.map((y) => `<option value="${y}">${y}</option>`).join("")}</select></label>
+        <label class="hj-f"><span>Статус</span><select id="hjx-status"><option value="">Все</option><option value="approved">Подтверждено</option><option value="pending">На рассмотрении</option><option value="cancelled">Отменено</option></select></label>
+        <button class="btn btn-primary" type="button" id="hjx-csv"><i class="ph-bold ph-download-simple"></i> Выгрузить CSV</button>
       </div>
       <div class="hj-sum" id="hjx-sum"></div>
       <div class="hj-table-wrap"><table class="hj-table"><thead><tr>
-        <th>Р”Р°С‚Р°</th><th>РЎРѕС‚СЂСѓРґРЅРёРє</th><th>РљС‚Рѕ</th><th>РСЃС‚РѕС‡РЅРёРє</th><th>РўРёРї</th><th class="num">Р§Р°СЃС‹</th><th>РџСЂРёС‡РёРЅР°</th><th>РЎС‚Р°С‚СѓСЃ</th><th class="num">РћСЃС‚Р°С‚РѕРє</th>
+        <th>Дата</th><th>Сотрудник</th><th>Кто</th><th>Источник</th><th>Тип</th><th class="num">Часы</th><th>Причина</th><th>Статус</th><th class="num">Остаток</th>
       </tr></thead><tbody id="hjx-body"></tbody></table></div>
       <div class="hj-pager" id="hjx-pager"></div>`;
     const f = { emp: "", kind: "", src: "", year: "", status: "" };
@@ -106,7 +106,7 @@
         if (f.kind === "minus" && !(hh < 0)) return false;
         return true;
       }).sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
-      // РѕСЃС‚Р°С‚РѕРє РїРѕ С…СЂРѕРЅРѕР»РѕРіРёРё
+      // остаток по хронологии
       const balMap = new Map();
       const baseBySlug = {};
       ((window.OTP_DATA && OTP_DATA.employees) || []).forEach((e) => { baseBySlug[e.slug || e.id] = e.hours_base || 0; });
@@ -125,15 +125,15 @@
       document.getElementById("hjx-body").innerHTML = view.map((r) => {
         const hh = signed(r);
         const note = otp.reqDeltaNote(r);
-        const who = r.decidedBy || (r.status === "approved" ? "СЂСѓРєРѕРІРѕРґРёС‚РµР»СЊ (СЂР°РЅРµРµ)" : "вЂ”");
-        return `<tr><td class="mono">${escJ(String(r.date || "вЂ”"))}</td><td>${escJ(String(r.empName || ""))}</td>
+        const who = r.decidedBy || (r.status === "approved" ? "руководитель (ранее)" : "—");
+        return `<tr><td class="mono">${escJ(String(r.date || "—"))}</td><td>${escJ(String(r.empName || ""))}</td>
           <td class="hj-who">${escJ(String(who))}</td>
-          <td>${r.type === "adjust" ? '<span class="hj-boss">СЂСѓРєРѕРІРѕРґРёС‚РµР»СЊ</span>' : '<span class="hj-emp-src">Р·Р°СЏРІРєР°</span>'}</td>
+          <td>${r.type === "adjust" ? '<span class="hj-boss">руководитель</span>' : '<span class="hj-emp-src">заявка</span>'}</td>
           <td>${escJ(TYPE[r.type] || r.type || "")}</td>
-          <td class="num ${hh < 0 ? "neg" : "pos"}"${note ? ` title="${escJ(note)}"` : ""}>${hh === 0 ? "0" : (hh > 0 ? "+" : "") + hh}${note ? '<sup class="hj-zero">В·</sup>' : ""}</td>
+          <td class="num ${hh < 0 ? "neg" : "pos"}"${note ? ` title="${escJ(note)}"` : ""}>${hh === 0 ? "0" : (hh > 0 ? "+" : "") + hh}${note ? '<sup class="hj-zero">·</sup>' : ""}</td>
           <td class="hj-why">${escJ(String(r.reason || ""))}</td>
           <td><span class="hj-st hj-${r.status || "pending"}">${ST[r.status] || r.status || ""}</span>${(() => { const d = otp.reqDecision(r); return d ? `<span class="hj-dec">${escJ(d)}</span>` : ""; })()}</td>
-          <td class="num hj-left">${r.status === "approved" ? balMap.get(r.id) : "вЂ”"}</td></tr>`;
+          <td class="num hj-left">${r.status === "approved" ? balMap.get(r.id) : "—"}</td></tr>`;
       }).join("");
       const pager = document.getElementById("hjx-pager");
       if (pager) {
@@ -142,16 +142,16 @@
           const nums = [];
           for (let i = 0; i < pages; i++) {
             if (pages > 7 && i > 0 && i < pages - 1 && Math.abs(i - page) > 1) {
-              if (nums[nums.length - 1] !== "вЂ¦") nums.push("вЂ¦");
+              if (nums[nums.length - 1] !== "…") nums.push("…");
               continue;
             }
             nums.push(i);
           }
-          pager.innerHTML = `<button class="hj-pg" data-pg="${page - 1}" ${page === 0 ? "disabled" : ""}>вЂ№</button>`
-            + nums.map((n) => n === "вЂ¦" ? '<span class="hj-pg-dots">вЂ¦</span>'
+          pager.innerHTML = `<button class="hj-pg" data-pg="${page - 1}" ${page === 0 ? "disabled" : ""}>‹</button>`
+            + nums.map((n) => n === "…" ? '<span class="hj-pg-dots">…</span>'
               : `<button class="hj-pg${n === page ? " on" : ""}" data-pg="${n}">${n + 1}</button>`).join("")
-            + `<button class="hj-pg" data-pg="${page + 1}" ${page >= pages - 1 ? "disabled" : ""}>вЂє</button>`
-            + `<span class="hj-pg-info">${page * PER + 1}вЂ“${Math.min(shown.length, (page + 1) * PER)} РёР· ${shown.length}</span>`;
+            + `<button class="hj-pg" data-pg="${page + 1}" ${page >= pages - 1 ? "disabled" : ""}>›</button>`
+            + `<span class="hj-pg-info">${page * PER + 1}–${Math.min(shown.length, (page + 1) * PER)} из ${shown.length}</span>`;
           pager.querySelectorAll("button[data-pg]").forEach((b) => b.addEventListener("click", () => {
             const n = +b.dataset.pg;
             if (n >= 0 && n < pages) { page = n; draw(); }
@@ -162,9 +162,9 @@
       const plus = ok.reduce((s, r) => s + Math.max(0, signed(r)), 0);
       const minus = ok.reduce((s, r) => s + Math.min(0, signed(r)), 0);
       document.getElementById("hjx-sum").innerHTML =
-        `<span class="hj-chip">Р·Р°РїРёСЃРµР№: <b>${shown.length}</b></span>
-         <span class="hj-chip plus">РЅР°С‡РёСЃР»РµРЅРѕ: <b>+${plus} С‡</b></span>
-         <span class="hj-chip minus">СЃРїРёСЃР°РЅРѕ: <b>${minus} С‡</b></span>`;
+        `<span class="hj-chip">записей: <b>${shown.length}</b></span>
+         <span class="hj-chip plus">начислено: <b>+${plus} ч</b></span>
+         <span class="hj-chip minus">списано: <b>${minus} ч</b></span>`;
     }
     [["hjx-emp", "emp"], ["hjx-kind", "kind"], ["hjx-src", "src"], ["hjx-year", "year"], ["hjx-status", "status"]].forEach(([id, key]) => {
       const el = document.getElementById(id);
@@ -173,8 +173,8 @@
     const csv = document.getElementById("hjx-csv");
     if (csv) csv.addEventListener("click", () => {
       const q = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
-      const head = ["Р”Р°С‚Р°", "РЎРѕС‚СЂСѓРґРЅРёРє", "РљС‚Рѕ", "РСЃС‚РѕС‡РЅРёРє", "РўРёРї", "Р§Р°СЃС‹", "РџСЂРёС‡РёРЅР°", "РЎС‚Р°С‚СѓСЃ", "РћСЃС‚Р°С‚РѕРє С‡Р°СЃРѕРІ"];
-      const rows = [head.map(q).join(";")].concat(shown.map((r) => [r.date || "", r.empName || "", r.decidedBy || "", r.type === "adjust" ? "СЂСѓРєРѕРІРѕРґРёС‚РµР»СЊ" : "Р·Р°СЏРІРєР° СЃРѕС‚СЂСѓРґРЅРёРєР°", TYPE[r.type] || r.type || "", signed(r), r.reason || "", ST[r.status] || r.status || "", r.status === "approved" ? String(balMap.get(r.id)) : ""].map(q).join(";")));
+      const head = ["Дата", "Сотрудник", "Кто", "Источник", "Тип", "Часы", "Причина", "Статус", "Остаток часов"];
+      const rows = [head.map(q).join(";")].concat(shown.map((r) => [r.date || "", r.empName || "", r.decidedBy || "", r.type === "adjust" ? "руководитель" : "заявка сотрудника", TYPE[r.type] || r.type || "", signed(r), r.reason || "", ST[r.status] || r.status || "", r.status === "approved" ? String(balMap.get(r.id)) : ""].map(q).join(";")));
       const blob = new Blob(["\ufeff" + rows.join("\r\n")], { type: "text/csv;charset=utf-8" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
@@ -197,7 +197,7 @@
       document.querySelectorAll("[data-today]").forEach((el) => {
         const emp = bySlug(el.dataset.today);
         const st = emp ? todayState(emp, now, reqs) : null;
-        el.innerHTML = st ? `<span class="td-chip k-${st.kind}" title="Р›РёРЅРёСЏ, СЃРјРµРЅР° Рё РѕС‚СЃСѓС‚СЃС‚РІРёСЏ РЅР° СЃРµРіРѕРґРЅСЏ"><i class="ph-bold ${tdIcon(st.kind)}"></i> ${st.text}</span>` : "";
+        el.innerHTML = st ? `<span class="td-chip k-${st.kind}" title="Линия, смена и отсутствия на сегодня"><i class="ph-bold ${tdIcon(st.kind)}"></i> ${st.text}</span>` : "";
       });
     };
     try {
@@ -205,16 +205,16 @@
       window.OTP_REQS = local;
       paint(local);
       renderHoursAdmin(local);
-    } catch (e) { /* Р»РѕРєР°Р»СЊРЅС‹Рµ РґР°РЅРЅС‹Рµ РјРѕРіР»Рё Р±С‹С‚СЊ Р±РёС‚С‹РјРё вЂ” РЅРµ РєСЂРёС‚РёС‡РЅРѕ */ }
+    } catch (e) { /* локальные данные могли быть битыми — не критично */ }
     try {
       const list = window.OTP_CLOUD ? await window.OTP_CLOUD.all() : null;
       if (list) { window.OTP_REQS = list; paint(list); renderHoursAdmin(list); }
-    } catch (e) { /* РЅРµС‚ СЃРµС‚Рё вЂ” РѕСЃС‚Р°СЋС‚СЃСЏ Р»РѕРєР°Р»СЊРЅС‹Рµ Р·РЅР°С‡РµРЅРёСЏ */ }
+    } catch (e) { /* нет сети — остаются локальные значения */ }
     hydrating = false;
   }
-  /* ---------- Р§Р°СЃС‹: РЅР°С‡РёСЃР»РµРЅРёРµ/СЃРїРёСЃР°РЅРёРµ РѕС‚ СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ ---------- */
+  /* ---------- Часы: начисление/списание от руководителя ---------- */
   const escT = (s) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-  const HX_PER = 10;            // РёСЃС‚РѕСЂРёСЏ РЅР°С‡РёСЃР»РµРЅРёР№/СЃРїРёСЃР°РЅРёР№ вЂ” РїРѕ 10 РЅР° СЃС‚СЂР°РЅРёС†Сѓ
+  const HX_PER = 10;            // история начислений/списаний — по 10 на страницу
   let hxPage = 0;
   function renderHoursAdmin(reqs) {
     const box = $("#hours-admin");
@@ -231,31 +231,31 @@
       return `<div class="hx-row">
         <span class="hx-d">${escT(d)}</span>
         <span class="hx-n">${escT(r.empName || "")}</span>
-        <b class="hx-h ${h >= 0 ? "pos" : "neg"}">${h >= 0 ? "+" : "в€’"}${fmtH(Math.abs(h))}</b>
+        <b class="hx-h ${h >= 0 ? "pos" : "neg"}">${h >= 0 ? "+" : "−"}${fmtH(Math.abs(h))}</b>
         <span class="hx-r">${escT(r.reason || "")}</span>
       </div>`;
     };
     const pager = pages > 1 ? `<div class="hj-pager hx-pager">
-      <button class="hj-pg" data-hxpg="${hxPage - 1}" ${hxPage === 0 ? "disabled" : ""}>вЂ№</button>
+      <button class="hj-pg" data-hxpg="${hxPage - 1}" ${hxPage === 0 ? "disabled" : ""}>‹</button>
       ${Array.from({ length: pages }, (_, i) => `<button class="hj-pg${i === hxPage ? " on" : ""}" data-hxpg="${i}">${i + 1}</button>`).join("")}
-      <button class="hj-pg" data-hxpg="${hxPage + 1}" ${hxPage >= pages - 1 ? "disabled" : ""}>вЂє</button>
-      <span class="hj-pg-info">${hxPage * HX_PER + 1}вЂ“${Math.min(all.length, (hxPage + 1) * HX_PER)} РёР· ${all.length}</span>
+      <button class="hj-pg" data-hxpg="${hxPage + 1}" ${hxPage >= pages - 1 ? "disabled" : ""}>›</button>
+      <span class="hj-pg-info">${hxPage * HX_PER + 1}–${Math.min(all.length, (hxPage + 1) * HX_PER)} из ${all.length}</span>
     </div>` : "";
     box.innerHTML = `<div class="hx-wrap">
       <div class="hx-head">
-        <h3><i class="ph-bold ph-hourglass-high"></i> Р§Р°СЃС‹: РЅР°С‡РёСЃР»РёС‚СЊ РёР»Рё СЃРїРёСЃР°С‚СЊ</h3>
-        <span class="hx-note">СЂРµС€РµРЅРёРµ СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ В· РёСЃС‚РѕСЂРёСЏ РІРёРґРЅР° РІСЃРµРј СЃРѕС‚СЂСѓРґРЅРёРєР°Рј</span>
+        <h3><i class="ph-bold ph-hourglass-high"></i> Часы: начислить или списать</h3>
+        <span class="hx-note">решение руководителя · история видна всем сотрудникам</span>
       </div>
       <form class="hx-form" id="hx-form" autocomplete="off">
         <select id="hx-emp">${emps.map((e) => `<option value="${e.slug}">${escT(e.fullName)}</option>`).join("")}</select>
-        <input id="hx-hours" type="number" step="0.5" inputmode="decimal" placeholder="С‡Р°СЃС‹: +2 РёР»Рё в€’1,5" required>
-        <input id="hx-reason" type="text" maxlength="160" placeholder="РџСЂРёС‡РёРЅР° (РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ)" required>
-        <button type="submit" class="hx-btn"><i class="ph-bold ph-check"></i> РџСЂРёРјРµРЅРёС‚СЊ</button>
+        <input id="hx-hours" type="number" step="0.5" inputmode="decimal" placeholder="часы: +2 или −1,5" required>
+        <input id="hx-reason" type="text" maxlength="160" placeholder="Причина (обязательно)" required>
+        <button type="submit" class="hx-btn"><i class="ph-bold ph-check"></i> Применить</button>
       </form>
-      <p class="hx-rule"><i class="ph-bold ph-info"></i> РџРѕРґС‚РІРµСЂР¶РґС‘РЅРЅР°СЏ РєРѕСЂСЂРµРєС‚РёСЂРѕРІРєР° СЃРґРІРёРіР°РµС‚ С‡Р°СЃС‹: РїР»СЋСЃ РЅР°С‡РёСЃР»СЏРµС‚, РјРёРЅСѓСЃ СЃРїРёСЃС‹РІР°РµС‚. РЈРІРѕР»СЊРЅРёС‚РµР»СЊРЅР°СЏ СЃРїРёСЃС‹РІР°РµС‚ РґРѕ 4 С‡, РѕС‚РіСѓР» Р·Р° РІС‹С…РѕРґРЅСѓСЋ СЃРјРµРЅСѓ вЂ” РІСЃРµРіРґР° 0.</p>
+      <p class="hx-rule"><i class="ph-bold ph-info"></i> Подтверждённая корректировка сдвигает часы: плюс начисляет, минус списывает. Увольнительная списывает до 4 ч, отгул за выходную смену — всегда 0.</p>
       <div class="hx-log">
-        <div class="hx-log-h">РСЃС‚РѕСЂРёСЏ РЅР°С‡РёСЃР»РµРЅРёР№ Рё СЃРїРёСЃР°РЅРёР№ <span>${all.length}</span></div>
-        ${list.length ? list.map(row).join("") : `<div class="hx-empty">РџРѕРєР° РЅРµС‚ Р·Р°РїРёСЃРµР№.</div>`}
+        <div class="hx-log-h">История начислений и списаний <span>${all.length}</span></div>
+        ${list.length ? list.map(row).join("") : `<div class="hx-empty">Пока нет записей.</div>`}
         ${pager}
       </div>
     </div>`;
@@ -277,18 +277,18 @@
         setTimeout(() => form.classList.remove("is-err"), 1200);
         return;
       }
-      // РјРёРЅСѓСЃ С‚РѕР¶Рµ РґРѕРїСѓСЃС‚РёРј: РїРѕРґС‚РІРµСЂР¶РґС‘РЅРЅР°СЏ РєРѕСЂСЂРµРєС‚РёСЂРѕРІРєР° СЃРїРёСЃС‹РІР°РµС‚ С‡Р°СЃС‹
+      // минус тоже допустим: подтверждённая корректировка списывает часы
       const nowIso = new Date().toISOString();
       const rec = {
         id: "adj-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
         empSlug: emp.slug, empName: emp.fullName, type: "adjust",
         date: isoDate(new Date()), from: "", to: "", hours: h, reason,
-        status: "approved", created: nowIso, decided: nowIso, decidedBy: window.OTP_ACTOR || "РЇРєРѕРІР»РµРІ Р•.Р•.",
+        status: "approved", created: nowIso, decided: nowIso, decidedBy: window.OTP_ACTOR || "Яковлев Е.Е.",
       };
       try { if (window.OTP_CLOUD) await window.OTP_CLOUD.upsert(rec); } catch (err) {}
       $("#hx-hours").value = "";
       $("#hx-reason").value = "";
-      hxPage = 0;                                   // СЃРІРµР¶Р°СЏ Р·Р°РїРёСЃСЊ вЂ” РЅР° РїРµСЂРІСѓСЋ СЃС‚СЂР°РЅРёС†Сѓ
+      hxPage = 0;                                   // свежая запись — на первую страницу
       await hydrateHours();
       renderHoursAdmin(window.OTP_REQS || []);
     });
@@ -296,9 +296,9 @@
 
   const tdIcon = (k) => k === "shift" ? "ph-clock" : k === "vacation" ? "ph-airplane-tilt"
     : k === "leave" ? "ph-door-open" : k === "dayoff" ? "ph-calendar-minus" : "ph-moon";
-  window.otpRefreshHours = hydrateHours;      // С‡С‚РѕР±С‹ Р±Р»РѕРє СЃРѕРіР»Р°СЃРѕРІР°РЅРёСЏ Р·Р°СЏРІРѕРє РѕР±РЅРѕРІРёР» С‡Р°СЃС‹ СЃСЂР°Р·Сѓ РїРѕСЃР»Рµ СЂРµС€РµРЅРёСЏ
+  window.otpRefreshHours = hydrateHours;      // чтобы блок согласования заявок обновил часы сразу после решения
 
-  /* ---------- РєС‚Рѕ РЅР° РєР°РєРѕР№ Р»РёРЅРёРё Рё РєС‚Рѕ РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚ (РѕР±С‰РµРµ РґР»СЏ РґР°С€Р±РѕСЂРґР°) ---------- */
+  /* ---------- кто на какой линии и кто отсутствует (общее для дашборда) ---------- */
   const SCH = D.schedule || null;
   const isoDate = (dt) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
   function monthOf(dt) {
@@ -310,15 +310,15 @@
     const m = monthOf(dt);
     if (!m || !m.shifts) return null;
     let days = m.shifts[fio];
-    if (!days) {                                // РІ РіСЂР°С„РёРєРµ Р¤РРћ РјРѕР¶РµС‚ РѕС‚Р»РёС‡Р°С‚СЊСЃСЏ РЅР°РїРёСЃР°РЅРёРµРј вЂ” РёС‰РµРј РїРѕ С„Р°РјРёР»РёРё
+    if (!days) {                                // в графике ФИО может отличаться написанием — ищем по фамилии
       const key = Object.keys(m.shifts).find((k) => samePerson(k, fio));
       days = key ? m.shifts[key] : null;
     }
     return days ? days[String(dt.getDate())] || null : null;
   }
-  /* Р›РёРЅРёРё С‡РµР»РѕРІРµРєР°: РІСЃРµ, РіРґРµ РѕРЅ СѓРєР°Р·Р°РЅ РЅР° РўР•РљРЈР©Р•Р™ РЅРµРґРµР»Рµ (РјРѕР¶РµС‚ Р±С‹С‚СЊ РІ РЅРµСЃРєРѕР»СЊРєРёС…,
-     РЅР°РїСЂРёРјРµСЂ L0 + L3). Р•СЃР»Рё РЅР° СЌС‚РѕР№ РЅРµРґРµР»Рµ РµРіРѕ РІ Р»РёРЅРёСЏС… РЅРµС‚ вЂ” Р±РµСЂС‘Рј Р±Р»РёР¶Р°Р№С€СѓСЋ РЅРµРґРµР»СЋ,
-     РіРґРµ РѕРЅ РµСЃС‚СЊ, Рё РїРѕРјРµС‡Р°РµРј РµС‘ РґР°С‚РѕР№ РЅР°С‡Р°Р»Р°. */
+  /* Линии человека: все, где он указан на ТЕКУЩЕЙ неделе (может быть в нескольких,
+     например L0 + L3). Если на этой неделе его в линиях нет — берём ближайшую неделю,
+     где он есть, и помечаем её датой начала. */
   function linesOf(fio, dt) {
     const m = monthOf(dt);
     if (!m || !m.lines) return [];
@@ -328,7 +328,7 @@
       const labels = info.labels || [];
       const weeks = info.weeks || [];
       for (let i = 0; i < weeks.length; i++) {
-        // РІ СЏС‡РµР№РєРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ РЅРµСЃРєРѕР»СЊРєРѕ С‡РµР»РѕРІРµРє вЂ” РїСЂРёС…РѕРґРёС‚ РјР°СЃСЃРёРІРѕРј
+        // в ячейке может быть несколько человек — приходит массивом
         const names = Array.isArray(weeks[i]) ? weeks[i] : [weeks[i]];
         if (!names.some((n) => samePerson(n, fio))) continue;
         const mm = /^(\d{2})\.(\d{2})\s*-\s*(\d{2})\.(\d{2})$/.exec(String(labels[i] || "").trim());
@@ -350,8 +350,8 @@
   const lineLabel = (list) => {
     if (!list || !list.length) return "";
     const f = list[0];
-    const since = f.current ? "" : " В· СЃ " + String(f.from.getDate()).padStart(2, "0") + "." + String(f.from.getMonth() + 1).padStart(2, "0");
-    return list.map((l) => l.id).join(" + ") + " В· " + f.title + since;
+    const since = f.current ? "" : " · с " + String(f.from.getDate()).padStart(2, "0") + "." + String(f.from.getMonth() + 1).padStart(2, "0");
+    return list.map((l) => l.id).join(" + ") + " · " + f.title + since;
   };
   function vacationOf(fio, dt) {
     if (!SCH || !SCH.vacations) return null;
@@ -363,26 +363,26 @@
     }
     return null;
   }
-  /* Р§С‚Рѕ СЃ СЃРѕС‚СЂСѓРґРЅРёРєРѕРј СЃРµРіРѕРґРЅСЏ: Р·Р°СЏРІРєР° (СѓРІРѕР»СЊРЅРёС‚РµР»СЊРЅР°СЏ/РѕС‚РіСѓР») -> РѕС‚РїСѓСЃРє -> СЃРјРµРЅР°/РІС‹С…РѕРґРЅРѕР№ */
+  /* Что с сотрудником сегодня: заявка (увольнительная/отгул) -> отпуск -> смена/выходной */
   function todayState(emp, dt, reqs) {
     const iso = isoDate(dt);
     const list = (reqs || []).filter((r) => r.empSlug === emp.slug && r.status === "approved" &&
       (r.type === "leave" || r.type === "dayoff") && r.date === iso);
     const leave = list.find((r) => r.type === "leave");
     const dayoff = list.find((r) => r.type === "dayoff");
-    if (leave) return { kind: "leave", text: `РЈРІРѕР»СЊРЅРёС‚РµР»СЊРЅР°СЏ ${leave.from || ""}${leave.to ? "вЂ“" + leave.to : ""}`.trim(), hours: leave.hours };
-    if (dayoff) return { kind: "dayoff", text: dayoff.date2 ? `РћС‚РіСѓР» Р·Р° РІС‹С…РѕРґРЅСѓСЋ СЃРјРµРЅСѓ ${dayoff.date2.slice(8, 10)}.${dayoff.date2.slice(5, 7)}` : "РћС‚РіСѓР»" };
+    if (leave) return { kind: "leave", text: `Увольнительная ${leave.from || ""}${leave.to ? "–" + leave.to : ""}`.trim(), hours: leave.hours };
+    if (dayoff) return { kind: "dayoff", text: dayoff.date2 ? `Отгул за выходную смену ${dayoff.date2.slice(8, 10)}.${dayoff.date2.slice(5, 7)}` : "Отгул" };
     const vac = vacationOf(emp.fullName, dt);
     if (vac) {
       const to = new Date(vac.to + "T00:00:00");
-      return { kind: "vacation", text: `РћС‚РїСѓСЃРє РґРѕ ${to.getDate()} ${MON_GEN[to.getMonth()]}` };
+      return { kind: "vacation", text: `Отпуск до ${to.getDate()} ${MON_GEN[to.getMonth()]}` };
     }
     const sh = shiftOf(emp.fullName, dt);
     if (!sh) return null;
     const lns = linesOf(emp.fullName, dt);
     const work = ["shift", "weekend", "duty", "extra"].includes(sh.kind);
-    if (!work) return { kind: "off", text: sh.kind === "dayoff" ? sh.title : "Р’С‹С…РѕРґРЅРѕР№" };
-    return { kind: "shift", text: [lineLabel(lns), sh.title, sh.time || ""].filter(Boolean).join(" В· "), sym: sh.sym };
+    if (!work) return { kind: "off", text: sh.kind === "dayoff" ? sh.title : "Выходной" };
+    return { kind: "shift", text: [lineLabel(lns), sh.title, sh.time || ""].filter(Boolean).join(" · "), sym: sh.sym };
   }
 
   function initials(name) {
@@ -392,49 +392,49 @@
 
   const rated = D.employees.filter((e) => e.avg != null);
   const teamAvgNow = rated.length ? +(rated.reduce((s, e) => s + e.avg, 0) / rated.length).toFixed(2) : 0;
-  // РІ СЂРµР№С‚РёРЅРі РїРѕ KPI РїРѕРїР°РґР°СЋС‚ С‚РѕР»СЊРєРѕ РґРµР№СЃС‚РІСѓСЋС‰РёРµ СЃРѕС‚СЂСѓРґРЅРёРєРё СЃ РѕС†РµРЅРєРѕР№:
-  // СѓРІРѕР»РµРЅРЅС‹Рµ Рё РЅРѕРІРёС‡РєРё РЅР° Р°РґР°РїС‚Р°С†РёРё (KPI РµС‰С‘ РЅРµ РІРµРґС‘С‚СЃСЏ) СЃСЋРґР° РЅРµ РІС…РѕРґСЏС‚
+  // в рейтинг по KPI попадают только действующие сотрудники с оценкой:
+  // уволенные и новички на адаптации (KPI ещё не ведётся) сюда не входят
   const ranked = D.employees.filter((e) => e.status === "active" && e.avg != null)
     .sort((a, b) => (b.avg ?? -1) - (a.avg ?? -1));
   const leader = ranked[0];
   const lastBonus = D.employees.reduce((s, e) => s + (e.history[e.history.length - 1].bonus || 0), 0);
 
-  /* ---------- С€Р°РїРєР° / РїРѕРґРІР°Р» ---------- */
-  if ($("#meta-count")) $("#meta-count").textContent = ACTIVE.length;   // Р±РµР· СѓРІРѕР»РµРЅРЅС‹С…
-  /* РљС‚Рѕ СЃРµР№С‡Р°СЃ РЅР° РѕР±СѓС‡РµРЅРёРё/Р°РґР°РїС‚Р°С†РёРё вЂ” С‡С‚РѕР±С‹ РЅРѕРІРёС‡РєРё Р±С‹Р»Рё РІРёРґРЅС‹ СЃСЂР°Р·Сѓ РЅР° РіР»Р°РІРЅРѕР№ */
+  /* ---------- шапка / подвал ---------- */
+  if ($("#meta-count")) $("#meta-count").textContent = ACTIVE.length;   // без уволенных
+  /* Кто сейчас на обучении/адаптации — чтобы новички были видны сразу на главной */
   const adaptBox = $("#adapt-strip");
   if (adaptBox) {
     const novices = D.employees.filter((e) => e.status === "adaptation");
     adaptBox.innerHTML = novices.length
-      ? `<span class="adapt-strip-h"><i class="ph-bold ph-graduation-cap"></i> РќР° РѕР±СѓС‡РµРЅРёРё / Р°РґР°РїС‚Р°С†РёРё:</span>
-         ${novices.map((e) => `<a class="adapt-chip" href="${SITE_ROOT}team/${e.slug}/index.html" title="РћС‚РєСЂС‹С‚СЊ СЃС‚СЂР°РЅРёС†Сѓ СЃРѕС‚СЂСѓРґРЅРёРєР°">${e.shortName} ${e.fullName.split(" ")[0] || ""}<small>${e.role.replace(/\s*\(.*\)$/, "")}</small></a>`).join("")}`
+      ? `<span class="adapt-strip-h"><i class="ph-bold ph-graduation-cap"></i> На обучении / адаптации:</span>
+         ${novices.map((e) => `<a class="adapt-chip" href="${SITE_ROOT}team/${e.slug}/index.html" title="Открыть страницу сотрудника">${e.shortName} ${e.fullName.split(" ")[0] || ""}<small>${e.role.replace(/\s*\(.*\)$/, "")}</small></a>`).join("")}`
       : "";
   }
   if ($("#meta-month")) {
     const mm = $("#meta-month");
     mm.textContent = D.meta.updated;
     const bd = mm.closest(".badge");
-    if (bd) bd.title = "РС‚РѕРіРё Р·Р° " + D.meta.updated + ". РўРµРєСѓС‰РёР№ РјРµСЃСЏС† РїРѕСЏРІРёС‚СЃСЏ РїРѕСЃР»Рµ Р·Р°РіСЂСѓР·РєРё РёС‚РѕРіРѕРІ.";
+    if (bd) bd.title = "Итоги за " + D.meta.updated + ". Текущий месяц появится после загрузки итогов.";
   }
   if ($("#stat-avg")) $("#stat-avg").textContent = teamAvgNow.toFixed(1);
   if ($("#stat-top")) $("#stat-top").textContent = leader.shortName;
   if ($("#stat-bonus")) $("#stat-bonus").textContent = otp.rub(lastBonus);
   const fm = $("#foot-month"); if (fm) fm.textContent = D.meta.updated;
 
-  /* ---------- В«РљС‚Рѕ Р»СѓС‡С€РµВ»: Р»СѓС‡С€РёР№ СЃРїРµС†РёР°Р»РёСЃС‚ РјРµСЃСЏС†Р° ---------- */
+  /* ---------- «Кто лучше»: лучший специалист месяца ---------- */
   const bestCard = $("#best-card");
   if (bestCard && leader && leader.avg != null) {
     const t = otp.trend(leader);
-    const arrow = t.dir === "up" ? "в–І" : t.dir === "down" ? "в–ј" : "в–¬";
+    const arrow = t.dir === "up" ? "▲" : t.dir === "down" ? "▼" : "▬";
     const metrics = MKEYS.map((k) => {
       const m = D.metrics[k];
-      const v = leader.current ? leader.current[k] : "вЂ”";
+      const v = leader.current ? leader.current[k] : "—";
       return `<span class="bc-m"><i class="ph-bold ${m.icon || "ph-chart-bar"}"></i><b>${v}</b><i>${m.label.split(" ")[0]}</i></span>`;
     }).join("");
     const awards = (leader.awards || []).slice(0, 2).map((a) => `<span class="bc-award" style="--ac:${a.color}">${a.glyph || ""} ${a.title}</span>`).join("");
     bestCard.innerHTML = `
       <div class="bc-left">
-        <span class="bc-crown">рџЏ† Р›СѓС‡С€РёР№ СЂРµР·СѓР»СЊС‚Р°С‚ РјРµСЃСЏС†Р°</span>
+        <span class="bc-crown">🏆 Лучший результат месяца</span>
         <div class="bc-who">
           <span class="bc-avatar">${initials(leader.fullName)}</span>
           <div>
@@ -446,29 +446,29 @@
       </div>
       <div class="bc-right">
         <div class="bc-avg">${leader.avg.toFixed(1)}</div>
-        <div class="bc-avg-l">СЃСЂРµРґРЅРёР№ KPI В· <span class="bc-trend ${t.dir}">${arrow} ${t.delta > 0 ? "+" + t.delta : t.delta}</span></div>
-        <div class="bc-badges"><span class="bc-badge">LVL ${leader.lvl} В· ${leader.stars_in_level}/10</span>${awards}</div>
-        <a class="btn btn-primary" href="${SITE_ROOT}team/${leader.slug}/index.html"><i class="ph ph-user"></i> РЎС‚СЂР°РЅРёС†Р° СЃРїРµС†РёР°Р»РёСЃС‚Р°</a>
+        <div class="bc-avg-l">средний KPI · <span class="bc-trend ${t.dir}">${arrow} ${t.delta > 0 ? "+" + t.delta : t.delta}</span></div>
+        <div class="bc-badges"><span class="bc-badge">LVL ${leader.lvl} · ${leader.stars_in_level}/10</span>${awards}</div>
+        <a class="btn btn-primary" href="${SITE_ROOT}team/${leader.slug}/index.html"><i class="ph ph-user"></i> Страница специалиста</a>
       </div>`;
   } else if (bestCard) {
     bestCard.remove();
   }
 
-  /* ---------- СЂРµР№С‚РёРЅРі РїРѕ KPI ---------- */
+  /* ---------- рейтинг по KPI ---------- */
   const lb = $("#leaderboard");
   if (lb) lb.innerHTML = ranked.map((e, i) => {
     const hasKpi = e.avg != null;
     const t = otp.trend(e);
-    const arrow = t.dir === "up" ? "в–І" : t.dir === "down" ? "в–ј" : "в–¬";
+    const arrow = t.dir === "up" ? "▲" : t.dir === "down" ? "▼" : "▬";
     const cls = t.dir === "up" ? "up" : t.dir === "down" ? "down" : "flat";
     const rankCls = i === 0 ? "top1" : i === 1 ? "top2" : i === 2 ? "top3" : "";
-    const medal = hasKpi ? (i === 0 ? "рџҐ‡" : i === 1 ? "рџҐ€" : i === 2 ? "рџҐ‰" : i + 1) : "рџ‘‘";
-    const leftBadge = e.status === "left" ? '<span class="badge badge-left">РІС‹Р±С‹Р»</span>'
-      : e.status === "adaptation" ? '<span class="badge badge-adapt">Р°РґР°РїС‚Р°С†РёСЏ</span>' : "";
-    const stars = hasKpi ? `<span class="lb-trend up" title="СѓСЂРѕРІРµРЅСЊ">LVL ${e.lvl}</span>` : "";
+    const medal = hasKpi ? (i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1) : "👑";
+    const leftBadge = e.status === "left" ? '<span class="badge badge-left">выбыл</span>'
+      : e.status === "adaptation" ? '<span class="badge badge-adapt">адаптация</span>' : "";
+    const stars = hasKpi ? `<span class="lb-trend up" title="уровень">LVL ${e.lvl}</span>` : "";
     const trendCell = hasKpi
       ? `<span class="lb-trend ${cls}">${arrow} ${t.delta > 0 ? "+" + t.delta : t.delta}</span>`
-      : '<span class="badge" style="font-size:.68rem"><i class="ph ph-crown"></i> СЂСѓРєРѕРІРѕРґРёС‚РµР»СЊ</span>';
+      : '<span class="badge" style="font-size:.68rem"><i class="ph ph-crown"></i> руководитель</span>';
     return `
       <a class="lb-row" href="${SITE_ROOT}team/${e.slug}/index.html" data-reveal>
         <span class="lb-rank ${rankCls}">${medal}</span>
@@ -476,11 +476,11 @@
           <span class="lb-hours" data-hours="${e.slug}"></span>
           <span class="lb-today" data-today="${e.slug}"></span></span>
         ${trendCell}
-        <span class="lb-avg">${hasKpi ? e.avg.toFixed(1) : "вЂ”"}</span>
+        <span class="lb-avg">${hasKpi ? e.avg.toFixed(1) : "—"}</span>
       </a>`;
   }).join("");
 
-  /* ---------- РєР°СЂС‚РѕС‡РєРё СЃРїРµС†РёР°Р»РёСЃС‚РѕРІ ---------- */
+  /* ---------- карточки специалистов ---------- */
   const grid = $("#emp-grid");
   if (grid) grid.innerHTML = ACTIVE.map((e) => {
     const hasKpi = e.avg != null;
@@ -489,11 +489,11 @@
           const m = D.metrics[k];
           return `<div class="mm"><span style="font-size:1.15rem;line-height:1">${m.emoji || ""}</span><div class="v">${e.current[k]}</div><div class="l">${m.label.split(" ")[0]}</div></div>`;
         }).join("")
-      : '<div class="mm" style="grid-column:1/-1;color:var(--muted);padding:12px"><i class="ph ph-crown"></i> KPI РЅРµ РІРµРґС‘С‚СЃСЏ вЂ” СЂСѓРєРѕРІРѕРґРёС‚РµР»СЊ</div>';
-    const leftTag = e.status === "left" ? '<span class="badge badge-left" style="font-size:.68rem">РІС‹Р±С‹Р»</span>'
-      : e.status === "adaptation" ? '<span class="badge badge-adapt" style="font-size:.68rem">Р°РґР°РїС‚Р°С†РёСЏ</span>' : "";
+      : '<div class="mm" style="grid-column:1/-1;color:var(--muted);padding:12px"><i class="ph ph-crown"></i> KPI не ведётся — руководитель</div>';
+    const leftTag = e.status === "left" ? '<span class="badge badge-left" style="font-size:.68rem">выбыл</span>'
+      : e.status === "adaptation" ? '<span class="badge badge-adapt" style="font-size:.68rem">адаптация</span>' : "";
     const awardTop = (e.awards && e.awards[0]) ? `<span class="badge" style="font-size:.66rem;color:${e.awards[0].color};border-color:${otp.hexA(e.awards[0].color,0.3)}"><i class="${e.awards[0].icon}"></i> ${e.awards[0].title}</span>` : "";
-    const stars = hasKpi ? `<span style="color:var(--warn);font-size:.75rem;font-weight:600"><i class="ph-fill ph-star"></i> LVL ${e.lvl} В· ${e.stars_in_level}/10</span>` : "";
+    const stars = hasKpi ? `<span style="color:var(--warn);font-size:.75rem;font-weight:600"><i class="ph-fill ph-star"></i> LVL ${e.lvl} · ${e.stars_in_level}/10</span>` : "";
     return `
       <a class="card emp-card" href="${SITE_ROOT}team/${e.slug}/index.html" data-reveal>
         <div class="top">
@@ -505,7 +505,7 @@
             </div>
           </div>
           <div style="text-align:right">
-            <div class="avg">${hasKpi ? e.avg.toFixed(1) : "вЂ”"}</div>
+            <div class="avg">${hasKpi ? e.avg.toFixed(1) : "—"}</div>
             ${leftTag}
           </div>
         </div>
@@ -517,52 +517,52 @@
 
 
 
-  /* ---------- РјРѕРё РЅР°РіСЂР°РґС‹ (СЂСѓРєРѕРІРѕРґРёС‚РµР»СЊ): Р·РЅР°РєРё РїСЂРёР·РЅР°РЅРёСЏ + РїРѕС…РІР°Р»С‹ РРў-РґРёСЂРµРєС‚РѕСЂР° ---------- */
+  /* ---------- мои награды (руководитель): знаки признания + похвалы ИТ-директора ---------- */
   const maBox = $("#my-awards");
   const boss = D.bossAwards;
   if (maBox && boss && ((boss.recognition || []).length || (boss.praise || []).length)) {
     const esc = (s) => String(s || "").replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
     maBox.innerHTML = `
       <div class="my-awards-h">
-        <h3><i class="ph-bold ph-medal"></i> РњРѕРё РЅР°РіСЂР°РґС‹</h3>
-        <span>РїСЂРёР·РЅР°РЅРёРµ РєРѕРјРїР°РЅРёРё Рё РїРѕС…РІР°Р»С‹ РРў-РґРёСЂРµРєС‚РѕСЂР°</span>
+        <h3><i class="ph-bold ph-medal"></i> Мои награды</h3>
+        <span>признание компании и похвалы ИТ-директора</span>
       </div>
       <div class="my-awards-list">
         ${(boss.recognition || []).map((a) => `<div class="my-award">
           <img src="${SITE_ROOT}${String(a.image || "").replace(/^\/+/, "")}" alt="${esc(a.title)}" loading="lazy">
-          <div class="my-award-body"><b>${a.degree} СЃС‚РµРїРµРЅСЊ</b><span>${esc(String(a.title || "").replace(/^РџСЂРёР·РЅР°РЅРёРµ:\s*/, ""))}</span></div>
+          <div class="my-award-body"><b>${a.degree} степень</b><span>${esc(String(a.title || "").replace(/^Признание:\s*/, ""))}</span></div>
         </div>`).join("")}
         ${(boss.praise || []).map((p) => `<div class="my-award praise">
-          <span class="my-award-glyph">${p.glyph || "рџЏ…"}</span>
-          <div class="my-award-body"><b>${esc(p.month || "")}</b><span>${esc(p.title || "РџРѕС…РІР°Р»Р° РѕС‚ РРў Р”РёСЂРµРєС‚РѕСЂР°")} вЂ” Р·Р° С‡С‚Рѕ: ${esc(p.reason || "")}</span></div>
+          <span class="my-award-glyph">${p.glyph || "🏅"}</span>
+          <div class="my-award-body"><b>${esc(p.month || "")}</b><span>${esc(p.title || "Похвала от ИТ Директора")} — за что: ${esc(p.reason || "")}</span></div>
         </div>`).join("")}
       </div>`;
   }
 
-  /* ---------- РїСЂРёР·РЅР°РЅРёРµ: РЅР°РіСЂСѓРґРЅС‹Рµ Р·РЅР°РєРё (РІСЂСѓС‡Р°РµС‚ СЂСѓРєРѕРІРѕРґРёС‚РµР»СЊ Р»РёС‡РЅРѕ) ---------- */
+  /* ---------- признание: нагрудные знаки (вручает руководитель лично) ---------- */
 
   const recBox = $("#recognition-board");
   if (recBox && (D.recognition || []).length) {
-    const rm = (s) => String(s || "").replace(/^РџСЂРёР·РЅР°РЅРёРµ:\s*/, "");
+    const rm = (s) => String(s || "").replace(/^Признание:\s*/, "");
     recBox.innerHTML = `
       <div class="rec-head">
-        <h3><i class="ph-bold ph-medal"></i> РџСЂРёР·РЅР°РЅРёРµ РІ РљРѕРјРїР°РЅРёРё</h3>
-        <span class="rec-hint">РЅР°РіСЂСѓРґРЅС‹Рµ Р·РЅР°РєРё РІСЂСѓС‡Р°СЋС‚СЃСЏ Р»РёС‡РЅРѕ вЂ” РІРЅРµ РјРµС‚СЂРёРє Рё СЂРµР№С‚РёРЅРіР°</span>
+        <h3><i class="ph-bold ph-medal"></i> Признание в Компании</h3>
+        <span class="rec-hint">нагрудные знаки вручаются лично — вне метрик и рейтинга</span>
       </div>
       <div class="rec-list">
         ${D.recognition.map((c) => `<div class="rec-card" style="--rc:${c.color}">
           <img class="rec-img" src="${SITE_ROOT + String(c.image || "").replace(/^\/+/, "")}" alt="${c.title}" loading="lazy">
           <div class="rec-body">
-            <div class="rec-degree">${c.degree} СЃС‚РµРїРµРЅСЊ</div>
+            <div class="rec-degree">${c.degree} степень</div>
             <div class="rec-title">${rm(c.title)}</div>
             <div class="rec-desc">${c.desc || ""}</div>
-            <div class="rec-holders">${(c.holders || []).map((h) => `<span class="rec-holder${h.role ? " boss" : ""}">${h.shortName}${h.role ? " В· " + h.role : ""}</span>`).join("") || '<span class="rec-none">РїРѕРєР° РЅРёРєС‚Рѕ</span>'}</div>
+            <div class="rec-holders">${(c.holders || []).map((h) => `<span class="rec-holder${h.role ? " boss" : ""}">${h.shortName}${h.role ? " · " + h.role : ""}</span>`).join("") || '<span class="rec-none">пока никто</span>'}</div>
           </div>
         </div>`).join("")}
       </div>`;
   }
 
-  /* ---------- РіСЂР°С„РёРє РѕС‚РґРµР»Р° (СЃРјРµРЅС‹ + РѕС‚РїСѓСЃРєР°) ---------- */
+  /* ---------- график отдела (смены + отпуска) ---------- */
   const dutyBox = $("#duty-board");
   if (dutyBox && D.schedule) {
     const S = D.schedule;
@@ -576,7 +576,7 @@
       const out = [];
       for (const [fio, days] of Object.entries((month && month.shifts) || {})) {
         const person = bySurname(fio);
-        if (person && person.status === "left") continue;      // СѓРІРѕР»РµРЅРЅС‹С… РІ РіСЂР°С„РёРєРµ РѕС‚РґРµР»Р° РЅРµС‚
+        if (person && person.status === "left") continue;      // уволенных в графике отдела нет
         const sh = days[String(dt.getDate())];
         if (!sh) continue;
         out.push({ fio, sh, ln: linesOf(fio, dt) });
@@ -589,25 +589,25 @@
       const work = list.filter((x) => isWork(x.sh));
       const off = list.filter((x) => !isWork(x.sh));
       return `<div class="dt-day">
-        <div class="dt-day-h"><b>${label}</b><span>${WD_FULL[dt.getDay()]}, ${dt.getDate()} ${MON_GEN[dt.getMonth()]}</span><i>${work.length} РЅР° СЃРјРµРЅРµ В· ${off.length} РѕС‚РґС‹С…Р°СЋС‚</i></div>
+        <div class="dt-day-h"><b>${label}</b><span>${WD_FULL[dt.getDay()]}, ${dt.getDate()} ${MON_GEN[dt.getMonth()]}</span><i>${work.length} на смене · ${off.length} отдыхают</i></div>
         <div class="dt-rows">
-          ${work.map((x) => `<div class="dt-row"><span class="gs-sym k-${x.sh.kind}">${x.sh.sym}</span><span class="dt-fio">${x.fio} <span class="dt-hours" data-hoursfio="${x.fio}"></span></span><span class="dt-time">${x.sh.time || ""}</span><span class="dt-ln">${x.ln.length ? lineLabel(x.ln) : '<span class="dt-ln-none">РІРЅРµ Р»РёРЅРёР№</span>'}</span></div>`).join("")}
+          ${work.map((x) => `<div class="dt-row"><span class="gs-sym k-${x.sh.kind}">${x.sh.sym}</span><span class="dt-fio">${x.fio} <span class="dt-hours" data-hoursfio="${x.fio}"></span></span><span class="dt-time">${x.sh.time || ""}</span><span class="dt-ln">${x.ln.length ? lineLabel(x.ln) : '<span class="dt-ln-none">вне линий</span>'}</span></div>`).join("")}
           ${off.map((x) => `<div class="dt-row off"><span class="gs-sym k-${x.sh.kind}">${x.sh.sym}</span><span class="dt-fio">${x.fio}</span><span class="dt-time">${x.sh.title}</span></div>`).join("")}
         </div></div>`;
     };
     const year = String(today.getFullYear());
     const vacAll = S.vacations && S.vacations[year] ? S.vacations[year] : {};
-    // РІ РѕС‚РїСѓСЃРєР°С… РѕС‚РґРµР»Р° вЂ” С‚РѕР»СЊРєРѕ РґРµР№СЃС‚РІСѓСЋС‰РёРµ СЃРѕС‚СЂСѓРґРЅРёРєРё РєРѕРјР°РЅРґС‹ (Р±РµР· СѓРІРѕР»РµРЅРЅС‹С… Рё РїРѕСЃС‚РѕСЂРѕРЅРЅРёС…)
+    // в отпусках отдела — только действующие сотрудники команды (без уволенных и посторонних)
     const vac = {};
     for (const [fio, list] of Object.entries(vacAll)) {
       const person = bySurname(fio);
       if (person && person.status !== "left") vac[fio] = list;
     }
-    let showPast = false;                       // РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РїСЂРѕС€РµРґС€РёРµ РѕС‚РїСѓСЃРєР° СЃРєСЂС‹С‚С‹
+    let showPast = false;                       // по умолчанию прошедшие отпуска скрыты
     const today0 = new Date(); today0.setHours(0, 0, 0, 0);
     const fmt = (p) => {
       const f = new Date(p.from + "T00:00:00"), t = new Date(p.to + "T00:00:00");
-      return `СЃ ${f.getDate()} ${MON_GEN[f.getMonth()]} РїРѕ ${t.getDate()} ${MON_GEN[t.getMonth()]}`;
+      return `с ${f.getDate()} ${MON_GEN[f.getMonth()]} по ${t.getDate()} ${MON_GEN[t.getMonth()]}`;
     };
     const renderDuty = () => {
       const vacRows = [];
@@ -618,19 +618,19 @@
         }
       vacRows.sort((a, b) => a.p.from.localeCompare(b.p.from));
       dutyBox.innerHTML = `
-        <div class="dt-grid">${dayBlock(today, "РЎРµРіРѕРґРЅСЏ")}${dayBlock(addDays(today, 1), "Р—Р°РІС‚СЂР°")}</div>
+        <div class="dt-grid">${dayBlock(today, "Сегодня")}${dayBlock(addDays(today, 1), "Завтра")}</div>
         <div class="dt-sub-row">
-          <h3 class="dt-sub"><i class="ph-bold ph-airplane-tilt"></i> РћС‚РїСѓСЃРєР° РѕС‚РґРµР»Р° В· ${year}</h3>
-          <label class="gs-past-toggle" title="РџРѕРєР°Р·Р°С‚СЊ Рё СѓР¶Рµ РїСЂРѕС€РµРґС€РёРµ РѕС‚РїСѓСЃРєР° СЌС‚РѕРіРѕ РіРѕРґР°">
-            <input type="checkbox" id="duty-past"${showPast ? " checked" : ""}> <span>РїРѕРєР°Р·С‹РІР°С‚СЊ РїСЂРѕС€РµРґС€РёРµ</span>
+          <h3 class="dt-sub"><i class="ph-bold ph-airplane-tilt"></i> Отпуска отдела · ${year}</h3>
+          <label class="gs-past-toggle" title="Показать и уже прошедшие отпуска этого года">
+            <input type="checkbox" id="duty-past"${showPast ? " checked" : ""}> <span>показывать прошедшие</span>
           </label>
         </div>
         <div class="gs-vac-table">
-          <div class="gs-vac-tr head"><span>РџРµСЂРёРѕРґ</span><span>РЎРѕС‚СЂСѓРґРЅРёРє</span><span>Р”РЅРµР№</span></div>
+          <div class="gs-vac-tr head"><span>Период</span><span>Сотрудник</span><span>Дней</span></div>
           ${vacRows.length ? vacRows.map(({ fio, p }) => `<div class="gs-vac-tr${new Date(p.from + "T00:00:00") <= today0 && new Date(p.to + "T00:00:00") >= today0 ? " mine" : ""}">
             <span class="gs-vac-per">${fmt(p)}</span>
-            <span class="gs-vac-who">${fio.split(" ")[0]} ${(fio.split(" ")[1] || "").slice(0, 1)}.${new Date(p.from + "T00:00:00") <= today0 && new Date(p.to + "T00:00:00") >= today0 ? ' <b class="gs-you">СЃРµР№С‡Р°СЃ</b>' : ""}</span>
-            <span class="gs-vac-dn">${p.days || ""}</span></div>`).join("") : '<div class="gs-vac-tr"><span class="gs-vac-per">РџСЂРѕС€РµРґС€РёС… РїРµСЂРёРѕРґРѕРІ РЅРµС‚</span><span></span><span></span></div>'}
+            <span class="gs-vac-who">${fio.split(" ")[0]} ${(fio.split(" ")[1] || "").slice(0, 1)}.${new Date(p.from + "T00:00:00") <= today0 && new Date(p.to + "T00:00:00") >= today0 ? ' <b class="gs-you">сейчас</b>' : ""}</span>
+            <span class="gs-vac-dn">${p.days || ""}</span></div>`).join("") : '<div class="gs-vac-tr"><span class="gs-vac-per">Прошедших периодов нет</span><span></span><span></span></div>'}
         </div>`;
       const chk = $("#duty-past");
       if (chk) chk.addEventListener("change", () => { showPast = chk.checked; renderDuty(); });
@@ -638,24 +638,24 @@
     renderDuty();
   }
 
-  /* P1.3: РёРЅРґРёРєР°С‚РѕСЂ СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёРё РґР°С€Р±РѕСЂРґР°. РћР±СЉСЏРІР»РµРЅ Р”Рћ РїРµСЂРІРѕРіРѕ РІС‹Р·РѕРІР°
-     renderNowBoard(), РёРЅР°С‡Рµ РїРµСЂРІС‹Р№ Р¶Рµ СЂРµРЅРґРµСЂ РїР°РґР°Р» РЅР° TDZ (let __nowSyncOk)
-     Рё РїР»Р°С€РєРё В«РЎРµР№С‡Р°СЃ РЅР° СЃРјРµРЅРµВ» РїРѕСЏРІР»СЏР»РёСЃСЊ С‚РѕР»СЊРєРѕ СЃРѕ РІС‚РѕСЂРѕРіРѕ С‚РёРєР° (60 СЃ). */
+  /* P1.3: индикатор синхронизации дашборда. Объявлен ДО первого вызова
+     renderNowBoard(), иначе первый же рендер падал на TDZ (let __nowSyncOk)
+     и плашки «Сейчас на смене» появлялись только со второго тика (60 с). */
   let __nowSyncOk = null;
-  /* P2.2: Р°РєС‚РёРІРЅС‹Р№ С„РёР»СЊС‚СЂ СЃРїРёСЃРєР° СЃРѕС‚СЂСѓРґРЅРёРєРѕРІ РїРѕ СЃС‚Р°С‚СѓСЃСѓ (null вЂ” РІСЃРµ). */
+  /* P2.2: активный фильтр списка сотрудников по статусу (null — все). */
   let nowFilter = null;
-  /* РџР»Р°РЅ 24.11.2026: РїРѕРёСЃРє РїРѕ С‚Р°Р±Р»РёС†Рµ РєРѕРјР°РЅРґС‹ РЅР° РѕРїРµСЂР°С‚РёРІРЅРѕР№ РіР»Р°РІРЅРѕР№. */
+  /* План 24.11.2026: поиск по таблице команды на оперативной главной. */
   let nowSearch = "";
-  /* РЎРѕРѕР±С‰РµРЅРёРµ, РєРѕС‚РѕСЂРѕРµ РїРѕРєР°Р¶РµРј РїРѕСЃР»Рµ РїРµСЂРµР·Р°РіСЂСѓР·РєРё СЃРїРёСЃРєР° РІ В«РђРґРјРёРЅРєРµВ». */
+  /* Сообщение, которое покажем после перезагрузки списка в «Админке». */
   let __staffMsg = "";
-  /* РџР°СЂРѕР»Рё, Р·Р°РґР°РЅРЅС‹Рµ РІ СЌС‚РѕРј СЃРµР°РЅСЃРµ СЃС‚СЂР°РЅРёС†С‹: РёР· Р±Р°Р·С‹ РёС… РЅРµ РїРѕРєР°Р·Р°С‚СЊ (С‚РѕР»СЊРєРѕ С…РµС€),
-     РЅРѕ В«РўРµРєСЃС‚ РґРѕСЃС‚СѓРїР°В» РґРѕР»Р¶РµРЅ СЃРѕРґРµСЂР¶Р°С‚СЊ РёРјРµРЅРЅРѕ Р·Р°РґР°РЅРЅС‹Р№ РїР°СЂРѕР»СЊ. */
+  /* Пароли, заданные в этом сеансе страницы: из базы их не показать (только хеш),
+     но «Текст доступа» должен содержать именно заданный пароль. */
   const __sessionPass = new Map();
   function nowSyncSet(ok) { __nowSyncOk = ok; }
   function nowSync() {
-    if (__nowSyncOk === null) return `<span class="now-chip s">вЂ¦ СЃРѕРµРґРёРЅРµРЅРёРµ</span>`;
-    if (__nowSyncOk) return `<span class="now-chip s ok" title="Р”Р°РЅРЅС‹Рµ РїРѕРґС‚СЏРіРёРІР°СЋС‚СЃСЏ РёР· РѕР±Р»Р°РєР° Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё"><i class="ph-bold ph-check-circle"></i> СЃРёРЅС…СЂ. ${new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</span>`;
-    return `<span class="now-chip s warn" title="РќРµ СѓРґР°Р»РѕСЃСЊ РѕРїСЂРѕСЃРёС‚СЊ РґР°РЅРЅС‹Рµ (РёРЅС‚РµСЂРЅРµС‚ РёР»Рё РїСЂРѕРєСЃРё). РЎС‚Р°С‚СѓСЃС‹ СЃРѕС‚СЂСѓРґРЅРёРєРѕРІ РЅР° РёС… СЌРєСЂР°РЅР°С… РЅРµ Р·Р°РІРёСЃСЏС‚ РѕС‚ СЌС‚РѕРіРѕ."><i class="ph-bold ph-wifi-high-signal-slash"></i> РѕС„Р»Р°Р№РЅ</span>`;
+    if (__nowSyncOk === null) return `<span class="now-chip s">… соединение</span>`;
+    if (__nowSyncOk) return `<span class="now-chip s ok" title="Данные подтягиваются из облака автоматически"><i class="ph-bold ph-check-circle"></i> синхр. ${new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</span>`;
+    return `<span class="now-chip s warn" title="Не удалось опросить данные (интернет или прокси). Статусы сотрудников на их экранах не зависят от этого."><i class="ph-bold ph-wifi-high-signal-slash"></i> офлайн</span>`;
   }
 
   otp.reveal(document);
@@ -664,17 +664,17 @@
   renderNowBoard();
   setInterval(() => { if (!document.hidden) renderNowBoard(); }, 60000);
 
-  /* P1.5: Р·РµСЂРєР°Р»Рѕ РіСЂР°С„РёРєР° РІ Р‘Р”. Р”Р°С€Р±РѕСЂРґ вЂ” РµРґРёРЅСЃС‚РІРµРЅРЅР°СЏ СЃС‚СЂР°РЅРёС†Р°, РіРґРµ РіР°СЂР°РЅС‚РёСЂРѕРІР°РЅРЅРѕ
-     РµСЃС‚СЊ Р°РєС‚СѓР°Р»СЊРЅС‹Р№ РіСЂР°С„РёРє Р Р°РґРјРёРЅ-СЃРµСЃСЃРёСЏ; СЂР°Р· РІ 10 РјРёРЅСѓС‚ РєРѕРїРёСЂСѓРµРј РµРіРѕ РІ
-     otp_schedule_cache, Р° cron РїСЂРё СЃС‚Р°СЂС‚Рµ С‡РёС‚Р°РµС‚ РіСЂР°С„РёРє СЃРЅР°С‡Р°Р»Р° РѕС‚С‚СѓРґР°.
-     РћС‚РєР°С‚ СЃР°Р№С‚Р° Рє СЃС‚Р°СЂРѕР№ РІРµСЂСЃРёРё Р±РѕР»СЊС€Рµ РЅРµ Р·Р°РєСЂСѓС‡РёРІР°РµС‚ СѓРІРµРґРѕРјР»РµРЅРёСЏ. */
+  /* P1.5: зеркало графика в БД. Дашборд — единственная страница, где гарантированно
+     есть актуальный график И админ-сессия; раз в 10 минут копируем его в
+     otp_schedule_cache, а cron при старте читает график сначала оттуда.
+     Откат сайта к старой версии больше не закручивает уведомления. */
   (function mirrorSchedule() {
     const KEY = "otp_sched_mirror";
-    // Р’РµСЂСЃРёСЏ СЃР°Р№С‚Р° вЂ” РёР· href С‚РµРіР° <link main.css?v=N> (РІ HTML РµС‘ РїРµС‡Р°С‚Р°РµС‚ РіРµРЅРµСЂР°С‚РѕСЂ).
-    // Р Р°РЅСЊС€Рµ Р·РґРµСЃСЊ СЃС‚РѕСЏР»Р° РїРµСЂРµРјРµРЅРЅР°СЏ V, РєРѕС‚РѕСЂРѕР№ РІ main.js РЅРµС‚ в†’ ReferenceError
-    // СЃРёРЅС…СЂРѕРЅРЅРѕ СЂРІР°Р» РІРµСЃСЊ СЃРєСЂРёРїС‚ РґР»СЏ Р°РґРјРёРЅР°: РЅРµ СЂРµРЅРґРµСЂРёР»РёСЃСЊ В«РЎРµР№С‡Р°СЃ РЅР° СЃРјРµРЅРµВ»,
-    // В«РќР°СЃС‚СЂРѕР№РєР°В» Рё В«РђРґРјРёРЅРєР°В». РўРµРїРµСЂСЊ РІРµСЂСЃРёСЏ С‡РёС‚Р°РµС‚СЃСЏ РёР· DOM; РµСЃР»Рё С‚РµРіР° РЅРµС‚ вЂ”
-    // В«runtimeВ» (РїРѕР»Рµ РёРЅС„РѕСЂРјР°С†РёРѕРЅРЅРѕРµ, Р±РµР· РЅРµРіРѕ РЅРёС‡РµРіРѕ РЅРµ Р»РѕРјР°РµС‚СЃСЏ).
+    // Версия сайта — из href тега <link main.css?v=N> (в HTML её печатает генератор).
+    // Раньше здесь стояла переменная V, которой в main.js нет → ReferenceError
+    // синхронно рвал весь скрипт для админа: не рендерились «Сейчас на смене»,
+    // «Настройка» и «Админка». Теперь версия читается из DOM; если тега нет —
+    // «runtime» (поле информационное, без него ничего не ломается).
     const mVer = /v=(\d+)/.exec((document.querySelector('link[href*="main.css"]') || {}).href || "");
     const VER = mVer ? "v" + mVer[1] : "runtime";
     const push = () => {
@@ -693,9 +693,9 @@
     document.addEventListener("visibilitychange", () => { if (!document.hidden) push(); });
   })();
 
-  /* P3: Realtime РЅР° РґР°С€Р±РѕСЂРґРµ вЂ” В«РЎРµР№С‡Р°СЃ РЅР° СЃРјРµРЅРµВ» РѕР±РЅРѕРІР»СЏРµС‚СЃСЏ РїРѕ С„Р°РєС‚Сѓ СЃРѕР±С‹С‚РёСЏ
-     (СЃ Р»СЋР±РѕРіРѕ СѓСЃС‚СЂРѕР№СЃС‚РІР°), Р° РЅРµ С‚РѕР»СЊРєРѕ СЂР°Р· РІ РјРёРЅСѓС‚Сѓ. Р•СЃР»Рё Realtime РІС‹РєР»СЋС‡РµРЅ
-     РІ Supabase, РїРѕРґРїРёСЃРєР° РјРѕР»С‡Р° РЅРёС‡РµРіРѕ РЅРµ РґРµР»Р°РµС‚ вЂ” РѕРїСЂРѕСЃ 60 СЃ СЂР°Р±РѕС‚Р°РµС‚ РєР°Рє СЂР°РЅСЊС€Рµ. */
+  /* P3: Realtime на дашборде — «Сейчас на смене» обновляется по факту события
+     (с любого устройства), а не только раз в минуту. Если Realtime выключен
+     в Supabase, подписка молча ничего не делает — опрос 60 с работает как раньше. */
   if (otp.realtime) {
     let rtT = 0;
     otp.realtime("otp_time_events", () => {
@@ -704,17 +704,17 @@
     });
   }
 
-  /* ---------- В«РЎРµР№С‡Р°СЃ РЅР° СЃРјРµРЅРµВ»: СЃС‚Р°С‚СѓСЃС‹ РїРѕ СЃРѕР±С‹С‚РёСЏРј В«РЎС‚Р°СЂС‚РѕРІРѕР№В» ---------- */
+  /* ---------- «Сейчас на смене»: статусы по событиям «Стартовой» ---------- */
   async function renderNowBoard() {
     const box = $("#now-board");
     if (!box) return;
     if (!box.dataset.loaded) {
-      box.innerHTML = `<div class="now-head"><h3><i class="ph-bold ph-broadcast"></i> РЎРµР№С‡Р°СЃ РЅР° СЃРјРµРЅРµ</h3>${nowSync()}</div>
+      box.innerHTML = `<div class="now-head"><h3><i class="ph-bold ph-broadcast"></i> Сейчас на смене</h3>${nowSync()}</div>
         <div class="skl-grid">${Array.from({ length: 6 }).map(() => `<div class="skl-card"><div class="skl"></div><div class="skl"></div></div>`).join("")}</div>`;
     }
     const c = D.hrRules && D.hrRules.cloud;
     if (!c || !c.url) return;
-    // РґР°РЅРЅС‹Рµ РґРѕСЃС‚СѓРїРЅС‹ С‚РѕР»СЊРєРѕ РїРѕСЃР»Рµ РІС…РѕРґР° (РїСЂРѕРєСЃРё РїСЂРѕРІРµСЂСЏРµС‚ С‚РѕРєРµРЅ)
+    // данные доступны только после входа (прокси проверяет токен)
     if (!window.OTP_AUTH || !window.OTP_AUTH.token("admin")) return;
     const dt = new Date();
     const day = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
@@ -722,7 +722,7 @@
     try {
       rows = await window.OTP_AUTH.api("admin", `otp_time_events?select=*&day=eq.${day}&order=at.asc`, "GET");
       if (!Array.isArray(rows)) rows = [];
-    } catch (e) { nowSyncSet(false); return; }   // СЃРµС‚СЊ/РїСЂРѕРєСЃРё РЅРµРґРѕСЃС‚СѓРїРЅС‹ вЂ” РїРѕРєР°Р·С‹РІР°РµРј offline-Р±РµР№РґР¶
+    } catch (e) { nowSyncSet(false); return; }   // сеть/прокси недоступны — показываем offline-бейдж
     if (!Array.isArray(rows)) { nowSyncSet(false); return; }
 
     const byEmp = new Map();
@@ -731,8 +731,8 @@
       if (!byEmp.has(k)) byEmp.set(k, []);
       byEmp.get(k).push(e);
     }
-    /* РћС‚РїСѓСЃРєР° (РёР· РіСЂР°С„РёРєР°) Рё СЃРѕРіР»Р°СЃРѕРІР°РЅРЅС‹Рµ Р·Р°СЏРІРєРё (РѕС‚РіСѓР», СѓРІРѕР»СЊРЅРёС‚РµР»СЊРЅР°СЏ) вЂ” С‡С‚РѕР±С‹
-       РІРјРµСЃС‚Рѕ В«РЅРµ РЅР°С‡РёРЅР°Р»В» Р±С‹Р»Рѕ РІРёРґРЅРѕ, РїРѕС‡РµРјСѓ С‡РµР»РѕРІРµРєР° РЅРµС‚ РЅР° СЃРјРµРЅРµ. */
+    /* Отпуска (из графика) и согласованные заявки (отгул, увольнительная) — чтобы
+       вместо «не начинал» было видно, почему человека нет на смене. */
     const year = String(dt.getFullYear());
     const vacAll = (D.schedule && D.schedule.vacations && D.schedule.vacations[year]) || {};
     const vacOf = (fio) => {
@@ -750,7 +750,7 @@
     const escNow = (s) => String(s == null ? "" : s).replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
     const hms = (s) => [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60].map((x) => String(x).padStart(2, "0")).join(":");
     const hm = (ms) => { const d = new Date(ms + 3 * 3600 * 1000); return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`; };
-    const SLOT = { tech1: ["С‚РµС….РїРµСЂРµСЂС‹РІ 1", "ph-coffee"], tech2: ["С‚РµС….РїРµСЂРµСЂС‹РІ 2", "ph-coffee"], lunch: ["РѕР±РµРґ", "ph-fork-knife"], absence: ["РѕС‚СЃСѓС‚СЃС‚РІРёРµ", "ph-walking"] };
+    const SLOT = { tech1: ["тех.перерыв 1", "ph-coffee"], tech2: ["тех.перерыв 2", "ph-coffee"], lunch: ["обед", "ph-fork-knife"], absence: ["отсутствие", "ph-walking"] };
     const stateOf = (ev) => {
       let acc = 0, running = false, last = 0, started = 0, stopped = 0, active = null, note = "";
       for (const e of ev) {
@@ -758,10 +758,10 @@
         if (e.type === "shift_start") { started = t; running = true; last = t; }
         else if (e.type === "shift_stop") { if (running) acc += t - last; running = false; stopped = t; }
         else if (e.type === "break_start" || e.type === "absence_start") {
-          /* В«Р’СЂРµРјРµРЅРЅРѕРµ РѕС‚СЃСѓС‚СЃС‚РІРёРµ: Р‘РµР· Р·Р°СЏРІРєРёвЂ¦В» вЂ” СЃС‚Р°С‚СѓСЃ С„РёРєСЃРёСЂСѓРµРј, РЅРѕ СЂР°Р±РѕС‡РµРµ
-             РІСЂРµРјСЏ РќР• РѕСЃС‚Р°РЅР°РІР»РёРІР°РµРј. РЎСЂР°РІРЅРµРЅРёРµ РїРѕ РЅР°С‡Р°Р»Сѓ СЃС‚СЂРѕРєРё: РїРѕСЃР»Рµ В«Р‘РµР· Р·Р°СЏРІРєРёВ»
-             С‡Р°СЃС‚Рѕ РёРґС‘С‚ РїРѕСЏСЃРЅРµРЅРёРµ (В«вЂ” СЂР°Р±РѕС‚Р° РїРѕ Р¦РћВ»), СЃС‚СЂРѕРіРѕРµ СЂР°РІРµРЅСЃС‚РІРѕ РЅРµ СЃСЂР°Р±Р°С‚С‹РІР°Р»Рѕ. */
-          const noStop = e.type === "absence_start" && String(e.reason || "").trim().startsWith("Р‘РµР· Р·Р°СЏРІРєРё");
+          /* «Временное отсутствие: Без заявки…» — статус фиксируем, но рабочее
+             время НЕ останавливаем. Сравнение по началу строки: после «Без заявки»
+             часто идёт пояснение («— работа по ЦО»), строгое равенство не срабатывало. */
+          const noStop = e.type === "absence_start" && String(e.reason || "").trim().startsWith("Без заявки");
           if (running) acc += t - last;
           if (noStop) { running = true; last = t; active = null; note = e.reason || ""; }
           else { running = false; active = e; note = ""; }
@@ -770,17 +770,17 @@
       }
       if (running) acc += Date.now() - last;
       const sec = Math.max(0, Math.round(acc / 1000));
-      if (stopped) return { kind: "done", label: "СЃРјРµРЅР° Р·Р°РІРµСЂС€РµРЅР°", icon: "ph-check-circle", since: stopped, sec };
+      if (stopped) return { kind: "done", label: "смена завершена", icon: "ph-check-circle", since: stopped, sec };
       if (active) {
-        const nm = SLOT[active.slot] || ["РїР°СѓР·Р°", "ph-pause"];
-        /* РґР»РёС‚РµР»СЊРЅРѕСЃС‚СЊ СЃР°РјРѕР№ РїР°СѓР·С‹ (Р° РЅРµ РѕС‚СЂР°Р±РѕС‚Р°РЅРЅРѕРµ РІСЂРµРјСЏ) вЂ” РЅСѓР¶РЅР° РґР»СЏ РїР»Р°С€РєРё
-           В«РџР°СѓР·Р° Р±РѕР»СЊС€Рµ 15 РјРёРЅСѓС‚В»; СЂР°РЅСЊС€Рµ С‚Р°Рј СЃСЂР°РІРЅРёРІР°Р»РѕСЃСЊ РѕС‚СЂР°Р±РѕС‚Р°РЅРЅРѕРµ РІСЂРµРјСЏ,
-           Рё РїР»Р°С€РєР° РїРѕСЏРІР»СЏР»Р°СЃСЊ РїРѕС‡С‚Рё Сѓ РІСЃРµС… РЅР° РїР°СѓР·Рµ. */
+        const nm = SLOT[active.slot] || ["пауза", "ph-pause"];
+        /* длительность самой паузы (а не отработанное время) — нужна для плашки
+           «Пауза больше 15 минут»; раньше там сравнивалось отработанное время,
+           и плашка появлялась почти у всех на паузе. */
         const pauseSec = Math.max(0, Math.round((Date.now() - Date.parse(active.at)) / 1000));
         return { kind: "pause", label: nm[0] + (active.reason ? ": " + active.reason : ""), icon: nm[1], since: Date.parse(active.at), sec, pauseSec };
       }
-      if (started) return { kind: "work", label: "СЂР°Р±РѕС‚Р°РµС‚" + (note ? " В· " + note : ""), icon: "ph-briefcase", since: last, sec };
-      return { kind: "idle", label: "РЅРµ РЅР°С‡РёРЅР°Р»", icon: "ph-moon", since: null, sec };
+      if (started) return { kind: "work", label: "работает" + (note ? " · " + note : ""), icon: "ph-briefcase", since: last, sec };
+      return { kind: "idle", label: "не начинал", icon: "ph-moon", since: null, sec };
     };
     let avatarBy = new Map();
     if (window.OTP_AUTH) {
@@ -798,7 +798,7 @@
       if (!m || !m.shifts) return 0;
       const sh = m.shifts[fioOf(e.id)] && m.shifts[fioOf(e.id)][String(dt.getDate())];
       if (!sh) return 0;
-      const mm = /^(\d{1,2}):(\d{2})\s*[вЂ“-]\s*(\d{1,2}):(\d{2})/.exec(String(sh.time || ""));
+      const mm = /^(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/.exec(String(sh.time || ""));
       if (!mm) return 0;
       const s = new Date(day + "T" + mm[1].padStart(2, "0") + ":" + mm[2] + ":00").getTime();
       const en = new Date(day + "T" + mm[3].padStart(2, "0") + ":" + mm[4] + ":00").getTime();
@@ -806,39 +806,39 @@
       return Math.max(0, Math.min(100, Math.round(((Date.now() - s) / (en - s)) * 100)));
     };
     const order = { work: 0, pause: 1, done: 2, leave: 3, dayoff: 4, vacation: 5, idle: 6 };
-    /* РџРѕС‡РµРјСѓ С‡РµР»РѕРІРµРєР° РЅРµС‚ РЅР° СЃРјРµРЅРµ: РѕС‚РїСѓСЃРє РїРѕ РіСЂР°С„РёРєСѓ, РѕС‚РіСѓР» РёР»Рё СѓРІРѕР»СЊРЅРёС‚РµР»СЊРЅР°СЏ РїРѕ Р·Р°СЏРІРєРµ. */
+    /* Почему человека нет на смене: отпуск по графику, отгул или увольнительная по заявке. */
     const absenceStatus = (emp) => {
       const v = vacOf(emp.fullName);
-      if (v) return { kind: "vacation", label: `РІ РѕС‚РїСѓСЃРєРµ РґРѕ ${String(v.to).split("-").reverse().join(".")}`, icon: "ph-airplane", since: null, sec: 0 };
+      if (v) return { kind: "vacation", label: `в отпуске до ${String(v.to).split("-").reverse().join(".")}`, icon: "ph-airplane", since: null, sec: 0 };
       const rs = reqOf(emp.slug);
       const dayoff = rs.find((r) => r.type === "dayoff");
-      if (dayoff) return { kind: "dayoff", label: "РѕС‚РіСѓР» Р·Р° РІС‹С…РѕРґРЅСѓСЋ СЃРјРµРЅСѓ", icon: "ph-calendar-minus", since: null, sec: 0 };
+      if (dayoff) return { kind: "dayoff", label: "отгул за выходную смену", icon: "ph-calendar-minus", since: null, sec: 0 };
       const leave = rs.find((r) => r.type === "leave");
       if (leave) {
         const a = hhmmToMin(leave.from), b = hhmmToMin(leave.to);
         if (a != null && b != null && nowMin >= a && nowMin < b) {
-          return { kind: "leave", label: `СѓРІРѕР»СЊРЅРёС‚РµР»СЊРЅР°СЏ ${leave.from}вЂ“${leave.to}`, icon: "ph-door-open", since: null, sec: 0 };
+          return { kind: "leave", label: `увольнительная ${leave.from}–${leave.to}`, icon: "ph-door-open", since: null, sec: 0 };
         }
         if (a != null && nowMin < a) {
-          return { kind: "leave", label: `СѓРІРѕР»СЊРЅРёС‚РµР»СЊРЅР°СЏ СЃ ${leave.from} РґРѕ ${leave.to}`, icon: "ph-door-open", since: null, sec: 0 };
+          return { kind: "leave", label: `увольнительная с ${leave.from} до ${leave.to}`, icon: "ph-door-open", since: null, sec: 0 };
         }
       }
       return null;
     };
     const list = D.employees.filter((e) => e.status !== "left")
       .map((e) => {
-        const st = byEmp.has(e.slug) ? stateOf(byEmp.get(e.slug)) : { kind: "idle", label: "РЅРµ РЅР°С‡РёРЅР°Р»", icon: "ph-moon", since: null, sec: 0 };
+        const st = byEmp.has(e.slug) ? stateOf(byEmp.get(e.slug)) : { kind: "idle", label: "не начинал", icon: "ph-moon", since: null, sec: 0 };
         if (st.kind === "idle") { const a = absenceStatus(e); if (a) return { emp: e, st: a }; }
         return { emp: e, st };
       })
       .sort((a, b) => order[a.st.kind] - order[b.st.kind] || String(a.emp.fullName).localeCompare(String(b.emp.fullName), "ru"));
-    // РєС‚Рѕ СЃРµР№С‡Р°СЃ РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚ (РїРѕСЃР»РµРґРЅРµРµ СЃРѕР±С‹С‚РёРµ вЂ” РЅР°С‡Р°Р»Рѕ РѕС‚СЃСѓС‚СЃС‚РІРёСЏ)
+    // кто сейчас отсутствует (последнее событие — начало отсутствия)
     const absNow = [];
     for (const [emp, evs] of byEmp.entries()) {
       const last = evs[evs.length - 1];
       if (last && last.type === "absence_start") absNow.push({ emp, slug: last.empSlug, reason: last.reason || "", at: last.at });
     }
-    // РґРµР№СЃС‚РІСѓСЋС‰РёРµ СѓРІРѕР»СЊРЅРёС‚РµР»СЊРЅС‹Рµ (approved leave, РІРЅСѓС‚СЂРё РёРЅС‚РµСЂРІР°Р»Р°)
+    // действующие увольнительные (approved leave, внутри интервала)
     let leaveNow = [];
     try {
       const rows2 = await window.OTP_AUTH.api("admin", `otp_requests?select=*&type=eq.leave&status=eq.approved&date=eq.${day}`, "GET");
@@ -852,8 +852,8 @@
         }).filter((x) => x && Date.now() >= x.start && Date.now() < x.end);
       }
     } catch (e) {}
-    /* P2.2: РєС‚Рѕ РґРѕР»Р¶РµРЅ Р±С‹Р» РЅР°С‡Р°С‚СЊ СЃРјРµРЅСѓ, РЅРѕ В«РќР°С‡Р°Р»РѕВ» РЅРµ РЅР°Р¶Р°Р» (РїРѕСЂРѕРі 5 РјРёРЅСѓС‚,
-       РєР°Рє Сѓ cron). Р“СЂР°С„РёРє СѓР¶Рµ РІ РїР°РјСЏС‚Рё СЃС‚СЂР°РЅРёС†С‹ вЂ” РѕС‚РґРµР»СЊРЅС‹Р№ Р·Р°РїСЂРѕСЃ РЅРµ РЅСѓР¶РµРЅ. */
+    /* P2.2: кто должен был начать смену, но «Начало» не нажал (порог 5 минут,
+       как у cron). График уже в памяти страницы — отдельный запрос не нужен. */
     const monSched = (D.schedule && D.schedule.months && D.schedule.months[day.slice(0, 7)]) || null;
     const dayNum = String(+day.slice(8, 10));
     const WORK_KINDS = new Set(["shift", "weekend", "duty", "extra"]);
@@ -868,8 +868,8 @@
     const late = list
       .filter((x) => x.st.kind === "idle" && (() => { const s = shiftOf(x.emp); return !!s && nowMin > s.start + 5; })())
       .map((x) => ({ emp: x.emp, s: shiftOf(x.emp) }));
-    /* РўР°Р±Р»РёС†Р° РєРѕРјР°РЅРґС‹ (РїР»Р°РЅ 24.11.2026): Р¤РРћ РІРµРґС‘С‚ РІ РїСЂРѕС„РёР»СЊ, В«РЎС‚Р°СЂС‚РѕРІР°СЏВ» вЂ” РІ СѓС‡С‘С‚.
-       Р¤РёР»СЊС‚СЂ РїРѕ СЃС‚Р°С‚СѓСЃСѓ + РїРѕРёСЃРє. Р”Р°РЅРЅС‹Рµ С‚Рµ Р¶Рµ, С‡С‚Рѕ СЂР°РЅСЊС€Рµ СЂРёСЃРѕРІР°Р»РёСЃСЊ РєР°СЂС‚РѕС‡РєР°РјРё. */
+    /* Таблица команды (план 24.11.2026): ФИО ведёт в профиль, «Стартовая» — в учёт.
+       Фильтр по статусу + поиск. Данные те же, что раньше рисовались карточками. */
     const filterList = (l) => l.filter((x) => {
       const byF = !nowFilter || (nowFilter === "v"
         ? ["vacation", "dayoff", "leave"].includes(x.st.kind)
@@ -879,14 +879,14 @@
     });
     const opLink = (x, sec) => SITE_ROOT + "team/" + (x.emp.slug || x.emp.id) + "/" + (sec || "");
     const rowsHtml = (l) => filterList(l).map((x) => `<div class="op-tr k-${x.st.kind}" data-ns="${escNow(x.emp.id)}" role="row">
-      <a class="op-name" href="${opLink(x)}" title="РћС‚РєСЂС‹С‚СЊ РїСЂРѕС„РёР»СЊ">${escNow(x.emp.fullName)} <i class="ph-bold ph-arrow-up-right" aria-hidden="true"></i></a>
+      <a class="op-name" href="${opLink(x)}" title="Открыть профиль">${escNow(x.emp.fullName)} <i class="ph-bold ph-arrow-up-right" aria-hidden="true"></i></a>
       <span class="op-st"><i class="ph-bold ${x.st.icon}" aria-hidden="true"></i> ${escNow(x.st.label)}</span>
-      <span class="op-since">${x.st.since ? hm(x.st.since) : "вЂ”"}</span>
-      <span class="op-time${x.st.kind === "idle" ? " is-idle" : ""}">${x.st.kind === "idle" ? "вЂ”" : hms(x.st.sec)}</span>
-      <a class="op-go" href="${opLink(x, "start/")}" title="В«РЎС‚Р°СЂС‚РѕРІР°СЏВ»: СЃРјРµРЅР°, РїРµСЂРµСЂС‹РІС‹, РѕС‚СЃСѓС‚СЃС‚РІРёРµ">РЎС‚Р°СЂС‚РѕРІР°СЏ</a>
-    </div>`).join("") || '<p class="muted op-empty">РќРёРєРѕРіРѕ РЅРµ РЅР°Р№РґРµРЅРѕ вЂ” РёР·РјРµРЅРё С„РёР»СЊС‚СЂ РёР»Рё РїРѕРёСЃРє.</p>';
-    const tableHtml = (l) => `<div class="op-table" role="table" aria-label="РЎРѕС‚СЂСѓРґРЅРёРєРё">
-      <div class="op-tr op-th" role="row"><span>Р¤РРћ</span><span>РЎС‚Р°С‚СѓСЃ</span><span>РЎ</span><span>РўР°Р№РјРµСЂ</span><span>РЈС‡С‘С‚</span></div>
+      <span class="op-since">${x.st.since ? hm(x.st.since) : "—"}</span>
+      <span class="op-time${x.st.kind === "idle" ? " is-idle" : ""}">${x.st.kind === "idle" ? "—" : hms(x.st.sec)}</span>
+      <a class="op-go" href="${opLink(x, "start/")}" title="«Стартовая»: смена, перерывы, отсутствие">Стартовая</a>
+    </div>`).join("") || '<p class="muted op-empty">Никого не найдено — измени фильтр или поиск.</p>';
+    const tableHtml = (l) => `<div class="op-table" role="table" aria-label="Сотрудники">
+      <div class="op-tr op-th" role="row"><span>ФИО</span><span>Статус</span><span>С</span><span>Таймер</span><span>Учёт</span></div>
       ${rowsHtml(l)}
     </div>`;
     const repaintTable = () => {
@@ -896,7 +896,7 @@
     if (!list.length) {
       nowSyncSet(false);
       box.dataset.loaded = "1";
-      box.innerHTML = `<p class="muted">РЎРµРіРѕРґРЅСЏ СЃРѕР±С‹С‚РёР№ РїРѕРєР° РЅРµС‚ вЂ” РЅРёРєС‚Рѕ РЅРµ РЅР°Р¶РёРјР°Р» РєРЅРѕРїРєРё.</p>`;
+      box.innerHTML = `<p class="muted">Сегодня событий пока нет — никто не нажимал кнопки.</p>`;
       renderHomeSide({ late, absNow, leaveNow, list });
       return;
     }
@@ -906,12 +906,12 @@
     window.__nowList = list;
     box.innerHTML = `
       <div class="op-tools">
-        <input class="op-search" id="op-search" type="search" placeholder="РџРѕРёСЃРє СЃРѕС‚СЂСѓРґРЅРёРєР°" value="${escNow(nowSearch)}" aria-label="РџРѕРёСЃРє СЃРѕС‚СЂСѓРґРЅРёРєР°">
+        <input class="op-search" id="op-search" type="search" placeholder="Поиск сотрудника" value="${escNow(nowSearch)}" aria-label="Поиск сотрудника">
         <span class="op-filters">
-          <button class="op-chip${!nowFilter ? " is-on" : ""}" data-f="">Р’СЃРµ <b>${list.length}</b></button>
-          <button class="op-chip${nowFilter === "work" ? " is-on" : ""}" data-f="work">Р Р°Р±РѕС‚Р°СЋС‚ <b>${cnt("work")}</b></button>
-          <button class="op-chip${nowFilter === "pause" ? " is-on" : ""}" data-f="pause">РќР° РїР°СѓР·Рµ <b>${cnt("pause")}</b></button>
-          <button class="op-chip${nowFilter === "idle" ? " is-on" : ""}" data-f="idle">РќРµ РЅР°С‡Р°Р»Рё <b>${cnt("idle")}</b></button>
+          <button class="op-chip${!nowFilter ? " is-on" : ""}" data-f="">Все <b>${list.length}</b></button>
+          <button class="op-chip${nowFilter === "work" ? " is-on" : ""}" data-f="work">Работают <b>${cnt("work")}</b></button>
+          <button class="op-chip${nowFilter === "pause" ? " is-on" : ""}" data-f="pause">На паузе <b>${cnt("pause")}</b></button>
+          <button class="op-chip${nowFilter === "idle" ? " is-on" : ""}" data-f="idle">Не начали <b>${cnt("idle")}</b></button>
         </span>
         ${nowSync()}
       </div>
@@ -951,7 +951,7 @@
       const hhmm = `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
       b.disabled = true;
       try {
-        // v4: Р·Р°СЏРІРєР° вЂ” С‚РѕР»СЊРєРѕ С‡РµСЂРµР· РїСЂРѕРєСЃРё `api` СЃ Р°РґРјРёРЅ-С‚РѕРєРµРЅРѕРј (anon-Р·Р°РїРёСЃСЊ Р·Р°РєСЂС‹С‚Р°)
+        // v4: заявка — только через прокси `api` с админ-токеном (anon-запись закрыта)
         await window.OTP_AUTH.api("admin", `otp_requests?id=eq.${id}`, "PATCH", { to: hhmm });
       } catch (e) {}
       renderNowBoard();
@@ -964,18 +964,18 @@
       const hhmm = `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
       b.disabled = true;
       try {
-        // v4: СЃРѕР±С‹С‚РёРµ вЂ” С‚РѕР»СЊРєРѕ С‡РµСЂРµР· РїСЂРѕРєСЃРё `api` (anon-insert Р·Р°РєСЂС‹С‚ RLS)
+        // v4: событие — только через прокси `api` (anon-insert закрыт RLS)
         await window.OTP_AUTH.api("admin", "otp_time_events", "POST", [{
           id: "mgr-" + Date.now() + "-" + String(slug).slice(0, 8),
           empSlug: slug, empName: emp, day, type: "absence_end", slot: "absence",
-          at: new Date().toISOString(), reason: "Р·Р°РєСЂС‹С‚Рѕ СЂСѓРєРѕРІРѕРґРёС‚РµР»РµРј",
+          at: new Date().toISOString(), reason: "закрыто руководителем",
         }]);
       } catch (e) {}
       renderNowBoard();
     }));
   }
 
-  /* ---------- РџСЂР°РІР°СЏ РєРѕР»РѕРЅРєР° РѕРїРµСЂР°С‚РёРІРЅРѕР№ РіР»Р°РІРЅРѕР№ (РїР»Р°РЅ 24.11.2026) ---------- */
+  /* ---------- Правая колонка оперативной главной (план 24.11.2026) ---------- */
   async function renderHomeSide(att) {
     const box = $("#home-side");
     if (!box) return;
@@ -991,56 +991,56 @@
     if (!Array.isArray(pending)) pending = [];
     if (!Array.isArray(monthReqs)) monthReqs = [];
     const esc = (s) => String(s == null ? "" : s).replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
-    const TYPE = { leave: "РЈРІРѕР»СЊРЅРёС‚РµР»СЊРЅР°СЏ", dayoff: "РћС‚РіСѓР»", overtime: "РџРµСЂРµСЂР°Р±РѕС‚РєР°", adjust: "РљРѕСЂСЂРµРєС‚РёСЂРѕРІРєР°" };
+    const TYPE = { leave: "Увольнительная", dayoff: "Отгул", overtime: "Переработка", adjust: "Корректировка" };
     const hhmm = (s) => String(s || "").slice(0, 5);
     const hrs = (r) => (r.hours != null ? +r.hours || 0 : 0);
     const short = (fio) => { const p = String(fio || "").split(" "); return p[0] + (p[1] ? " " + p[1].slice(0, 1) + "." : ""); };
     const notes = (rows) => rows.map((r) => `<a class="op-note" href="#hr-sec">
-        <span class="op-note-t">${esc(TYPE[r.type] || r.type)} В· ${esc(r.empName)}</span>
-        <span class="op-note-d">${esc(r.date)}${r.from ? " В· " + esc(hhmm(r.from)) + "вЂ“" + esc(hhmm(r.to)) : ""}${(r.type === "overtime" || r.type === "adjust") ? " В· " + esc(hrs(r)) + " С‡" : ""}</span></a>`).join("")
-      || '<p class="muted op-empty">РџРѕРєР° РЅРµС‚.</p>';
+        <span class="op-note-t">${esc(TYPE[r.type] || r.type)} · ${esc(r.empName)}</span>
+        <span class="op-note-d">${esc(r.date)}${r.from ? " · " + esc(hhmm(r.from)) + "–" + esc(hhmm(r.to)) : ""}${(r.type === "overtime" || r.type === "adjust") ? " · " + esc(hrs(r)) + " ч" : ""}</span></a>`).join("")
+      || '<p class="muted op-empty">Пока нет.</p>';
     const attn = [];
-    if (att && att.late && att.late.length) attn.push({ icon: "ph-alarm", cls: "late", text: `РќРµ РІС‹С€Р»Рё Рє СЃРјРµРЅРµ: ${att.late.map((l) => short(l.emp.fullName)).join(", ")}` });
-    if (att && att.absNow && att.absNow.length) attn.push({ icon: "ph-walking", cls: "abs", text: `РћС‚СЃСѓС‚СЃС‚РІСѓСЋС‚: ${att.absNow.map((a) => short(a.emp)).join(", ")}` });
+    if (att && att.late && att.late.length) attn.push({ icon: "ph-alarm", cls: "late", text: `Не вышли к смене: ${att.late.map((l) => short(l.emp.fullName)).join(", ")}` });
+    if (att && att.absNow && att.absNow.length) attn.push({ icon: "ph-walking", cls: "abs", text: `Отсутствуют: ${att.absNow.map((a) => short(a.emp)).join(", ")}` });
     const longPause = ((att && att.list) || []).filter((x) => x.st.kind === "pause" && (x.st.pauseSec || 0) > 15 * 60);
-    if (longPause.length) attn.push({ icon: "ph-pause", cls: "pause", text: `РџР°СѓР·Р° Р±РѕР»СЊС€Рµ 15 РјРёРЅСѓС‚: ${longPause.map((x) => short(x.emp.fullName)).join(", ")}` });
+    if (longPause.length) attn.push({ icon: "ph-pause", cls: "pause", text: `Пауза больше 15 минут: ${longPause.map((x) => short(x.emp.fullName)).join(", ")}` });
     const leaveRows = monthReqs.filter((r) => r.type === "leave" || r.type === "dayoff");
     const overRows = monthReqs.filter((r) => r.type === "overtime" || r.type === "adjust");
     const overTotal = overRows.reduce((s, r) => s + hrs(r), 0);
     box.innerHTML = `
       <section class="op-block">
-        <h3>РўСЂРµР±СѓСЋС‚ РІРЅРёРјР°РЅРёСЏ</h3>
-        ${attn.length ? attn.map((a) => `<div class="op-alert k-${a.cls}"><i class="ph-bold ${a.icon}" aria-hidden="true"></i><span>${esc(a.text)}</span></div>`).join("") : '<p class="muted op-empty">РћС‚РєР»РѕРЅРµРЅРёР№ РЅРµС‚.</p>'}
-        <div class="op-sub">Р—Р°СЏРІРєРё Рє СЂРµС€РµРЅРёСЋ${pending.length ? ` <b>${pending.length}</b>` : ""}</div>
-        ${pending.length ? notes(pending.slice(0, 4)) : '<p class="muted op-empty">Р—Р°СЏРІРѕРє Рє СЂРµС€РµРЅРёСЋ РЅРµС‚.</p>'}
-        ${pending.length > 4 ? '<a class="op-more" href="#hr-sec">Р’СЃРµ Р·Р°СЏРІРєРё в†’</a>' : ""}
+        <h3>Требуют внимания</h3>
+        ${attn.length ? attn.map((a) => `<div class="op-alert k-${a.cls}"><i class="ph-bold ${a.icon}" aria-hidden="true"></i><span>${esc(a.text)}</span></div>`).join("") : '<p class="muted op-empty">Отклонений нет.</p>'}
+        <div class="op-sub">Заявки к решению${pending.length ? ` <b>${pending.length}</b>` : ""}</div>
+        ${pending.length ? notes(pending.slice(0, 4)) : '<p class="muted op-empty">Заявок к решению нет.</p>'}
+        ${pending.length > 4 ? '<a class="op-more" href="#hr-sec">Все заявки →</a>' : ""}
       </section>
       <section class="op-block">
-        <h3>Р’ СЌС‚РѕРј РјРµСЃСЏС†Рµ</h3>
-        <div class="op-sub">РЈРІРѕР»СЊРЅРёС‚РµР»СЊРЅС‹Рµ Рё РѕС‚РіСѓР»С‹ <b>${leaveRows.length}</b></div>
-        ${leaveRows.length ? notes(leaveRows.slice(0, 3)) : '<p class="muted op-empty">РџРѕРєР° РЅРµС‚.</p>'}
-        <div class="op-sub">РџРµСЂРµСЂР°Р±РѕС‚РєРё В· ${overTotal} С‡</div>
-        ${overRows.length ? notes(overRows.slice(0, 3)) : '<p class="muted op-empty">РџРѕРєР° РЅРµС‚.</p>'}
-        <a class="op-more" href="${DASH_BASE}hours/">РџРѕР»РЅС‹Р№ Р¶СѓСЂРЅР°Р» С‡Р°СЃРѕРІ в†’</a>
+        <h3>В этом месяце</h3>
+        <div class="op-sub">Увольнительные и отгулы <b>${leaveRows.length}</b></div>
+        ${leaveRows.length ? notes(leaveRows.slice(0, 3)) : '<p class="muted op-empty">Пока нет.</p>'}
+        <div class="op-sub">Переработки · ${overTotal} ч</div>
+        ${overRows.length ? notes(overRows.slice(0, 3)) : '<p class="muted op-empty">Пока нет.</p>'}
+        <a class="op-more" href="${DASH_BASE}hours/">Полный журнал часов →</a>
       </section>`;
   }
 
-  /* РЁР°РїРєР° РѕРїРµСЂР°С‚РёРІРЅРѕР№ РіР»Р°РІРЅРѕР№ + С„РѕСЂРјС‹ Р·Р°РЅРµСЃРµРЅРёСЏ (РїР»Р°РЅ 24.11.2026, СЌС‚Р°Рї 2). */
+  /* Шапка оперативной главной + формы занесения (план 24.11.2026, этап 2). */
   (function initHomeChrome() {
     const dateEl = $("#op-date");
     if (dateEl) {
       const d = new Date();
-      dateEl.textContent = `${d.toLocaleDateString("ru-RU", { day: "numeric", month: "long" })} В· РѕР±РЅРѕРІР»РµРЅРѕ ${d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} РњРЎРљ`;
+      dateEl.textContent = `${d.toLocaleDateString("ru-RU", { day: "numeric", month: "long" })} · обновлено ${d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} МСК`;
     }
 
     const modal = $("#op-modal"), form = $("#op-form"), titleEl = $("#op-modal-title"), errEl = $("#op-form-err");
     if (!modal || !form) return;
-    const LABEL = { leave: "РЈРІРѕР»СЊРЅРёС‚РµР»СЊРЅР°СЏ", dayoff: "РћС‚РіСѓР»", overtime: "РќР°С‡РёСЃР»РµРЅРёРµ РїРµСЂРµСЂР°Р±РѕС‚РєРё" };
+    const LABEL = { leave: "Увольнительная", dayoff: "Отгул", overtime: "Начисление переработки" };
     const ICON = { leave: "ph-door-open", dayoff: "ph-calendar-minus", overtime: "ph-plus-circle" };
     const FIELDS = {
-      leave: [["date", "Р”Р°С‚Р°", "date", true], ["from", "Р’СЂРµРјСЏ СЃ", "time", true], ["to", "Р’СЂРµРјСЏ РґРѕ", "time", true], ["reason", "РџСЂРёС‡РёРЅР°", "textarea", true]],
-      dayoff: [["date", "Р”Р°С‚Р° РѕС‚РіСѓР»Р°", "date", true], ["date2", "Р”Р°С‚Р° РІС‹С…РѕРґРЅРѕР№ СЃРјРµРЅС‹", "date", true], ["reason", "РљРѕРјРјРµРЅС‚Р°СЂРёР№", "textarea", false]],
-      overtime: [["date", "Р”Р°С‚Р° СЂР°Р±РѕС‚С‹", "date", true], ["hours", "Р§Р°СЃС‹", "number", true], ["reason", "РљР°РєРёРµ Р·Р°РґР°С‡Рё РІС‹РїРѕР»РЅСЏР»РёСЃСЊ", "textarea", true]],
+      leave: [["date", "Дата", "date", true], ["from", "Время с", "time", true], ["to", "Время до", "time", true], ["reason", "Причина", "textarea", true]],
+      dayoff: [["date", "Дата отгула", "date", true], ["date2", "Дата выходной смены", "date", true], ["reason", "Комментарий", "textarea", false]],
+      overtime: [["date", "Дата работы", "date", true], ["hours", "Часы", "number", true], ["reason", "Какие задачи выполнялись", "textarea", true]],
     };
     const todayIso = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
     const parseHM = (s) => { const m = /^(\d{1,2}):(\d{2})$/.exec(String(s || "")); return m ? +m[1] * 60 + +m[2] : null; };
@@ -1052,43 +1052,43 @@
       .map((e) => `<option value="${escAttr(e.slug || e.id)}">${escAttr(e.fullName)}</option>`).join("");
     const escAttr = (s) => String(s == null ? "" : s).replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
 
-    /* РЎРѕР±РёСЂР°РµС‚ Р·Р°СЏРІРєСѓ РёР· С„РѕСЂРјС‹: {rec} РёР»Рё {err}. Р§Р°СЃС‹ вЂ” РёР· РІСЂРµРјРµРЅРё РёР»Рё РїРѕР»СЏ. */
+    /* Собирает заявку из формы: {rec} или {err}. Часы — из времени или поля. */
     function buildRec() {
       const fd = Object.fromEntries(new FormData(form).entries());
       const emp = (D.employees || []).find((e) => (e.slug || e.id) === fd.emp);
-      if (!emp) return { err: "Р’С‹Р±РµСЂРё СЃРѕС‚СЂСѓРґРЅРёРєР°." };
+      if (!emp) return { err: "Выбери сотрудника." };
       let hours = null;
       if (curType === "dayoff") hours = 8;
       else if (curType === "overtime") hours = Number(String(fd.hours || "").replace(",", "."));
       else {
         const a = parseHM(fd.from), b = parseHM(fd.to);
         hours = (a != null && b != null && b > a) ? Math.round((b - a) / 6) / 10 : null;
-        if (hours == null) return { err: "РџСЂРѕРІРµСЂСЊ РІСЂРµРјСЏ: РєРѕРЅРµС† РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РїРѕР·Р¶Рµ РЅР°С‡Р°Р»Р°." };
+        if (hours == null) return { err: "Проверь время: конец должен быть позже начала." };
       }
-      if (!fd.date) return { err: "РЈРєР°Р¶Рё РґР°С‚Сѓ." };
+      if (!fd.date) return { err: "Укажи дату." };
       const max = (D.hrRules && D.hrRules.leaveMaxHours) || 4;
-      if (curType === "leave" && hours > max) return { err: `РЈРІРѕР»СЊРЅРёС‚РµР»СЊРЅР°СЏ Р±РѕР»СЊС€Рµ ${max} С‡ РІ РґРµРЅСЊ РЅРµРІРѕР·РјРѕР¶РЅР°.` };
-      if (curType === "overtime" && !(hours > 0 && hours <= 24)) return { err: "Р§Р°СЃС‹ РґРѕР»Р¶РЅС‹ Р±С‹С‚СЊ РѕС‚ 0,5 РґРѕ 24." };
-      if (curType === "dayoff" && !fd.date2) return { err: "РЈРєР°Р¶Рё РґР°С‚Сѓ РІС‹С…РѕРґРЅРѕР№ СЃРјРµРЅС‹." };
+      if (curType === "leave" && hours > max) return { err: `Увольнительная больше ${max} ч в день невозможна.` };
+      if (curType === "overtime" && !(hours > 0 && hours <= 24)) return { err: "Часы должны быть от 0,5 до 24." };
+      if (curType === "dayoff" && !fd.date2) return { err: "Укажи дату выходной смены." };
       const nowIso = new Date().toISOString();
       const rec = {
         id: "req-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
         empSlug: emp.slug || emp.id, empName: emp.fullName, type: curType,
         date: fd.date, date2: fd.date2 || "", from: fd.from || "", to: fd.to || "",
         hours, reason: String(fd.reason || "").trim(), status: "approved",
-        created: nowIso, decided: nowIso, decidedBy: window.OTP_ACTOR || "Р СѓРєРѕРІРѕРґРёС‚РµР»СЊ",
+        created: nowIso, decided: nowIso, decidedBy: window.OTP_ACTOR || "Руководитель",
       };
       if (curType === "leave" && fd.noDeduct) rec.noDeduct = true;
       return { rec };
     }
 
-    /* Р Р°СЃС‡С‘С‚ РїРѕ РґРµР№СЃС‚РІСѓСЋС‰РёРј РїСЂР°РІРёР»Р°Рј (otp.reqDelta): С‡С‚Рѕ РїСЂРѕРёР·РѕР№РґС‘С‚ СЃ С‡Р°СЃР°РјРё. */
+    /* Расчёт по действующим правилам (otp.reqDelta): что произойдёт с часами. */
     function deltaText(rec) {
       if (!window.otp || !otp.reqDelta) return "";
       const d = otp.reqDelta(rec);
-      if (rec.type === "dayoff") return "РѕС‚РіСѓР» С‡Р°СЃС‹ РЅРµ РґРІРёРіР°РµС‚";
-      if (rec.type === "leave") return rec.noDeduct ? "С‡Р°СЃС‹ РЅРµ СЃРїРёС€СѓС‚СЃСЏ (СЂРµС€РµРЅРёРµ СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ)" : (d < 0 ? `СЃРїРёС€РµС‚СЃСЏ ${Math.abs(d)} С‡` : "С‡Р°СЃС‹ РЅРµ СЃРїРёС€СѓС‚СЃСЏ");
-      return d > 0 ? `РЅР°С‡РёСЃР»РёС‚СЃСЏ ${d} С‡` : "С‡Р°СЃС‹ РЅРµ РёР·РјРµРЅСЏС‚СЃСЏ";
+      if (rec.type === "dayoff") return "отгул часы не двигает";
+      if (rec.type === "leave") return rec.noDeduct ? "часы не спишутся (решение руководителя)" : (d < 0 ? `спишется ${Math.abs(d)} ч` : "часы не спишутся");
+      return d > 0 ? `начислится ${d} ч` : "часы не изменятся";
     }
 
     function preview() {
@@ -1096,11 +1096,11 @@
       if (!box) return;
       const r = buildRec();
       if (r.err) { box.textContent = r.err; box.className = "op-preview is-err"; return; }
-      box.textContent = `РС‚РѕРі: ${deltaText(r.rec)}`;
+      box.textContent = `Итог: ${deltaText(r.rec)}`;
       box.className = "op-preview";
     }
 
-    /* РџРµСЂРµСЃРµС‡РµРЅРёСЏ: С‚Р° Р¶Рµ РґР°С‚Р° Сѓ С‚РѕРіРѕ Р¶Рµ СЃРѕС‚СЂСѓРґРЅРёРєР° (РґР»СЏ СѓРІРѕР»СЊРЅРёС‚РµР»СЊРЅРѕР№ вЂ” РїРѕ РІСЂРµРјРµРЅРё). */
+    /* Пересечения: та же дата у того же сотрудника (для увольнительной — по времени). */
     async function conflict(rec) {
       try {
         const rows = await window.OTP_AUTH.api("admin", `otp_requests?select=*&empSlug=eq.${encodeURIComponent(rec.empSlug)}&type=eq.${rec.type}&date=eq.${rec.date}`, "GET");
@@ -1109,17 +1109,17 @@
           if (rec.type === "leave") {
             const a1 = parseHM(rec.from), b1 = parseHM(rec.to), a2 = parseHM(r.from), b2 = parseHM(r.to);
             if (a1 != null && b1 != null && a2 != null && b2 != null && a1 < b2 && a2 < b1) {
-              return `РџРµСЂРµСЃРµС‡РµРЅРёРµ СЃ СѓРІРѕР»СЊРЅРёС‚РµР»СЊРЅРѕР№ ${hm(a2)}вЂ“${hm(b2)} РІ СЌС‚РѕС‚ РґРµРЅСЊ.`;
+              return `Пересечение с увольнительной ${hm(a2)}–${hm(b2)} в этот день.`;
             }
-            if (r.noDeduct === true && !rec.noDeduct) return "РќР° СЌС‚Сѓ РґР°С‚Сѓ СѓР¶Рµ РµСЃС‚СЊ СѓРІРѕР»СЊРЅРёС‚РµР»СЊРЅР°СЏ Р±РµР· СЃРїРёСЃР°РЅРёСЏ.";
+            if (r.noDeduct === true && !rec.noDeduct) return "На эту дату уже есть увольнительная без списания.";
           } else if (rec.type === "dayoff") {
-            if (String(r.date2 || "") === String(rec.date2 || "")) return "РћС‚РіСѓР» Р·Р° СЌС‚Сѓ РІС‹С…РѕРґРЅСѓСЋ СЃРјРµРЅСѓ СѓР¶Рµ Р·Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°РЅ.";
-            if (String(r.date || "") === String(rec.date || "")) return "РќР° СЌС‚Сѓ РґР°С‚Сѓ РѕС‚РіСѓР» СѓР¶Рµ РµСЃС‚СЊ.";
+            if (String(r.date2 || "") === String(rec.date2 || "")) return "Отгул за эту выходную смену уже зарегистрирован.";
+            if (String(r.date || "") === String(rec.date || "")) return "На эту дату отгул уже есть.";
           } else {
-            return "РџРµСЂРµСЂР°Р±РѕС‚РєР° РЅР° СЌС‚Сѓ РґР°С‚Сѓ СѓР¶Рµ Р·Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°РЅР°.";
+            return "Переработка на эту дату уже зарегистрирована.";
           }
         }
-      } catch (e) { /* РЅРµС‚ СЃРІСЏР·Рё вЂ” РЅРµ Р±Р»РѕРєРёСЂСѓРµРј, СЃРµСЂРІРµСЂ РІСЃС‘ СЂР°РІРЅРѕ РїСЂРѕРІРµСЂРёС‚ */ }
+      } catch (e) { /* нет связи — не блокируем, сервер всё равно проверит */ }
       return "";
     }
 
@@ -1132,14 +1132,14 @@
         if (kind === "number") return `<label class="op-f"><span>${label}</span><input type="number" name="${name}" step="0.5" min="0.5" max="24" ${req ? "required" : ""}></label>`;
         return `<label class="op-f"><span>${label}</span><input type="${kind}" name="${name}" value="${kind === "date" ? todayIso() : ""}" ${req ? "required" : ""}></label>`;
       }).join("");
-      form.innerHTML = `<label class="op-f"><span>РЎРѕС‚СЂСѓРґРЅРёРє</span><select name="emp">${empOptions()}</select></label>
+      form.innerHTML = `<label class="op-f"><span>Сотрудник</span><select name="emp">${empOptions()}</select></label>
         ${fields}
-        ${type === "leave" ? `<label class="op-check"><input type="checkbox" name="noDeduct"> <span>РќРµ СЃРїРёСЃС‹РІР°С‚СЊ С‡Р°СЃС‹</span></label>
-          <div class="op-note">РЈРІРѕР»СЊРЅРёС‚РµР»СЊРЅР°СЏ вЂ” РЅРµ Р±РѕР»СЊС€Рµ ${(D.hrRules && D.hrRules.leaveMaxHours) || 4} С‡ РІ РґРµРЅСЊ.</div>` : ""}
+        ${type === "leave" ? `<label class="op-check"><input type="checkbox" name="noDeduct"> <span>Не списывать часы</span></label>
+          <div class="op-note">Увольнительная — не больше ${(D.hrRules && D.hrRules.leaveMaxHours) || 4} ч в день.</div>` : ""}
         <div class="op-preview" id="op-preview"></div>
         <div class="op-form-foot">
-          <button class="btn btn-primary" type="submit"><i class="ph-bold ph-check" aria-hidden="true"></i> Р—Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°С‚СЊ</button>
-          <button class="btn btn-ghost" type="button" id="op-cancel">РћС‚РјРµРЅР°</button>
+          <button class="btn btn-primary" type="submit"><i class="ph-bold ph-check" aria-hidden="true"></i> Зарегистрировать</button>
+          <button class="btn btn-ghost" type="button" id="op-cancel">Отмена</button>
         </div>`;
       modal.hidden = false;
       $("#op-cancel").addEventListener("click", close);
@@ -1150,15 +1150,15 @@
     }
     function close() { modal.hidden = true; curType = null; }
 
-    /* --- СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёСЏ РіСЂР°С„РёРєР° СЃ Confluence (РєРЅРѕРїРєР° РЅР° РіР»Р°РІРЅРѕР№) ---
-       РљРЅРѕРїРєР° С‚РѕР»СЊРєРѕ РїРёС€РµС‚ Р·Р°РїСЂРѕСЃ РІ otp_sync_flags; СЃР°Рј РіСЂР°С„РёРє Р·Р°Р±РёСЂР°РµС‚ Р»РѕРєР°Р»СЊРЅС‹Р№
-       Р°РіРµРЅС‚ РёР· Confluence (РёРЅС‚СЂР°РЅРµС‚): scripts/sync_schedule.py --if-requested. */
+    /* --- синхронизация графика с Confluence (кнопка на главной) ---
+       Кнопка только пишет запрос в otp_sync_flags; сам график забирает локальный
+       агент из Confluence (интранет): scripts/sync_schedule.py --if-requested. */
     const cloudCfg = () => (D.hrRules && D.hrRules.cloud) || null;
     function syncStateText(f) {
-      /* В«РіСЂР°С„РёРє РѕС‚В» РїРѕРєР°Р·С‹РІР°РµС‚ РґР°С‚Сѓ Рё РІСЂРµРјСЏ, РєРѕРіРґР° Confluence РѕС‚РґР°Р» РіСЂР°С„РёРє
-         (СЃС‚Р°СЂС‹Рµ schedule.json СЃРѕРґРµСЂР¶Р°С‚ С‚РѕР»СЊРєРѕ РґР°С‚Сѓ вЂ” РёС… С‚РѕР¶Рµ РїРѕРЅРёРјР°РµРј). */
+      /* «график от» показывает дату и время, когда Confluence отдал график
+         (старые schedule.json содержат только дату — их тоже понимаем). */
       const g = (D.schedule && D.schedule.generated) || "";
-      let gen = "вЂ”";
+      let gen = "—";
       if (g) {
         const s = String(g);
         const d = new Date(s.length <= 10 ? s + "T00:00:00" : s);
@@ -1167,9 +1167,9 @@
           ? d.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
           : d.toLocaleDateString("ru-RU");
       }
-      if (!f || !f.done_at) return `РіСЂР°С„РёРє РѕС‚ ${gen}`;
+      if (!f || !f.done_at) return `график от ${gen}`;
       const t = new Date(f.done_at).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
-      return `РіСЂР°С„РёРє РѕС‚ ${gen} В· СЃРёРЅС…СЂРѕРЅРёР·РёСЂРѕРІР°РЅ ${t}` + (f.ok === false ? ` (РѕС€РёР±РєР°: ${f.message || ""})` : "");
+      return `график от ${gen} · синхронизирован ${t}` + (f.ok === false ? ` (ошибка: ${f.message || ""})` : "");
     }
     async function renderSyncState() {
       const el = $("#op-sync-state");
@@ -1184,15 +1184,15 @@
     function requestSync() {
       const el = $("#op-sync-state");
       if (!el) return;
-      if (!window.OTP_AUTH || !window.OTP_AUTH.token("admin")) { el.textContent = "РЎРёРЅС…СЂРѕРЅРёР·Р°С†РёСЏ РЅРµРґРѕСЃС‚СѓРїРЅР°: РЅСѓР¶РµРЅ РІС…РѕРґ."; return; }
-      el.textContent = "РћС‚РїСЂР°РІР»СЏСЋ Р·Р°РїСЂРѕСЃвЂ¦";
+      if (!window.OTP_AUTH || !window.OTP_AUTH.token("admin")) { el.textContent = "Синхронизация недоступна: нужен вход."; return; }
+      el.textContent = "Отправляю запрос…";
       window.OTP_AUTH.api("admin", "otp_sync_flags?id=eq.schedule", "PATCH", {
         requested_at: new Date().toISOString(),
-        requested_by: window.OTP_ACTOR || "Р СѓРєРѕРІРѕРґРёС‚РµР»СЊ",
+        requested_by: window.OTP_ACTOR || "Руководитель",
       }).then(() => {
-        el.textContent = "РЎРёРЅС…СЂРѕРЅРёР·Р°С†РёСЏ Р·Р°РїСЂРѕС€РµРЅР° вЂ” РџРљ Р·Р°Р±РµСЂС‘С‚ РіСЂР°С„РёРє РёР· Confluence РІ С‚РµС‡РµРЅРёРµ РїР°СЂС‹ РјРёРЅСѓС‚.";
+        el.textContent = "Синхронизация запрошена — ПК заберёт график из Confluence в течение пары минут.";
         setTimeout(renderSyncState, 90000);
-      }).catch(() => { el.textContent = "РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РїСЂРѕСЃРёС‚СЊ СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёСЋ вЂ” РїСЂРѕРІРµСЂСЊ СЃРІСЏР·СЊ."; });
+      }).catch(() => { el.textContent = "Не удалось запросить синхронизацию — проверь связь."; });
     }
     renderSyncState();
 
@@ -1208,27 +1208,27 @@
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      if (busy) return;                       // РґРІРѕР№РЅРѕРµ РЅР°Р¶Р°С‚РёРµ = РѕРґРЅР° РѕРїРµСЂР°С†РёСЏ
+      if (busy) return;                       // двойное нажатие = одна операция
       const r = buildRec();
       if (r.err) { errEl.textContent = r.err; return; }
       busy = true;
-      errEl.textContent = "РџСЂРѕРІРµСЂСЏСЋ РїРµСЂРµСЃРµС‡РµРЅРёСЏвЂ¦";
+      errEl.textContent = "Проверяю пересечения…";
       const bad = await conflict(r.rec);
       if (bad) { errEl.textContent = bad; busy = false; return; }
-      errEl.textContent = "РЎРѕС…СЂР°РЅСЏСЋвЂ¦";
+      errEl.textContent = "Сохраняю…";
       try {
         if (window.OTP_CLOUD) await window.OTP_CLOUD.upsert(r.rec);
         close();
-        renderNowBoard();                    // РѕР±РЅРѕРІРёС‚СЊ С‚Р°Р±Р»РёС†Сѓ Рё РїСЂР°РІСѓСЋ РєРѕР»РѕРЅРєСѓ
+        renderNowBoard();                    // обновить таблицу и правую колонку
         if (window.otpRefreshHours) window.otpRefreshHours();
       } catch (err) {
-        errEl.textContent = "РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕС…СЂР°РЅРёС‚СЊ вЂ” РїСЂРѕРІРµСЂСЊ СЃРІСЏР·СЊ Рё РїРѕРїСЂРѕР±СѓР№ РµС‰С‘ СЂР°Р·.";
+        errEl.textContent = "Не удалось сохранить — проверь связь и попробуй ещё раз.";
       }
       busy = false;
     });
   })();
 
-  /* ---------- РіСЂР°С„РёРєРё (СЃС‚СЂР°РЅРёС†Р° В«Р”РёРЅР°РјРёРєР°В») ---------- */
+  /* ---------- графики (страница «Динамика») ---------- */
   if (!window.Chart) return;
 
   if ($("#chart-team-avg")) {
@@ -1240,7 +1240,7 @@
     new Chart($("#chart-team-avg"), {
       type: "line",
       data: { labels: D.months, datasets: [{
-        label: "РЎСЂРµРґРЅРёР№ KPI", data: teamAvgSeries,
+        label: "Средний KPI", data: teamAvgSeries,
         borderColor: "#22d3ee", borderWidth: 2.5, tension: 0.4,
         pointRadius: 3, pointHoverRadius: 6,
         pointBackgroundColor: "#22d3ee", pointBorderColor: "#0d1219", pointBorderWidth: 2,
@@ -1252,7 +1252,7 @@
           y: { min: 0, max: 10, grid: { color: "rgba(255,255,255,.05)" }, ticks: { stepSize: 2 } },
           x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 7 } },
         },
-        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `РЎСЂРµРґРЅРёР№ KPI: ${c.parsed.y}` } } },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `Средний KPI: ${c.parsed.y}` } } },
       },
     });
   }
@@ -1262,12 +1262,12 @@
       D.employees.reduce((s, e) => s + (e.history[i].bonus || 0), 0));
     new Chart($("#chart-bonus"), {
       type: "bar",
-      data: { labels: D.months, datasets: [{ label: "Р‘РѕРЅСѓСЃС‹", data: bonusSeries,
+      data: { labels: D.months, datasets: [{ label: "Бонусы", data: bonusSeries,
         backgroundColor: "#0e7490", hoverBackgroundColor: "#22d3ee", borderRadius: 6, maxBarThickness: 26 }] },
       options: {
         responsive: true, maintainAspectRatio: false,
         scales: {
-          y: { grid: { color: "rgba(255,255,255,.05)" }, ticks: { callback: (v) => otp.fmt(v) + " в‚Ѕ" } },
+          y: { grid: { color: "rgba(255,255,255,.05)" }, ticks: { callback: (v) => otp.fmt(v) + " ₽" } },
           x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 7 } },
         },
         plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => otp.rub(c.parsed.y) } } },
@@ -1282,14 +1282,14 @@
     MKEYS.forEach((k) => {
       teamProfile[k] = +(ratedEmployees.reduce((s, e) => s + e.current[k], 0) / ratedEmployees.length).toFixed(1);
     });
-    sel.innerHTML = `<option value="__team__">РЎСЂРµРґРЅРµРµ РїРѕ РєРѕРјР°РЅРґРµ</option>` +
+    sel.innerHTML = `<option value="__team__">Среднее по команде</option>` +
       D.employees.filter((e) => e.current != null)
         .map((e) => `<option value="${e.id}">${e.shortName} ${e.fullName.split(" ")[0]}</option>`).join("");
     let radarChart = null;
     const drawRadar = () => {
       const v = sel.value;
       const src = v === "__team__" ? teamProfile : (otp.byId(v)?.current || teamProfile);
-      const label = v === "__team__" ? "РЎСЂРµРґРЅРµРµ РїРѕ РєРѕРјР°РЅРґРµ" : otp.byId(v).fullName;
+      const label = v === "__team__" ? "Среднее по команде" : otp.byId(v).fullName;
       const data = MKEYS.map((k) => src[k]);
       if (radarChart) radarChart.destroy();
       radarChart = new Chart($("#chart-radar"), {
@@ -1311,7 +1311,7 @@
   }
 
 
-  /* ---------- РќР°СЃС‚СЂРѕР№РєРё (СЃС‚СЂР°РЅРёС†Р° /settings/) ---------- */
+  /* ---------- Настройки (страница /settings/) ---------- */
   function renderSettings() {
     const box = $("#settings-panel");
     const T = window.OTP_THEME;
@@ -1320,22 +1320,22 @@
     const cur = T.themeOf(st.theme);
     box.innerHTML = `<div class="set-wrap">
       <section class="set-block">
-        <div class="set-h"><i class="ph-bold ph-palette"></i><h3>РўРµРјР° РѕС„РѕСЂРјР»РµРЅРёСЏ</h3></div>
-        <p class="set-sub">РўРµРјР° РјРµРЅСЏРµС‚ С„РѕРЅ, СЌР»РµРјРµРЅС‚С‹, РёРєРѕРЅРєРё, СЌРјР±Р»РµРјСѓ Рё РІРєР»СЋС‡Р°РµС‚ СЃРІРѕСЋ Р°РЅРёРјР°С†РёСЋ. РќР°СЃС‚СЂРѕР№РєР° Р»РёС‡РЅР°СЏ вЂ” Сѓ СЃРѕС‚СЂСѓРґРЅРёРєРѕРІ СЃРІРѕРё С‚РµРјС‹.</p>
+        <div class="set-h"><i class="ph-bold ph-palette"></i><h3>Тема оформления</h3></div>
+        <p class="set-sub">Тема меняет фон, элементы, иконки, эмблему и включает свою анимацию. Настройка личная — у сотрудников свои темы.</p>
         <div class="set-grid set-grid-themes" id="set-themes">
           ${T.themes.map((x) => `<button class="set-opt set-theme-card${st.theme === x.id ? " is-on" : ""}${["classic","light","dark","cyberpunk"].includes(x.id) ? "" : " set-hide"}" data-theme-id="${x.id}">
             <span class="set-thumb th-${x.id}">${(x.figures && x.figures[0]) ? `<img src="${T.img(x.figures[0])}" alt="${x.label}">` : `<span class="set-thumb-fx"></span>`}</span>
             <b>${x.label}</b><i>${x.hint}</i>
             <i class="ph-bold ph-check-circle set-tick"></i></button>`).join("")}
         </div>
-        <button class="set-more" id="set-more">РџРѕРєР°Р·Р°С‚СЊ РІСЃРµ С‚РµРјС‹</button>
+        <button class="set-more" id="set-more">Показать все темы</button>
       </section>
       <section class="set-block">
-        <div class="set-h"><i class="ph-bold ph-sparkle"></i><h3>РђРЅРёРјР°С†РёСЏ</h3></div>
-        <p class="set-sub">РЈ РєР°Р¶РґРѕР№ С‚РµРјС‹ СЃРІРѕСЏ РїРѕСЃС‚РѕСЏРЅРЅР°СЏ Р°РЅРёРјР°С†РёСЏ РЅР° С„РѕРЅРµ вЂ” РѕРЅР° РЅРµ РїРµСЂРµРєСЂС‹РІР°РµС‚ С‚РµРєСЃС‚.</p>
+        <div class="set-h"><i class="ph-bold ph-sparkle"></i><h3>Анимация</h3></div>
+        <p class="set-sub">У каждой темы своя постоянная анимация на фоне — она не перекрывает текст.</p>
         <label class="set-row"><input type="checkbox" id="set-anim-on"${st.animOn ? " checked" : ""}>
-          <span>Р’РєР»СЋС‡РёС‚СЊ Р°РЅРёРјР°С†РёСЋ С„РѕРЅР°${cur && cur.anim ? " вЂ” " + cur.label : ""}</span></label>
-        <div class="set-foot"><button class="set-btn ghost" id="set-reset"><i class="ph-bold ph-arrow-counter-clockwise"></i> РЎР±СЂРѕСЃРёС‚СЊ Рє РєР»Р°СЃСЃРёС‡РµСЃРєРѕР№</button></div>
+          <span>Включить анимацию фона${cur && cur.anim ? " — " + cur.label : ""}</span></label>
+        <div class="set-foot"><button class="set-btn ghost" id="set-reset"><i class="ph-bold ph-arrow-counter-clockwise"></i> Сбросить к классической</button></div>
       </section>
     </div>`;
     const more = document.getElementById("set-more");
@@ -1343,7 +1343,7 @@
       const grid = document.getElementById("set-themes");
       if (!grid) return;
       const open = grid.classList.toggle("set-open");
-      more.textContent = open ? "РЎРІРµСЂРЅСѓС‚СЊ С‚РµРјС‹" : "РџРѕРєР°Р·Р°С‚СЊ РІСЃРµ С‚РµРјС‹";
+      more.textContent = open ? "Свернуть темы" : "Показать все темы";
     });
     document.querySelectorAll("#set-themes .set-opt").forEach((b) =>
       b.addEventListener("click", () => {
@@ -1352,7 +1352,7 @@
         b.classList.add("is-on");
         const th = T.themeOf(b.dataset.themeId);
         const lbl = document.querySelector("#set-anim-on + span");
-        if (lbl) lbl.textContent = "Р’РєР»СЋС‡РёС‚СЊ Р°РЅРёРјР°С†РёСЋ С„РѕРЅР°" + (th.anim ? " вЂ” " + th.label : "");
+        if (lbl) lbl.textContent = "Включить анимацию фона" + (th.anim ? " — " + th.label : "");
         const chk = $("#set-anim-on"); if (chk) chk.checked = T.get().animOn;
       }));
     const chk = $("#set-anim-on");
@@ -1371,15 +1371,15 @@
   initStaffPage();
   initSchedulePage();
 
-  /* ---------- Р°РґРјРёРЅРєР°: СЃРѕС‚СЂСѓРґРЅРёРєРё, Р»РѕРіРёРЅС‹, РїР°СЂРѕР»Рё ---------- */
-  /* ---------------- v22: СЂРµРґР°РєС‚РѕСЂ РіСЂР°С„РёРєР° РјРµСЃСЏС†Р° ---------------- */
-  const SCH_SYMBOLS = ["2", "1", "3", "Р’", "I", "II", "РЎСЂ", "Рў", "Рћ", "Р‘", "X", "РќР’", "Р”", "РЈ", "Рљ"];
+  /* ---------- админка: сотрудники, логины, пароли ---------- */
+  /* ---------------- v22: редактор графика месяца ---------------- */
+  const SCH_SYMBOLS = ["2", "1", "3", "В", "I", "II", "Ср", "Т", "О", "Б", "X", "НВ", "Д", "У", "К"];
   const SCH_KIND = {
     "1": "shift", "2": "shift", "3": "shift", "I": "week", "II": "week",
-    "Р’": "off", "Рћ": "vac", "Р‘": "sick", "РЈ": "study", "X": "dayoff",
-    "РќР’": "dayoff", "Р”": "extra", "Рљ": "trip", "РЎСЂ": "duty", "Рў": "duty",
+    "В": "off", "О": "vac", "Б": "sick", "У": "study", "X": "dayoff",
+    "НВ": "dayoff", "Д": "extra", "К": "trip", "Ср": "duty", "Т": "duty",
   };
-  /* РЅРѕСЂРјС‹ Р»РёРЅРёР№ Рё РґРѕРїСѓСЃС‚РёРјС‹Рµ СЃРѕС‚СЂСѓРґРЅРёРєРё (РїРѕ РїСЂР°РІРёР»Р°Рј СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ) */
+  /* нормы линий и допустимые сотрудники (по правилам руководителя) */
   const SCH_LINES = [
     { line: "L0", need: 1, who: ["frolov", "bolgov"], shift: "2" },
     { line: "L1.1", need: 3, who: ["yuryev", "agarov", "vtorygin", "zavyalov", "khasanov"], shift: "2" },
@@ -1387,7 +1387,7 @@
     { line: "L2.2", need: 1, who: ["pestovsky", "yuryev"], shift: "2" },
     { line: "L2.3", need: 1, who: ["melnikov", "eliseev"], shift: "2" },
     { line: "L2.4", need: 1, who: ["pospelova", "melnikov"], shift: "2" },
-    { line: "РЅРѕС‡РЅРѕР№", need: 1, who: ["zavyalov"], shift: "1" },
+    { line: "ночной", need: 1, who: ["zavyalov"], shift: "1" },
   ];
   const SCH_TANIA = ["bolgov", "melnikov", "eliseev"];
   const SCH_FIXED_HOLIDAYS = ["01-01", "01-02", "01-07", "02-23", "03-08", "05-01", "05-09", "06-12", "11-04"];
@@ -1420,27 +1420,27 @@
     })();
     const box = document.createElement("div");
     box.className = "staff-add sch-editor";
-    box.innerHTML = `<h4><i class="ph-bold ph-table"></i> Р“СЂР°С„РёРє РјРµСЃСЏС†Р°</h4>
+    box.innerHTML = `<h4><i class="ph-bold ph-table"></i> График месяца</h4>
       <div class="staff-add-grid">
-        <label>РњРµСЃСЏС†<input id="sch-month" type="month" value="${nextMonth}"></label>
-        <label>Р”РµРЅСЊ РґР»СЏ РѕС‚РјРµС‚РєРё<input id="sch-flag-day" type="number" min="1" max="31" value="1"></label>
+        <label>Месяц<input id="sch-month" type="month" value="${nextMonth}"></label>
+        <label>День для отметки<input id="sch-flag-day" type="number" min="1" max="31" value="1"></label>
       </div>
       <div class="sch-toolbar">
         ${SCH_SYMBOLS.map((s, i) => `<button type="button" class="sch-sym${i === 0 ? " is-on" : ""}" data-sym="${s}">${s}</button>`).join("")}
-        <span class="staff-hint">РІС‹Р±РµСЂРёС‚Рµ СЃРёРјРІРѕР» Рё РЅР°Р¶РёРјР°Р№С‚Рµ РїРѕ СЏС‡РµР№РєР°Рј</span>
+        <span class="staff-hint">выберите символ и нажимайте по ячейкам</span>
       </div>
       <div class="staff-add-foot">
-        <button class="btn btn-primary" id="sch-load" type="button">Р—Р°РіСЂСѓР·РёС‚СЊ</button>
-        <button class="btn btn-ghost" id="sch-auto" type="button">РђРІС‚Рѕ РїРѕ РїРѕР¶РµР»Р°РЅРёСЏРј</button>
-        <button class="btn btn-ghost" id="sch-check" type="button">РџСЂРѕРІРµСЂРёС‚СЊ РЅРѕСЂРјС‹</button>
-        <button class="btn btn-ghost" id="sch-flag-short" type="button">Р”РµРЅСЊ СѓРєРѕСЂРѕС‡РµРЅРЅС‹Р№</button>
-        <button class="btn btn-ghost" id="sch-flag-hol" type="button">Р’ РґРµРЅСЊ СЃРјРµРЅ РЅРµС‚</button>
-        <button class="btn btn-ghost" id="sch-flag-clear" type="button">РЎРЅСЏС‚СЊ РѕС‚РјРµС‚РєСѓ</button>
-        <button class="btn btn-primary" id="sch-save" type="button">РЎРѕС…СЂР°РЅРёС‚СЊ С‡РµСЂРЅРѕРІРёРє</button>
-        <button class="btn btn-ghost" id="sch-publish" type="button">РћРїСѓР±Р»РёРєРѕРІР°С‚СЊ</button>
-        <button class="btn btn-ghost" id="sch-csv" type="button">Р’С‹РіСЂСѓР·РёС‚СЊ CSV</button>
-        <button class="btn btn-ghost" id="sch-xlsx" type="button">XLSX СЃ С†РІРµС‚Р°РјРё</button>
-        <button class="btn btn-ghost" id="sch-conf" type="button">Р’ Confluence</button>
+        <button class="btn btn-primary" id="sch-load" type="button">Загрузить</button>
+        <button class="btn btn-ghost" id="sch-auto" type="button">Авто по пожеланиям</button>
+        <button class="btn btn-ghost" id="sch-check" type="button">Проверить нормы</button>
+        <button class="btn btn-ghost" id="sch-flag-short" type="button">День укороченный</button>
+        <button class="btn btn-ghost" id="sch-flag-hol" type="button">В день смен нет</button>
+        <button class="btn btn-ghost" id="sch-flag-clear" type="button">Снять отметку</button>
+        <button class="btn btn-primary" id="sch-save" type="button">Сохранить черновик</button>
+        <button class="btn btn-ghost" id="sch-publish" type="button">Опубликовать</button>
+        <button class="btn btn-ghost" id="sch-csv" type="button">Выгрузить CSV</button>
+        <button class="btn btn-ghost" id="sch-xlsx" type="button">XLSX с цветами</button>
+        <button class="btn btn-ghost" id="sch-conf" type="button">В Confluence</button>
         <span class="staff-hint" id="sch-msg"></span>
       </div>
       <div class="sch-report" id="sch-report"></div>
@@ -1450,7 +1450,7 @@
     let month = nextMonth;
     let cell = {};            // slug -> { day: symbol }
     let symbol = "2";
-    let answers = {};         // slug -> РѕС‚РІРµС‚ РѕРїСЂРѕСЃР°
+    let answers = {};         // slug -> ответ опроса
     let report = [];
 
     const bySlug = new Map(emps.map((e) => [e.slug, e]));
@@ -1469,19 +1469,19 @@
       const head = days.map((x) => {
         const f = flagOf(x.d);
         const cls = `${x.wd === 0 ? "is-sun" : ""}${x.noShifts || f === "holiday" ? " is-holiday" : ""}${f === "short" ? " is-short" : ""}`;
-        return `<th class="${cls}" title="${f === "short" ? "СѓРєРѕСЂРѕС‡РµРЅРЅС‹Р№ РґРµРЅСЊ" : f === "holiday" ? "СЃРјРµРЅ РЅРµС‚" : ""}">${x.d}${f === "short" ? "*" : ""}</th>`;
+        return `<th class="${cls}" title="${f === "short" ? "укороченный день" : f === "holiday" ? "смен нет" : ""}">${x.d}${f === "short" ? "*" : ""}</th>`;
       }).join("");
       const rowsHtml = emps.map((e) => {
         const cells = days.map((x) => {
           const v = get(e.slug, x.d);
           const kind = SCH_KIND[v] || "";
-          return `<td class="sch-cell ${kind}" data-slug="${e.slug}" data-day="${x.d}" title="${escNow(fio(e.slug))} В· ${x.d}">${escNow(v)}</td>`;
+          return `<td class="sch-cell ${kind}" data-slug="${e.slug}" data-day="${x.d}" title="${escNow(fio(e.slug))} · ${x.d}">${escNow(v)}</td>`;
         }).join("");
-        const shifts = days.filter((x) => ["1", "2", "3", "I", "II", "2Р ", "3Р "].includes(get(e.slug, x.d))).length;
+        const shifts = days.filter((x) => ["1", "2", "3", "I", "II", "2Р", "3Р"].includes(get(e.slug, x.d))).length;
         return `<tr><th class="sch-name">${escNow(fio(e.slug))}</th>${cells}<td class="sch-total">${shifts}</td></tr>`;
       }).join("");
       const wrap = box.querySelector("#sch-wrap");
-      if (wrap) wrap.innerHTML = `<table class="sch-table"><thead><tr><th class="sch-name">Р¤РРћ</th>${head}<th>СЃРј.</th></tr></thead><tbody>${rowsHtml}</tbody></table>`;
+      if (wrap) wrap.innerHTML = `<table class="sch-table"><thead><tr><th class="sch-name">ФИО</th>${head}<th>см.</th></tr></thead><tbody>${rowsHtml}</tbody></table>`;
       wrap.querySelectorAll(".sch-cell").forEach((td) => td.addEventListener("click", () => {
         put(td.dataset.slug, Number(td.dataset.day), symbol === "" ? "" : symbol);
         render();
@@ -1489,7 +1489,7 @@
       const rep = box.querySelector("#sch-report");
       if (rep) {
         rep.innerHTML = report.length
-          ? `<b>Р—Р°РјРµС‡Р°РЅРёСЏ Р°РІС‚РѕСЃР±РѕСЂРєРё:</b><ul>${report.map((r) => `<li>${escNow(r)}</li>`).join("")}</ul>`
+          ? `<b>Замечания автосборки:</b><ul>${report.map((r) => `<li>${escNow(r)}</li>`).join("")}</ul>`
           : "";
       }
     };
@@ -1512,9 +1512,9 @@
       const a = answers[slug] || {};
       return (a.off_dates || []).map(Number).includes(Number(d));
     };
-    /* РѕС‚РїСѓСЃРєР° РёР· Р±Р°Р·С‹ (Р·Р°РїРѕР»РЅСЏРµС‚ Р°РіРµРЅС‚ РёР· СЃС‚СЂР°РЅРёС†С‹ РѕС‚РїСѓСЃРєРѕРІ Confluence) */
+    /* отпуска из базы (заполняет агент из страницы отпусков Confluence) */
     let vacations = [];
-    let flags = [];   // РѕС‚РјРµС‚РєРё РґРЅРµР№: {day, kind: short|holiday}
+    let flags = [];   // отметки дней: {day, kind: short|holiday}
     const loadFlags = async () => {
       const res = await A.flagsGet(month);
       flags = (res && res.ok && Array.isArray(res.list)) ? res.list : [];
@@ -1528,23 +1528,23 @@
     };
     const onVacation = (slug, d) => vacations.some((v) => v.emp_slug === slug && d >= v.from_day && d <= v.to_day);
 
-    /* РїСЂРѕРІРµСЂРєР° РЅРѕСЂРј Р»РёРЅРёР№ РїРѕ С‚РµРєСѓС‰РµР№ С‚Р°Р±Р»РёС†Рµ */
+    /* проверка норм линий по текущей таблице */
     const checkNorms = () => {
       const days = schMonthDays(month);
       const bad = [];
-      const isShift = (sym) => ["1", "2", "3", "I", "II", "2Р ", "3Р "].includes(sym);
+      const isShift = (sym) => ["1", "2", "3", "I", "II", "2Р", "3Р"].includes(sym);
       for (const day of days) {
         if (day.noShifts) continue;
         const weekend = day.wd === 0 || day.wd === 6 || day.holiday;
-        if (weekend) continue;   // РІ РІС‹С…РѕРґРЅС‹Рµ РЅРѕСЂРјС‹ Р»РёРЅРёР№ РЅРµ РґРµР№СЃС‚РІСѓСЋС‚
+        if (weekend) continue;   // в выходные нормы линий не действуют
         for (const line of SCH_LINES) {
           const have = emps.filter((e) => line.who.includes(e.slug) && isShift(get(e.slug, day.d))).length;
-          if (have < line.need) bad.push(`${day.d}-Рµ: ${line.line} вЂ” ${have} РёР· ${line.need}`);
+          if (have < line.need) bad.push(`${day.d}-е: ${line.line} — ${have} из ${line.need}`);
         }
       }
       report = bad;
       render();
-      setMsg(bad.length ? `РќР°СЂСѓС€РµРЅРёР№ РЅРѕСЂРј: ${bad.length}` : "РќРѕСЂРјС‹ Р»РёРЅРёР№ СЃРѕР±Р»СЋРґРµРЅС‹");
+      setMsg(bad.length ? `Нарушений норм: ${bad.length}` : "Нормы линий соблюдены");
     };
 
     const autoBuild = async () => {
@@ -1553,9 +1553,9 @@
       const days = schMonthDays(month);
       cell = {};
       report = [];
-      const consec = {};   // slug -> СЃРјРµРЅ РїРѕРґСЂСЏРґ
-      const load = {};     // slug -> РІСЃРµРіРѕ СЃРјРµРЅ
-      const lastShift = {};// slug -> РґРµРЅСЊ РїРѕСЃР»РµРґРЅРµР№ СЃРјРµРЅС‹
+      const consec = {};   // slug -> смен подряд
+      const load = {};     // slug -> всего смен
+      const lastShift = {};// slug -> день последней смены
       const taniaQ = SCH_TANIA.slice();
       const l0Q = ["frolov", "bolgov"];
 
@@ -1563,13 +1563,13 @@
         const weekend = day.wd === 0 || day.wd === 6 || day.holiday;
         if (weekend || day.noShifts) {
           for (const e of emps) {
-            put(e.slug, day.d, "Р’");
+            put(e.slug, day.d, "В");
             consec[e.slug] = 0;
           }
           if (day.noShifts) continue;
-          /* РІС‹С…РѕРґРЅС‹Рµ СЃРјРµРЅС‹ вЂ” С‚РѕР»СЊРєРѕ РїРѕ РїРѕР¶РµР»Р°РЅРёСЏРј */
+          /* выходные смены — только по пожеланиям */
           for (const e of emps) {
-            if (onVacation(e.slug, day.d)) { put(e.slug, day.d, "Рћ"); continue; }
+            if (onVacation(e.slug, day.d)) { put(e.slug, day.d, "О"); continue; }
             const a = answers[e.slug] || {};
             if (a.weekend_none) continue;
             if ((a.weekend_dates || []).map(Number).includes(day.d)) {
@@ -1577,37 +1577,37 @@
               load[e.slug] = (load[e.slug] || 0) + 1;
             }
           }
-          /* РґРµР¶СѓСЂРЅС‹Рµ: СЃСѓР±Р±РѕС‚Р° вЂ” В«РўР°РЅРёСЏВ», РІРѕСЃРєСЂРµСЃРµРЅСЊРµ вЂ” В«СЃСЂРѕС‡РєР°В» РёР· L0 */
+          /* дежурные: суббота — «Тания», воскресенье — «срочка» из L0 */
           const queue = day.wd === 6 ? taniaQ : l0Q;
           for (let i = 0; i < queue.length; i++) {
             const slug = queue[i];
             if (!emps.some((e) => e.slug === slug)) continue;
-            if (get(slug, day.d) !== "Р’") continue;
+            if (get(slug, day.d) !== "В") continue;
             if (offDay(slug, day.d)) continue;
-            put(slug, day.d, day.wd === 6 ? "Рў" : "РЎСЂ");
+            put(slug, day.d, day.wd === 6 ? "Т" : "Ср");
             queue.push(queue.shift());
             break;
           }
           continue;
         }
 
-        /* Р±СѓРґРЅРё: РЅРѕСЂРјС‹ Р»РёРЅРёР№ */
-        for (const e of emps) put(e.slug, day.d, onVacation(e.slug, day.d) ? "Рћ" : (offDay(e.slug, day.d) ? "X" : "Р’"));
+        /* будни: нормы линий */
+        for (const e of emps) put(e.slug, day.d, onVacation(e.slug, day.d) ? "О" : (offDay(e.slug, day.d) ? "X" : "В"));
         for (const line of SCH_LINES) {
           const cand = line.who
             .filter((slug) => bySlug.has(slug))
-            .filter((slug) => get(slug, day.d) === "Р’")
+            .filter((slug) => get(slug, day.d) === "В")
             .filter((slug) => (consec[slug] || 0) < 6)
             .sort((a, b) => (load[a] || 0) - (load[b] || 0) || String(lastShift[a] || 0).localeCompare(String(lastShift[b] || 0)));
           const picked = cand.slice(0, line.need);
           if (picked.length < line.need) {
-            report.push(`${day.d}-Рµ: ${line.line} вЂ” РЅРµРґРѕР±РѕСЂ (${picked.length} РёР· ${line.need})`);
+            report.push(`${day.d}-е: ${line.line} — недобор (${picked.length} из ${line.need})`);
           }
           for (const slug of picked) {
             const a = answers[slug] || {};
             const weekStart = new Date(month + "-" + String(day.d).padStart(2, "0")).getDate() - ((day.wd + 6) % 7);
             const thirdOk = (a.third_weeks || []).map(Number).includes(weekStart) && !a.third_none;
-            put(slug, day.d, thirdOk && line.line !== "РЅРѕС‡РЅРѕР№" ? "3" : (line.shift || "2"));
+            put(slug, day.d, thirdOk && line.line !== "ночной" ? "3" : (line.shift || "2"));
             load[slug] = (load[slug] || 0) + 1;
             consec[slug] = (consec[slug] || 0) + 1;
             lastShift[slug] = day.d;
@@ -1627,7 +1627,7 @@
       cell = (res && res.ok && res.schedule && res.schedule.cell) ? res.schedule.cell : {};
       report = [];
       render();
-      setMsg(res && res.schedule ? `Р—Р°РіСЂСѓР¶РµРЅРѕ (РІРµСЂСЃРёСЏ ${res.schedule.version}, ${res.schedule.status})` : "Р§РµСЂРЅРѕРІРёРєР° РЅРµС‚ вЂ” РјРѕР¶РЅРѕ СЃРѕР±СЂР°С‚СЊ Р°РІС‚Рѕ");
+      setMsg(res && res.schedule ? `Загружено (версия ${res.schedule.version}, ${res.schedule.status})` : "Черновика нет — можно собрать авто");
       loadAnswers();
       loadVacations();
       loadFlags();
@@ -1642,20 +1642,20 @@
       await A.flagSet(month, day, kind);
       await loadFlags();
       render();
-      setMsg(kind ? `РћС‚РјРµС‚РєР° РґР»СЏ ${day}-РіРѕ: ${kind === "short" ? "СѓРєРѕСЂРѕС‡РµРЅРЅС‹Р№ РґРµРЅСЊ" : "СЃРјРµРЅ РЅРµС‚"}` : `РћС‚РјРµС‚РєР° РґР»СЏ ${day}-РіРѕ СЃРЅСЏС‚Р°`);
+      setMsg(kind ? `Отметка для ${day}-го: ${kind === "short" ? "укороченный день" : "смен нет"}` : `Отметка для ${day}-го снята`);
     };
     [["sch-flag-short", "short"], ["sch-flag-hol", "holiday"], ["sch-flag-clear", ""]].forEach(([id, kind]) => {
       const b = box.querySelector("#" + id);
       if (b) b.addEventListener("click", () => setFlag(kind));
     });
     const btnSave = box.querySelector("#sch-save"); if (btnSave) btnSave.addEventListener("click", async () => {
-      const res = await A.scheduleSave(month, cell, "draft", "С‡РµСЂРЅРѕРІРёРє РёР· Р°РґРјРёРЅРєРё");
-      setMsg(res && res.ok ? `РЎРѕС…СЂР°РЅРµРЅРѕ (РІРµСЂСЃРёСЏ ${res.version})` : "РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕС…СЂР°РЅРёС‚СЊ (РЅСѓР¶РµРЅ Р°РґРјРёРЅ-РІС…РѕРґ)");
+      const res = await A.scheduleSave(month, cell, "draft", "черновик из админки");
+      setMsg(res && res.ok ? `Сохранено (версия ${res.version})` : "Не удалось сохранить (нужен админ-вход)");
     });
     const btnPub = box.querySelector("#sch-publish"); if (btnPub) btnPub.addEventListener("click", async () => {
-      const res = await A.scheduleSave(month, cell, "published", "РїСѓР±Р»РёРєР°С†РёСЏ РіСЂР°С„РёРєР°");
-      if (!res || !res.ok) { setMsg("РќРµ СѓРґР°Р»РѕСЃСЊ РѕРїСѓР±Р»РёРєРѕРІР°С‚СЊ"); return; }
-      /* Р·Р°РґР°С‡Р° Р°РіРµРЅС‚Сѓ: РїРµСЂРµРЅРµСЃС‚Рё РѕРїСѓР±Р»РёРєРѕРІР°РЅРЅС‹Р№ РјРµСЃСЏС† РІ data.js Рё РЅР° СЃР°Р№С‚ */
+      const res = await A.scheduleSave(month, cell, "published", "публикация графика");
+      if (!res || !res.ok) { setMsg("Не удалось опубликовать"); return; }
+      /* задача агенту: перенести опубликованный месяц в data.js и на сайт */
       try {
         const c = D.hrRules && D.hrRules.cloud;
         if (c && c.url && c.key) {
@@ -1665,23 +1665,23 @@
             body: JSON.stringify([{
               id: "task-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
               kind: "publish_schedule", payload: { month },
-              requested_by: window.OTP_ACTOR || "Р СѓРєРѕРІРѕРґРёС‚РµР»СЊ",
+              requested_by: window.OTP_ACTOR || "Руководитель",
             }]),
           });
-          setMsg("РћРїСѓР±Р»РёРєРѕРІР°РЅРѕ РІ Р±Р°Р·Рµ. Р“СЂР°С„РёРє РїРѕСЏРІРёС‚СЃСЏ РЅР° СЃР°Р№С‚Рµ РІ С‚РµС‡РµРЅРёРµ 5 РјРёРЅСѓС‚ (Р°РіРµРЅС‚).");
+          setMsg("Опубликовано в базе. График появится на сайте в течение 5 минут (агент).");
         } else {
-          setMsg("РћРїСѓР±Р»РёРєРѕРІР°РЅРѕ РІ Р±Р°Р·Рµ; Р°РІС‚РѕРїРµСЂРµРЅРѕСЃ РЅР° СЃР°Р№С‚ РЅРµРґРѕСЃС‚СѓРїРµРЅ (РЅРµС‚ РєРѕРЅС„РёРіСѓСЂР°С†РёРё РѕР±Р»Р°РєР°).");
+          setMsg("Опубликовано в базе; автоперенос на сайт недоступен (нет конфигурации облака).");
         }
       } catch (e) {
-        setMsg("РћРїСѓР±Р»РёРєРѕРІР°РЅРѕ РІ Р±Р°Р·Рµ, РЅРѕ Р·Р°РґР°С‡Р° РЅР° СЃР°Р№С‚ РЅРµ РѕС‚РїСЂР°РІР»РµРЅР°.");
+        setMsg("Опубликовано в базе, но задача на сайт не отправлена.");
       }
     });
     const btnCsv = box.querySelector("#sch-csv"); if (btnCsv) btnCsv.addEventListener("click", () => {
       const days = schMonthDays(month);
-      const lines = [["Р¤РРћ", ...days.map((x) => String(x.d)), "СЃРјРµРЅ"].join(";")];
+      const lines = [["ФИО", ...days.map((x) => String(x.d)), "смен"].join(";")];
       for (const e of emps) {
         const row = [fio(e.slug), ...days.map((x) => get(e.slug, x.d) || "")];
-        const shifts = days.filter((x) => ["1", "2", "3", "I", "II", "2Р ", "3Р "].includes(get(e.slug, x.d))).length;
+        const shifts = days.filter((x) => ["1", "2", "3", "I", "II", "2Р", "3Р"].includes(get(e.slug, x.d))).length;
         row.push(String(shifts));
         lines.push(row.map((v) => String(v).replace(/;/g, ",")).join(";"));
       }
@@ -1692,36 +1692,36 @@
       document.body.appendChild(a);
       a.click();
       a.remove();
-      setMsg("CSV РІС‹РіСЂСѓР¶РµРЅ: grafik-" + month + ".csv");
+      setMsg("CSV выгружен: grafik-" + month + ".csv");
     });
     const enqueue = async (kind, note) => {
       try {
         const c = D.hrRules && D.hrRules.cloud;
-        if (!c || !c.url || !c.key) { setMsg("РќРµС‚ РєРѕРЅС„РёРіСѓСЂР°С†РёРё РѕР±Р»Р°РєР° вЂ” Р·Р°РґР°С‡Р° РЅРµ РѕС‚РїСЂР°РІР»РµРЅР°."); return; }
+        if (!c || !c.url || !c.key) { setMsg("Нет конфигурации облака — задача не отправлена."); return; }
         await fetch(`${c.url.replace(/\/$/, "")}/rest/v1/otp_tasks`, {
           method: "POST",
           headers: { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json", Prefer: "return=minimal" },
           body: JSON.stringify([{
             id: "task-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
-            kind, payload: { month }, requested_by: window.OTP_ACTOR || "Р СѓРєРѕРІРѕРґРёС‚РµР»СЊ",
+            kind, payload: { month }, requested_by: window.OTP_ACTOR || "Руководитель",
           }]),
         });
         setMsg(note);
       } catch (e) {
-        setMsg("Р—Р°РґР°С‡Р° РЅРµ РѕС‚РїСЂР°РІР»РµРЅР° вЂ” РїСЂРѕРІРµСЂСЊС‚Рµ СЃРІСЏР·СЊ.");
+        setMsg("Задача не отправлена — проверьте связь.");
       }
     };
     const btnXlsx = box.querySelector("#sch-xlsx");
     if (btnXlsx) btnXlsx.addEventListener("click", () => enqueue("export_schedule_xlsx",
-      "XLSX РіРѕС‚РѕРІРёС‚СЃСЏ вЂ” С„Р°Р№Р» РїРѕСЏРІРёС‚СЃСЏ РІ downloads РЅР° СЃР°Р№С‚Рµ РІ С‚РµС‡РµРЅРёРµ 5 РјРёРЅСѓС‚."));
+      "XLSX готовится — файл появится в downloads на сайте в течение 5 минут."));
     const btnConf = box.querySelector("#sch-conf");
     if (btnConf) btnConf.addEventListener("click", () => enqueue("publish_confluence_schedule",
-      "РЎС‚СЂР°РЅРёС†Р° РІ Confluence СЃРѕР·РґР°С‘С‚СЃСЏ РІ С‚РµС‡РµРЅРёРµ 5 РјРёРЅСѓС‚ (РЅСѓР¶РЅС‹ РїСЂР°РІР° РЅР° Р·Р°РїРёСЃСЊ)."));
+      "Страница в Confluence создаётся в течение 5 минут (нужны права на запись)."));
     render();
     loadAnswers();
   }
 
-  /* ---------------- В«Р“СЂР°С„РёРє РЅР° РјРµСЃСЏС†В»: РѕРїСЂРѕСЃ, РѕС‚РІРµС‚С‹, СЂРµРґР°РєС‚РѕСЂ ---------------- */
+  /* ---------------- «График на месяц»: опрос, ответы, редактор ---------------- */
   async function initSchedulePage() {
     const host = document.getElementById("schedule-app");
     if (!host || host.dataset.ready) return;
@@ -1729,8 +1729,8 @@
     const D = window.OTP_DATA || {};
     const A = window.OTP_AUTH;
     if (!A || !A.token("admin")) {
-      host.innerHTML = `<div class="staff-add"><h4>РќСѓР¶РµРЅ РІС…РѕРґ СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ</h4>
-        <p class="staff-hint">Р Р°Р·РґРµР» РґРѕСЃС‚СѓРїРµРЅ РїРѕСЃР»Рµ РІС…РѕРґР° РІ Р°РґРјРёРЅРєСѓ вЂ” РѕС‚РєСЂРѕР№С‚Рµ В«РђРґРјРёРЅРєСѓВ» Рё РІРѕР№РґРёС‚Рµ.</p></div>`;
+      host.innerHTML = `<div class="staff-add"><h4>Нужен вход руководителя</h4>
+        <p class="staff-hint">Раздел доступен после входа в админку — откройте «Админку» и войдите.</p></div>`;
       return;
     }
     const staff = await A.staffList().catch(() => []);
@@ -1746,14 +1746,14 @@
     })();
 
     host.insertAdjacentHTML("beforeend", `<div class="staff-add" id="sched-poll">
-      <h4><i class="ph-bold ph-calendar-check"></i> РћРїСЂРѕСЃ РїРѕ РіСЂР°С„РёРєСѓ</h4>
+      <h4><i class="ph-bold ph-calendar-check"></i> Опрос по графику</h4>
       <div class="staff-add-grid">
-        <label>РњРµСЃСЏС†<input id="sp-month" type="month" value="${nextMonth}"></label>
-        <label>РЎРґР°С‚СЊ РґРѕ<input id="sp-due" type="datetime-local"></label>
+        <label>Месяц<input id="sp-month" type="month" value="${nextMonth}"></label>
+        <label>Сдать до<input id="sp-due" type="datetime-local"></label>
       </div>
       <div class="staff-add-foot">
-        <button class="btn btn-primary" id="sp-create" type="button">РћС‚РєСЂС‹С‚СЊ РѕРїСЂРѕСЃ</button>
-        <button class="btn btn-ghost" id="sp-close" type="button">Р—Р°РєСЂС‹С‚СЊ РѕРїСЂРѕСЃ</button>
+        <button class="btn btn-primary" id="sp-create" type="button">Открыть опрос</button>
+        <button class="btn btn-ghost" id="sp-close" type="button">Закрыть опрос</button>
         <span class="staff-hint" id="sp-msg"></span>
       </div>
       <div id="sp-answers"></div>
@@ -1762,45 +1762,48 @@
     const msg = $("#sp-msg");
     const month = () => (($("#sp-month") || {}).value || nextMonth);
 
-    /* С‚Р°Р±Р»РёС†Р° РїРѕР¶РµР»Р°РЅРёР№: С‚Рѕ, С‡С‚Рѕ РЅСѓР¶РЅРѕ РІРёРґРµС‚СЊ РїСЂРё СЃРѕСЃС‚Р°РІР»РµРЅРёРё РіСЂР°С„РёРєР° */
+    /* пожелания сотрудников: то, что нужно видеть при составлении графика */
     const renderAnswers = async () => {
       const hostA = document.getElementById("sp-answers");
       if (!hostA) return;
       const m = month();
-      hostA.innerHTML = `<p class="staff-hint">Р—Р°РіСЂСѓР¶Р°СЋ РїРѕР¶РµР»Р°РЅРёСЏ РЅР° ${m}вЂ¦</p>`;
+      hostA.innerHTML = `<p class="staff-hint">Загружаю пожелания на ${m}…</p>`;
       const res = await A.pollSummary("p-" + m);
       if (!res || !res.ok) {
-        hostA.innerHTML = `<p class="staff-hint">РџРѕР¶РµР»Р°РЅРёСЏ РЅРµРґРѕСЃС‚СѓРїРЅС‹.</p>`;
+        hostA.innerHTML = `<p class="staff-hint">Пожелания недоступны.</p>`;
         return;
       }
       const list = res.list || [];
       const missing = res.missing || [];
-      const fmtDates = (arr) => (Array.isArray(arr) && arr.length ? arr.join(", ") : "вЂ”");
+      const dates = (arr) => (Array.isArray(arr) && arr.length ? arr.join(", ") : "—");
       const rows = list.map((r) => {
         const a = r.answers || {};
-        const weekend = a.weekend_none ? "Р±РµР· РІС‹С…РѕРґРЅС‹С… СЃРјРµРЅ" : fmtDates(a.weekend_dates) + (a.weekend_time ? ` (${a.weekend_time})` : "");
-        const off = (Array.isArray(a.off_dates) && a.off_dates.length) ? a.off_dates.join(", ") : "вЂ”";
-        const third = a.third_none ? "Р±РµР· 3-Р№" : ((Array.isArray(a.third_weeks) && a.third_weeks.length) ? "РЅРµРґРµР»Рё СЃ " + a.third_weeks.join(", ") : "вЂ”");
-        const tania = a.tania === true ? "РґР°" : a.tania === false ? "РЅРµС‚" : "вЂ”";
-        return `<tr><td>${escNow(r.fio)}</td><td>${escNow(weekend)}</td><td>${escNow(off)}</td><td>${escNow(third)}</td><td>${escNow(tania)}</td><td>${escNow(String(a.comment || "").slice(0, 80))}</td></tr>`;
+        const weekend = a.weekend_none ? "без выходных смен" : dates(a.weekend_dates) + (a.weekend_time ? ` (${a.weekend_time})` : "");
+        const off = dates(a.off_dates);
+        const third = a.third_none ? "без 3-й" : ((Array.isArray(a.third_weeks) && a.third_weeks.length) ? "недели с " + a.third_weeks.join(", ") : "—");
+        const tania = a.tania === true ? "да" : a.tania === false ? "нет" : "—";
+        return `<tr><td>${escNow(r.fio)}</td><td>${escNow(weekend)}</td><td>${escNow(off)}</td>
+          <td>${escNow(third)}</td><td>${escNow(tania)}</td><td>${escNow(String(a.comment || "").slice(0, 90))}</td></tr>`;
       }).join("");
-      hostA.innerHTML = `<p class="staff-hint">РћС‚РІРµС‚РёР»Рё: <b>${list.length}</b> В· РЅРµ РѕС‚РІРµС‚РёР»Рё: <b>${missing.length}</b>${missing.length ? " вЂ” " + missing.map(escNow).join(", ") : ""}</p>
+      hostA.innerHTML = `<p class="staff-hint">Ответили: <b>${list.length}</b> · не ответили: <b>${missing.length}</b>
+        ${missing.length ? " — " + missing.map(escNow).join(", ") : ""}</p>
         <div class="sch-wrap"><table class="sch-table poll-answers"><thead><tr>
-          <th class="sch-name">Р¤РРћ</th><th>Р’С‹С…РѕРґРЅС‹Рµ СЃРјРµРЅС‹</th><th>РћР±СЏР·Р°С‚РµР»СЊРЅС‹Рµ РІС‹С…РѕРґРЅС‹Рµ</th><th>3-СЏ СЃРјРµРЅР°</th><th>РўР°РЅРёСЏ</th><th>РљРѕРјРјРµРЅС‚Р°СЂРёР№</th>
-        </tr></thead><tbody>${rows || `<tr><td colspan="6">РџРѕРєР° РЅРёРєС‚Рѕ РЅРµ РѕС‚РІРµС‚РёР»</td></tr>`}</tbody></table></div>`;
+          <th class="sch-name">ФИО</th><th>Выходные смены</th><th>Обязательные выходные</th>
+          <th>3-я смена</th><th>Тания</th><th>Комментарий</th>
+        </tr></thead><tbody>${rows || `<tr><td colspan="6">Пока никто не ответил</td></tr>`}</tbody></table></div>`;
     };
 
     const createBtn = $("#sp-create");
     if (createBtn) createBtn.addEventListener("click", async () => {
       const due = ($("#sp-due") || {}).value;
       const res = await A.pollCreate(month(), due ? new Date(due).toISOString() : null, {});
-      if (msg) msg.textContent = res && res.ok ? "РћРїСЂРѕСЃ РѕС‚РєСЂС‹С‚: " + month() : "РќРµ СѓРґР°Р»РѕСЃСЊ РѕС‚РєСЂС‹С‚СЊ РѕРїСЂРѕСЃ";
+      if (msg) msg.textContent = res && res.ok ? "Опрос открыт: " + month() : "Не удалось открыть опрос";
       renderAnswers();
     });
     const closeBtn = $("#sp-close");
     if (closeBtn) closeBtn.addEventListener("click", async () => {
       const res = await A.pollSetStatus("p-" + month(), "closed");
-      if (msg) msg.textContent = res && res.ok ? "РћРїСЂРѕСЃ Р·Р°РєСЂС‹С‚" : "РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РєСЂС‹С‚СЊ";
+      if (msg) msg.textContent = res && res.ok ? "Опрос закрыт" : "Не удалось закрыть";
       renderAnswers();
     });
     const mEl = $("#sp-month");
@@ -1818,11 +1821,11 @@
 
     const loginForm = () => {
       app.innerHTML = `<div class="staff-login">
-        <h3><i class="ph-bold ph-lock-key"></i> Р’С…РѕРґ РґР»СЏ СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ</h3>
-        <p>Р’РІРµРґРёС‚Рµ РїР°СЂРѕР»СЊ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂР°, С‡С‚РѕР±С‹ СѓРїСЂР°РІР»СЏС‚СЊ СЃРѕС‚СЂСѓРґРЅРёРєР°РјРё.</p>
-        <input id="staff-pass" type="password" placeholder="РїР°СЂРѕР»СЊ" autocomplete="current-password">
+        <h3><i class="ph-bold ph-lock-key"></i> Вход для руководителя</h3>
+        <p>Введите пароль администратора, чтобы управлять сотрудниками.</p>
+        <input id="staff-pass" type="password" placeholder="пароль" autocomplete="current-password">
         <div class="staff-actions">
-          <button class="btn btn-primary" id="staff-do-login">Р’РѕР№С‚Рё</button>
+          <button class="btn btn-primary" id="staff-do-login">Войти</button>
           <span class="staff-err" id="staff-err"></span>
         </div>
       </div>`;
@@ -1831,7 +1834,7 @@
         const err = $("#staff-err");
         const res = await A.login("admin", pass);
         if (res && res.ok) initStaffPage();
-        else if (err) err.textContent = res && res.error === "bad_password" ? "РќРµРІРµСЂРЅС‹Р№ РїР°СЂРѕР»СЊ" : "РќРµ СѓРґР°Р»РѕСЃСЊ РІРѕР№С‚Рё";
+        else if (err) err.textContent = res && res.error === "bad_password" ? "Неверный пароль" : "Не удалось войти";
       };
       $("#staff-do-login").addEventListener("click", go);
       $("#staff-pass").addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
@@ -1842,7 +1845,7 @@
 
     const staff = await A.staffList();
     const bySlug = new Map((staff || []).map((s) => [s.slug, s]));
-    /* v19: С„Р»Р°Рі В«СЃС‚Р°СЂС‚ С‚РѕР»СЊРєРѕ РёР· РїСЂРёР»РѕР¶РµРЅРёСЏВ» Рё РєРѕРґ СЃС‚СЂР°РЅРёС†С‹ вЂ” РёР· otp_staff */
+    /* v19: флаг «старт только из приложения» и код страницы — из otp_staff */
     const onlyAppOf = (s) => !!(s && (s.only_app || s.onlyApp));
     const rows = D.employees.filter((e) => e.status !== "left").map((e) => {
       const s = bySlug.get(e.id) || {};
@@ -1852,7 +1855,7 @@
         hasPass: !!s.has_pass, onlyApp: onlyAppOf(s),
       };
     });
-    // СЃРѕС‚СЂСѓРґРЅРёРєРё, РєРѕС‚РѕСЂС‹С… РЅРµС‚ РІ data.js (РґРѕР±Р°РІР»РµРЅС‹ РІСЂСѓС‡РЅСѓСЋ РІ Р°РґРјРёРЅРєРµ) вЂ” С‚РѕР¶Рµ РїРѕРєР°Р·С‹РІР°РµРј
+    // сотрудники, которых нет в data.js (добавлены вручную в админке) — тоже показываем
     for (const s of (staff || [])) {
       if (!s || !s.slug || s.slug === "admin") continue;
       if (rows.some((r) => r.slug === s.slug)) continue;
@@ -1862,105 +1865,105 @@
         onlyApp: onlyAppOf(s), manual: true,
       });
     }
-    // Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ вЂ” РїРµСЂРІС‹Рј
+    // администратор — первым
     const admin = bySlug.get("admin");
-    if (admin) rows.unshift({ slug: "admin", fio: admin.fio || "Р СѓРєРѕРІРѕРґРёС‚РµР»СЊ", login: admin.login || "", pass: admin.pass || "", avatar: admin.avatar || "", active: admin.active !== false, hasPass: !!admin.has_pass });
+    if (admin) rows.unshift({ slug: "admin", fio: admin.fio || "Руководитель", login: admin.login || "", pass: admin.pass || "", avatar: admin.avatar || "", active: admin.active !== false, hasPass: !!admin.has_pass });
 
     app.innerHTML = `<div class="staff-head">
-        <h3><i class="ph-bold ph-identification-card"></i> РЎРѕС‚СЂСѓРґРЅРёРєРё Рё РґРѕСЃС‚СѓРїС‹</h3>
-        <button class="btn btn-ghost" id="staff-out">Р’С‹Р№С‚Рё</button>
+        <h3><i class="ph-bold ph-identification-card"></i> Сотрудники и доступы</h3>
+        <button class="btn btn-ghost" id="staff-out">Выйти</button>
       </div>
       <div class="staff-add">
-        <h4><i class="ph-bold ph-user-plus"></i> Р”РѕР±Р°РІРёС‚СЊ СЃРѕС‚СЂСѓРґРЅРёРєР°</h4>
+        <h4><i class="ph-bold ph-user-plus"></i> Добавить сотрудника</h4>
         <div class="staff-add-grid">
-          <label>Р¤РРћ<input id="sa-fio" placeholder="РРІР°РЅРѕРІ РРІР°РЅ РРІР°РЅРѕРІРёС‡"></label>
-          <label>РљРѕРґ СЃС‚СЂР°РЅРёС†С‹<input id="sa-slug" placeholder="РїСѓСЃС‚Рѕ вЂ” СЃРіРµРЅРµСЂРёСЂРѕРІР°С‚СЊ"></label>
-          <label>Р›РѕРіРёРЅ<input id="sa-login" placeholder="РёРјСЏ@ftech.io"></label>
-          <label>РџР°СЂРѕР»СЊ<input id="sa-pass" type="password" placeholder="РЅРµ РєРѕСЂРѕС‡Рµ 6 СЃРёРјРІРѕР»РѕРІ"></label>
-          <label>РђРІР°С‚Р°СЂ (СЃСЃС‹Р»РєР°)<input id="sa-avatar" placeholder="https://..."></label>
+          <label>ФИО<input id="sa-fio" placeholder="Иванов Иван Иванович"></label>
+          <label>Код страницы<input id="sa-slug" placeholder="пусто — сгенерировать"></label>
+          <label>Логин<input id="sa-login" placeholder="имя@ftech.io"></label>
+          <label>Пароль<input id="sa-pass" type="password" placeholder="не короче 6 символов"></label>
+          <label>Аватар (ссылка)<input id="sa-avatar" placeholder="https://..."></label>
         </div>
         <div class="staff-add-foot">
-          <button class="btn btn-primary" id="sa-add" type="button"><i class="ph-bold ph-plus" aria-hidden="true"></i> Р”РѕР±Р°РІРёС‚СЊ</button>
-          <label class="staff-add-check"><input type="checkbox" id="sa-pages" checked> СЃРѕР·РґР°С‚СЊ СЃС‚СЂР°РЅРёС†С‹ СЃСЂР°Р·Сѓ</label>
+          <button class="btn btn-primary" id="sa-add" type="button"><i class="ph-bold ph-plus" aria-hidden="true"></i> Добавить</button>
+          <label class="staff-add-check"><input type="checkbox" id="sa-pages" checked> создать страницы сразу</label>
           <span class="staff-hint" id="sa-msg"></span>
         </div>
       </div>
       <div class="staff-add">
-        <h4><i class="ph-bold ph-chart-line"></i> KPI Рё Р±РѕРЅСѓСЃС‹ Р·Р° РјРµСЃСЏС†</h4>
+        <h4><i class="ph-bold ph-chart-line"></i> KPI и бонусы за месяц</h4>
         <div class="staff-add-grid">
-          <label>РЎРѕС‚СЂСѓРґРЅРёРє<select id="kpi-emp">${rows.filter((r) => r.slug !== "admin")
+          <label>Сотрудник<select id="kpi-emp">${rows.filter((r) => r.slug !== "admin")
             .map((r) => `<option value="${escNow(r.slug)}">${escNow(r.fio)}</option>`).join("")}</select></label>
-          <label>РњРµСЃСЏС†<select id="kpi-month">${(D.employees.find((e) => e.history && e.history.length) || { history: [] })
+          <label>Месяц<select id="kpi-month">${(D.employees.find((e) => e.history && e.history.length) || { history: [] })
             .history.map((h) => `<option value="${escNow(h.key)}">${escNow(h.month || h.key)}</option>`).join("")}</select></label>
-          <label>РљР°С‡РµСЃС‚РІРѕ<input id="kpi-quality" type="number" min="0" max="10" step="1"></label>
-          <label>РћР±СѓС‡Р°РµРјРѕСЃС‚СЊ<input id="kpi-learnability" type="number" min="0" max="10" step="1"></label>
-          <label>РРЅРёС†РёР°С‚РёРІР°<input id="kpi-initiative" type="number" min="0" max="10" step="1"></label>
-          <label>Р’РѕРІР»РµС‡С‘РЅРЅРѕСЃС‚СЊ<input id="kpi-engagement" type="number" min="0" max="10" step="1"></label>
-          <label>Р”РёСЃС†РёРїР»РёРЅР°<input id="kpi-discipline" type="number" min="0" max="10" step="1"></label>
-          <label>Р‘РѕРЅСѓСЃ, в‚Ѕ<input id="kpi-bonus" type="number" min="0" step="100"></label>
-          <label>РљРѕРјРјРµРЅС‚Р°СЂРёР№<input id="kpi-note" placeholder="РЅРµРѕР±СЏР·Р°С‚РµР»СЊРЅРѕ"></label>
+          <label>Качество<input id="kpi-quality" type="number" min="0" max="10" step="1"></label>
+          <label>Обучаемость<input id="kpi-learnability" type="number" min="0" max="10" step="1"></label>
+          <label>Инициатива<input id="kpi-initiative" type="number" min="0" max="10" step="1"></label>
+          <label>Вовлечённость<input id="kpi-engagement" type="number" min="0" max="10" step="1"></label>
+          <label>Дисциплина<input id="kpi-discipline" type="number" min="0" max="10" step="1"></label>
+          <label>Бонус, ₽<input id="kpi-bonus" type="number" min="0" step="100"></label>
+          <label>Комментарий<input id="kpi-note" placeholder="необязательно"></label>
         </div>
         <div class="staff-add-foot">
-          <button class="btn btn-primary" id="kpi-save" type="button"><i class="ph-bold ph-check" aria-hidden="true"></i> РЎРѕС…СЂР°РЅРёС‚СЊ Рё РїСЂРёРјРµРЅРёС‚СЊ</button>
+          <button class="btn btn-primary" id="kpi-save" type="button"><i class="ph-bold ph-check" aria-hidden="true"></i> Сохранить и применить</button>
           <span class="staff-hint" id="kpi-msg"></span>
         </div>
       </div>
-      <p class="staff-hint">РћРїСЂРѕСЃ РїРѕ РіСЂР°С„РёРєСѓ, РїРѕР¶РµР»Р°РЅРёСЏ СЃРѕС‚СЂСѓРґРЅРёРєРѕРІ Рё СЃР±РѕСЂРєР° РјРµСЃСЏС†Р° вЂ” РІ СЂР°Р·РґРµР»Рµ <a href="../schedule/index.html">В«Р“СЂР°С„РёРє РЅР° РјРµСЃСЏС†В»</a>.</p>
-      <p class="staff-hint">РџР°СЂРѕР»СЊ: РµСЃР»Рё РѕСЃС‚Р°РІРёС‚СЊ РїСѓСЃС‚С‹Рј вЂ” РЅРµ РјРµРЅСЏРµС‚СЃСЏ. Р›РѕРіРёРЅ вЂ” РґР»СЏ Р»РёС‡РЅС‹С… СЃРѕРѕР±С‰РµРЅРёР№ РІ РњРµСЃСЃРµРЅРґР¶РµСЂРµ (РЅР°РїСЂРёРјРµСЂ, a.bolgov@ftech.io).</p>
+      <p class="staff-hint">Опрос по графику, пожелания сотрудников и сборка месяца — в разделе <a href="../schedule/index.html">«График на месяц»</a>.</p>
+      <p class="staff-hint">Пароль: если оставить пустым — не меняется. Логин — для личных сообщений в Мессенджере (например, a.bolgov@ftech.io).</p>
       <div class="staff-list">
         ${rows.map((r) => `<div class="staff-row" data-slug="${escNow(r.slug)}">
-          <div class="staff-cell"><label>Р¤РРћ</label><input data-f="fio" value="${escNow(r.fio)}"></div>
-          <div class="staff-cell"><label>Р›РѕРіРёРЅ</label><input data-f="login" value="${escNow(r.login)}" placeholder="РёРјСЏ@ftech.io"></div>
-          <div class="staff-cell"><label>РџР°СЂРѕР»СЊ ${r.hasPass ? "(Р·Р°РґР°РЅ)" : "(РЅРµС‚)"}</label><div class="pass-wrap"><input data-f="pass" type="password" value="${escNow(r.pass || "")}" placeholder="РЅРѕРІС‹Р№ РїР°СЂРѕР»СЊ"><button type="button" data-eye title="РџРѕРєР°Р·Р°С‚СЊ РїР°СЂРѕР»СЊ"><i class="ph-bold ph-eye"></i></button></div></div>
-          <div class="staff-cell"><label>РђРІР°С‚Р°СЂ</label><input data-f="avatar" value="${escNow(r.avatar)}" placeholder="https://..."><div class="staff-up"><button data-file>Р—Р°РіСЂСѓР·РёС‚СЊ С„РѕС‚Рѕ</button><input type="file" data-file-inp accept="image/*" hidden></div></div>
-          <div class="staff-cell staff-check"><label><input data-f="active" type="checkbox" ${r.active ? "checked" : ""}> Р°РєС‚РёРІРµРЅ</label></div>
-          <div class="staff-cell staff-check"><label title="РЎРјРµРЅСѓ РјРѕР¶РЅРѕ РЅР°С‡Р°С‚СЊ С‚РѕР»СЊРєРѕ РёР· РїСЂРёР»РѕР¶РµРЅРёСЏ-С‚СЂРµСЏ"><input data-f="onlyapp" type="checkbox" ${r.onlyApp ? "checked" : ""}> С‚РѕР»СЊРєРѕ РёР· РїСЂРёР»РѕР¶РµРЅРёСЏ</label></div>
-          <div class="staff-cell staff-save"><button class="btn btn-primary" data-save>РЎРѕС…СЂР°РЅРёС‚СЊ</button><button type="button" class="btn btn-ghost" data-access>РўРµРєСЃС‚ РґРѕСЃС‚СѓРїР°</button><span class="staff-ok" hidden>СЃРѕС…СЂР°РЅРµРЅРѕ</span></div>
+          <div class="staff-cell"><label>ФИО</label><input data-f="fio" value="${escNow(r.fio)}"></div>
+          <div class="staff-cell"><label>Логин</label><input data-f="login" value="${escNow(r.login)}" placeholder="имя@ftech.io"></div>
+          <div class="staff-cell"><label>Пароль ${r.hasPass ? "(задан)" : "(нет)"}</label><div class="pass-wrap"><input data-f="pass" type="password" value="${escNow(r.pass || "")}" placeholder="новый пароль"><button type="button" data-eye title="Показать пароль"><i class="ph-bold ph-eye"></i></button></div></div>
+          <div class="staff-cell"><label>Аватар</label><input data-f="avatar" value="${escNow(r.avatar)}" placeholder="https://..."><div class="staff-up"><button data-file>Загрузить фото</button><input type="file" data-file-inp accept="image/*" hidden></div></div>
+          <div class="staff-cell staff-check"><label><input data-f="active" type="checkbox" ${r.active ? "checked" : ""}> активен</label></div>
+          <div class="staff-cell staff-check"><label title="Смену можно начать только из приложения-трея"><input data-f="onlyapp" type="checkbox" ${r.onlyApp ? "checked" : ""}> только из приложения</label></div>
+          <div class="staff-cell staff-save"><button class="btn btn-primary" data-save>Сохранить</button><button type="button" class="btn btn-ghost" data-access>Текст доступа</button><span class="staff-ok" hidden>сохранено</span></div>
         </div>`).join("")}
       </div>
       <div class="staff-devices" id="staff-devices"></div>`;
-    /* P3: РјРµС‚СЂРёРєРё вЂ” РЅРµСѓРґР°С‡РЅС‹Рµ РїРѕРїС‹С‚РєРё РІС…РѕРґР° Р·Р° РїРѕСЃР»РµРґРЅРёРµ 15 РјРёРЅСѓС‚ (СЃРєСЂРёРїС‚
-       scripts/supabase_v6_realtime.sql). РџРѕРєР°Р·С‹РІР°РµРј С‚РёС…Рѕ, РЅРµ РјРµС€Р°СЏ СЂР°Р±РѕС‚Рµ. */
-    /* v19: РїРµСЂРµРєР»СЋС‡Р°С‚РµР»СЊ В«С‚РѕР»СЊРєРѕ РёР· РїСЂРёР»РѕР¶РµРЅРёСЏВ» + СЃРїРёСЃРѕРє РїСЂРёРІСЏР·Р°РЅРЅС‹С… СѓСЃС‚СЂРѕР№СЃС‚РІ */
+    /* P3: метрики — неудачные попытки входа за последние 15 минут (скрипт
+       scripts/supabase_v6_realtime.sql). Показываем тихо, не мешая работе. */
+    /* v19: переключатель «только из приложения» + список привязанных устройств */
     app.querySelectorAll('[data-f="onlyapp"]').forEach((box) => box.addEventListener("change", async () => {
       const row = box.closest(".staff-row");
       const slug = row && row.getAttribute("data-slug");
       const res = await A.setOnlyApp(slug, box.checked);
-      if (res && res.ok) toast(box.checked ? "РЎС‚Р°СЂС‚ СЃРјРµРЅС‹ вЂ” С‚РѕР»СЊРєРѕ РёР· РїСЂРёР»РѕР¶РµРЅРёСЏ" : "РЎС‚Р°СЂС‚ СЃРјРµРЅС‹ СЂР°Р·СЂРµС€С‘РЅ Рё РІ Р±СЂР°СѓР·РµСЂРµ");
-      else { box.checked = !box.checked; toast("РќРµ СѓРґР°Р»РѕСЃСЊ РїРµСЂРµРєР»СЋС‡РёС‚СЊ (РЅСѓР¶РµРЅ Р°РґРјРёРЅ-РІС…РѕРґ)"); }
+      if (res && res.ok) toast(box.checked ? "Старт смены — только из приложения" : "Старт смены разрешён и в браузере");
+      else { box.checked = !box.checked; toast("Не удалось переключить (нужен админ-вход)"); }
     }));
     A.devicesList().then((list) => {
       const host = document.getElementById("staff-devices");
       if (!host) return;
       const bulk = `<div class="staff-dev-actions">
-        <button class="btn btn-ghost" type="button" data-onlyapp-all="1">РџСЂР°РІРёР»Рѕ РґР»СЏ РІСЃРµС…</button>
-        <button class="btn btn-ghost" type="button" data-onlyapp-all="0">Р Р°Р·СЂРµС€РёС‚СЊ Р±СЂР°СѓР·РµСЂ РІСЃРµРј</button>
+        <button class="btn btn-ghost" type="button" data-onlyapp-all="1">Правило для всех</button>
+        <button class="btn btn-ghost" type="button" data-onlyapp-all="0">Разрешить браузер всем</button>
       </div>`;
       if (!Array.isArray(list) || !list.length) {
-        host.innerHTML = `<h4><i class="ph-bold ph-device-mobile"></i> РЈСЃС‚СЂРѕР№СЃС‚РІР°</h4>
-          <p class="staff-hint">РџРѕРєР° РЅРё РѕРґРЅРѕ СѓСЃС‚СЂРѕР№СЃС‚РІРѕ РЅРµ РїСЂРёРІСЏР·Р°РЅРѕ: СЃРѕС‚СЂСѓРґРЅРёРє РґРѕР»Р¶РµРЅ РѕРґРёРЅ СЂР°Р· РІРѕР№С‚Рё РІ РїСЂРёР»РѕР¶РµРЅРёРµ.</p>${bulk}`;
+        host.innerHTML = `<h4><i class="ph-bold ph-device-mobile"></i> Устройства</h4>
+          <p class="staff-hint">Пока ни одно устройство не привязано: сотрудник должен один раз войти в приложение.</p>${bulk}`;
       } else {
-        host.innerHTML = `<h4><i class="ph-bold ph-device-mobile"></i> РЈСЃС‚СЂРѕР№СЃС‚РІР° (${list.length})</h4>
+        host.innerHTML = `<h4><i class="ph-bold ph-device-mobile"></i> Устройства (${list.length})</h4>
           <div class="staff-dev-list">${list.map((d) => `<div class="staff-dev-row">
             <b>${escNow(d.fio || d.slug)}</b>
-            <span>${escNow(d.label || "СѓСЃС‚СЂРѕР№СЃС‚РІРѕ")}</span>
-            <span class="staff-hint">${d.last_seen ? "Р±С‹Р» РѕРЅР»Р°Р№РЅ " + new Date(d.last_seen).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "РЅРµ РІС‹С…РѕРґРёР» РЅР° СЃРІСЏР·СЊ"}</span>
-            <button class="btn btn-ghost" type="button" data-revoke="${escNow(d.slug)}|${escNow(d.device || "")}">РћС‚РІСЏР·Р°С‚СЊ</button>
+            <span>${escNow(d.label || "устройство")}</span>
+            <span class="staff-hint">${d.last_seen ? "был онлайн " + new Date(d.last_seen).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "не выходил на связь"}</span>
+            <button class="btn btn-ghost" type="button" data-revoke="${escNow(d.slug)}|${escNow(d.device || "")}">Отвязать</button>
           </div>`).join("")}</div>${bulk}`;
       }
       host.querySelectorAll("[data-onlyapp-all]").forEach((btn) => btn.addEventListener("click", async () => {
         const on = btn.getAttribute("data-onlyapp-all") === "1";
         const res = await A.setOnlyAppAll(on);
-        if (res && res.ok) toast(on ? `РџСЂР°РІРёР»Рѕ РІРєР»СЋС‡РµРЅРѕ: ${res.updated || 0} СЃРѕС‚СЂСѓРґРЅРёРєРѕРІ` : "Р‘СЂР°СѓР·РµСЂ СЂР°Р·СЂРµС€С‘РЅ РІСЃРµРј");
-        else toast("РќРµ СѓРґР°Р»РѕСЃСЊ РїСЂРёРјРµРЅРёС‚СЊ (РЅСѓР¶РµРЅ Р°РґРјРёРЅ-РІС…РѕРґ)");
+        if (res && res.ok) toast(on ? `Правило включено: ${res.updated || 0} сотрудников` : "Браузер разрешён всем");
+        else toast("Не удалось применить (нужен админ-вход)");
         initStaffPage();
       }));
       host.querySelectorAll("[data-revoke]").forEach((btn) => btn.addEventListener("click", async () => {
         const [slug, device] = btn.getAttribute("data-revoke").split("|");
-        if (!device) { toast("РЈСЃС‚СЂРѕР№СЃС‚РІРѕ РЅРµ РЅР°Р№РґРµРЅРѕ вЂ” РѕР±РЅРѕРІРёС‚Рµ СЃРїРёСЃРѕРє"); return; }
+        if (!device) { toast("Устройство не найдено — обновите список"); return; }
         const res = await A.revokeDevice(slug, device);
-        if (res && res.ok) { toast("РЈСЃС‚СЂРѕР№СЃС‚РІРѕ РѕС‚РІСЏР·Р°РЅРѕ"); initStaffPage(); }
-        else toast("РќРµ СѓРґР°Р»РѕСЃСЊ РѕС‚РІСЏР·Р°С‚СЊ");
+        if (res && res.ok) { toast("Устройство отвязано"); initStaffPage(); }
+        else toast("Не удалось отвязать");
       }));
     }).catch(() => {});
     A.loginFails().then((list) => {
@@ -1968,32 +1971,32 @@
       const total = list.reduce((s, x) => s + (+x.fails || 0), 0);
       const head = app.querySelector(".staff-head");
       if (head && !document.getElementById("staff-fails")) {
-        head.insertAdjacentHTML("afterend", `<p class="staff-hint" id="staff-fails">рџ”’ РќРµСѓРґР°С‡РЅС‹Рµ РІС…РѕРґС‹ (Р·Р° 15 РјРёРЅ): <b>${total}</b> вЂ” ${list.map((x) => escNow(x.slug) + " Г—" + (+x.fails || 0)).join(", ")}</p>`);
+        head.insertAdjacentHTML("afterend", `<p class="staff-hint" id="staff-fails">🔒 Неудачные входы (за 15 мин): <b>${total}</b> — ${list.map((x) => escNow(x.slug) + " ×" + (+x.fails || 0)).join(", ")}</p>`);
       }
     }).catch(() => {});
     app.insertAdjacentHTML("beforeend", `<div class="sc-wrap">
-      <h3><i class="ph-bold ph-medal"></i> Р”РѕСЃС‚РёР¶РµРЅРёСЏ, Р±РѕРЅСѓСЃС‹ Рё Р·РѕРЅС‹ СЂРѕСЃС‚Р°</h3>
-      <p class="staff-hint">Р—Р°РїРёСЃРё РїРѕСЏРІР»СЏСЋС‚СЃСЏ РЅР° Р»РёС‡РЅРѕР№ СЃС‚СЂР°РЅРёС†Рµ СЃРѕС‚СЂСѓРґРЅРёРєР° РІ СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰РµРј СЂР°Р·РґРµР»Рµ.</p>
+      <h3><i class="ph-bold ph-medal"></i> Достижения, бонусы и зоны роста</h3>
+      <p class="staff-hint">Записи появляются на личной странице сотрудника в соответствующем разделе.</p>
       <div class="sc-form">
         <select id="sc-emp">${rows.map((r) => `<option value="${escNow(r.slug)}">${escNow(r.fio)}</option>`).join("")}</select>
         <select id="sc-section">
-          <option value="bonus">Р‘РѕРЅСѓСЃС‹</option>
-          <option value="awards">РќР°РіСЂР°РґС‹</option>
-          <option value="growth">Р—РѕРЅС‹ СЂРѕСЃС‚Р°</option>
-          <option value="lvl">Р”РѕСЃС‚РёР¶РµРЅРёСЏ</option>
-          <option value="stats">РЎС‚Р°С‚РёСЃС‚РёРєР°</option>
+          <option value="bonus">Бонусы</option>
+          <option value="awards">Награды</option>
+          <option value="growth">Зоны роста</option>
+          <option value="lvl">Достижения</option>
+          <option value="stats">Статистика</option>
         </select>
-        <input id="sc-title" placeholder="Р—Р°РіРѕР»РѕРІРѕРє">
-        <input id="sc-value" placeholder="РЎСѓРјРјР°/РїРѕРґРїРёСЃСЊ (5 000 в‚Ѕ)">
+        <input id="sc-title" placeholder="Заголовок">
+        <input id="sc-value" placeholder="Сумма/подпись (5 000 ₽)">
         <input id="sc-date" type="date">
-        <textarea id="sc-body" placeholder="РћРїРёСЃР°РЅРёРµ" rows="2"></textarea>
-        <button class="btn btn-primary" id="sc-add">Р”РѕР±Р°РІРёС‚СЊ</button>
+        <textarea id="sc-body" placeholder="Описание" rows="2"></textarea>
+        <button class="btn btn-primary" id="sc-add">Добавить</button>
       </div>
       <div class="sc-list" id="sc-list"></div>
     </div>`);    $("#staff-out").addEventListener("click", () => { A.logout("admin"); initStaffPage(); });
 
-    /* Р”РѕР±Р°РІР»РµРЅРёРµ СЃРѕС‚СЂСѓРґРЅРёРєР°: СЃРѕР·РґР°С‘С‚/РѕР±РЅРѕРІР»СЏРµС‚ Р·Р°РїРёСЃСЊ otp_staff (Р»РѕРіРёРЅ, РїР°СЂРѕР»СЊ).
-       Р•СЃР»Рё РєРѕРґ СЃС‚СЂР°РЅРёС†С‹ РЅРѕРІС‹Р№ вЂ” СЃС‚СЂР°РЅРёС†Р° РїРѕСЏРІРёС‚СЃСЏ РїРѕСЃР»Рµ РґРѕР±Р°РІР»РµРЅРёСЏ РІ РґР°РЅРЅС‹Рµ СЃР°Р№С‚Р°. */
+    /* Добавление сотрудника: создаёт/обновляет запись otp_staff (логин, пароль).
+       Если код страницы новый — страница появится после добавления в данные сайта. */
     const saAdd = $("#sa-add");
     if (saAdd) saAdd.addEventListener("click", async () => {
       const fio = ($("#sa-fio") || {}).value.trim();
@@ -2003,8 +2006,8 @@
       const avatar = ($("#sa-avatar") || {}).value.trim();
       const msg = $("#sa-msg");
       if (!msg) return;
-      if (fio.length < 3) { msg.textContent = "РЈРєР°Р¶Рё Р¤РРћ."; return; }
-      if (pass.length < 6) { msg.textContent = "РџР°СЂРѕР»СЊ РЅРµ РєРѕСЂРѕС‡Рµ 6 СЃРёРјРІРѕР»РѕРІ."; return; }
+      if (fio.length < 3) { msg.textContent = "Укажи ФИО."; return; }
+      if (pass.length < 6) { msg.textContent = "Пароль не короче 6 символов."; return; }
       if (!slug) {
         const buf = new Uint8Array(6);
         crypto.getRandomValues(buf);
@@ -2014,7 +2017,7 @@
       const res = await A.saveStaff({ slug, fio, login, pass, avatar, active: true }).catch(() => null);
       saAdd.disabled = false;
       if (!res || !res.ok) {
-        msg.textContent = "РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕС…СЂР°РЅРёС‚СЊ: " + ((res && res.error) || "РѕС€РёР±РєР° СЃРІСЏР·Рё");
+        msg.textContent = "Не удалось сохранить: " + ((res && res.error) || "ошибка связи");
         return;
       }
       const known = D.employees.some((e) => (e.slug || e.id) === slug);
@@ -2030,20 +2033,20 @@
               id: "task-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
               kind: "add_employee",
               payload: { fio, slug },
-              requested_by: window.OTP_ACTOR || "Р СѓРєРѕРІРѕРґРёС‚РµР»СЊ",
+              requested_by: window.OTP_ACTOR || "Руководитель",
             }]),
           }).catch(() => {});
           queued = true;
         }
       }
       __staffMsg = known
-        ? `РЎРѕС…СЂР°РЅРµРЅРѕ: ${fio}.`
-        : `РЎРѕС…СЂР°РЅРµРЅРѕ: ${fio}. ` + (queued
-          ? "РЎС‚СЂР°РЅРёС†Р° СЃРѕР·РґР°С‘С‚СЃСЏ вЂ” РїРѕСЏРІРёС‚СЃСЏ РІ С‚РµС‡РµРЅРёРµ 5 РјРёРЅСѓС‚."
-          : `РЎС‚СЂР°РЅРёС†Р° РїРѕСЏРІРёС‚СЃСЏ РїРѕСЃР»Рµ РґРѕР±Р°РІР»РµРЅРёСЏ РІ РґР°РЅРЅС‹Рµ СЃР°Р№С‚Р°: ${location.origin}${SITE_ROOT}team/${slug}/start/`);
+        ? `Сохранено: ${fio}.`
+        : `Сохранено: ${fio}. ` + (queued
+          ? "Страница создаётся — появится в течение 5 минут."
+          : `Страница появится после добавления в данные сайта: ${location.origin}${SITE_ROOT}team/${slug}/start/`);
       initStaffPage();
     });
-    /* KPI Р·Р° РјРµСЃСЏС†: СЃРѕС…СЂР°РЅСЏРµРј РІ otp_kpi Рё СЃС‚Р°РІРёРј Р·Р°РґР°С‡Сѓ Р°РіРµРЅС‚Сѓ (РѕРЅ РїСЂРёРјРµРЅРёС‚ Рє data.js) */
+    /* KPI за месяц: сохраняем в otp_kpi и ставим задачу агенту (он применит к data.js) */
     const kpiEmp = $("#kpi-emp"), kpiMonth = $("#kpi-month");
     const KPI_KEYS = ["quality", "learnability", "initiative", "engagement", "discipline"];
     const kpiFill = () => {
@@ -2072,10 +2075,10 @@
         initiative: val("#kpi-initiative"), engagement: val("#kpi-engagement"),
         discipline: val("#kpi-discipline"), bonus: val("#kpi-bonus"),
         note: ($("#kpi-note") || {}).value || "",
-        updated_by: window.OTP_ACTOR || "Р СѓРєРѕРІРѕРґРёС‚РµР»СЊ",
+        updated_by: window.OTP_ACTOR || "Руководитель",
       };
       const c = D.hrRules && D.hrRules.cloud;
-      if (!c || !c.url || !c.key) { msg.textContent = "РќРµС‚ РєРѕРЅС„РёРіСѓСЂР°С†РёРё РѕР±Р»Р°РєР°."; return; }
+      if (!c || !c.url || !c.key) { msg.textContent = "Нет конфигурации облака."; return; }
       const base = c.url.replace(/\/$/, "");
       const headers = { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json", Prefer: "return=minimal" };
       kpiSave.disabled = true;
@@ -2094,9 +2097,9 @@
             requested_by: row.updated_by,
           }]),
         });
-        msg.textContent = "РЎРѕС…СЂР°РЅРµРЅРѕ. РџСЂРёРјРµРЅРёС‚СЃСЏ Рє СЃР°Р№С‚Сѓ РІ С‚РµС‡РµРЅРёРµ 5 РјРёРЅСѓС‚.";
+        msg.textContent = "Сохранено. Применится к сайту в течение 5 минут.";
       } catch (e) {
-        msg.textContent = "РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕС…СЂР°РЅРёС‚СЊ: " + e.message;
+        msg.textContent = "Не удалось сохранить: " + e.message;
       }
       kpiSave.disabled = false;
     });
@@ -2108,8 +2111,8 @@
       if (!scList || !scEmp) return;
       const list = await A.contentList(scEmp.value);
       scList.innerHTML = (list || []).length
-        ? list.map((x) => `<div class="sc-item"><div><b>${escX(x.title || "Р‘РµР· РЅР°Р·РІР°РЅРёСЏ")}</b><span>${escX(x.section)}${x.on_date ? " В· " + escX(x.on_date) : ""}${x.value ? " В· " + escX(x.value) : ""}</span><p>${escX(x.body || "")}</p></div><button class="sc-del" data-del="${escX(x.id)}">РЈРґР°Р»РёС‚СЊ</button></div>`).join("")
-        : `<div class="sc-empty">РџРѕРєР° РЅРµС‚ Р·Р°РїРёСЃРµР№</div>`;
+        ? list.map((x) => `<div class="sc-item"><div><b>${escX(x.title || "Без названия")}</b><span>${escX(x.section)}${x.on_date ? " · " + escX(x.on_date) : ""}${x.value ? " · " + escX(x.value) : ""}</span><p>${escX(x.body || "")}</p></div><button class="sc-del" data-del="${escX(x.id)}">Удалить</button></div>`).join("")
+        : `<div class="sc-empty">Пока нет записей</div>`;
       scList.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", async () => {
         b.disabled = true;
         await A.delContent(b.getAttribute("data-del"));
@@ -2141,10 +2144,10 @@
       const slug = row.getAttribute("data-slug");
       const info = rows.find((x) => x.slug === slug) || {};
       const typedPass = ((row.querySelector(`[data-f="pass"]`) || {}).value || "").trim();
-      /* Р•СЃР»Рё РїР°СЂРѕР»СЊ РІРІРµРґС‘РЅ РїСЂСЏРјРѕ СЃРµР№С‡Р°СЃ вЂ” СЃРЅР°С‡Р°Р»Р° СЃРѕС…СЂР°РЅСЏРµРј РµРіРѕ, С‡С‚РѕР±С‹ РІ С‚РµРєСЃС‚Рµ
-         РѕРєР°Р·Р°Р»СЃСЏ СЂР°Р±РѕС‡РёР№ РїР°СЂРѕР»СЊ. РќРµ СЃРѕС…СЂР°РЅРёР»СЃСЏ вЂ” РїР°СЂРѕР»СЊ РІ С‚РµРєСЃС‚ РЅРµ РїРѕРїР°РґС‘С‚. */
+      /* Если пароль введён прямо сейчас — сначала сохраняем его, чтобы в тексте
+         оказался рабочий пароль. Не сохранился — пароль в текст не попадёт. */
       if (typedPass) {
-        if (typedPass.length < 6) { toast("РџР°СЂРѕР»СЊ РєРѕСЂРѕС‡Рµ 6 СЃРёРјРІРѕР»РѕРІ вЂ” СЃРµСЂРІРµСЂ РµРіРѕ РЅРµ РїСЂРёРјРµС‚"); return; }
+        if (typedPass.length < 6) { toast("Пароль короче 6 символов — сервер его не примет"); return; }
         const saved = await A.saveStaff({
           slug,
           fio: (row.querySelector(`[data-f="fio"]`) || {}).value.trim() || info.fio,
@@ -2154,12 +2157,12 @@
           active: true,
         }).catch(() => null);
         if (!saved || !saved.ok) {
-          toast("РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕС…СЂР°РЅРёС‚СЊ РїР°СЂРѕР»СЊ: " + ((saved && saved.error) || "РѕС€РёР±РєР° СЃРІСЏР·Рё"));
+          toast("Не удалось сохранить пароль: " + ((saved && saved.error) || "ошибка связи"));
           return;
         }
         const chk = await A.verifyPass(slug, typedPass);
         if (chk && chk.ok && chk.matches === false) {
-          toast("РџР°СЂРѕР»СЊ РќР• Р·Р°РїРёСЃР°Р»СЃСЏ РІ Р±Р°Р·Сѓ вЂ” С‚РµРєСЃС‚ РґРѕСЃС‚СѓРїР° РЅРµ РєРѕРїРёСЂСѓСЋ");
+          toast("Пароль НЕ записался в базу — текст доступа не копирую");
           return;
         }
         __sessionPass.set(slug, typedPass);
@@ -2168,31 +2171,31 @@
       }
       const pass = typedPass || __sessionPass.get(slug) || __sessionPass.get(info.fio) || info.pass || "";
       if (!pass) {
-        toast("РЎРЅР°С‡Р°Р»Р° Р·Р°РґР°Р№С‚Рµ РїР°СЂРѕР»СЊ: РІРІРµРґРёС‚Рµ РµРіРѕ РІ РїРѕР»Рµ В«РџР°СЂРѕР»СЊВ» Рё РЅР°Р¶РјРёС‚Рµ В«РўРµРєСЃС‚ РґРѕСЃС‚СѓРїР°В»");
+        toast("Сначала задайте пароль: введите его в поле «Пароль» и нажмите «Текст доступа»");
         return;
       }
       const fio = (row.querySelector(`[data-f="fio"]`) || {}).value || info.fio || "";
       const hash = info.hash || "";
       const link = hash ? "https://videoxiter.github.io/9a57a59df2fd/team/" + hash + "/start/index.html" : "";
-      const text = "РџСЂРёРІРµС‚! Р­С‚Рѕ В«РњРѕРё СЂРµР·СѓР»СЊС‚Р°С‚С‹В» вЂ” Р»РёС‡РЅС‹Р№ РєР°Р±РёРЅРµС‚ СЃРѕС‚СЂСѓРґРЅРёРєР° РѕС‚РґРµР»Р° С‚РµС…РЅРёС‡РµСЃРєРѕР№ РїРѕРґРґРµСЂР¶РєРё РћРўРџ.\n\n"
-        + (fio ? fio + ", С‚РІРѕСЏ СЃС‚СЂР°РЅРёС†Р°:\n" : "РўРІРѕСЏ СЃС‚СЂР°РЅРёС†Р°:\n") + link + "\n"
-        + "РџР°СЂРѕР»СЊ: " + pass + "\n\n"
-        + "Р—Р°С‡РµРј СЌС‚Рѕ РЅСѓР¶РЅРѕ:\n"
-        + "вЂў РІРёРґРµС‚СЊ СЃРІРѕРё СЂРµР·СѓР»СЊС‚Р°С‚С‹ Рё СЂР°СЃС‚Рё РѕСЃРѕР·РЅР°РЅРЅРѕ: KPI РїРѕ РјРµСЃСЏС†Р°Рј, РјРµСЃС‚Рѕ РІ СЂРµР№С‚РёРЅРіРµ, Р±РѕРЅСѓСЃС‹ Рё РґРѕС…РѕРґ;\n"
-        + "вЂў РЅРµ РґРµСЂР¶Р°С‚СЊ РІ РіРѕР»РѕРІРµ С‡Р°СЃС‹: В«РЎС‚Р°СЂС‚РѕРІР°СЏВ» СЃС‡РёС‚Р°РµС‚ СЃРјРµРЅСѓ, РїРµСЂРµСЂС‹РІС‹ Рё РїСЂРѕРіСЂРµСЃСЃ РґРЅСЏ;\n"
-        + "вЂў РїРѕРЅРёРјР°С‚СЊ, РєСѓРґР° РґРІРёРіР°С‚СЊСЃСЏ: Р·РѕРЅС‹ СЂРѕСЃС‚Р°, РЅР°РіСЂР°РґС‹, СѓСЂРѕРІРЅРё Рё СЂРµРєРѕРјРµРЅРґР°С†РёРё СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ;\n"
-        + "вЂў РєРѕРјР°РЅРґРµ вЂ” РїСЂРѕР·СЂР°С‡РЅРѕСЃС‚СЊ: РІРёРґРЅРѕ, РєС‚Рѕ РЅР° СЃРјРµРЅРµ, РєС‚Рѕ РІ РїРµСЂРµСЂС‹РІРµ, РєС‚Рѕ РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚.\n\n"
-        + "Р§С‚Рѕ РІРЅСѓС‚СЂРё:\n"
-        + "вЂў В«РЎС‚Р°СЂС‚РѕРІР°СЏВ» вЂ” РЅР°С‡Р°Р»Рѕ Рё РєРѕРЅРµС† СЃРјРµРЅС‹, РїРµСЂРµСЂС‹РІС‹, РѕР±РµРґ, РѕС‚СЃСѓС‚СЃС‚РІРёРµ, С‚Р°Р№РјРµСЂ Рё РЅРѕСЂРјР° 7:30 РІ РґРµРЅСЊ\n"
-        + "вЂў В«Р‘РѕРЅСѓСЃС‹В» Рё В«РљР°СЂС‚Р° РґРѕС…РѕРґРѕРІВ» вЂ” РёР· С‡РµРіРѕ СЃРєР»Р°РґС‹РІР°РµС‚СЃСЏ РїСЂРµРјРёСЏ Рё СЃРєРѕР»СЊРєРѕ РЅР°С‡РёСЃР»РµРЅРѕ Р·Р° РјРµСЃСЏС†\n"
-        + "вЂў В«РњРѕР№ LVLВ», В«РќР°РіСЂР°РґС‹В», В«РњРѕР№ СЂРѕСЃС‚В» вЂ” РґРѕСЃС‚РёР¶РµРЅРёСЏ, СѓСЂРѕРІРЅРё Рё Р·РѕРЅС‹ СЂР°Р·РІРёС‚РёСЏ\n"
-        + "вЂў В«РЎС‚Р°С‚РёСЃС‚РёРєР°В» Рё В«РњРѕР№ РіСЂР°С„РёРєВ» вЂ” РјРµС‚СЂРёРєРё Рё СЃРјРµРЅС‹ РЅР° РјРµСЃСЏС†\n"
-        + "вЂў В«Р–СѓСЂРЅР°Р» С‡Р°СЃРѕРІВ» вЂ” СѓРІРѕР»СЊРЅРёС‚РµР»СЊРЅС‹Рµ, РїРµСЂРµСЂР°Р±РѕС‚РєРё Рё РєРѕСЂСЂРµРєС‚РёСЂРѕРІРєРё СЃ СЂРµС€РµРЅРёСЏРјРё СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ\n"
-        + "вЂў В«РџСЂР°РІРёР»Р°В» вЂ” РєР°Рє РІСЃС‘ СЃС‡РёС‚Р°РµС‚СЃСЏ; В«РќР°СЃС‚СЂРѕР№РєРёВ» вЂ” С‚РµРјР°, С„РѕС‚Рѕ Рё РїР°СЂРѕР»СЊ\n\n"
-        + "РљР°Рє РЅР°С‡Р°С‚СЊ: РѕС‚РєСЂРѕР№ СЃСЃС‹Р»РєСѓ РЅР° С‚РµР»РµС„РѕРЅРµ РёР»Рё РџРљ, РІРІРµРґРё РїР°СЂРѕР»СЊ (Р·Р°РїРѕРјРЅРёС‚СЃСЏ РЅР° 60 РґРЅРµР№), "
-        + "РЅР° В«РЎС‚Р°СЂС‚РѕРІРѕР№В» РЅР°Р¶РјРё В«РќР°С‡Р°Р»Рѕ СЃРјРµРЅС‹В». РџРµСЂРµСЂС‹РІС‹ Рё Р·Р°РІРµСЂС€РµРЅРёРµ СЃРјРµРЅС‹ вЂ” РїРѕ РєРЅРѕРїРєР°Рј.";
-      try { await navigator.clipboard.writeText(text); toast("РўРµРєСЃС‚ РґРѕСЃС‚СѓРїР° СЃРєРѕРїРёСЂРѕРІР°РЅ"); }
-      catch (e) { window.prompt("РЎРєРѕРїРёСЂСѓР№С‚Рµ С‚РµРєСЃС‚:", text); }
+      const text = "Привет! Это «Мои результаты» — личный кабинет сотрудника отдела технической поддержки ОТП.\n\n"
+        + (fio ? fio + ", твоя страница:\n" : "Твоя страница:\n") + link + "\n"
+        + "Пароль: " + pass + "\n\n"
+        + "Зачем это нужно:\n"
+        + "• видеть свои результаты и расти осознанно: KPI по месяцам, место в рейтинге, бонусы и доход;\n"
+        + "• не держать в голове часы: «Стартовая» считает смену, перерывы и прогресс дня;\n"
+        + "• понимать, куда двигаться: зоны роста, награды, уровни и рекомендации руководителя;\n"
+        + "• команде — прозрачность: видно, кто на смене, кто в перерыве, кто отсутствует.\n\n"
+        + "Что внутри:\n"
+        + "• «Стартовая» — начало и конец смены, перерывы, обед, отсутствие, таймер и норма 7:30 в день\n"
+        + "• «Бонусы» и «Карта доходов» — из чего складывается премия и сколько начислено за месяц\n"
+        + "• «Мой LVL», «Награды», «Мой рост» — достижения, уровни и зоны развития\n"
+        + "• «Статистика» и «Мой график» — метрики и смены на месяц\n"
+        + "• «Журнал часов» — увольнительные, переработки и корректировки с решениями руководителя\n"
+        + "• «Правила» — как всё считается; «Настройки» — тема, фото и пароль\n\n"
+        + "Как начать: открой ссылку на телефоне или ПК, введи пароль (запомнится на 60 дней), "
+        + "на «Стартовой» нажми «Начало смены». Перерывы и завершение смены — по кнопкам.";
+      try { await navigator.clipboard.writeText(text); toast("Текст доступа скопирован"); }
+      catch (e) { window.prompt("Скопируйте текст:", text); }
     }));
     app.querySelectorAll("[data-file]").forEach((btn) => btn.addEventListener("click", () => {
       const row = btn.closest(".staff-row");
@@ -2247,24 +2250,24 @@
       if (res && res.ok) {
         const hadPass = !!typed;
         if (hadPass) {
-          /* v14: СЃРІРµСЂСЏРµРј, С‡С‚Рѕ РїР°СЂРѕР»СЊ РґРµР№СЃС‚РІРёС‚РµР»СЊРЅРѕ Р·Р°РїРёСЃР°Р»СЃСЏ (crypt РїРѕ С…РµС€Сѓ) */
+          /* v14: сверяем, что пароль действительно записался (crypt по хешу) */
           const chk = await A.verifyPass(row.getAttribute("data-slug"), typed);
           if (chk && chk.ok && chk.matches === false) {
-            toast("РџР°СЂРѕР»СЊ РќР• Р·Р°РїРёСЃР°Р»СЃСЏ РІ Р±Р°Р·Сѓ вЂ” РїРѕРІС‚РѕСЂРёС‚Рµ СЃРѕС…СЂР°РЅРµРЅРёРµ");
+            toast("Пароль НЕ записался в базу — повторите сохранение");
             return;
           }
           __sessionPass.set(row.getAttribute("data-slug"), typed);
           __sessionPass.set(String(get("fio").value.trim()), typed);
         }
         if (ok) { ok.hidden = false; setTimeout(() => { ok.hidden = true; }, 2000); }
-        toast(hadPass ? "РџР°СЂРѕР»СЊ СЃРѕС…СЂР°РЅС‘РЅ" : "Р”Р°РЅРЅС‹Рµ СЃРѕС…СЂР°РЅРµРЅС‹");
+        toast(hadPass ? "Пароль сохранён" : "Данные сохранены");
         if (hadPass) get("pass").value = "";
       }
     }));
   }
 
-  /* Р°РІР°С‚Р°СЂ СЂСѓРєРѕРІРѕРґРёС‚РµР»СЏ РІ С€Р°РїРєРµ (v4: С‚РѕР»СЊРєРѕ РµСЃР»Рё РµСЃС‚СЊ Р°РґРјРёРЅ-СЃРµСЃСЃРёСЏ,
-     РёРЅР°С‡Рµ otp_staff_admin_list РІРµСЂРЅС‘С‚ forbidden вЂ” РїСЂРѕСЃС‚Рѕ Р±РµР· Р°РІР°С‚Р°СЂР°) */
+  /* аватар руководителя в шапке (v4: только если есть админ-сессия,
+     иначе otp_staff_admin_list вернёт forbidden — просто без аватара) */
   if (window.OTP_AUTH && D.hrRules && D.hrRules.cloud && window.OTP_AUTH.token("admin")) {
     window.OTP_AUTH.staffList().then((list) => {
       const ad = (list || []).find((x) => x.slug === "admin");
