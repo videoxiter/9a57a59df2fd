@@ -2176,12 +2176,9 @@
       const headers = { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json", Prefer: "return=minimal" };
       kpiSave.disabled = true;
       try {
-        const r = await fetch(`${base}/rest/v1/otp_kpi`, {
-          method: "POST",
-          headers: { ...headers, Prefer: "resolution=merge-duplicates,return=minimal" },
-          body: JSON.stringify([row]),
-        });
-        if (!r.ok) throw new Error("HTTP " + r.status);
+        /* v26: запись KPI только через админ-сессию (RPC), прямой REST закрыт */
+        const saved = await A.kpiSet(row);
+        if (!saved || !saved.ok) throw new Error((saved && saved.error) || "нужен админ-вход");
         await fetch(`${base}/rest/v1/otp_tasks`, {
           method: "POST", headers,
           body: JSON.stringify([{

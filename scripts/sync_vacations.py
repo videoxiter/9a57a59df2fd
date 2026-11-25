@@ -132,7 +132,8 @@ def main():
             continue
         rows.append({"emp_slug": slug, "from_day": x["from_day"], "to_day": x["to_day"], "raw": x["raw"]})
     if args.push:
-        res = rpc("otp_vacations_set", {"p_month": args.month, "p_rows": rows})
+        secret = (cloud() or {}).get("agentSecret") or ""
+        res = rpc("otp_vacations_set", {"p_secret": secret, "p_month": args.month, "p_rows": rows})
         print("записано в базу:", (res or {}).get("count"))
     print(json.dumps(rows, ensure_ascii=False))
     return 0

@@ -239,6 +239,15 @@
       return rpc("otp_schedule_acks_get", { p_token: tok("admin"), p_month: month })
         .catch(function () { return null; });
     },
+    /* v26: KPI сохраняются только через админ-сессию */
+    kpiSet: function (row) {
+      return rpc("otp_kpi_set", {
+        p_token: tok("admin"), p_slug: row.emp_slug, p_month: row.month,
+        p_quality: row.quality, p_learnability: row.learnability,
+        p_initiative: row.initiative, p_engagement: row.engagement,
+        p_discipline: row.discipline, p_bonus: row.bonus, p_note: row.note || "",
+      }).catch(function () { return null; });
+    },
   };
   window.OTP_AUTH = API;
 })();
