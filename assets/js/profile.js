@@ -4185,9 +4185,16 @@ function robotMenuHtml() {
         if (i >= ids.length) { err(); return; }
         window.OTP_AUTH.login(ids[i], pass).then((res) => {
           if (res && res.ok) { ov.remove(); next(); return; }
+          /* держим последний ответ, чтобы показать точную причину, а не «неверный пароль» на всё */
+          if (res && res.error === "bad_password") blockMsg = "Неверный пароль (код bad_password)";
+          else if (res && res.error) blockMsg = "Ошибка входа: " + res.error;
           if (res && res.error === "too_many_attempts") blockMsg = "Слишком много попыток. Подождите 15 минут — или попросите руководителя сбросить блокировку.";
           attempt(i + 1);
-        }).catch(() => attempt(i + 1));
+        }).catch((e) => {
+          blockMsg = "Нет связи с сервером входа (проверьте интернет/VPN)";
+          try { console.warn("login error:", e); } catch (x) {}
+          attempt(i + 1);
+        });
       };
       attempt(0);
     };

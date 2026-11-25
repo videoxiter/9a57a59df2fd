@@ -1658,6 +1658,11 @@
           toast("Не удалось сохранить пароль: " + ((saved && saved.error) || "ошибка связи"));
           return;
         }
+        const chk = await A.verifyPass(slug, typedPass);
+        if (chk && chk.ok && chk.matches === false) {
+          toast("Пароль НЕ записался в базу — текст доступа не копирую");
+          return;
+        }
         __sessionPass.set(slug, typedPass);
         const fld = row.querySelector(`[data-f="pass"]`);
         if (fld) fld.value = "";
@@ -1743,9 +1748,12 @@
       if (res && res.ok) {
         const hadPass = !!typed;
         if (hadPass) {
-          /* Запоминаем введённый пароль до конца сеанса страницы: показать его
-             из базы нельзя (там только хеш), но текст доступа должен содержать
-             именно то, что вы задали сотруднику. */
+          /* v14: сверяем, что пароль действительно записался (crypt по хешу) */
+          const chk = await A.verifyPass(row.getAttribute("data-slug"), typed);
+          if (chk && chk.ok && chk.matches === false) {
+            toast("Пароль НЕ записался в базу — повторите сохранение");
+            return;
+          }
           __sessionPass.set(row.getAttribute("data-slug"), typed);
           __sessionPass.set(String(get("fio").value.trim()), typed);
         }

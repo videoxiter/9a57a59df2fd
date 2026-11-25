@@ -149,6 +149,11 @@
         p_active: row.active !== false,
       });
     },
+    /* v14: проверка, что пароль реально записался в базу (только админ-сессия). */
+    verifyPass: function (slug, pass) {
+      return rpc("otp_staff_verify_pass", { p_token: tok("admin"), p_slug: slug, p_pass: pass })
+        .catch(function () { return null; });
+    },
   };
   window.OTP_AUTH = API;
 })();
