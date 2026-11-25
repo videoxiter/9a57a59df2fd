@@ -2744,6 +2744,14 @@ html[data-theme="ocean"] .award-tile .medal {
   background: rgba(13,18,26,.9); color: #e8edf5; font-size: .82rem; }
 .staff-check { align-items: flex-start; }
 .staff-check label { display: flex; gap: 6px; align-items: center; font-size: .78rem; color: #cbd5e1; }
+/* список привязанных устройств (v19) */
+.staff-devices { margin-top: 14px; }
+.staff-devices h4 { margin: 0 0 6px; font-size: .9rem; display: flex; gap: 8px; align-items: center; }
+.staff-dev-list { display: flex; flex-direction: column; gap: 6px; }
+.staff-dev-row { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; padding: 8px 12px;
+  border-radius: 10px; border: 1px solid rgba(148,163,184,.18); font-size: .8rem; }
+.staff-dev-row b { min-width: 190px; }
+.staff-dev-row span { color: #9fb0c5; }
 .staff-save { align-items: flex-end; }
 .staff-save .btn { padding: 7px 12px; font-size: .8rem; }
 .staff-ok { color: #34d399; font-size: .72rem; margin-top: 4px; }

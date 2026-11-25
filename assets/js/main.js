@@ -1403,12 +1403,14 @@
 
     const staff = await A.staffList();
     const bySlug = new Map((staff || []).map((s) => [s.slug, s]));
+    /* v19: флаг «старт только из приложения» и код страницы — из otp_staff */
+    const onlyAppOf = (s) => !!(s && (s.only_app || s.onlyApp));
     const rows = D.employees.filter((e) => e.status !== "left").map((e) => {
       const s = bySlug.get(e.id) || {};
       return {
         slug: e.id, hash: e.slug, fio: s.fio || e.fullName, login: s.login || "", pass: s.pass || "",
         avatar: s.avatar || "", active: s.active !== false,
-        hasPass: !!s.has_pass,
+        hasPass: !!s.has_pass, onlyApp: onlyAppOf(s),
       };
     });
     // сотрудники, которых нет в data.js (добавлены вручную в админке) — тоже показываем
@@ -1417,7 +1419,8 @@
       if (rows.some((r) => r.slug === s.slug)) continue;
       rows.push({
         slug: s.slug, hash: s.slug, fio: s.fio || s.slug, login: s.login || "", pass: "",
-        avatar: s.avatar || "", active: s.active !== false, hasPass: !!s.has_pass, manual: true,
+        avatar: s.avatar || "", active: s.active !== false, hasPass: !!s.has_pass,
+        onlyApp: onlyAppOf(s), manual: true,
       });
     }
     // администратор — первым
@@ -1471,11 +1474,36 @@
           <div class="staff-cell"><label>Пароль ${r.hasPass ? "(задан)" : "(нет)"}</label><div class="pass-wrap"><input data-f="pass" type="password" value="${escNow(r.pass || "")}" placeholder="новый пароль"><button type="button" data-eye title="Показать пароль"><i class="ph-bold ph-eye"></i></button></div></div>
           <div class="staff-cell"><label>Аватар</label><input data-f="avatar" value="${escNow(r.avatar)}" placeholder="https://..."><div class="staff-up"><button data-file>Загрузить фото</button><input type="file" data-file-inp accept="image/*" hidden></div></div>
           <div class="staff-cell staff-check"><label><input data-f="active" type="checkbox" ${r.active ? "checked" : ""}> активен</label></div>
+          <div class="staff-cell staff-check"><label title="Смену можно начать только из приложения-трея"><input data-f="onlyapp" type="checkbox" ${r.onlyApp ? "checked" : ""}> только из приложения</label></div>
           <div class="staff-cell staff-save"><button class="btn btn-primary" data-save>Сохранить</button><button type="button" class="btn btn-ghost" data-access>Текст доступа</button><span class="staff-ok" hidden>сохранено</span></div>
         </div>`).join("")}
-      </div>`;
+      </div>
+      <div class="staff-devices" id="staff-devices"></div>`;
     /* P3: метрики — неудачные попытки входа за последние 15 минут (скрипт
        scripts/supabase_v6_realtime.sql). Показываем тихо, не мешая работе. */
+    /* v19: переключатель «только из приложения» + список привязанных устройств */
+    app.querySelectorAll('[data-f="onlyapp"]').forEach((box) => box.addEventListener("change", async () => {
+      const row = box.closest(".staff-row");
+      const slug = row && row.getAttribute("data-slug");
+      const res = await A.setOnlyApp(slug, box.checked);
+      if (res && res.ok) toast(box.checked ? "Старт смены — только из приложения" : "Старт смены разрешён и в браузере");
+      else { box.checked = !box.checked; toast("Не удалось переключить (нужен админ-вход)"); }
+    }));
+    A.devicesList().then((list) => {
+      const host = document.getElementById("staff-devices");
+      if (!host) return;
+      if (!Array.isArray(list) || !list.length) {
+        host.innerHTML = `<h4><i class="ph-bold ph-device-mobile"></i> Устройства</h4>
+          <p class="staff-hint">Пока ни одно устройство не привязано: сотрудник должен один раз войти в приложение.</p>`;
+        return;
+      }
+      host.innerHTML = `<h4><i class="ph-bold ph-device-mobile"></i> Устройства (${list.length})</h4>
+        <div class="staff-dev-list">${list.map((d) => `<div class="staff-dev-row">
+          <b>${escNow(d.fio || d.slug)}</b>
+          <span>${escNow(d.label || "устройство")}</span>
+          <span class="staff-hint">${d.last_seen ? "был онлайн " + new Date(d.last_seen).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "не выходил на связь"}</span>
+        </div>`).join("")}</div>`;
+    }).catch(() => {});
     A.loginFails().then((list) => {
       if (!Array.isArray(list) || !list.length) return;
       const total = list.reduce((s, x) => s + (+x.fails || 0), 0);

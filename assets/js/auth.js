@@ -154,6 +154,18 @@
       return rpc("otp_staff_verify_pass", { p_token: tok("admin"), p_slug: slug, p_pass: pass })
         .catch(function () { return null; });
     },
+    /* v17/v19: «старт только из приложения» и список привязанных устройств. */
+    setOnlyApp: function (slug, on) {
+      return rpc("otp_staff_set_only_app", { p_token: tok("admin"), p_slug: slug, p_only_app: !!on })
+        .catch(function () { return null; });
+    },
+    devicesList: function () {
+      var t = tok("admin");
+      if (!t) return Promise.resolve([]);
+      return rpc("otp_devices_list", { p_token: t }).then(function (res) {
+        return (res && res.ok && Array.isArray(res.list)) ? res.list : [];
+      }).catch(function () { return []; });
+    },
   };
   window.OTP_AUTH = API;
 })();
