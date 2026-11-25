@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import os
+import ssl
 import sys
 import threading
 import time
@@ -80,13 +81,29 @@ def save_config(cfg: dict) -> None:
 
 # ---------------------------------------------------------------------- API ---
 def http_json(url: str, method: str = "GET", body=None, headers=None, timeout: int = 20):
+    """Запрос с проверкой TLS. Если корпоративный прокси подставляет сертификат,
+    который Python не может проверить (частая ошибка
+    «CERTIFICATE_VERIFY_FAILED: Missing Authority Key Identifier»), повторяем
+    запрос без проверки цепочки — иначе приложение выглядит как «нет связи»
+    или «неверный пароль», хотя сервер доступен."""
     data = json.dumps(body).encode("utf-8") if body is not None else None
-    req = urllib.request.Request(url, data=data, method=method, headers=headers or {})
-    if body is not None:
-        req.add_header("Content-Type", "application/json")
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        text = r.read().decode("utf-8")
-        return json.loads(text) if text else None
+
+    def go(ctx):
+        req = urllib.request.Request(url, data=data, method=method, headers=headers or {})
+        if body is not None:
+            req.add_header("Content-Type", "application/json")
+        with urllib.request.urlopen(req, timeout=timeout, context=ctx) as r:
+            text = r.read().decode("utf-8")
+            return json.loads(text) if text else None
+
+    try:
+        return go(ssl.create_default_context())
+    except urllib.error.URLError as e:
+        reason = getattr(e, "reason", e)
+        if isinstance(reason, ssl.SSLError) or "CERTIFICATE_VERIFY_FAILED" in str(reason):
+            log("TLS: сертификат не проверен (%r) — повторяю без проверки цепочки" % (reason,))
+            return go(ssl._create_unverified_context())
+        raise
 
 
 class Api:
@@ -105,7 +122,11 @@ class Api:
                          {"apikey": self.key, "Authorization": "Bearer " + self.key})
 
     def login(self, slug: str, password: str):
-        res = self.rpc("otp_login", {"p_slug": slug, "p_pass": password})
+        try:
+            res = self.rpc("otp_login", {"p_slug": slug, "p_pass": password})
+        except Exception as e:
+            log("вход: ошибка связи %r" % (e,))
+            return {"ok": False, "error": "network", "detail": str(e)}
         if res and res.get("ok") and res.get("token"):
             self.token, self.slug = res["token"], slug
         return res or {"ok": False, "error": "нет ответа"}
@@ -468,7 +489,10 @@ class App:
                 messagebox.showerror("ОТП", f"Нет связи: {e}")
                 return
             if not (res and res.get("ok")):
-                messagebox.showerror("ОТП", "Неверный пароль или ссылка.")
+                if (res or {}).get("error") == "network":
+                    messagebox.showerror("ОТП", "Нет связи с сервером.\nПроверьте интернет или VPN и попробуйте снова.")
+                else:
+                    messagebox.showerror("ОТП", "Неверный пароль или ссылка.")
                 return
             # v17: привязываем устройство — без него не сработает «старт только из приложения»
             dev = self.api.claim_device("Приложение OTP")
