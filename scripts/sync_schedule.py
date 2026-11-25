@@ -154,6 +154,13 @@ def process_tasks():
                     raise RuntimeError("нет месяца в задаче Confluence")
                 run("publish_confluence_schedule.py", "--month", month)
                 mark_task(tid, True, "страница Confluence создана или обновлена")
+            elif kind == "sync_vacations":
+                month = str((payload or {}).get("month") or "").strip()
+                if not month:
+                    now = datetime.datetime.now()
+                    month = (now.replace(day=1) + datetime.timedelta(days=32)).strftime("%Y-%m")
+                run("sync_vacations.py", "--month", month)
+                mark_task(tid, True, "отпуска на %s обновлены" % month)
             else:
                 raise RuntimeError("неизвестный тип задачи: " + str(kind))
         except Exception as e:
@@ -173,6 +180,15 @@ def sync(tag):
         run("apply_kpi.py", "--no-push")
     except Exception as e:
         log("KPI не применены:", e)
+    # отпуска на текущий и следующий месяц — для редактора графика и автосборки
+    try:
+        now = datetime.datetime.now()
+        this_m = now.strftime("%Y-%m")
+        next_m = (now.replace(day=1) + datetime.timedelta(days=32)).strftime("%Y-%m")
+        for m in (this_m, next_m):
+            run("sync_vacations.py", "--month", m)
+    except Exception as e:
+        log("отпуска не обновлены:", e)
     if not args.no_push:
         git("add", "-A")
         st = git("status", "--porcelain").stdout.strip()

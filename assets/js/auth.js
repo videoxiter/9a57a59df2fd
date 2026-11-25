@@ -212,6 +212,18 @@
         p_status: status || "draft", p_note: note || null,
       }).catch(function () { return null; });
     },
+    /* v24: отпуска и отметки дней */
+    vacationsGet: function (month) {
+      return rpc("otp_vacations_get", { p_month: month }).catch(function () { return null; });
+    },
+    flagsGet: function (month) {
+      return rpc("otp_month_flags_get", { p_month: month }).catch(function () { return null; });
+    },
+    flagSet: function (month, day, kind) {
+      return rpc("otp_month_flags_set", {
+        p_token: tok("admin"), p_month: month, p_day: day, p_kind: kind || "",
+      }).catch(function () { return null; });
+    },
   };
   window.OTP_AUTH = API;
 })();

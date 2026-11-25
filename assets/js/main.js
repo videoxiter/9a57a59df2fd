@@ -1430,6 +1430,7 @@
       <div class="staff-add-foot">
         <button class="btn btn-primary" id="sch-load" type="button">Загрузить</button>
         <button class="btn btn-ghost" id="sch-auto" type="button">Авто по пожеланиям</button>
+        <button class="btn btn-ghost" id="sch-check" type="button">Проверить нормы</button>
         <button class="btn btn-primary" id="sch-save" type="button">Сохранить черновик</button>
         <button class="btn btn-ghost" id="sch-publish" type="button">Опубликовать</button>
         <button class="btn btn-ghost" id="sch-csv" type="button">Выгрузить CSV</button>
@@ -1502,9 +1503,37 @@
       const a = answers[slug] || {};
       return (a.off_dates || []).map(Number).includes(Number(d));
     };
+    /* отпуска из базы (заполняет агент из страницы отпусков Confluence) */
+    let vacations = [];
+    const loadVacations = async () => {
+      const res = await A.vacationsGet(month);
+      vacations = (res && res.ok && Array.isArray(res.list)) ? res.list : [];
+      return vacations;
+    };
+    const onVacation = (slug, d) => vacations.some((v) => v.emp_slug === slug && d >= v.from_day && d <= v.to_day);
+
+    /* проверка норм линий по текущей таблице */
+    const checkNorms = () => {
+      const days = schMonthDays(month);
+      const bad = [];
+      const isShift = (sym) => ["1", "2", "3", "I", "II", "2Р", "3Р"].includes(sym);
+      for (const day of days) {
+        if (day.noShifts) continue;
+        const weekend = day.wd === 0 || day.wd === 6 || day.holiday;
+        if (weekend) continue;   // в выходные нормы линий не действуют
+        for (const line of SCH_LINES) {
+          const have = emps.filter((e) => line.who.includes(e.slug) && isShift(get(e.slug, day.d))).length;
+          if (have < line.need) bad.push(`${day.d}-е: ${line.line} — ${have} из ${line.need}`);
+        }
+      }
+      report = bad;
+      render();
+      setMsg(bad.length ? `Нарушений норм: ${bad.length}` : "Нормы линий соблюдены");
+    };
 
     const autoBuild = async () => {
       await loadAnswers();
+      await loadVacations();
       const days = schMonthDays(month);
       cell = {};
       report = [];
@@ -1524,6 +1553,7 @@
           if (day.noShifts) continue;
           /* выходные смены — только по пожеланиям */
           for (const e of emps) {
+            if (onVacation(e.slug, day.d)) { put(e.slug, day.d, "О"); continue; }
             const a = answers[e.slug] || {};
             if (a.weekend_none) continue;
             if ((a.weekend_dates || []).map(Number).includes(day.d)) {
@@ -1546,7 +1576,7 @@
         }
 
         /* будни: нормы линий */
-        for (const e of emps) put(e.slug, day.d, offDay(e.slug, day.d) ? "X" : "В");
+        for (const e of emps) put(e.slug, day.d, onVacation(e.slug, day.d) ? "О" : (offDay(e.slug, day.d) ? "X" : "В"));
         for (const line of SCH_LINES) {
           const cand = line.who
             .filter((slug) => bySlug.has(slug))
@@ -1583,9 +1613,11 @@
       render();
       setMsg(res && res.schedule ? `Загружено (версия ${res.schedule.version}, ${res.schedule.status})` : "Черновика нет — можно собрать авто");
       loadAnswers();
+      loadVacations();
     };
     const btnLoad = box.querySelector("#sch-load"); if (btnLoad) btnLoad.addEventListener("click", onLoad);
     const btnAuto = box.querySelector("#sch-auto"); if (btnAuto) btnAuto.addEventListener("click", autoBuild);
+    const btnCheck = box.querySelector("#sch-check"); if (btnCheck) btnCheck.addEventListener("click", checkNorms);
     const btnSave = box.querySelector("#sch-save"); if (btnSave) btnSave.addEventListener("click", async () => {
       const res = await A.scheduleSave(month, cell, "draft", "черновик из админки");
       setMsg(res && res.ok ? `Сохранено (версия ${res.version})` : "Не удалось сохранить (нужен админ-вход)");
