@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import os
 import ssl
+import subprocess
 import sys
 import threading
 import time
@@ -27,7 +28,16 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "1.0"
+VERSION = "1.2"
+# Сочетания по умолчанию: пользователь может поменять их в меню «Горячие клавиши…»
+DEFAULT_HOTKEYS = {
+    "start": "ctrl+alt+s",
+    "slot-tech1": "ctrl+alt+b",
+    "slot-lunch": "ctrl+alt+l",
+    "absence": "ctrl+alt+a",
+    "return": "ctrl+alt+r",
+    "stop": "ctrl+alt+e",
+}
 POLL_SECONDS = 20
 CONFIRM_SECONDS = 10
 TZ = timezone(timedelta(hours=3))          # Москва, UTC+3
@@ -70,6 +80,13 @@ def load_config() -> dict:
         return {}
 
 
+def load_config() -> dict:
+    try:
+        return json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
 def save_config(cfg: dict) -> None:
     CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
     CONFIG_PATH.write_text(json.dumps(cfg, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -77,6 +94,149 @@ def save_config(cfg: dict) -> None:
         os.chmod(CONFIG_PATH, 0o600)
     except Exception:
         pass
+
+
+# ------------------------------------------------------- автообновление ------
+UPDATE_URL = "https://videoxiter.github.io/9a57a59df2fd/downloads/version.json"
+DATA_URL = "https://videoxiter.github.io/9a57a59df2fd/assets/js/data.js"
+
+
+def ver_tuple(v) -> tuple:
+    try:
+        nums = [int(x) for x in str(v).replace(",", ".").split(".") if x.strip().isdigit()]
+        return tuple(nums[:3]) if nums else (0,)
+    except Exception:
+        return (0,)
+
+
+def update_available():
+    """Возвращает описание новой версии или None."""
+    try:
+        info = http_json(UPDATE_URL, timeout=15)
+        if not isinstance(info, dict):
+            return None
+        latest = str(info.get("version") or "")
+        if latest and ver_tuple(latest) > ver_tuple(VERSION):
+            log("доступно обновление: %s (сейчас %s)" % (latest, VERSION))
+            return info
+    except Exception as e:
+        log("обновление: проверка не удалась %r" % (e,))
+    return None
+
+
+def install_update(info) -> bool:
+    """Скачивает новый exe и подменяет текущий при перезапуске."""
+    import hashlib
+    import tempfile
+    exe = Path(sys.executable) if getattr(sys, "frozen", False) else None
+    if not exe:
+        log("обновление: приложение запущено из скрипта — обновление не требуется")
+        return False
+    url = str(info.get("url") or "")
+    if not url:
+        return False
+    tmp = Path(tempfile.gettempdir()) / "OtpTray-new.exe"
+    try:
+        data = b""
+        with urllib.request.urlopen(url, timeout=120, context=ssl._create_unverified_context()) as r:
+            data = r.read()
+        want = str(info.get("sha256") or "")
+        if want and hashlib.sha256(data).hexdigest().lower() != want.lower():
+            log("обновление: контрольная сумма не совпала — отмена")
+            return False
+        tmp.write_bytes(data)
+        log("обновление: скачано %d байт, ставлю при перезапуске" % len(data))
+    except Exception as e:
+        log("обновление: скачать не удалось %r" % (e,))
+        return False
+
+    bat = Path(tempfile.gettempdir()) / "OtptrayUpdate.cmd"
+    bat.write_text(
+        "@echo off\r\n"
+        "ping -n 4 127.0.0.1 >nul\r\n"
+        f'move /y "{exe}" "{exe}.old" >nul 2>&1\r\n'
+        f'move /y "{tmp}" "{exe}" >nul 2>&1\r\n'
+        f'start "" "{exe}"\r\n'
+        f'del "{exe}.old" >nul 2>&1\r\n'
+        'del "%~f0" >nul 2>&1\r\n',
+        encoding="utf-8",
+    )
+    try:
+        flags = 0x08000000 if os.name == "nt" else 0
+        subprocess.Popen(["cmd", "/c", str(bat)], creationflags=flags,
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        log("обновление: перезапускаюсь в новую версию")
+        os._exit(0)
+    except Exception as e:
+        log("обновление: перезапуск не удался %r" % (e,))
+        return False
+
+
+def http_text(url: str, timeout: int = 60) -> str:
+    """Скачивание текста с тем же обходом корпоративного сертификата."""
+    def go(ctx):
+        req = urllib.request.Request(url, headers={"User-Agent": "OtpTray/" + VERSION})
+        with urllib.request.urlopen(req, timeout=timeout, context=ctx) as r:
+            return r.read().decode("utf-8", "replace")
+
+    try:
+        return go(ssl.create_default_context())
+    except urllib.error.URLError as e:
+        reason = getattr(e, "reason", e)
+        if isinstance(reason, ssl.SSLError) or "CERTIFICATE_VERIFY_FAILED" in str(reason):
+            return go(ssl._create_unverified_context())
+        raise
+
+
+def content_snapshot(slug: str):
+    """Снимок важного для сотрудника: график, бонусы, награды, место.
+
+    Читаем публичный data.js (тот же файл, что и сайт) и берём только то,
+    что касается этого сотрудника. Сравнение снимков даёт «что нового».
+    """
+    try:
+        raw = http_text(DATA_URL)
+        mark = "window.OTP_DATA = "
+        i = raw.index(mark)
+        data = json.loads(raw[i + len(mark):].strip().rstrip(";"))
+    except Exception as e:
+        log("данные сайта: не удалось прочитать %r" % (e,))
+        return None
+    emp = next((e for e in (data.get("employees") or [])
+                if slug in (str(e.get("slug")), str(e.get("id")))), None)
+    if not emp:
+        return None
+    months = ((data.get("schedule") or {}).get("months") or {})
+    cur = max(months) if months else ""
+    shifts = ((months.get(cur) or {}).get("shifts") or {})
+    days = shifts.get(emp.get("fullName")) or {}
+    hist = emp.get("history") or []
+    last = hist[-1] if hist else {}
+    return {
+        "schedule_month": cur,
+        "schedule": {str(k): (v or {}).get("sym") for k, v in days.items()},
+        "bonus": last.get("bonus"),
+        "money": last.get("money"),
+        "awards": len(emp.get("awards") or []),
+        "stars": emp.get("stars"),
+        "rank": emp.get("rank"),
+    }
+
+
+def content_diff(old, new) -> list:
+    """Что именно изменилось — словами."""
+    if not old or not new:
+        return []
+    out = []
+    if old.get("schedule") != new.get("schedule") or old.get("schedule_month") != new.get("schedule_month"):
+        out.append("график")
+    if old.get("bonus") != new.get("bonus") or old.get("money") != new.get("money"):
+        out.append("бонусы")
+    if old.get("awards") != new.get("awards"):
+        out.append("награды")
+    if old.get("stars") != new.get("stars") or old.get("rank") != new.get("rank"):
+        out.append("уровень и место")
+    return out
 
 
 # ---------------------------------------------------------------------- API ---
@@ -231,22 +391,69 @@ def icons_dir() -> Path:
 
 # ---------------------------------------------------------------- приложение --
 class Hotkeys:
-    """Глобальные горячие клавиши (только Windows).
+    """Глобальные горячие клавиши (Windows), настраиваемые пользователем.
 
-    Ctrl+Alt+S — начать смену, Ctrl+Alt+B — техперерыв 1, Ctrl+Alt+L — обед,
-    Ctrl+Alt+A — временное отсутствие, Ctrl+Alt+R — вернуться, Ctrl+Alt+E — завершить.
+    Сочетания хранятся в конфиге (`hotkeys`): действие → строка вида «ctrl+alt+s».
     Реализовано через WinAPI RegisterHotKey: без сторонних библиотек и без прав
-    администратора. На macOS и при ошибке — просто не запускается (журнал пишет причину).
+    администратора. На macOS и при ошибке — просто не запускается (в журнал пишется причина).
     """
     MOD_ALT = 0x0001
     MOD_CONTROL = 0x0002
+    MOD_SHIFT = 0x0004
+    MOD_WIN = 0x0008
     WM_HOTKEY = 0x0312
-    MAP = [("S", "start"), ("B", "slot-tech1"), ("L", "slot-lunch"),
-           ("A", "absence"), ("R", "return"), ("E", "stop")]
+    WM_QUIT = 0x0012
 
-    def __init__(self, app):
+    ACTIONS = [
+        ("start", "Начать смену"),
+        ("slot-tech1", "Техперерыв 1"),
+        ("slot-lunch", "Обед"),
+        ("absence", "Временное отсутствие"),
+        ("return", "Вернуться с перерыва"),
+        ("stop", "Завершить смену"),
+    ]
+
+    def __init__(self, app, combos):
         self.app = app
+        self.combos = combos or {}
         self.alive = True
+        self.tid = 0
+
+    @staticmethod
+    def parse(text):
+        """«ctrl+alt+s» → (модификаторы, виртуальный код клавиши) или None."""
+        s = (text or "").strip().lower().replace("+", " ")
+        parts = [p for p in s.split() if p]
+        if not parts:
+            return None
+        mods, vk = 0, None
+        for p in parts:
+            if p in ("ctrl", "control"):
+                mods |= Hotkeys.MOD_CONTROL
+            elif p == "alt":
+                mods |= Hotkeys.MOD_ALT
+            elif p == "shift":
+                mods |= Hotkeys.MOD_SHIFT
+            elif p in ("win", "windows"):
+                mods |= Hotkeys.MOD_WIN
+            elif p == "space":
+                vk = 0x20
+            elif len(p) == 1 and (p.isalnum() or p in "`-=[];',./\\"):
+                vk = ord(p.upper())
+            elif p.startswith("f") and p[1:].isdigit() and 1 <= int(p[1:]) <= 12:
+                vk = 0x70 + int(p[1:]) - 1
+            else:
+                return None
+        return (mods, vk) if (vk and mods) else None
+
+    def stop(self):
+        self.alive = False
+        try:
+            import ctypes
+            if self.tid:
+                ctypes.windll.user32.PostThreadMessageW(self.tid, self.WM_QUIT, 0, 0)
+        except Exception:
+            pass
 
     def run(self):
         if os.name != "nt":
@@ -255,17 +462,24 @@ class Hotkeys:
         try:
             import ctypes
             import ctypes.wintypes as wt
+            kernel32 = ctypes.windll.kernel32
             user32 = ctypes.windll.user32
+            self.tid = kernel32.GetCurrentThreadId()
             ids = {}
-            for i, (key, act) in enumerate(self.MAP, start=1):
-                if user32.RegisterHotKey(None, i, self.MOD_ALT | self.MOD_CONTROL, ord(key)):
+            for i, (act, _label) in enumerate(self.ACTIONS, start=1):
+                combo = self.parse(self.combos.get(act, ""))
+                if not combo:
+                    continue
+                mods, vk = combo
+                if user32.RegisterHotKey(None, i, mods, vk):
                     ids[i] = act
                 else:
-                    log("горячая клавиша Ctrl+Alt+%s занята другой программой" % key)
+                    log("горячая клавиша для %s (%s) занята другой программой" % (act, self.combos.get(act)))
             if not ids:
-                log("горячие клавиши: не удалось зарегистрировать ни одну")
+                log("горячие клавиши: ни одно сочетание не зарегистрировано")
                 return
-            log("горячие клавиши включены: %s" % ", ".join("Ctrl+Alt+" + k for k, _ in self.MAP))
+            log("горячие клавиши включены: " + ", ".join(
+                "%s=%s" % (a, self.combos.get(a, "")) for a in ids.values()))
             msg = wt.MSG()
             while self.alive:
                 if user32.GetMessageW(ctypes.byref(msg), None, 0, 0) == 0:
@@ -277,6 +491,11 @@ class Hotkeys:
                             self.app.act(act)
                         except Exception as e:
                             log("горячая клавиша %s: ошибка %r" % (act, e))
+            try:
+                for i in list(ids):
+                    user32.UnregisterHotKey(None, i)
+            except Exception:
+                pass
         except Exception as e:
             log("горячие клавиши не запустились: %r" % (e,))
 
@@ -355,6 +574,9 @@ class App:
             MenuItem("Завершить смену", lambda: self.act("stop"), enabled=self.can_finish),
             Menu.SEPARATOR,
             MenuItem("Открыть мою страницу", lambda: webbrowser.open(self.page_url())),
+            MenuItem("Горячие клавиши…", self.hotkeys_dialog),
+            MenuItem("Проверить обновление", lambda: threading.Thread(target=self.check_updates_manual, daemon=True).start()),
+            MenuItem("Проверить новые данные", lambda: threading.Thread(target=self.check_content_manual, daemon=True).start()),
             MenuItem("Обновить", lambda: self.refresh()),
             MenuItem("Журнал приложения", lambda: webbrowser.open(LOG_PATH.as_uri())),
             MenuItem(f"ОТП · версия {VERSION}", None, enabled=False),
@@ -467,6 +689,10 @@ class App:
     def countdown_loop(self):
         while self._alive:
             time.sleep(1)
+            try:
+                self.maybe_pause_warning()
+            except Exception:
+                pass
             p = self.pending
             if not p:
                 continue
@@ -482,6 +708,50 @@ class App:
                 except Exception:
                     pass
 
+    # --- напоминание о затянувшемся перерыве
+    PAUSE_LIMIT = {"tech1": 15, "tech2": 15, "lunch": 60, "absence": 30}
+
+    def maybe_pause_warning(self):
+        """Если перерыв идёт дольше нормы — показываем уведомление в трее.
+
+        Своё напоминание, не зависящее от «ДисКо»: сотрудник видит его даже
+        при свёрнутом приложении. Одно уведомление на один перерыв.
+        """
+        active = (self.state.get("active") or {}) if isinstance(self.state, dict) else {}
+        if not active:
+            self._pause_warn_key = ""
+            return
+        slot = str(active.get("slot") or "")
+        key = "%s|%s" % (slot, active.get("at") or "")
+        if getattr(self, "_pause_warn_key", "") == key:
+            return
+        try:
+            at = datetime.fromisoformat(str(active.get("at")).replace("Z", "+00:00"))
+            if at.tzinfo is None:
+                at = at.replace(tzinfo=TZ)
+            mins = (datetime.now(TZ) - at).total_seconds() / 60.0
+        except Exception:
+            return
+        limit = self.PAUSE_LIMIT.get(slot, 15)
+        if mins < limit:
+            return
+        self._pause_warn_key = key
+        title = "ОТП: перерыв затянулся"
+        label = {"tech1": "Техперерыв 1", "tech2": "Техперерыв 2", "lunch": "Обед",
+                 "absence": "Временное отсутствие"}.get(slot, "Перерыв")
+        body = f"{label} идёт уже {int(mins)} мин (норма {limit} мин) — пора возвращаться к работе."
+        log("напоминание: " + body)
+        try:
+            if self.icon:
+                self.icon.notify(body, title)
+        except Exception:
+            # на части систем всплывающие уведомления недоступны — хотя бы заголовок значка
+            try:
+                if self.icon:
+                    self.icon.title = body
+            except Exception:
+                pass
+
     def poll_loop(self):
         while self._alive:
             time.sleep(POLL_SECONDS)
@@ -496,12 +766,12 @@ class App:
             if not self.login_dialog():
                 return
         self.refresh()
-        # глобальные горячие клавиши (Windows): Ctrl+Alt+S/B/L/A/R/E
-        try:
-            self.hotkeys = Hotkeys(self)
-            threading.Thread(target=self.hotkeys.run, daemon=True).start()
-        except Exception as e:
-            log("горячие клавиши: %r" % (e,))
+        # глобальные горячие клавиши (Windows) из настроек
+        self.start_hotkeys()
+        # ежедневная проверка обновлений (и сразу при запуске)
+        threading.Thread(target=self.update_loop, daemon=True).start()
+        # проверка новых данных на странице (график, бонусы, награды)
+        threading.Thread(target=self.content_loop, daemon=True).start()
         from pystray import Icon
         self.icon = Icon(APP_NAME, self.make_icon(self.state["kind"]),
                          self.status_line(), menu=self.menu())
@@ -512,10 +782,169 @@ class App:
     def quit_app(self):
         self._alive = False
         try:
+            if getattr(self, "hotkeys", None):
+                self.hotkeys.stop()
+        except Exception:
+            pass
+        try:
             if self.icon:
                 self.icon.stop()
         except Exception:
             pass
+
+    # --- горячие клавиши
+    def hotkey_combos(self) -> dict:
+        combos = dict(DEFAULT_HOTKEYS)
+        saved = self.cfg.get("hotkeys") or {}
+        for k, v in saved.items():
+            if k in combos and isinstance(v, str):
+                combos[k] = v
+        return combos
+
+    def start_hotkeys(self):
+        try:
+            if getattr(self, "hotkeys", None):
+                self.hotkeys.stop()
+        except Exception:
+            pass
+        try:
+            self.hotkeys = Hotkeys(self, self.hotkey_combos())
+            threading.Thread(target=self.hotkeys.run, daemon=True).start()
+        except Exception as e:
+            log("горячие клавиши: %r" % (e,))
+
+    def hotkeys_dialog(self):
+        """Окно настройки сочетаний. Пустое поле = сочетание выключено."""
+        import tkinter as tk
+        from tkinter import messagebox
+        combos = self.hotkey_combos()
+        root = tk.Tk()
+        root.title("ОТП — горячие клавиши")
+        root.geometry("520x360")
+        tk.Label(root, anchor="w", justify="left",
+                 text="Например: ctrl+alt+s, shift+f5, ctrl+alt+1.\n"
+                      "Пустое поле — действие без горячей клавиши.").pack(fill="x", padx=12, pady=(10, 6))
+        entries = {}
+        for act, label in Hotkeys.ACTIONS:
+            rowf = tk.Frame(root)
+            rowf.pack(fill="x", padx=12, pady=2)
+            tk.Label(rowf, text=label, width=24, anchor="w").pack(side="left")
+            e = tk.Entry(rowf, width=18)
+            e.insert(0, combos.get(act, ""))
+            e.pack(side="left")
+            entries[act] = e
+
+        def save():
+            new = {}
+            for act, e in entries.items():
+                txt = e.get().strip().lower()
+                if not txt:
+                    new[act] = ""
+                    continue
+                if Hotkeys.parse(txt) is None:
+                    messagebox.showerror("ОТП", f"Не понял сочетание «{txt}».\n"
+                                                "Нужны модификатор и клавиша, например ctrl+alt+s.")
+                    return
+                new[act] = txt
+            self.cfg["hotkeys"] = new
+            save_config(self.cfg)
+            self.start_hotkeys()
+            log("горячие клавиши сохранены: %r" % (new,))
+            root.destroy()
+            messagebox.showinfo("ОТП", "Сохранено. Настройки лежат отдельно от программы, "
+                                       "обновление их не затирает.")
+
+        def reset():
+            for act, e in entries.items():
+                e.delete(0, "end")
+                e.insert(0, DEFAULT_HOTKEYS.get(act, ""))
+
+        btns = tk.Frame(root)
+        btns.pack(pady=12)
+        tk.Button(btns, text="Сохранить", command=save, width=14).pack(side="left", padx=6)
+        tk.Button(btns, text="По умолчанию", command=reset, width=14).pack(side="left", padx=6)
+        tk.Button(btns, text="Отмена", command=root.destroy, width=10).pack(side="left", padx=6)
+        root.mainloop()
+
+    # --- обновление
+    def update_loop(self):
+        """Проверяет обновление при запуске и далее раз в сутки."""
+        while self._alive:
+            try:
+                info = update_available()
+                if info:
+                    log("обновление: ставлю версию %s" % info.get("version"))
+                    install_update(info)   # перезапуск; настройки и статусы сохраняются
+            except Exception as e:
+                log("обновление: %r" % (e,))
+            for _ in range(24 * 60):      # спим сутки, просыпаясь каждую минуту
+                if not self._alive:
+                    return
+                time.sleep(60)
+
+    def check_updates_manual(self):
+        from tkinter import messagebox
+        info = update_available()
+        if not info:
+            messagebox.showinfo("ОТП", f"Обновлений нет. Версия {VERSION}.")
+            return
+        if messagebox.askokcancel("ОТП", f"Доступна версия {info.get('version')}.\n"
+                                        "Установить сейчас? Настройки и статусы сохранятся."):
+            install_update(info)
+
+    # --- новые данные на странице (график, бонусы, награды)
+    def content_loop(self):
+        """Раз в несколько часов сверяет страницу и сообщает об изменениях."""
+        first = True
+        while self._alive:
+            try:
+                self.check_content(silent=first)
+                first = False
+            except Exception as e:
+                log("новые данные: ошибка %r" % (e,))
+            for _ in range(6 * 60):          # проверяем примерно каждые 6 часов
+                if not self._alive:
+                    return
+                time.sleep(60)
+
+    def check_content(self, silent=False):
+        slug = self.api.slug or self.cfg.get("slug") or ""
+        if not slug:
+            return []
+        new = content_snapshot(slug)
+        if not new:
+            return []
+        old = self.cfg.get("content") or None
+        changed = content_diff(old, new)
+        self.cfg["content"] = new
+        try:
+            save_config(self.cfg)      # снимок лежит в конфиге, обновление его не стирает
+        except Exception:
+            pass
+        if not changed:
+            if not silent:
+                log("новые данные: изменений нет")
+            return []
+        text = "Новое на странице: " + ", ".join(changed)
+        log("новые данные: " + text)
+        try:
+            if self.icon:
+                self.icon.notify(text, "ОТП: обновились данные")
+        except Exception:
+            try:
+                if self.icon:
+                    self.icon.title = text
+            except Exception:
+                pass
+        return changed
+
+    def check_content_manual(self):
+        from tkinter import messagebox
+        changed = self.check_content()
+        if changed:
+            messagebox.showinfo("ОТП", "Новое: " + ", ".join(changed))
+        else:
+            messagebox.showinfo("ОТП", "Изменений на странице нет.")
 
     # --- вход
     def login_dialog(self):
