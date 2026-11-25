@@ -1466,6 +1466,19 @@
           <span class="staff-hint" id="kpi-msg"></span>
         </div>
       </div>
+      <div class="staff-add" id="poll-admin">
+        <h4><i class="ph-bold ph-calendar-check"></i> Опрос по графику</h4>
+        <div class="staff-add-grid">
+          <label>Месяц<input id="poll-month" type="month" value="2026-12"></label>
+          <label>Сдать до<input id="poll-due" type="datetime-local"></label>
+        </div>
+        <div class="staff-add-foot">
+          <button class="btn btn-primary" id="poll-create" type="button"><i class="ph-bold ph-paper-plane-right" aria-hidden="true"></i> Открыть опрос</button>
+          <button class="btn btn-ghost" id="poll-close" type="button">Закрыть опрос</button>
+          <span class="staff-hint" id="poll-admin-msg"></span>
+        </div>
+        <div id="poll-summary"></div>
+      </div>
       <p class="staff-hint">Пароль: если оставить пустым — не меняется. Логин — для личных сообщений в Мессенджере (например, a.bolgov@ftech.io).</p>
       <div class="staff-list">
         ${rows.map((r) => `<div class="staff-row" data-slug="${escNow(r.slug)}">
@@ -1481,6 +1494,57 @@
       <div class="staff-devices" id="staff-devices"></div>`;
     /* P3: метрики — неудачные попытки входа за последние 15 минут (скрипт
        scripts/supabase_v6_realtime.sql). Показываем тихо, не мешая работе. */
+    /* v21: опрос по графику — создать, закрыть, смотреть пожелания */
+    const pollLoad = async () => {
+      const mEl = $("#poll-month");
+      const host = $("#poll-summary");
+      if (!mEl || !host) return;
+      const pollId = "p-" + mEl.value;
+      host.innerHTML = "<p class=\"staff-hint\">Загружаю ответы…</p>";
+      const res = await A.pollSummary(pollId);
+      if (!res || !res.ok) { host.innerHTML = "<p class=\"staff-hint\">Сводка недоступна (нужен админ-вход).</p>"; return; }
+      const list = res.list || [];
+      const missing = res.missing || [];
+      const short = (a) => {
+        if (!a || typeof a !== "object") return "";
+        const parts = [];
+        if (a.weekend_none) parts.push("без выходных смен");
+        if (Array.isArray(a.weekend_dates) && a.weekend_dates.length) parts.push("выходные: " + a.weekend_dates.join(", "));
+        if (Array.isArray(a.off_dates) && a.off_dates.length) parts.push("обязательные выходные: " + a.off_dates.join(", "));
+        if (a.third_none) parts.push("без 3-й смены");
+        else if (Array.isArray(a.third_weeks) && a.third_weeks.length) parts.push("3-я смена: недели с " + a.third_weeks.join(", "));
+        if (a.tania === true) parts.push("Тания: готов");
+        if (a.tania === false) parts.push("Тания: нет");
+        if (a.comment) parts.push("«" + String(a.comment).slice(0, 60) + "»");
+        return parts.join("; ");
+      };
+      host.innerHTML = `<p class="staff-hint">Ответили: <b>${list.length}</b> · не ответили: <b>${missing.length}</b>
+        ${missing.length ? "— " + missing.map((x) => escNow(x)).join(", ") : ""}</p>
+        ${list.length ? `<div class="poll-table">${list.map((r) => `<div class="poll-tr">
+          <b>${escNow(r.fio)}</b><span>${escNow(short(r.answers))}</span></div>`).join("")}</div>` : ""}`;
+    };
+    const pollCreateBtn = $("#poll-create");
+    if (pollCreateBtn) pollCreateBtn.addEventListener("click", async () => {
+      const month = ($("#poll-month") || {}).value;
+      const due = ($("#poll-due") || {}).value;
+      const msg = $("#poll-admin-msg");
+      if (!month) { if (msg) msg.textContent = "Выберите месяц."; return; }
+      const res = await A.pollCreate(month, due ? new Date(due).toISOString() : null, {});
+      if (msg) msg.textContent = res && res.ok ? "Опрос открыт: " + month : "Не удалось открыть (нужен админ-вход).";
+      pollLoad();
+    });
+    const pollCloseBtn = $("#poll-close");
+    if (pollCloseBtn) pollCloseBtn.addEventListener("click", async () => {
+      const month = ($("#poll-month") || {}).value;
+      const msg = $("#poll-admin-msg");
+      if (!month) return;
+      const res = await A.pollSetStatus("p-" + month, "closed");
+      if (msg) msg.textContent = res && res.ok ? "Опрос закрыт: " + month : "Не удалось закрыть.";
+      pollLoad();
+    });
+    const pollMonthEl = $("#poll-month");
+    if (pollMonthEl) pollMonthEl.addEventListener("change", pollLoad);
+    pollLoad();
     /* v19: переключатель «только из приложения» + список привязанных устройств */
     app.querySelectorAll('[data-f="onlyapp"]').forEach((box) => box.addEventListener("change", async () => {
       const row = box.closest(".staff-row");

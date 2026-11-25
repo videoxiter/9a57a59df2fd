@@ -175,6 +175,31 @@
       return rpc("otp_staff_set_only_app_all", { p_token: tok("admin"), p_on: !!on })
         .catch(function () { return null; });
     },
+    /* v21: опрос по графику */
+    pollMy: function (slug) {
+      var t = tok(slug || "admin");
+      if (!t) return Promise.resolve(null);
+      return rpc("otp_poll_my", { p_token: t }).catch(function () { return null; });
+    },
+    pollSave: function (slug, pollId, answers) {
+      var t = tok(slug);
+      if (!t) return Promise.resolve(null);
+      return rpc("otp_poll_save", { p_token: t, p_poll_id: pollId, p_answers: answers })
+        .catch(function () { return null; });
+    },
+    pollCreate: function (month, due, params) {
+      return rpc("otp_poll_create", {
+        p_token: tok("admin"), p_month: month, p_due: due || null, p_params: params || {},
+      }).catch(function () { return null; });
+    },
+    pollSummary: function (pollId) {
+      return rpc("otp_poll_summary", { p_token: tok("admin"), p_poll_id: pollId })
+        .catch(function () { return null; });
+    },
+    pollSetStatus: function (pollId, status) {
+      return rpc("otp_poll_set_status", { p_token: tok("admin"), p_poll_id: pollId, p_status: status })
+        .catch(function () { return null; });
+    },
   };
   window.OTP_AUTH = API;
 })();

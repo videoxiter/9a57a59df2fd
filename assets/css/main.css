@@ -2888,3 +2888,18 @@ html.auth-lock body > :not(.auth-gate):not(script):not(style) { display: none !i
 .now-chip.v { color: #a5b4fc; }
 .staff-dev-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
 .staff-dev-row .btn { margin-left: auto; padding: 4px 10px; font-size: .74rem; }
+/* Пожелания по графику (опрос, v21) */
+.poll-card { margin-top: 12px; }
+.poll-body { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
+.poll-q { display: flex; flex-direction: column; gap: 6px; font-size: .86rem; }
+.poll-hint { color: #9fb0c5; font-size: .76rem; }
+.poll-opts { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.poll-opts label, .poll-inline { display: inline-flex; gap: 6px; align-items: center; font-size: .82rem; }
+.poll-q textarea { width: 100%; padding: 8px 10px; border-radius: 9px; border: 1px solid rgba(148,163,184,.25);
+  background: rgba(9,12,18,.6); color: var(--text); font-size: .84rem; }
+.poll-foot { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.poll-table { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.poll-tr { display: flex; gap: 12px; font-size: .8rem; padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(148,163,184,.16); }
+.poll-tr b { min-width: 180px; }
+/* Админка: опрос */
+#poll-admin { margin-top: 16px; }

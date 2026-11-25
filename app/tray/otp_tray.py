@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "1.3"
+VERSION = "1.4"
 # Сочетания по умолчанию: пользователь может поменять их в меню «Горячие клавиши…»
 DEFAULT_HOTKEYS = {
     "start": "ctrl+alt+s",
@@ -318,6 +318,10 @@ class Api:
 
     def add_event(self, ev: dict):
         return self.api("otp_time_events", "POST", [ev])
+
+    def poll_my(self):
+        """Открытый опрос по графику и мой ответ (v21)."""
+        return self.rpc("otp_poll_my", {"p_token": self.token})
 
 
 # -------------------------------------------------------------------- статус --
@@ -1003,6 +1007,7 @@ class App:
         while self._alive:
             try:
                 self.check_content(silent=first)
+                self.check_poll()
                 first = False
             except Exception as e:
                 log("новые данные: ошибка %r" % (e,))
@@ -1041,6 +1046,43 @@ class App:
             except Exception:
                 pass
         return changed
+
+    def check_poll(self, silent=False):
+        """Опрос по графику: сообщаем, что он открыт и что ответа ещё нет."""
+        try:
+            res = self.api.poll_my()
+        except Exception as e:
+            log("опрос: проверить не удалось %r" % (e,))
+            return None
+        if not (res and res.get("ok") and res.get("poll")):
+            return None
+        poll = res["poll"]
+        ans = res.get("answers")
+        answered = bool(ans and isinstance(ans, dict) and ans)
+        if answered:
+            return None
+        key = "%s|%s" % (poll.get("id"), datetime.now(TZ).date().isoformat())
+        if self.cfg.get("poll_notified") == key:
+            return None
+        self.cfg["poll_notified"] = key
+        try:
+            save_config(self.cfg)
+        except Exception:
+            pass
+        month = str(poll.get("month") or "")
+        try:
+            name = datetime.strptime(month + "-01", "%Y-%m-%d").strftime("%m.%Y")
+        except Exception:
+            name = month
+        text = ("Открыт опрос по графику на %s — пожелания ещё не отправлены. "
+                "Заполните на «Стартовой» в разделе графика." % name)
+        log("опрос: " + text)
+        try:
+            if self.icon:
+                self.icon.notify(text, "ОТП: пожелания по графику")
+        except Exception:
+            pass
+        return poll
 
     def check_content_manual(self):
         from tkinter import messagebox

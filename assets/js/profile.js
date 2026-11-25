@@ -2906,6 +2906,8 @@ function robotMenuHtml() {
       window.OTP_AUTH.isAdmin().then((adm) => { if (adm) initStartReport(); else hideReport(); }).catch(hideReport);
     } else hideReport();
     if (emp.canManage) initStartRegister();
+    /* v21: пожелания по графику на следующий месяц (если опрос открыт) */
+    initPollCard();
     /* блок «Сейчас на смене»: руководителю, главному специалисту и Андрею Болгову */
     const wantNow = emp.canManage || emp.id === "bolgov";
     const withNow = (yes) => { if (yes) initNowBoard(); };
@@ -2915,6 +2917,114 @@ function robotMenuHtml() {
 
   /* Блок «Сейчас на смене» на личной странице: кто работает, кто на паузе,
      кто в отпуске, на отгуле или в увольнительной. */
+  /* «Пожелания по графику» — карточка на «Стартовой», если руководитель
+     открыл опрос на следующий месяц (v21). Вопросы те же, что в WebAsk. */
+  function initPollCard() {
+    const A = window.OTP_AUTH;
+    if (!A || !A.pollMy) return;
+    const host = document.getElementById("st-actions");
+    if (!host) return;
+    const sec = host.closest(".st-card") || host.parentNode;
+    A.pollMy(String(emp.id)).then((res) => {
+      if (!res || !res.ok || !res.poll) return;
+      const poll = res.poll;
+      const saved = res.answers || {};
+      const [y, m] = String(poll.month).split("-").map(Number);
+      const monthName = new Date(y, m - 1, 1).toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+      const due = poll.due_at
+        ? new Date(poll.due_at).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
+        : "без срока";
+      const FIXED = ["01-01", "01-02", "01-07", "02-23", "03-08", "05-01", "05-09", "06-12", "11-04"];
+      const days = [];
+      const lastDay = new Date(y, m, 0).getDate();
+      for (let d = 1; d <= lastDay; d++) {
+        const dt = new Date(y, m - 1, d);
+        const mmdd = String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+        const holiday = FIXED.includes(mmdd);
+        if (dt.getDay() === 0 || dt.getDay() === 6 || holiday) {
+          days.push({ d, label: `${String(d).padStart(2, "0")}.${String(m).padStart(2, "0")} — ${dt.toLocaleDateString("ru-RU", { weekday: "short" })}${holiday ? " (праздник)" : ""}` });
+        }
+      }
+      const weeks = [];
+      for (let d = 1; d <= lastDay; d++) {
+        const dt = new Date(y, m - 1, d);
+        if (dt.getDay() === 1) {
+          const fri = Math.min(d + 4, lastDay);
+          weeks.push({ from: d, label: `${String(d).padStart(2, "0")}.${String(m).padStart(2, "0")}–${String(fri).padStart(2, "0")}.${String(m).padStart(2, "0")}` });
+        }
+      }
+      const chk = (arr, v) => (arr || []).map(String).includes(String(v)) ? "checked" : "";
+      const box = document.createElement("div");
+      box.className = "now-block poll-card";
+      box.innerHTML = `<div class="now-head">
+        <h3><i class="ph-bold ph-calendar-check"></i> Пожелания по графику: ${escHtml(monthName)}</h3>
+        <span class="now-sum">сдать до ${escHtml(due)}</span>
+      </div>
+      <div class="poll-body">
+        <div class="poll-q">
+          <b>1. Желаемые выходные смены</b>
+          <span class="poll-hint">Оплата за выходную смену — 4 000 ₽. Время: 05:00 или 08:00.</span>
+          <div class="poll-opts">${days.map((x) => `<label><input type="checkbox" data-pd="weekend" value="${x.d}" ${chk(saved.weekend_dates, x.d)}> ${escHtml(x.label)}</label>`).join("")}</div>
+          <label class="poll-inline">Время: <select id="poll-time">
+            <option value="05:00"${saved.weekend_time === "05:00" ? " selected" : ""}>с 05:00</option>
+            <option value="08:00"${saved.weekend_time === "08:00" ? " selected" : ""}>с 08:00</option>
+          </select></label>
+          <label><input type="checkbox" id="poll-none" ${saved.weekend_none ? "checked" : ""}> Прошу без выходных смен</label>
+        </div>
+        <div class="poll-q">
+          <b>2. Обязательные выходные дни</b>
+          <span class="poll-hint">Даты, когда не можете работать (учтите отпуск).</span>
+          <div class="poll-opts">${days.map((x) => `<label><input type="checkbox" data-pd="off" value="${x.d}" ${chk(saved.off_dates, x.d)}> ${escHtml(x.label)}</label>`).join("")}</div>
+        </div>
+        <div class="poll-q">
+          <b>3. 3-я смена (10:00–19:00)</b>
+          <span class="poll-hint">Недели, когда можете выходить в 3-ю смену.</span>
+          <div class="poll-opts">${weeks.map((w) => `<label><input type="checkbox" data-pd="third" value="${w.from}" ${chk(saved.third_weeks, w.from)}> ${escHtml(w.label)}</label>`).join("")}</div>
+          <label><input type="checkbox" id="poll-third-none" ${saved.third_none ? "checked" : ""}> Без 3-й смены</label>
+        </div>
+        <div class="poll-q">
+          <b>4. Дежурный по МКК «Тания»</b>
+          <div class="poll-opts">
+            <label><input type="radio" name="poll-tania" value="1" ${saved.tania === true ? "checked" : ""}> Готов</label>
+            <label><input type="radio" name="poll-tania" value="0" ${saved.tania === false ? "checked" : ""}> Не готов</label>
+          </div>
+        </div>
+        <div class="poll-q">
+          <b>5. Дополнительно</b>
+          <textarea id="poll-comment" rows="2" placeholder="Пожелания, ограничения, пояснения">${escHtml(saved.comment || "")}</textarea>
+        </div>
+        <div class="poll-foot">
+          <button class="btn btn-primary" id="poll-save" type="button"><i class="ph-bold ph-check"></i> Сохранить пожелания</button>
+          <span class="staff-hint" id="poll-msg">${Object.keys(saved).length ? "Ответ сохранён — можно поправить до срока." : ""}</span>
+        </div>
+      </div>`;
+      sec.appendChild(box);
+      box.querySelectorAll("[data-pd]").forEach((el) => el.addEventListener("change", () => {
+        if (el.dataset.pd === "weekend" && el.checked) { const n = box.querySelector("#poll-none"); if (n) n.checked = false; }
+        if (el.dataset.pd === "third" && el.checked) { const n = box.querySelector("#poll-third-none"); if (n) n.checked = false; }
+      }));
+      const save = box.querySelector("#poll-save");
+      if (save) save.addEventListener("click", async () => {
+        const pick = (kind) => Array.from(box.querySelectorAll(`[data-pd="${kind}"]:checked`)).map((x) => Number(x.value));
+        const tania = box.querySelector('input[name="poll-tania"]:checked');
+        save.disabled = true;
+        const r = await A.pollSave(String(emp.id), poll.id, {
+          weekend_dates: pick("weekend"),
+          weekend_time: (box.querySelector("#poll-time") || {}).value || "05:00",
+          weekend_none: !!(box.querySelector("#poll-none") || {}).checked,
+          off_dates: pick("off"),
+          third_weeks: pick("third"),
+          third_none: !!(box.querySelector("#poll-third-none") || {}).checked,
+          tania: tania ? tania.value === "1" : null,
+          comment: (box.querySelector("#poll-comment") || {}).value || "",
+        });
+        save.disabled = false;
+        const msg = box.querySelector("#poll-msg");
+        if (msg) msg.textContent = r && r.ok ? "Сохранено. Можно поправить до срока." : "Не удалось сохранить — попробуйте ещё раз.";
+      });
+    }).catch(() => {});
+  }
+
   function initNowBoard() {
     const host = document.getElementById("st-actions");
     if (!host) return;
