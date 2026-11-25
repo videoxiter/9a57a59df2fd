@@ -1,0 +1,53 @@
+; Инсталлятор приложения «ОТП» (Windows).
+; Собирается Inno Setup 6: ISCC.exe OTP-Tray-Setup.iss
+; Ставится в профиль пользователя (без прав администратора), создаёт ярлыки
+; и автозапуск, после установки запускает приложение.
+
+#define AppName "ОТП — учёт рабочего времени"
+#define AppShort "OTP Tray"
+#define AppVersion "1.4"
+#define AppPublisher "Яковлев Евгений Евгеньевич"
+#define AppExe "OtpTray.exe"
+
+[Setup]
+AppId={{8E2B6C11-7A4D-4F5E-9B33-0B9C1E7A2D51}
+AppName={#AppName}
+AppVersion={#AppVersion}
+AppPublisher={#AppPublisher}
+DefaultDirName={localappdata}\OtpTray
+DefaultGroupName=ОТП
+DisableProgramGroupPage=yes
+PrivilegesRequired=lowest
+OutputDir=..\..\..\dist
+OutputBaseFilename=OTP-Tray-Setup-{#AppVersion}
+SetupIconFile=..\..\assets\app.ico
+Compression=lzma2
+SolidCompression=yes
+WizardStyle=modern
+UninstallDisplayIcon={app}\{#AppExe}
+UninstallDisplayName={#AppName}
+ArchitecturesInstallIn64BitMode=x64compatible
+CloseApplications=no
+
+[Languages]
+Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
+
+[Tasks]
+Name: "desktopicon"; Description: "Создать значок на рабочем столе"; GroupDescription: "Дополнительно:"
+Name: "autostart"; Description: "Запускать приложение при входе в Windows"; GroupDescription: "Дополнительно:"
+
+[Files]
+Source: "..\dist\{#AppExe}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\README-СОТРУДНИК.md"; DestDir: "{app}"; Flags: ignoreversion
+
+[Icons]
+Name: "{group}\ОТП"; Filename: "{app}\{#AppExe}"
+Name: "{group}\Инструкция (Markdown)"; Filename: "{app}\README-СОТРУДНИК.md"
+Name: "{userdesktop}\ОТП"; Filename: "{app}\{#AppExe}"; Tasks: desktopicon
+
+[Registry]
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; \
+    ValueName: "OtpTray"; ValueData: """{app}\{#AppExe}"""; Flags: uninsdeletevalue; Tasks: autostart
+
+[Run]
+Filename: "{app}\{#AppExe}"; Description: "Запустить ОТП сейчас"; Flags: nowait postinstall skipifsilent

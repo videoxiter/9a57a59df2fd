@@ -53,6 +53,14 @@ def main():
         "size": len(data),
         "date": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
+    # инсталлятор (если собран) тоже публикуем — по нему ставят приложение
+    setup_src = os.path.join(ROOT, "dist", f"OTP-Tray-Setup-{ver}.exe")
+    if os.path.exists(setup_src):
+        shutil.copy2(setup_src, os.path.join(OUT_DIR, "OTP-Tray-Setup.exe"))
+        manifest["setup"] = PAGES + "/downloads/OTP-Tray-Setup.exe"
+        print("инсталлятор опубликован: downloads/OTP-Tray-Setup.exe")
+    else:
+        print("инсталлятор не найден — публикую только exe")
     with open(os.path.join(OUT_DIR, "version.json"), "w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False, indent=2)
     print(f"опубликовано: версия {ver}, {len(data) // 1024} КБ, sha256 {manifest['sha256'][:12]}…")
