@@ -2640,6 +2640,11 @@ html[data-theme="ocean"] .award-tile .medal {
   color: #fbbf24; background: rgba(251,191,36,.08); }
 .st-outbox i { color: #fbbf24; }
 .st-outbox[hidden] { display: none; }
+.st-out-btn { margin-left: auto; border: 1px solid rgba(251,191,36,.5); background: rgba(251,191,36,.1);
+  color: #fbbf24; border-radius: 8px; padding: 4px 10px; font-size: .76rem; cursor: pointer; }
+.st-out-btn + .st-out-btn { margin-left: 6px; }
+.st-out-btn:hover { background: rgba(251,191,36,.2); }
+.st-out-btn:disabled { opacity: .6; cursor: default; }
 
 /* Синхронизация графика с Confluence — блок для главного специалиста */
 .st-sync { margin-top: 12px; padding: 12px 14px; border-radius: 12px;

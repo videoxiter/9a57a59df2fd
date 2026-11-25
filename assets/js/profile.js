@@ -1993,16 +1993,39 @@ function robotMenuHtml() {
   function stPendingDec(n) { __stPend = Math.max(0, __stPend - (n || 1)); renderStOutbox(); }
   /* P1.1: очередь неотправленных событий. Показываем строку ТОЛЬКО когда
      реально что-то не ушло (нет связи) — в обычной работе её не видно.
-     Закрытая вкладка догоняется автоматически: событие ждёт в localStorage
-     и улетает при следующем открытии «Стартовой». */
+     Здесь же — диагностика: последняя ошибка отправки и причина словами,
+     чтобы не гадать «почему не уходит в ДисКо». */
+  const ST_ERR_KEY = "otp_last_err";
+  const stLastErr = () => { try { return JSON.parse(localStorage.getItem(ST_ERR_KEY) || "null"); } catch (e) { return null; } };
+  const stErrText = (err) => {
+    const s = String((err && err.status) || "");
+    if (/401/.test(s)) return "сессия истекла — нажмите «Войти заново»";
+    if (/403/.test(s)) return "нет доступа к записи (профиль не совпадает)";
+    if (/409/.test(s)) return "событие уже записано (дубль) — повторите";
+    if (/5\d\d/.test(s)) return "сервис временно недоступен";
+    if (/HTTP|offline/i.test(s)) return "нет связи с сервером";
+    return s || "неизвестная ошибка";
+  };
   const renderStOutbox = () => {
     const el = document.getElementById("st-outbox");
     if (!el) return;
     try {
       const pend = stLocal().length;
       if (!pend) { el.hidden = true; return; }
+      const err = stLastErr();
+      const when = err && err.at ? new Date(err.at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : "";
       el.hidden = false;
-      el.innerHTML = `<i class="ph-bold ph-cloud-arrow-up"></i> <span>не отправлено: ${pend} — уйдёт само, как только появится связь</span>`;
+      el.innerHTML = `<i class="ph-bold ph-cloud-arrow-up"></i>
+        <span>не отправлено: ${pend}${err ? ` · <b>${escHtml(stErrText(err))}</b>${when ? ` (${when})` : ""}` : ""}</span>
+        <button class="st-out-btn" type="button" data-out-retry>Повторить</button>
+        ${err && /40[13]/.test(String(err.status || "")) ? '<button class="st-out-btn" type="button" data-out-login>Войти заново</button>' : ""}`;
+      const retry = el.querySelector("[data-out-retry]");
+      if (retry) retry.addEventListener("click", () => { retry.disabled = true; stFlush(); setTimeout(() => { retry.disabled = false; }, 1500); });
+      const login = el.querySelector("[data-out-login]");
+      if (login) login.addEventListener("click", () => {
+        try { window.OTP_AUTH && window.OTP_AUTH.logout(ME_SLUG); } catch (e) {}
+        location.reload();
+      });
     } catch (e) { el.hidden = true; }
   };
   function stApi(path, opts) {
@@ -2020,12 +2043,22 @@ function robotMenuHtml() {
         // успех: счётчик «в пути» снимаем ровно на то число, что приросло,
         // иначе «события в пути» висит навсегда (был баг: dec только в catch).
         // if (n): только для POST (n=0) — иначе каждый GET уводит счётчик вниз.
-        if (n) stPendingDec(n);
+        if (n) { stPendingDec(n); try { localStorage.removeItem(ST_ERR_KEY); } catch (e) {} }
         if (method === "POST") try { localStorage.setItem("otp_time_last_sync", String(Date.now())); } catch (e) {}
         renderStOutbox();
         return r;
       })
-      .catch((e) => { if (n) stPendingDec(n); throw e; });
+      .catch((e) => {
+        // запоминаем последнюю ошибку — её показывает строка очереди на «Стартовой»
+        try {
+          localStorage.setItem(ST_ERR_KEY, JSON.stringify({
+            status: String((e && e.message) || e), at: Date.now(), path: String(path).split("?")[0],
+          }));
+        } catch (x) {}
+        if (n) stPendingDec(n);
+        renderStOutbox();
+        throw e;
+      });
   }
   const stLocal = () => { try { return JSON.parse(localStorage.getItem(ST_KEY) || "[]"); } catch (e) { return []; } };
   const stLocalSave = (list) => { try { localStorage.setItem(ST_KEY, JSON.stringify(list)); } catch (e) {} };
@@ -2071,7 +2104,22 @@ function robotMenuHtml() {
           const done = new Set(left.map((e) => e.id));
           stLocalSave(stLocal().filter((e) => !done.has(e.id)));
           renderStOutbox();
-        }).catch(() => {});
+        }).catch(async () => {
+          /* Пакет мог упасть из-за одного дубля (409): остальные при этом не
+             записались. Пробуем по одному и убираем из очереди те, что сервер
+             уже знает (409), — иначе очередь висела бы вечно. */
+          for (const ev of left) {
+            let ok = false, dup = false;
+            try {
+              await stApi("otp_time_events", { method: "POST", body: JSON.stringify([ev]) });
+              ok = true;
+            } catch (e) {
+              dup = /409/.test(String((e && e.message) || ""));
+            }
+            if (ok || dup) stLocalSave(stLocal().filter((x) => x.id !== ev.id));
+          }
+          renderStOutbox();
+        });
       })
       .catch(() => {});
   }
