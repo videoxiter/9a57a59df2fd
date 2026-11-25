@@ -242,9 +242,11 @@ Deno.serve(async () => {
       if (!last || last.type !== "break_start") continue;
       const limit = BREAK_MIN[last.slot as keyof typeof BREAK_MIN] || 15;
       const endMs = Date.parse(last.at) + limit * 60000;
-      // сообщение только через 5 минут после того, как перерыв должен был закончиться
+      /* Сообщение — сразу как истекло время перерыва (раньше ждали ещё 5 минут,
+         и уведомление приходило уже сильно позже; на «Стартовой» при этом
+         висела плашка «пауза больше 15 минут», а в канале было тихо). */
       const overMs = nowMs - endMs;
-      if (overMs >= 5 * 60000) {
+      if (overMs >= 0) {
         const kind = last.slot === "lunch" ? "lunch_over" : "break_over";
         const text = last.slot === "lunch" ? `⚠️ Обед затянулся! — ${emp}` : `⚠️ Перерыв затянулся! — ${emp}`;
         await notifyOnce(kind, emp, text, false, threads.get(emp));
