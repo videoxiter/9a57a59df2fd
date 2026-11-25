@@ -289,6 +289,30 @@ Deno.serve(async () => {
       errors.push("poll_remind: " + String(e));
     }
 
+    // 3.6 все ознакомились с опубликованным графиком — сообщаем руководителю в канал
+    try {
+      const sch: any[] = await sb(
+        `otp_schedule?select=month&status=eq.published&order=month.desc&limit=1`,
+      ) || [];
+      const pubMonth = sch[0] && sch[0].month;
+      if (pubMonth) {
+        const staff: any[] = await sb(
+          `otp_staff?select=slug,fio,active&active=eq.true&slug=neq.admin`,
+        ) || [];
+        const acks: any[] = await sb(
+          `otp_schedule_acks?select=emp_slug&month=eq.${encodeURIComponent(pubMonth)}`,
+        ) || [];
+        const acked = new Set((acks || []).map((a: any) => String(a.emp_slug)));
+        const missing = (staff || []).filter((s: any) => !acked.has(String(s.slug)));
+        if ((staff || []).length && !missing.length) {
+          await notifyOnce("acks_all", pubMonth,
+            `✅ Все ознакомились с графиком на ${pubMonth} (${staff.length} чел.).`);
+        }
+      }
+    } catch (e) {
+      errors.push("acks_all: " + String(e));
+    }
+
     // 4. автозакрытие смены в конце дня (если сотрудник забыл нажать «Завершить»)
     const minsNow = nowMsk.getUTCHours() * 60 + nowMsk.getUTCMinutes();
     if (minsNow >= 23 * 60 + 50) {

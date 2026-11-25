@@ -99,6 +99,12 @@ def main():
             keys = [k for c in r for k in (c.get("keys") or [])]
             fio = client.user(keys[0]) if keys else (r[0]["t"] or "").strip()
             period = (r[1]["t"] or "").strip()
+            vrio = ""
+            if len(r) > 3:
+                if r[3].get("keys"):
+                    vrio = client.user(r[3]["keys"][0]) or ""
+                else:
+                    vrio = r[3].get("t") or ""
             if not fio or not period or "ФИО" in fio.upper():
                 continue
             pr = parse_period(period)
@@ -116,7 +122,8 @@ def main():
                 continue
             from_day = max(1, (start - first).days + 1)
             to_day = min((last - first).days, (end - first).days + 1)
-            out.append({"fio": fio, "from_day": from_day, "to_day": to_day, "raw": period})
+            note = period + ((" · ВрИО: " + vrio.strip()) if vrio.strip() else "")
+            out.append({"fio": fio, "from_day": from_day, "to_day": to_day, "raw": note})
     print("периодов в месяце", args.month, ":", len(out), [f"{x['fio']} {x['from_day']}-{x['to_day']}" for x in out])
 
     # сопоставляем ФИО с сотрудниками сайта и пишем в базу

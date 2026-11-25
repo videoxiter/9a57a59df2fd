@@ -1981,7 +1981,8 @@ function robotMenuHtml() {
   ];
   const ST_KEY = "otp_time_events_v1";
   // Норма дня: 8 часов минус два тех.перерыва по 15 минут = 7 ч 30 мин.
-  const ST_NORM_SEC = 7.5 * 3600;
+  // Для укороченного дня (флаг в админке) норма уменьшается на час.
+  let ST_NORM_SEC = 7.5 * 3600;
   const ST_RING_R = 62, ST_RING_C = 2 * Math.PI * ST_RING_R;
   const ST_CLOUD = () => (D.hrRules && D.hrRules.cloud) || null;
   const stIsoDate = (d) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Moscow", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
@@ -2314,7 +2315,7 @@ function robotMenuHtml() {
       <div class="st-shift" id="st-shift"></div>
       <div class="st-top">
         <div class="st-status" id="st-status"><span class="st-si"><i class="ph-bold ph-hourglass"></i></span><span class="st-st-txt">Загрузка…</span></div>
-        <div class="st-timer-wrap"><div class="st-timer" id="st-timer">00:00:00</div><div class="st-bar"><div class="st-bar-fg" id="st-bar"></div></div><span class="st-timer-h">отработано за день · норма 7:30 · МСК</span></div>
+        <div class="st-timer-wrap"><div class="st-timer" id="st-timer">00:00:00</div><div class="st-bar"><div class="st-bar-fg" id="st-bar"></div></div><span class="st-timer-h" id="st-norm-h">отработано за день · норма 7:30 · МСК</span></div>
       </div>
       <div class="st-actions" id="st-actions"></div>
       <div class="st-outbox" id="st-outbox" hidden></div>
@@ -2910,6 +2911,8 @@ function robotMenuHtml() {
     initPollCard();
     /* v25: подтверждение опубликованного графика («ознакомлен») */
     initScheduleAckCard();
+    /* v28: укороченный день — норма уменьшается на час */
+    initShortDay();
     /* блок «Сейчас на смене»: руководителю, главному специалисту и Андрею Болгову */
     const wantNow = emp.canManage || emp.id === "bolgov";
     const withNow = (yes) => { if (yes) initNowBoard(); };
@@ -3066,6 +3069,25 @@ function robotMenuHtml() {
           msg.textContent = "Не удалось сохранить отметку — попробуйте позже.";
         }
       });
+    }).catch(() => {});
+  }
+
+  /* Укороченный день: если в админке отмечено, норма дня 6:30 вместо 7:30 */
+  function initShortDay() {
+    const A = window.OTP_AUTH;
+    if (!A || !A.flagsGet) return;
+    const today = stIsoDate(new Date());
+    const month = today.slice(0, 7);
+    const day = Number(today.slice(8));
+    A.flagsGet(month).then((res) => {
+      const list = (res && res.ok && Array.isArray(res.list)) ? res.list : [];
+      const f = list.find((x) => Number(x.day) === day);
+      if (!f || f.kind !== "short") return;
+      ST_NORM_SEC = 6.5 * 3600;
+      const el = document.getElementById("st-norm-h");
+      if (el) el.textContent = "отработано за день · норма 6:30 (укороченный день) · МСК";
+      const note = document.getElementById("st-note");
+      if (note) note.textContent = "Сегодня укороченный день по графику — норма 6 ч 30 мин.";
     }).catch(() => {});
   }
 

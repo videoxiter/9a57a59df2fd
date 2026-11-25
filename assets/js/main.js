@@ -1453,7 +1453,8 @@
       </div>
       <div class="sch-report" id="sch-report"></div>
       <div class="sch-wrap" id="sch-wrap"></div>
-      <div class="sch-lines" id="sch-lines"></div>`;
+      <div class="sch-lines" id="sch-lines"></div>
+      <div class="sch-vac" id="sch-vac"></div>`;
     app.appendChild(box);
 
     let month = nextMonth;
@@ -1526,7 +1527,23 @@
           : "";
       }
       renderLines();
+      renderVacs();
     };
+
+    /* отпуска месяца с ВрИО: кто замещает */
+    function renderVacs() {
+      const hostV = box.querySelector("#sch-vac");
+      if (!hostV) return;
+      if (!vacations.length) { hostV.innerHTML = ""; return; }
+      const rows = vacations.map((v) => `<div class="staff-dev-row">
+          <b>${escNow(fio(v.emp_slug))}</b>
+          <span>${v.from_day}–${v.to_day}</span>
+          <span class="staff-hint">${escNow(v.raw || "")}</span>
+        </div>`).join("");
+      hostV.innerHTML = `<div class="sch-lines-head"><b>Отпуска месяца</b>
+        <span class="staff-hint">из графика отпусков Confluence, ВрИО — кто замещает</span></div>
+        <div class="staff-dev-list">${rows}</div>`;
+    }
 
     /* линии на выбранный день: кто стоит и хватает ли людей по нормам */
     let linesDay = 1;
