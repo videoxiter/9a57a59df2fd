@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "1.2"
+VERSION = "1.3"
 # Сочетания по умолчанию: пользователь может поменять их в меню «Горячие клавиши…»
 DEFAULT_HOTKEYS = {
     "start": "ctrl+alt+s",
@@ -574,12 +574,13 @@ class App:
             MenuItem("Завершить смену", lambda: self.act("stop"), enabled=self.can_finish),
             Menu.SEPARATOR,
             MenuItem("Открыть мою страницу", lambda: webbrowser.open(self.page_url())),
+            MenuItem("Справка", self.help_window),
             MenuItem("Горячие клавиши…", self.hotkeys_dialog),
             MenuItem("Проверить обновление", lambda: threading.Thread(target=self.check_updates_manual, daemon=True).start()),
             MenuItem("Проверить новые данные", lambda: threading.Thread(target=self.check_content_manual, daemon=True).start()),
             MenuItem("Обновить", lambda: self.refresh()),
+            MenuItem("О программе", self.about_window),
             MenuItem("Журнал приложения", lambda: webbrowser.open(LOG_PATH.as_uri())),
-            MenuItem(f"ОТП · версия {VERSION}", None, enabled=False),
             MenuItem("Выход", lambda: self.quit_app()),
         )
 
@@ -791,6 +792,109 @@ class App:
                 self.icon.stop()
         except Exception:
             pass
+
+    # --- справка и «О программе»
+    def about_window(self):
+        import tkinter as tk
+        root = tk.Tk()
+        root.title("О программе «ОТП»")
+        root.geometry("520x360")
+        tk.Label(root, text="ОТП — учёт рабочего времени", font=("Segoe UI", 14, "bold")).pack(pady=(16, 4))
+        tk.Label(root, text=f"Версия {VERSION}", font=("Segoe UI", 11)).pack()
+        text = ("Приложение отдела технической поддержки: смена, перерывы, обед,\n"
+                "временное отсутствие — без браузера, прямо из трея.\n\n"
+                "Показывает напоминание, если перерыв затянулся, сообщает о новых\n"
+                "данных на вашей странице (график, бонусы, награды) и обновляется\n"
+                "само, когда выходит новая версия.\n\n"
+                "Автор: Евгений Евгеньевич Яковлев")
+        tk.Label(root, text=text, justify="left", wraplength=470).pack(padx=16, pady=12)
+        tk.Button(root, text="Закрыть", command=root.destroy, width=14).pack(pady=10)
+        root.mainloop()
+
+    def help_window(self):
+        """Справка сотруднику: по-человечески, с картинкой значков."""
+        import tkinter as tk
+        from tkinter import ttk
+        root = tk.Tk()
+        root.title("ОТП — справка")
+        root.geometry("640x560")
+        wrap = tk.Frame(root)
+        wrap.pack(fill="both", expand=True)
+        txt = tk.Text(wrap, wrap="word", padx=14, pady=12, font=("Segoe UI", 10))
+        bar = ttk.Scrollbar(wrap, command=txt.yview)
+        txt.configure(yscrollcommand=bar.set)
+        bar.pack(side="right", fill="y")
+        txt.pack(side="left", fill="both", expand=True)
+
+        def head(s):
+            txt.insert("end", "\n" + s + "\n", ("h",))
+
+        txt.tag_configure("h", font=("Segoe UI", 11, "bold"), spacing1=8, spacing3=4)
+        txt.insert("end",
+            "ОТП — приложение учёта рабочего времени.\n"
+            "Живёт значком в трее и позволяет без браузера начинать смену,\n"
+            "делать перерывы, обед, отмечать отсутствие и завершать смену.\n")
+        head("Значок и его цвета")
+        # картинка со состояниями значка (реальный файл из комплекта)
+        try:
+            from PIL import Image, ImageTk
+            p = icons_dir() / "tray-states.png"
+            if p.exists():
+                img = Image.open(p)
+                w = min(560, img.width)
+                img = img.resize((w, int(img.height * w / img.width)))
+                photo = ImageTk.PhotoImage(img)
+                txt.image_create("end", image=photo)
+                txt.image = photo          # удерживаем ссылку
+                txt.insert("end", "\n")
+        except Exception as e:
+            log("справка: картинку не показать (%r)" % (e,))
+        txt.insert("end",
+            "зелёный — работаете · жёлтый — перерыв · сиреневый — обед\n"
+            "голубой — отсутствие · серый — смена не начата · красный — нет связи\n")
+        head("Первый запуск")
+        txt.insert("end",
+            "1. Вставьте ссылку на свою страницу (её присылает руководитель)\n"
+            "   или только код из ссылки. Если ссылка в буфере обмена — подставится сама.\n"
+            "2. Введите пароль (галочка «показать пароль» поможет проверить ввод).\n"
+            "3. «Войти». Значок появится в трее только после успешного входа.\n"
+            "Больше пароль спрашивать не будет — он хранится на этом компьютере.\n")
+        head("Как пользоваться")
+        txt.insert("end",
+            "Нажмите на значок — откроется меню. Перед действием идёт отсчёт\n"
+            "10 секунд с кнопкой «Отмена»; повторное нажатие применяет сразу.\n"
+            "Windows: значок справа внизу (может быть в «^»).\n"
+            "macOS: значок в меню-баре сверху справа.\n")
+        head("Горячие клавиши (Windows)")
+        txt.insert("end",
+            "Ctrl+Alt+S — начать смену        Ctrl+Alt+A — временное отсутствие\n"
+            "Ctrl+Alt+B — техперерыв 1         Ctrl+Alt+R — вернуться с перерыва\n"
+            "Ctrl+Alt+L — обед                 Ctrl+Alt+E — завершить смену\n"
+            "Свои сочетания: меню → «Горячие клавиши…». Если сочетание занято\n"
+            "другой программой, в журнале будет строка об этом.\n")
+        head("Напоминания")
+        txt.insert("end",
+            "• Перерыв идёт дольше нормы (техперерыв 15 мин, обед 60 мин,\n"
+            "  отсутствие 30 мин) — появится уведомление в трее.\n"
+            "• Изменились данные на странице (график, бонусы, награды) —\n"
+            "  придёт сообщение «Новое на странице: …».\n"
+            "• Вышла новая версия программы — приложение обновится само\n"
+            "  (настройки и данные при этом сохраняются).\n")
+        head("Если что-то не так")
+        txt.insert("end",
+            "• «Неверный пароль или ссылка» — в окне видно ответ сервера\n"
+            "  и код страницы; проверьте ссылку и пароль у руководителя.\n"
+            "• «Нет связи» — проверьте интернет/VPN; приложение переподключится.\n"
+            "• Подробности всегда в «Журнал приложения».\n"
+            "• Проверить обновление вручную: меню → «Проверить обновление».\n")
+        txt.configure(state="disabled")
+
+        btns = tk.Frame(root)
+        btns.pack(fill="x")
+        tk.Button(btns, text="Открыть мою страницу", command=lambda: webbrowser.open(self.page_url()),
+                  width=20).pack(side="left", padx=10, pady=8)
+        tk.Button(btns, text="Закрыть", command=root.destroy, width=12).pack(side="right", padx=10, pady=8)
+        root.mainloop()
 
     # --- горячие клавиши
     def hotkey_combos(self) -> dict:
