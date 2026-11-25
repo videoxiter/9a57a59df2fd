@@ -2154,7 +2154,19 @@ function robotMenuHtml() {
       stLocalSave(stLocal().filter((x) => x.id !== ev.id));
       stNotifyEvent(ev);            // и сразу отправляем уведомление в канал
       return r;
-    }).catch(() => null);
+    }).catch((e) => {
+      /* v17: если у сотрудника включено «старт только из приложения», сервер
+         отклонит shift_start из браузера. Объясняем это словами, а не молчим. */
+      const msg = String((e && e.message) || "");
+      if (/403/.test(msg) && ev.type === "shift_start") {
+        const box = document.getElementById("st-msg") || document.getElementById("st-outbox");
+        if (box) {
+          box.hidden = false;
+          box.innerHTML = `<i class="ph-bold ph-device-mobile"></i> <span>Смена начинается только из приложения: откройте «OTP» в трее (Windows/macOS) и нажмите «Начать смену» там.</span>`;
+        }
+      }
+      return null;
+    });
   }
   function stCalc(events, nowMs, windows) {
     const wins = windows || [];

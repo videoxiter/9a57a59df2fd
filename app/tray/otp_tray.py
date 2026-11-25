@@ -96,6 +96,9 @@ class Api:
         self.key = str(cloud.get("key") or DEFAULT_CLOUD["key"])
         self.token = cfg.get("token") or ""
         self.slug = cfg.get("slug") or ""
+        # v17: токен устройства — нужен, если у сотрудника включено
+        # «старт смены только из приложения».
+        self.device = cfg.get("device") or ""
 
     def rpc(self, name: str, payload: dict):
         return http_json(f"{self.url}/rest/v1/rpc/{name}", "POST", payload,
@@ -107,9 +110,23 @@ class Api:
             self.token, self.slug = res["token"], slug
         return res or {"ok": False, "error": "нет ответа"}
 
+    def claim_device(self, label: str = "OTP tray"):
+        """Заявляем устройство и запоминаем его токен (для «старт только из приложения»)."""
+        try:
+            res = self.rpc("otp_device_claim", {"p_token": self.token, "p_label": label})
+            if res and res.get("ok") and res.get("device"):
+                self.device = res["device"]
+                log("устройство привязано: %s" % self.device[:8])
+                return self.device
+        except Exception as e:
+            log("не удалось привязать устройство: %r" % (e,))
+        return ""
+
     def api(self, path: str, method: str = "GET", body=None):
-        return http_json(f"{self.url}/functions/v1/api", "POST",
-                         {"token": self.token, "path": path, "method": method, "body": body},
+        payload = {"token": self.token, "path": path, "method": method, "body": body}
+        if self.device:
+            payload["device"] = self.device
+        return http_json(f"{self.url}/functions/v1/api", "POST", payload,
                          {"apikey": self.key, "Authorization": "Bearer " + self.key})
 
     def events_today(self):
@@ -196,6 +213,12 @@ class App:
     def __init__(self):
         self.cfg = load_config()
         self.api = Api(self.cfg)
+        # v17: если вход уже был, а устройство ещё не привязано — привязываем сейчас
+        if self.api.token and not self.api.device:
+            dev = self.api.claim_device("Приложение OTP")
+            if dev:
+                self.cfg["device"] = dev
+                save_config(self.cfg)
         self.state = {"kind": "idle", "label": "Смена не начата", "sec": 0,
                       "active": None, "used": set(), "started": None, "stopped": None}
         self.pending = None            # {"act": str, "until": float, "label": str}
@@ -447,7 +470,10 @@ class App:
             if not (res and res.get("ok")):
                 messagebox.showerror("ОТП", "Неверный пароль или ссылка.")
                 return
+            # v17: привязываем устройство — без него не сработает «старт только из приложения»
+            dev = self.api.claim_device("Приложение OTP")
             self.cfg.update({"token": self.api.token, "slug": self.api.slug,
+                             "device": dev or self.cfg.get("device") or "",
                              "name": res.get("fio") or "",
                              "cloud": self.cfg.get("cloud") or DEFAULT_CLOUD})
             save_config(self.cfg)

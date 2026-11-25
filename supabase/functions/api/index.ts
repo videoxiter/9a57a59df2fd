@@ -37,7 +37,7 @@ async function session(token: string) {
   const rows = await r.json();
   if (!Array.isArray(rows) || !rows.length) return null;
   const slug = rows[0].slug;
-  const a = await fetch(`${SB}/rest/v1/otp_staff?select=is_admin,active,can_sync,page_hash&slug=eq.${slug}`, {
+  const a = await fetch(`${SB}/rest/v1/otp_staff?select=is_admin,active,can_sync,page_hash,only_app&slug=eq.${slug}`, {
     headers: { apikey: SRV, Authorization: `Bearer ${SRV}` },
   });
   const st = a.ok ? await a.json() : [];
@@ -47,7 +47,9 @@ async function session(token: string) {
   const canSync = !!(st && st[0] && st[0].can_sync);
   // v12: вторая форма идентификатора (внутренний id ↔ код страницы)
   const pageHash = (st && st[0] && st[0].page_hash) ? String(st[0].page_hash) : "";
-  return { slug, admin, active, canSync, pageHash };
+  // v17: «старт смены только из приложения»
+  const onlyApp = !!(st && st[0] && st[0].only_app);
+  return { slug, admin, active, canSync, pageHash, onlyApp };
 }
 
 Deno.serve(async (req: Request) => {
@@ -81,6 +83,25 @@ Deno.serve(async (req: Request) => {
       if (!s.admin && own !== s.slug && !(s.pageHash && own === s.pageHash)) {
         return json({ ok: false, error: "not your event" }, 403);
       }
+    }
+    // v17: «старт смены только из приложения». Проверяем токен устройства,
+    // который приложение получает через otp_device_claim и присылает в p.device.
+    if (s.onlyApp && !s.admin && rows.some((r) => r && r.type === "shift_start")) {
+      const dev = String(p.device || "");
+      if (!dev) return json({ ok: false, error: "start_only_from_app" }, 403);
+      const dq = await fetch(
+        `${SB}/rest/v1/otp_devices?select=device&slug=eq.${s.slug}&device=eq.${encodeURIComponent(dev)}`,
+        { headers: { apikey: SRV, Authorization: `Bearer ${SRV}` } },
+      );
+      const dr = dq.ok ? await dq.json() : [];
+      if (!Array.isArray(dr) || !dr.length) {
+        return json({ ok: false, error: "start_only_from_app" }, 403);
+      }
+      await fetch(`${SB}/rest/v1/otp_devices?slug=eq.${s.slug}&device=eq.${encodeURIComponent(dev)}`, {
+        method: "PATCH",
+        headers: { apikey: SRV, Authorization: `Bearer ${SRV}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({ last_seen: new Date().toISOString() }),
+      });
     }
   }
   // v5 (P1.2): правка журнала через прокси — только админ. До этого любая
