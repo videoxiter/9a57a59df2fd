@@ -4191,7 +4191,10 @@ function robotMenuHtml() {
           if (res && res.error === "too_many_attempts") blockMsg = "Слишком много попыток. Подождите 15 минут — или попросите руководителя сбросить блокировку.";
           attempt(i + 1);
         }).catch((e) => {
-          blockMsg = "Нет связи с сервером входа (проверьте интернет/VPN)";
+          const m = String((e && e.message) || "");
+          blockMsg = /^HTTP/.test(m)
+            ? "Ошибка сервера входа (" + m + ") — сообщите руководителю"
+            : "Нет связи с сервером входа (проверьте интернет/VPN)";
           try { console.warn("login error:", e); } catch (x) {}
           attempt(i + 1);
         });
