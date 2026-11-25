@@ -136,6 +136,12 @@ def process_tasks():
             elif kind == "apply_kpi":
                 run("apply_kpi.py")
                 mark_task(tid, True, "KPI применены и опубликованы")
+            elif kind == "publish_schedule":
+                month = str((payload or {}).get("month") or "").strip()
+                if not month:
+                    raise RuntimeError("нет месяца в задаче публикации")
+                run("publish_schedule.py", "--month", month)
+                mark_task(tid, True, "график %s опубликован на сайте" % month)
             else:
                 raise RuntimeError("неизвестный тип задачи: " + str(kind))
         except Exception as e:

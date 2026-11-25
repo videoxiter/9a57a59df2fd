@@ -1589,7 +1589,27 @@
     });
     const btnPub = box.querySelector("#sch-publish"); if (btnPub) btnPub.addEventListener("click", async () => {
       const res = await A.scheduleSave(month, cell, "published", "публикация графика");
-      setMsg(res && res.ok ? "Опубликовано в базе. Перенос на сайт — этап публикации." : "Не удалось опубликовать");
+      if (!res || !res.ok) { setMsg("Не удалось опубликовать"); return; }
+      /* задача агенту: перенести опубликованный месяц в data.js и на сайт */
+      try {
+        const c = D.hrRules && D.hrRules.cloud;
+        if (c && c.url && c.key) {
+          await fetch(`${c.url.replace(/\/$/, "")}/rest/v1/otp_tasks`, {
+            method: "POST",
+            headers: { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json", Prefer: "return=minimal" },
+            body: JSON.stringify([{
+              id: "task-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
+              kind: "publish_schedule", payload: { month },
+              requested_by: window.OTP_ACTOR || "Руководитель",
+            }]),
+          });
+          setMsg("Опубликовано в базе. График появится на сайте в течение 5 минут (агент).");
+        } else {
+          setMsg("Опубликовано в базе; автоперенос на сайт недоступен (нет конфигурации облака).");
+        }
+      } catch (e) {
+        setMsg("Опубликовано в базе, но задача на сайт не отправлена.");
+      }
     });
     render();
     loadAnswers();
