@@ -1444,7 +1444,8 @@
         <span class="staff-hint" id="sch-msg"></span>
       </div>
       <div class="sch-report" id="sch-report"></div>
-      <div class="sch-wrap" id="sch-wrap"></div>`;
+      <div class="sch-wrap" id="sch-wrap"></div>
+      <div class="sch-lines" id="sch-lines"></div>`;
     app.appendChild(box);
 
     let month = nextMonth;
@@ -1492,7 +1493,34 @@
           ? `<b>Замечания автосборки:</b><ul>${report.map((r) => `<li>${escNow(r)}</li>`).join("")}</ul>`
           : "";
       }
+      renderLines();
     };
+
+    /* линии на выбранный день: кто стоит и хватает ли людей по нормам */
+    let linesDay = 1;
+    function renderLines() {
+      const hostL = box.querySelector("#sch-lines");
+      if (!hostL) return;
+      const isShift = (sym) => ["1", "2", "3", "I", "II", "2Р", "3Р"].includes(sym);
+      const day = Number(linesDay) || 1;
+      const rows = SCH_LINES.map((line) => {
+        const on = emps.filter((e) => line.who.includes(e.slug) && isShift(get(e.slug, day)));
+        const ok = on.length >= line.need;
+        return `<div class="staff-dev-row">
+          <b>${escNow(line.line)}</b>
+          <span class="${ok ? "sch-ok" : "sch-bad"}">${on.length} из ${line.need}</span>
+          <span class="staff-hint">${on.length ? on.map((x) => escNow(fio(x.slug))).join(", ") : "никого"}</span>
+        </div>`;
+      }).join("");
+      hostL.innerHTML = `<div class="sch-lines-head">
+          <b>Линии на день</b>
+          <label class="poll-inline">День <input id="sch-lines-day" type="number" min="1" max="31" value="${day}"></label>
+          <span class="staff-hint">по правилам: L0 1, L1.1 ≥3, L2.1 2, L2.2–L2.4 по 1, ночной 1</span>
+        </div>
+        <div class="staff-dev-list">${rows}</div>`;
+      const inp = hostL.querySelector("#sch-lines-day");
+      if (inp) inp.addEventListener("change", () => { linesDay = Number(inp.value) || 1; renderLines(); });
+    }
 
     const loadAnswers = async () => {
       const res = await A.pollSummary("p-" + month);

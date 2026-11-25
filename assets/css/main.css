@@ -2930,3 +2930,7 @@ html.auth-lock body > :not(.auth-gate):not(script):not(style) { display: none !i
 .sch-table th.is-holiday { text-decoration: underline; }
 .sch-report ul { margin: 4px 0 0 18px; color: #fbbf24; font-size: .78rem; }
 .sch-total { font-weight: bold; }
+.sch-lines { margin-top: 14px; }
+.sch-lines-head { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.sch-ok { color: #34d399; }
+.sch-bad { color: #f87171; }
