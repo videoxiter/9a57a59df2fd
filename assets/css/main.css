@@ -2886,3 +2886,5 @@ html.auth-lock body > :not(.auth-gate):not(script):not(style) { display: none !i
 .now-card.k-leave { border-color: rgba(56,189,248,.45); }
 .now-card.k-leave > i { color: #38bdf8; }
 .now-chip.v { color: #a5b4fc; }
+.staff-dev-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.staff-dev-row .btn { margin-left: auto; padding: 4px 10px; font-size: .74rem; }

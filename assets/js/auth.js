@@ -166,6 +166,15 @@
         return (res && res.ok && Array.isArray(res.list)) ? res.list : [];
       }).catch(function () { return []; });
     },
+    /* v20: отвязать устройство и включить правило сразу для всех */
+    revokeDevice: function (slug, device) {
+      return rpc("otp_device_revoke", { p_token: tok("admin"), p_slug: slug, p_device: device })
+        .catch(function () { return null; });
+    },
+    setOnlyAppAll: function (on) {
+      return rpc("otp_staff_set_only_app_all", { p_token: tok("admin"), p_on: !!on })
+        .catch(function () { return null; });
+    },
   };
   window.OTP_AUTH = API;
 })();

@@ -1492,17 +1492,36 @@
     A.devicesList().then((list) => {
       const host = document.getElementById("staff-devices");
       if (!host) return;
+      const bulk = `<div class="staff-dev-actions">
+        <button class="btn btn-ghost" type="button" data-onlyapp-all="1">Правило для всех</button>
+        <button class="btn btn-ghost" type="button" data-onlyapp-all="0">Разрешить браузер всем</button>
+      </div>`;
       if (!Array.isArray(list) || !list.length) {
         host.innerHTML = `<h4><i class="ph-bold ph-device-mobile"></i> Устройства</h4>
-          <p class="staff-hint">Пока ни одно устройство не привязано: сотрудник должен один раз войти в приложение.</p>`;
-        return;
+          <p class="staff-hint">Пока ни одно устройство не привязано: сотрудник должен один раз войти в приложение.</p>${bulk}`;
+      } else {
+        host.innerHTML = `<h4><i class="ph-bold ph-device-mobile"></i> Устройства (${list.length})</h4>
+          <div class="staff-dev-list">${list.map((d) => `<div class="staff-dev-row">
+            <b>${escNow(d.fio || d.slug)}</b>
+            <span>${escNow(d.label || "устройство")}</span>
+            <span class="staff-hint">${d.last_seen ? "был онлайн " + new Date(d.last_seen).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "не выходил на связь"}</span>
+            <button class="btn btn-ghost" type="button" data-revoke="${escNow(d.slug)}|${escNow(d.device || "")}">Отвязать</button>
+          </div>`).join("")}</div>${bulk}`;
       }
-      host.innerHTML = `<h4><i class="ph-bold ph-device-mobile"></i> Устройства (${list.length})</h4>
-        <div class="staff-dev-list">${list.map((d) => `<div class="staff-dev-row">
-          <b>${escNow(d.fio || d.slug)}</b>
-          <span>${escNow(d.label || "устройство")}</span>
-          <span class="staff-hint">${d.last_seen ? "был онлайн " + new Date(d.last_seen).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "не выходил на связь"}</span>
-        </div>`).join("")}</div>`;
+      host.querySelectorAll("[data-onlyapp-all]").forEach((btn) => btn.addEventListener("click", async () => {
+        const on = btn.getAttribute("data-onlyapp-all") === "1";
+        const res = await A.setOnlyAppAll(on);
+        if (res && res.ok) toast(on ? `Правило включено: ${res.updated || 0} сотрудников` : "Браузер разрешён всем");
+        else toast("Не удалось применить (нужен админ-вход)");
+        initStaffPage();
+      }));
+      host.querySelectorAll("[data-revoke]").forEach((btn) => btn.addEventListener("click", async () => {
+        const [slug, device] = btn.getAttribute("data-revoke").split("|");
+        if (!device) { toast("Устройство не найдено — обновите список"); return; }
+        const res = await A.revokeDevice(slug, device);
+        if (res && res.ok) { toast("Устройство отвязано"); initStaffPage(); }
+        else toast("Не удалось отвязать");
+      }));
     }).catch(() => {});
     A.loginFails().then((list) => {
       if (!Array.isArray(list) || !list.length) return;
