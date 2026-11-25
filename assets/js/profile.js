@@ -2908,6 +2908,8 @@ function robotMenuHtml() {
     if (emp.canManage) initStartRegister();
     /* v21: пожелания по графику на следующий месяц (если опрос открыт) */
     initPollCard();
+    /* v25: подтверждение опубликованного графика («ознакомлен») */
+    initScheduleAckCard();
     /* блок «Сейчас на смене»: руководителю, главному специалисту и Андрею Болгову */
     const wantNow = emp.canManage || emp.id === "bolgov";
     const withNow = (yes) => { if (yes) initNowBoard(); };
@@ -3021,6 +3023,48 @@ function robotMenuHtml() {
         save.disabled = false;
         const msg = box.querySelector("#poll-msg");
         if (msg) msg.textContent = r && r.ok ? "Сохранено. Можно поправить до срока." : "Не удалось сохранить — попробуйте ещё раз.";
+      });
+    }).catch(() => {});
+  }
+
+  /* «Ознакомлен»: показывает опубликованный график и отметку о подтверждении */
+  function initScheduleAckCard() {
+    const A = window.OTP_AUTH;
+    if (!A || !A.ackMy) return;
+    const host = document.getElementById("st-actions");
+    if (!host) return;
+    const sec = host.closest(".st-card") || host.parentNode;
+    A.ackMy(String(emp.id)).then((res) => {
+      if (!res || !res.ok || !res.month) return;
+      const [y, m] = String(res.month).split("-").map(Number);
+      const monthName = new Date(y, m - 1, 1).toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
+      const when = res.acked_at
+        ? new Date(res.acked_at).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
+        : "";
+      const box = document.createElement("div");
+      box.className = "now-block ack-card";
+      box.innerHTML = `<div class="now-head">
+          <h3><i class="ph-bold ph-check-circle"></i> График на ${escHtml(monthName)} утверждён</h3>
+          <span class="now-sum">${res.acked_at ? "вы ознакомлены " + escHtml(when) : "нужно подтверждение"}</span>
+        </div>
+        <div class="poll-foot">
+          ${res.acked_at ? "" : '<button class="btn btn-primary" id="ack-go" type="button"><i class="ph-bold ph-check"></i> Ознакомлен</button>'}
+          <a class="btn btn-ghost" href="graph/index.html">Открыть мой график</a>
+          <span class="staff-hint" id="ack-msg">Подтверждение нужно, чтобы руководитель видел, кто график видел.</span>
+        </div>`;
+      sec.appendChild(box);
+      const btn = box.querySelector("#ack-go");
+      if (btn) btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        const r = await A.ackDo(String(emp.id), res.month);
+        btn.disabled = false;
+        const msg = box.querySelector("#ack-msg");
+        if (r && r.ok) {
+          box.querySelector(".now-sum").textContent = "вы ознакомлены " + new Date().toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+          btn.remove();
+        } else if (msg) {
+          msg.textContent = "Не удалось сохранить отметку — попробуйте позже.";
+        }
       });
     }).catch(() => {});
   }

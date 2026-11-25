@@ -1388,6 +1388,8 @@
     { line: "L2.3", need: 1, who: ["melnikov", "eliseev"], shift: "2" },
     { line: "L2.4", need: 1, who: ["pospelova", "melnikov"], shift: "2" },
     { line: "ночной", need: 1, who: ["zavyalov"], shift: "1" },
+    /* 3-я смена (L1.2): минимум 1, лучше 2 — из тех, кто указал недели в опросе */
+    { line: "L1.2 (3-я смена)", need: 1, who: null, shift: "3" },
   ];
   const SCH_TANIA = ["bolgov", "melnikov", "eliseev"];
   const SCH_FIXED_HOLIDAYS = ["01-01", "01-02", "01-07", "02-23", "03-08", "05-01", "05-09", "06-12", "11-04"];
@@ -1566,7 +1568,9 @@
         const weekend = day.wd === 0 || day.wd === 6 || day.holiday;
         if (weekend) continue;   // в выходные нормы линий не действуют
         for (const line of SCH_LINES) {
-          const have = emps.filter((e) => line.who.includes(e.slug) && isShift(get(e.slug, day.d))).length;
+          const have = line.who
+            ? emps.filter((e) => line.who.includes(e.slug) && isShift(get(e.slug, day.d))).length
+            : emps.filter((e) => get(e.slug, day.d) === "3").length;   // L1.2 — 3-я смена
           if (have < line.need) bad.push(`${day.d}-е: ${line.line} — ${have} из ${line.need}`);
         }
       }
@@ -1621,7 +1625,9 @@
 
         /* будни: нормы линий */
         for (const e of emps) put(e.slug, day.d, onVacation(e.slug, day.d) ? "О" : (offDay(e.slug, day.d) ? "X" : "В"));
+        const weekStart = day.d - ((day.wd + 6) % 7);
         for (const line of SCH_LINES) {
+          if (!line.who) continue;   // L1.2 считаем отдельно, после остальных линий
           const cand = line.who
             .filter((slug) => bySlug.has(slug))
             .filter((slug) => get(slug, day.d) === "В")
@@ -1632,14 +1638,29 @@
             report.push(`${day.d}-е: ${line.line} — недобор (${picked.length} из ${line.need})`);
           }
           for (const slug of picked) {
-            const a = answers[slug] || {};
-            const weekStart = new Date(month + "-" + String(day.d).padStart(2, "0")).getDate() - ((day.wd + 6) % 7);
-            const thirdOk = (a.third_weeks || []).map(Number).includes(weekStart) && !a.third_none;
-            put(slug, day.d, thirdOk && line.line !== "ночной" ? "3" : (line.shift || "2"));
+            put(slug, day.d, line.shift || "2");
             load[slug] = (load[slug] || 0) + 1;
             consec[slug] = (consec[slug] || 0) + 1;
             lastShift[slug] = day.d;
           }
+        }
+        /* L1.2 — 3-я смена по будням: минимум 1, лучше 2, из тех, кто указал недели */
+        const thirdPool = emps
+          .filter((e) => {
+            const a = answers[e.slug] || {};
+            return !a.third_none && (a.third_weeks || []).map(Number).includes(weekStart);
+          })
+          .filter((e) => get(e.slug, day.d) === "В")
+          .filter((e) => (consec[e.slug] || 0) < 6)
+          .map((e) => e.slug);
+        const thirdPicked = thirdPool.slice(0, 2);
+        if (!thirdPicked.length) report.push(`${day.d}-е: L1.2 — нет желающих на 3-ю смену`);
+        else if (thirdPicked.length === 1) report.push(`${day.d}-е: L1.2 — 1 человек (норма от 1, лучше 2)`);
+        for (const slug of thirdPicked) {
+          put(slug, day.d, "3");
+          load[slug] = (load[slug] || 0) + 1;
+          consec[slug] = (consec[slug] || 0) + 1;
+          lastShift[slug] = day.d;
         }
       }
       render();
@@ -1785,6 +1806,7 @@
         <span class="staff-hint" id="sp-msg"></span>
       </div>
       <div id="sp-answers"></div>
+      <div id="sp-acks"></div>
     </div>`);
 
     const msg = $("#sp-msg");
@@ -1821,24 +1843,50 @@
         </tr></thead><tbody>${rows || `<tr><td colspan="6">Пока никто не ответил</td></tr>`}</tbody></table></div>`;
     };
 
+    /* v25: кто уже ознакомился с опубликованным графиком */
+    const renderAcks = async () => {
+      const hostK = document.getElementById("sp-acks");
+      if (!hostK) return;
+      const m = month();
+      const res = await A.acksList(m);
+      if (!res || !res.ok) {
+        hostK.innerHTML = `<p class="staff-hint">Сводка ознакомления недоступна (нужен админ-вход).</p>`;
+        return;
+      }
+      const acked = res.acked || [];
+      const missing = res.missing || [];
+      const fmt = (iso) => iso ? new Date(iso).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
+      hostK.innerHTML = `<div class="staff-devices">
+        <h4><i class="ph-bold ph-check-circle"></i> Ознакомление с графиком на ${m}</h4>
+        <p class="staff-hint">Ознакомились: <b>${acked.length}</b> · не ознакомились: <b>${missing.length}</b></p>
+        ${acked.length ? `<div class="staff-dev-list">${acked.map((x) => `<div class="staff-dev-row">
+          <b>${escNow(x.fio)}</b><span class="sch-ok">ознакомлен</span><span class="staff-hint">${escNow(fmt(x.at))}</span>
+        </div>`).join("")}</div>` : ""}
+        ${missing.length ? `<p class="staff-hint">Ждём: ${missing.map(escNow).join(", ")}</p>` : ""}
+      </div>`;
+    };
+
     const createBtn = $("#sp-create");
     if (createBtn) createBtn.addEventListener("click", async () => {
       const due = ($("#sp-due") || {}).value;
       const res = await A.pollCreate(month(), due ? new Date(due).toISOString() : null, {});
       if (msg) msg.textContent = res && res.ok ? "Опрос открыт: " + month() : "Не удалось открыть опрос";
       renderAnswers();
+      renderAcks();
     });
     const closeBtn = $("#sp-close");
     if (closeBtn) closeBtn.addEventListener("click", async () => {
       const res = await A.pollSetStatus("p-" + month(), "closed");
       if (msg) msg.textContent = res && res.ok ? "Опрос закрыт" : "Не удалось закрыть";
       renderAnswers();
+      renderAcks();
     });
     const mEl = $("#sp-month");
-    if (mEl) mEl.addEventListener("change", renderAnswers);
+    if (mEl) mEl.addEventListener("change", () => { renderAnswers(); renderAcks(); });
 
     initScheduleEditor(emps, host);
     renderAnswers();
+    renderAcks();
   }
 
   async function initStaffPage() {

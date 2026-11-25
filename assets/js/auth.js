@@ -224,6 +224,21 @@
         p_token: tok("admin"), p_month: month, p_day: day, p_kind: kind || "",
       }).catch(function () { return null; });
     },
+    /* v25: подтверждение графика «ознакомлен» */
+    ackMy: function (slug) {
+      var t = tok(slug);
+      if (!t) return Promise.resolve(null);
+      return rpc("otp_schedule_my_state", { p_token: t }).catch(function () { return null; });
+    },
+    ackDo: function (slug, month) {
+      var t = tok(slug);
+      if (!t) return Promise.resolve(null);
+      return rpc("otp_schedule_ack", { p_token: t, p_month: month || null }).catch(function () { return null; });
+    },
+    acksList: function (month) {
+      return rpc("otp_schedule_acks_get", { p_token: tok("admin"), p_month: month })
+        .catch(function () { return null; });
+    },
   };
   window.OTP_AUTH = API;
 })();
