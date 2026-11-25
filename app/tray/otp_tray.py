@@ -342,6 +342,21 @@ class App:
         if reason:
             ev["reason"] = reason
         self.api.add_event(ev)
+        self._notify(ev)
+
+    def _notify(self, ev):
+        """Мгновенное сообщение в «ДисКо» (как это делает сайт).
+
+        Отправляем сразу после записи события, чтобы перерывы/смена были видны
+        в канале за секунды, а не через cron (до минуты). Ошибку не показываем:
+        если не вышло — событие всё равно в базе, и cron дошлёт.
+        """
+        try:
+            key = (self.cfg.get("cloud") or DEFAULT_CLOUD).get("key") or DEFAULT_CLOUD["key"]
+            http_json(f"{self.api.url}/functions/v1/notify", "POST", {"event": ev},
+                      {"apikey": key, "Authorization": "Bearer " + key, "x-otp-key": key})
+        except Exception as e:
+            log("notify не отправлен: %r" % (e,))
 
     # --- опрос и отсчёт
     def refresh(self):

@@ -2954,9 +2954,14 @@ function robotMenuHtml() {
         };
         const order = { work: 0, pause: 1, done: 2, leave: 3, dayoff: 4, vacation: 5, idle: 6 };
         const leaveByEmp = stLeaveWins(reqs);
+        /* Кто в списке: админский список (если есть) → график отдела → данные сайта.
+           Раньше без админ-токена список был пуст, и «Сейчас на смене» показывал нули
+           (так было у Болгова и главного специалиста). */
         const src = (Array.isArray(staff) && staff.length)
           ? staff.map((x) => ({ id: x.slug, slug: x.slug, fullName: x.fio || x.slug }))
-          : ((D.employees || []).slice());
+          : ((D.schedule && D.schedule.people && D.schedule.people.length)
+            ? D.schedule.people.map((p) => ({ id: p.slug, slug: p.slug, fullName: p.fio }))
+            : ((D.employees || []).slice()));
         const list = src.filter((e) => e.status !== "left").map((e) => {
           const slug = e.slug || e.id;
           const events = byEmp.get(slug) || byEmp.get(e.fullName);
