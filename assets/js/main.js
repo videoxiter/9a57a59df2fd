@@ -1422,6 +1422,7 @@
     box.innerHTML = `<h4><i class="ph-bold ph-table"></i> График месяца</h4>
       <div class="staff-add-grid">
         <label>Месяц<input id="sch-month" type="month" value="${nextMonth}"></label>
+        <label>День для отметки<input id="sch-flag-day" type="number" min="1" max="31" value="1"></label>
       </div>
       <div class="sch-toolbar">
         ${SCH_SYMBOLS.map((s, i) => `<button type="button" class="sch-sym${i === 0 ? " is-on" : ""}" data-sym="${s}">${s}</button>`).join("")}
@@ -1431,6 +1432,9 @@
         <button class="btn btn-primary" id="sch-load" type="button">Загрузить</button>
         <button class="btn btn-ghost" id="sch-auto" type="button">Авто по пожеланиям</button>
         <button class="btn btn-ghost" id="sch-check" type="button">Проверить нормы</button>
+        <button class="btn btn-ghost" id="sch-flag-short" type="button">День укороченный</button>
+        <button class="btn btn-ghost" id="sch-flag-hol" type="button">В день смен нет</button>
+        <button class="btn btn-ghost" id="sch-flag-clear" type="button">Снять отметку</button>
         <button class="btn btn-primary" id="sch-save" type="button">Сохранить черновик</button>
         <button class="btn btn-ghost" id="sch-publish" type="button">Опубликовать</button>
         <button class="btn btn-ghost" id="sch-csv" type="button">Выгрузить CSV</button>
@@ -1461,7 +1465,11 @@
 
     const render = () => {
       const days = schMonthDays(month);
-      const head = days.map((x) => `<th class="${x.wd === 0 ? "is-sun" : ""}${x.noShifts ? " is-holiday" : ""}">${x.d}</th>`).join("");
+      const head = days.map((x) => {
+        const f = flagOf(x.d);
+        const cls = `${x.wd === 0 ? "is-sun" : ""}${x.noShifts || f === "holiday" ? " is-holiday" : ""}${f === "short" ? " is-short" : ""}`;
+        return `<th class="${cls}" title="${f === "short" ? "укороченный день" : f === "holiday" ? "смен нет" : ""}">${x.d}${f === "short" ? "*" : ""}</th>`;
+      }).join("");
       const rowsHtml = emps.map((e) => {
         const cells = days.map((x) => {
           const v = get(e.slug, x.d);
@@ -1505,6 +1513,13 @@
     };
     /* отпуска из базы (заполняет агент из страницы отпусков Confluence) */
     let vacations = [];
+    let flags = [];   // отметки дней: {day, kind: short|holiday}
+    const loadFlags = async () => {
+      const res = await A.flagsGet(month);
+      flags = (res && res.ok && Array.isArray(res.list)) ? res.list : [];
+      return flags;
+    };
+    const flagOf = (d) => (flags.find((f) => Number(f.day) === Number(d)) || {}).kind || "";
     const loadVacations = async () => {
       const res = await A.vacationsGet(month);
       vacations = (res && res.ok && Array.isArray(res.list)) ? res.list : [];
@@ -1614,10 +1629,24 @@
       setMsg(res && res.schedule ? `Загружено (версия ${res.schedule.version}, ${res.schedule.status})` : "Черновика нет — можно собрать авто");
       loadAnswers();
       loadVacations();
+      loadFlags();
     };
     const btnLoad = box.querySelector("#sch-load"); if (btnLoad) btnLoad.addEventListener("click", onLoad);
     const btnAuto = box.querySelector("#sch-auto"); if (btnAuto) btnAuto.addEventListener("click", autoBuild);
     const btnCheck = box.querySelector("#sch-check"); if (btnCheck) btnCheck.addEventListener("click", checkNorms);
+    const setFlag = async (kind) => {
+      const dayEl = box.querySelector("#sch-flag-day");
+      const day = dayEl ? Number(dayEl.value) : 1;
+      if (!day) return;
+      await A.flagSet(month, day, kind);
+      await loadFlags();
+      render();
+      setMsg(kind ? `Отметка для ${day}-го: ${kind === "short" ? "укороченный день" : "смен нет"}` : `Отметка для ${day}-го снята`);
+    };
+    [["sch-flag-short", "short"], ["sch-flag-hol", "holiday"], ["sch-flag-clear", ""]].forEach(([id, kind]) => {
+      const b = box.querySelector("#" + id);
+      if (b) b.addEventListener("click", () => setFlag(kind));
+    });
     const btnSave = box.querySelector("#sch-save"); if (btnSave) btnSave.addEventListener("click", async () => {
       const res = await A.scheduleSave(month, cell, "draft", "черновик из админки");
       setMsg(res && res.ok ? `Сохранено (версия ${res.version})` : "Не удалось сохранить (нужен админ-вход)");
