@@ -1432,6 +1432,7 @@
         <button class="btn btn-ghost" id="sch-auto" type="button">Авто по пожеланиям</button>
         <button class="btn btn-primary" id="sch-save" type="button">Сохранить черновик</button>
         <button class="btn btn-ghost" id="sch-publish" type="button">Опубликовать</button>
+        <button class="btn btn-ghost" id="sch-csv" type="button">Выгрузить CSV</button>
         <span class="staff-hint" id="sch-msg"></span>
       </div>
       <div class="sch-report" id="sch-report"></div>
@@ -1610,6 +1611,24 @@
       } catch (e) {
         setMsg("Опубликовано в базе, но задача на сайт не отправлена.");
       }
+    });
+    const btnCsv = box.querySelector("#sch-csv"); if (btnCsv) btnCsv.addEventListener("click", () => {
+      const days = schMonthDays(month);
+      const lines = [["ФИО", ...days.map((x) => String(x.d)), "смен"].join(";")];
+      for (const e of emps) {
+        const row = [fio(e.slug), ...days.map((x) => get(e.slug, x.d) || "")];
+        const shifts = days.filter((x) => ["1", "2", "3", "I", "II", "2Р", "3Р"].includes(get(e.slug, x.d))).length;
+        row.push(String(shifts));
+        lines.push(row.map((v) => String(v).replace(/;/g, ",")).join(";"));
+      }
+      const blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "grafik-" + month + ".csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setMsg("CSV выгружен: grafik-" + month + ".csv");
     });
     render();
     loadAnswers();
