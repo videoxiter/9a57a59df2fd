@@ -465,13 +465,23 @@ class App:
         from tkinter import messagebox
         root = tk.Tk()
         root.title("ОТП — вход")
-        root.geometry("440x230")
-        tk.Label(root, text="Вставь ссылку на свою страницу (или её код):", anchor="w").pack(fill="x", padx=12, pady=(12, 2))
+        root.geometry("460x260")
+        tk.Label(root, text="Ссылка на свою страницу (или её код):", anchor="w").pack(fill="x", padx=12, pady=(12, 2))
         link = tk.Entry(root)
         link.pack(fill="x", padx=12)
         tk.Label(root, text="Пароль:", anchor="w").pack(fill="x", padx=12, pady=(10, 2))
         pwd = tk.Entry(root, show="*")
         pwd.pack(fill="x", padx=12)
+        hint = tk.Label(root, text="", anchor="w", fg="#b45309")
+        hint.pack(fill="x", padx=12, pady=(6, 0))
+        # если в буфере обмена лежит ссылка на страницу — подставляем сразу
+        try:
+            import tkinter as _tk
+            clip = str(root.clipboard_get() or "")
+            if "/team/" in clip and "videoxiter.github.io" in clip:
+                link.insert(0, clip.strip())
+        except Exception:
+            pass
         result = {"ok": False}
 
         def go(_=None):
@@ -480,9 +490,15 @@ class App:
             if "/team/" in raw:
                 code = raw.split("/team/", 1)[1].split("/", 1)[0]
             code = code.strip().strip("/")
-            if not code or not pwd.get():
-                messagebox.showwarning("ОТП", "Нужны ссылка (или код) и пароль.")
+            if not code:
+                hint.config(text="Вставьте ссылку на свою страницу (или её код).")
+                messagebox.showwarning("ОТП", "Не вижу ссылку (или код страницы).\nВставьте её в верхнее поле.")
                 return
+            if not pwd.get():
+                hint.config(text="Введите пароль.")
+                messagebox.showwarning("ОТП", "Не вижу пароль.\nВведите его в нижнее поле.")
+                return
+            hint.config(text="")
             try:
                 res = self.api.login(code, pwd.get())
             except Exception as e:
