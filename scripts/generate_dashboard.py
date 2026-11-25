@@ -51,8 +51,9 @@ PAGES = [
     ("development", "Развитие отдела", "rocket-launch", ["grow"]),
     ("settings", "Настройки", "sliders", ["settings"]),
     ("staff", "Админка", "identification-card", ["staff"]),
+    ("schedule", "График на месяц", "calendar-plus", ["schedule-sec"]),
 ]
-NAV_LABEL = {"": "Моя команда", "hours": "Журнал", "dynamics": "Динамика", "people": "Специалисты", "duties": "График отдела", "development": "Развитие", "settings": "Настройки", "staff": "Админка"}
+NAV_LABEL = {"": "Моя команда", "hours": "Журнал", "dynamics": "Динамика", "people": "Специалисты", "duties": "График отдела", "development": "Развитие", "settings": "Настройки", "staff": "Админка", "schedule": "График на месяц"}
 
 BEST_SECTION = '''  <!-- ===== КТО ЛУЧШЕ ===== -->
   <section class="section" id="best" style="padding-top:8px">
@@ -77,6 +78,20 @@ DUTIES_SECTION = '''  <!-- ===== ГРАФИК ОТДЕЛА ===== -->
       </div>
       <div class="now-board" id="now-board" data-reveal></div>
       <div class="duty-board" id="duty-board" data-reveal></div>
+    </div>
+  </section>
+'''
+
+
+SCHEDULE_SECTION = '''  <!-- ===== ГРАФИК НА МЕСЯЦ ===== -->
+  <section class="section" id="schedule-sec">
+    <div class="wrap">
+      <div class="section-head" data-reveal>
+        <span class="kicker">Планирование</span>
+        <h2>График на месяц</h2>
+        <p>Пожелания сотрудников, сборка графика, ручные правки, публикация на сайт, выгрузка в Confluence и XLSX.</p>
+      </div>
+      <div id="schedule-app" data-reveal></div>
     </div>
   </section>
 '''
@@ -123,6 +138,7 @@ def build_pages():
 
     sections["best"] = BEST_SECTION.strip()
     sections["duties"] = DUTIES_SECTION.strip()
+    sections["schedule-sec"] = SCHEDULE_SECTION.strip()
 
     for path, title, icon, ids in PAGES:
         depth = 0 if path == "" else 1

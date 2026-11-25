@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Моя команда ОТП · График на месяц</title>
+  <meta name="description" content="Моя команда ОТП · График на месяц">
+  <link rel="icon" type="image/svg+xml" href="../../assets/img/favicon.svg">
+  <link href="../../assets/css/fonts.css" rel="stylesheet">
+
+  <!-- Иконки Phosphor -->
+  <link rel="stylesheet" href="../../assets/vendor/phosphor/regular/style.css">
+  <link rel="stylesheet" href="../../assets/vendor/phosphor/fill/style.css">
+  <link rel="stylesheet" href="../../assets/vendor/phosphor/bold/style.css">
+
+  <link rel="stylesheet" href="../../assets/css/main.css?v=b3ea0a6e">
+</head>
+
+<body data-page="schedule">
+<div class="bg-stage"></div>
+<div class="bg-grid"></div>
+  <header class="nav dash-nav">
+    <div class="wrap nav-inner">
+      <a class="nav-logo" href="../index.html"><span class="dot"><i class="ph-fill ph-robot" style="color:#03141a"></i></span> Моя команда ОТП</a>
+      <nav class="nav-links dash-links"><a class="nav-chip" href="../index.html"><i class="ph-bold ph-team"></i> Моя команда</a><a class="nav-chip" href="../hours/"><i class="ph-bold ph-clock-counter-clockwise"></i> Журнал</a><a class="nav-chip" href="../dynamics/"><i class="ph-bold ph-chart-line"></i> Динамика</a><a class="nav-chip" href="../people/"><i class="ph-bold ph-users-three"></i> Специалисты</a><a class="nav-chip" href="../duties/"><i class="ph-bold ph-calendar-check"></i> График отдела</a><a class="nav-chip" href="../development/"><i class="ph-bold ph-rocket-launch"></i> Развитие</a><a class="nav-chip" href="../settings/"><i class="ph-bold ph-sliders"></i> Настройки</a><a class="nav-chip" href="../staff/"><i class="ph-bold ph-identification-card"></i> Админка</a><a class="nav-chip is-now" href="./"><i class="ph-bold ph-calendar-plus"></i> График на месяц</a></nav>
+    </div>
+  </header>
+<!-- ===== ГРАФИК НА МЕСЯЦ ===== -->
+  <section class="section" id="schedule-sec">
+    <div class="wrap">
+      <div class="section-head" data-reveal>
+        <span class="kicker">Планирование</span>
+        <h2>График на месяц</h2>
+        <p>Пожелания сотрудников, сборка графика, ручные правки, публикация на сайт, выгрузка в Confluence и XLSX.</p>
+      </div>
+      <div id="schedule-app" data-reveal></div>
+    </div>
+  </section>
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <div>
+        <div style="font-weight:600;color:var(--text)">Моя команда ОТП</div>
+        <div style="margin-top:4px">Аналитика эффективности · данные за <span id="foot-month">…</span></div>
+      </div>
+      <div style="font-family:var(--font-mono);font-size:.78rem">обновлено: <span id="foot-updated">…</span></div>
+    </div>
+  </footer>
+  <script src="../../assets/vendor/gsap.min.js?v=b3ea0a6e"></script>
+  <script src="../../assets/vendor/ScrollTrigger.min.js?v=b3ea0a6e"></script>
+  <script src="../../assets/vendor/lenis.min.js?v=b3ea0a6e"></script>
+  <script src="../../assets/vendor/chart.umd.min.js?v=b3ea0a6e"></script>
+  <script src="../../assets/js/themes.js?v=b3ea0a6e"></script>
+  <script src="../../assets/js/data.js?v=b3ea0a6e"></script>
+  <script src="../../assets/js/auth.js?v=b3ea0a6e"></script>
+  <script>window.OTP_AUTH && window.OTP_AUTH.protect("admin", true);</script>
+  <script src="../../assets/js/common.js?v=b3ea0a6e"></script>
+  <script src="../../assets/js/cloud.js?v=b3ea0a6e"></script>
+  <script src="../../assets/js/hr.js?v=b3ea0a6e"></script>
+  <script src="../../assets/js/main.js?v=b3ea0a6e"></script>
+</body>
+</html>
