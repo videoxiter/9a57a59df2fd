@@ -1373,6 +1373,9 @@
 
   /* ---------- админка: сотрудники, логины, пароли ---------- */
   /* ---------------- v22: редактор графика месяца ---------------- */
+  /* экранирование для шаблонов: нужно и редактору, и разделу «График на месяц»
+     (раньше helper был только внутри initStaffPage — раздел падал с ошибкой) */
+  const escNow = (s) => String(s == null ? "" : s).replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
   const SCH_SYMBOLS = ["2", "1", "3", "В", "I", "II", "Ср", "Т", "О", "Б", "X", "НВ", "Д", "У", "К"];
   const SCH_KIND = {
     "1": "shift", "2": "shift", "3": "shift", "I": "week", "II": "week",
@@ -1415,6 +1418,7 @@
     const app = hostEl || document.getElementById("app");
     if (!app || !emps || !emps.length) return;
     const D = window.OTP_DATA || {};
+    const A = window.OTP_AUTH;
     const nextMonth = (() => {
       const now = new Date();
       const d = new Date(now.getFullYear(), now.getMonth() + 1, 1);
@@ -1506,7 +1510,9 @@
       const isShift = (sym) => ["1", "2", "3", "I", "II", "2Р", "3Р"].includes(sym);
       const day = Number(linesDay) || 1;
       const rows = SCH_LINES.map((line) => {
-        const on = emps.filter((e) => line.who.includes(e.slug) && isShift(get(e.slug, day)));
+        const on = line.who
+          ? emps.filter((e) => line.who.includes(e.slug) && isShift(get(e.slug, day)))
+          : emps.filter((e) => get(e.slug, day) === "3");   // L1.2 — 3-я смена
         const ok = on.length >= line.need;
         return `<div class="staff-dev-row">
           <b>${escNow(line.line)}</b>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Приложение «ОТП» — установка и работа</title>
+<style>
+  :root {
+    --bg: #070b11; --panel: #0d131b; --line: rgba(148,163,184,.22);
+    --text: #e8edf5; --muted: #9fb0c5; --accent: #22d3ee; --accent2: #67e8f9;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #fff; color: #10151c;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif; font-size: 11pt; line-height: 1.55; }
+  .page { width: 210mm; min-height: 297mm; padding: 18mm 16mm; margin: 0 auto 0; page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+  .cover { background: #070b11; color: var(--text); display: flex; flex-direction: column; justify-content: center; }
+  .cover .logo { display: flex; align-items: center; gap: 14px; margin-bottom: 26px; }
+  .cover .logo img { width: 64px; height: 64px; border-radius: 16px; }
+  .cover h1 { font-size: 30pt; line-height: 1.15; margin: 0 0 8px; }
+  .cover .sub { color: var(--accent2); font-size: 13pt; letter-spacing: .04em; text-transform: uppercase; }
+  .cover .lead { color: var(--muted); font-size: 12pt; margin-top: 18px; max-width: 150mm; }
+  .cover .meta { margin-top: 40px; color: #7f8ea3; font-size: 10pt; border-top: 1px solid rgba(148,163,184,.25); padding-top: 12px; }
+  .kicker { color: #0e7490; font-size: 9pt; letter-spacing: .16em; text-transform: uppercase; font-weight: 700; }
+  h2 { font-size: 19pt; margin: 4px 0 10px; }
+  h3 { font-size: 12.5pt; margin: 18px 0 6px; color: #0f172a; }
+  p { margin: 0 0 8px; }
+  .muted { color: #5b6675; }
+  ol, ul { margin: 6px 0 10px 18px; padding: 0; }
+  li { margin-bottom: 4px; }
+  .shot { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin: 10px 0 4px; }
+  .shot img { display: block; width: 100%; height: auto; }
+  .cap { color: #5b6675; font-size: 9pt; margin-bottom: 14px; }
+  .steps { counter-reset: s; list-style: none; margin-left: 0; }
+  .steps li { counter-increment: s; position: relative; padding-left: 26px; margin-bottom: 8px; }
+  .steps li:before { content: counter(s); position: absolute; left: 0; top: 1px; width: 18px; height: 18px;
+    border-radius: 50%; background: #0e7490; color: #fff; font-size: 9pt; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; font-size: 10pt; }
+  th, td { border: 1px solid #d5dbe3; padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #eef3f8; }
+  .note { border-left: 3px solid var(--accent); background: #f1fbfd; padding: 8px 12px; margin: 10px 0; font-size: 10pt; }
+  .warn { border-left: 3px solid #f59e0b; background: #fff8ec; padding: 8px 12px; margin: 10px 0; font-size: 10pt; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .badge { display: inline-block; background: #0e7490; color: #fff; border-radius: 999px; padding: 2px 10px; font-size: 9pt; }
+  .foot { margin-top: 16px; border-top: 1px solid #d5dbe3; padding-top: 8px; color: #5b6675; font-size: 9pt; }
+  @page { size: A4; margin: 0; }
+</style>
+</head>
+<body>
+
+<section class="page cover">
+  <div class="logo">
+    <img src="images/app-icon.png" alt="">
+    <div>
+      <div class="sub">Мои результаты · ОТП</div>
+      <div style="color:#9fb0c5;font-size:11pt">приложение для трея</div>
+    </div>
+  </div>
+  <h1>Приложение «ОТП»<br>установка и работа</h1>
+  <p class="lead">Учёт рабочего времени без браузера: смена, перерывы, обед, отсутствие.
+  Напоминания о затянувшемся перерыве и открытом опросе, автоматические обновления.</p>
+  <div class="meta">
+    Версия 1.4 · Windows 10/11 · macOS<br>
+    Автор: Яковлев Евгений Евгеньевич · 25.11.2026
+  </div>
+</section>
+
+<section class="page">
+  <span class="kicker">Установка</span>
+  <h2>1. Инсталлятор</h2>
+  <p>Скачайте файл и запустите двойным щелчком:</p>
+  <p><b>https://videoxiter.github.io/9a57a59df2fd/downloads/OTP-Tray-Setup.exe</b></p>
+  <ol class="steps">
+    <li>Windows может показать синее окно «Система Windows защитила ваш компьютер».
+      Нажмите <b>«Подробнее» → «Выполнить в любом случае»</b>: у установщика нет платной подписи.</li>
+    <li>Отметьте галочки: <b>«Создать значок на рабочем столе»</b> и
+      <b>«Запускать приложение при входе в Windows»</b> (рекомендуется).</li>
+    <li>Нажмите «Установить». Программа ставится в профиль пользователя —
+      <b>права администратора не нужны</b>.</li>
+    <li>В конце оставьте галочку <b>«Запустить ОТП сейчас»</b> — приложение стартует сразу.</li>
+  </ol>
+  <div class="note">После установки ярлык появляется в меню «Пуск» → «ОТП».
+  Удаление — «Параметры → Приложения → ОТП…» (ярлыки и автозапуск убираются автоматически).</div>
+</section>
+
+<section class="page">
+  <span class="kicker">Первый запуск</span>
+  <h2>2. Вход</h2>
+  <div class="shot"><img src="images/login.png" alt="Окно входа"></div>
+  <div class="cap">Окно входа приложения (реальный вид программы)</div>
+  <ol class="steps">
+    <li>Вставьте ссылку на свою страницу (её присылает руководитель) или только код из неё.
+      Если ссылка уже в буфере обмена, она подставится сама.</li>
+    <li>Введите пароль. Сомневаетесь в опечатке — поставьте галочку <b>«показать пароль»</b>.</li>
+    <li>Нажмите «Войти». Значок в трее появляется <b>только после успешного входа</b> — это нормально.</li>
+  </ol>
+  <div class="warn">Если написано «Неверный пароль или ссылка» — в окне ошибки видно
+  <b>ответ сервера</b> и <b>код страницы</b>. С этим текстом можно сразу обратиться к руководителю.</div>
+</section>
+
+<section class="page">
+  <span class="kicker">Значок</span>
+  <h2>3. Состояния значка</h2>
+  <div class="shot"><img src="images/tray-states.png" alt="Состояния значка"></div>
+  <div class="cap">Шесть состояний: смена не начата, работа, перерыв, обед, отсутствие, нет связи</div>
+  <table>
+    <tr><th>Цвет</th><th>Что означает</th></tr>
+    <tr><td>серый</td><td>смена не начата</td></tr>
+    <tr><td>зелёный</td><td>работаете</td></tr>
+    <tr><td>жёлтый</td><td>перерыв</td></tr>
+    <tr><td>сиреневый</td><td>обед</td></tr>
+    <tr><td>голубой</td><td>временное отсутствие</td></tr>
+    <tr><td>красный</td><td>нет связи с сервером</td></tr>
+  </table>
+  <p class="muted">Windows: значок справа внизу, может прятаться под «^». macOS: в строке меню.</p>
+</section>
+
+<section class="page">
+  <span class="kicker">Работа</span>
+  <h2>4. Меню и действия</h2>
+  <p>Щелчок по значку открывает меню: <b>Начать смену</b>, <b>Техперерыв 1/2</b>, <b>Обед</b>,
+  <b>Вернуться с перерыва</b>, <b>Временное отсутствие</b>, <b>Завершить смену</b>.</p>
+  <p>Перед применением идёт <b>отсчёт 10 секунд</b> с кнопкой «Отмена»: если нажали случайно —
+  успеете отменить. Повторный щелчок по тому же пункту применяет сразу.</p>
+  <h3>Горячие клавиши (Windows)</h3>
+  <table>
+    <tr><th>Сочетание</th><th>Действие</th></tr>
+    <tr><td>Ctrl+Alt+S</td><td>начать смену</td></tr>
+    <tr><td>Ctrl+Alt+B</td><td>техперерыв 1 (повторно — вернуться)</td></tr>
+    <tr><td>Ctrl+Alt+L</td><td>обед (повторно — вернуться)</td></tr>
+    <tr><td>Ctrl+Alt+A</td><td>временное отсутствие</td></tr>
+    <tr><td>Ctrl+Alt+R</td><td>вернуться с перерыва</td></tr>
+    <tr><td>Ctrl+Alt+E</td><td>завершить смену</td></tr>
+  </table>
+  <p>Свои сочетания: меню → <b>«Горячие клавиши…»</b>. Работают и при свёрнутом приложении.</p>
+  <h3>Напоминания</h3>
+  <ul>
+    <li>Перерыв идёт дольше нормы (техперерыв 15 мин, обед 60, отсутствие 30) — уведомление в трее.</li>
+    <li>Изменились данные на странице (график, бонусы, награды) — сообщение «Новое на странице: …».</li>
+    <li>Открыт опрос по графику, а пожелания не отправлены — напоминание.</li>
+  </ul>
+</section>
+
+<section class="page">
+  <span class="kicker">Сайт</span>
+  <h2>5. Раздел «График на месяц»</h2>
+  <p>В личном кабинете появился раздел для планирования: опрос, пожелания сотрудников,
+  сборка графика и выгрузки. Ниже — реальный вид раздела (демонстрационные данные).</p>
+  <div class="shot"><img src="images/preview-poll.png" alt="Опрос и пожелания"></div>
+  <div class="cap">Опрос по графику, таблица пожеланий и сводка «кто ознакомился»</div>
+</section>
+
+<section class="page">
+  <h2>6. Сборка графика</h2>
+  <div class="shot"><img src="images/preview-grid.png" alt="Сетка графика"></div>
+  <div class="cap">Сетка «люди × дни», автосборка по пожеланиям, проверка норм и линии на день</div>
+  <ul>
+    <li><b>Авто по пожеланиям</b> — расставляет смены по правилам линий и пожеланиям.</li>
+    <li><b>Проверить нормы</b> — покажет недоборы по линиям.</li>
+    <li><b>Публиковать</b> — график уходит на сайт, сотрудники видят его в личной странице.</li>
+    <li><b>XLSX с цветами</b> и <b>В Confluence</b> — выгрузки для отчёта.</li>
+  </ul>
+  <div class="foot">ОТП · приложение и сайт «Мои результаты» · автор: Яковлев Евгений Евгеньевич</div>
+</section>
+
+</body>
+</html>
