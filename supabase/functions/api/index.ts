@@ -37,7 +37,7 @@ async function session(token: string) {
   const rows = await r.json();
   if (!Array.isArray(rows) || !rows.length) return null;
   const slug = rows[0].slug;
-  const a = await fetch(`${SB}/rest/v1/otp_staff?select=is_admin,active,can_sync&slug=eq.${slug}`, {
+  const a = await fetch(`${SB}/rest/v1/otp_staff?select=is_admin,active,can_sync,page_hash&slug=eq.${slug}`, {
     headers: { apikey: SRV, Authorization: `Bearer ${SRV}` },
   });
   const st = a.ok ? await a.json() : [];
@@ -45,7 +45,9 @@ async function session(token: string) {
   const active = !(st && st[0] && st[0].active === false);
   // v8: право запрашивать синхронизацию графика (главный специалист)
   const canSync = !!(st && st[0] && st[0].can_sync);
-  return { slug, admin, active, canSync };
+  // v12: вторая форма идентификатора (внутренний id ↔ код страницы)
+  const pageHash = (st && st[0] && st[0].page_hash) ? String(st[0].page_hash) : "";
+  return { slug, admin, active, canSync, pageHash };
 }
 
 Deno.serve(async (req: Request) => {
@@ -73,7 +75,10 @@ Deno.serve(async (req: Request) => {
     const rows: any[] = Array.isArray(p.body) ? p.body : [p.body];
     for (const r of rows) {
       if (!r || typeof r !== "object") return json({ ok: false, error: "bad row" }, 400);
-      if (!s.admin && String(r.empSlug || "") !== s.slug) {
+      // v12: принимаем обе формы идентификатора — внутренний id и код страницы,
+      // иначе «Стартовая» с данными по hash получала 403 «профиль не совпадает».
+      const own = String(r.empSlug || "");
+      if (!s.admin && own !== s.slug && !(s.pageHash && own === s.pageHash)) {
         return json({ ok: false, error: "not your event" }, 403);
       }
     }

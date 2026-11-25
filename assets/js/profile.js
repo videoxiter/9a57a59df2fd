@@ -2035,7 +2035,10 @@ function robotMenuHtml() {
     const method = (opts && opts.method) || "GET";
     let body = opts && opts.body;
     if (typeof body === "string") { try { body = JSON.parse(body); } catch (e) { body = []; } }
-    const slug = A.token(String(emp.id)) ? String(emp.id) : (A.token("admin") ? "admin" : String(emp.id));
+    /* какую сессию использовать: свой id, код страницы (hash) или админ */
+    const slug = A.token(String(emp.id)) ? String(emp.id)
+      : (emp.slug && A.token(String(emp.slug)) ? String(emp.slug)
+        : (A.token("admin") ? "admin" : String(emp.id)));
     const n = method === "POST" ? (Array.isArray(body) ? body.length : 1) : 0;
     if (n) stPendingInc();
     return A.api(slug, path, method, body)
@@ -4099,18 +4102,26 @@ function robotMenuHtml() {
       btn.addEventListener("click", () => { selected = i; renderMonth(i); });
     });
   }
-  /* вход по паролю, если он задан сотруднику (иначе страница открывается как раньше) */
+  /* вход по паролю, если он задан сотруднику (иначе страница открывается как раньше).
+     Пробуем обе формы идентификатора: внутренний id и код страницы (hash) —
+     записи в otp_staff могли заводиться и так, и так. */
   function authGate(next) {
     const A = window.OTP_AUTH;
     if (!A) return next();
-    A.session(String(emp.id)).then((s) => {
-      if (s) return next();
+    const ids = [String(emp.id)];
+    if (emp.slug && emp.slug !== emp.id) ids.push(String(emp.slug));
+    const tryIds = (i) => {
+      if (i >= ids.length) return Promise.resolve(false);
+      return A.session(ids[i]).then((s) => (s ? true : tryIds(i + 1)));
+    };
+    tryIds(0).then((ok) => {
+      if (ok) return next();
       /* Руководитель (администратор) уже авторизован — страницы сотрудников открываются сразу */
       const tryAdmin = A.isAdmin ? A.isAdmin() : Promise.resolve(false);
       tryAdmin.then((adm) => {
         if (adm) return next();
         A.staffList().then((list) => {
-          const row = (list || []).find((x) => x.slug === emp.id);
+          const row = (list || []).find((x) => ids.includes(String(x.slug)));
           if (!row || !row.has_pass) return showNoAccess();
           showGate(next);
         }).catch(() => next());
@@ -4148,10 +4159,17 @@ function robotMenuHtml() {
     document.body.appendChild(ov);
     const go = () => {
       const pass = (document.getElementById("ag-pass") || {}).value || "";
-      window.OTP_AUTH.login(String(emp.id), pass).then((res) => {
-        if (res && res.ok) { ov.remove(); next(); }
-        else { const e = document.getElementById("ag-err"); if (e) e.textContent = "Неверный пароль"; }
-      });
+      const err = () => { const e = document.getElementById("ag-err"); if (e) e.textContent = "Неверный пароль"; };
+      const ids = [String(emp.id)];
+      if (emp.slug && emp.slug !== emp.id) ids.push(String(emp.slug));
+      const attempt = (i) => {
+        if (i >= ids.length) { err(); return; }
+        window.OTP_AUTH.login(ids[i], pass).then((res) => {
+          if (res && res.ok) { ov.remove(); next(); }
+          else attempt(i + 1);
+        }).catch(() => attempt(i + 1));
+      };
+      attempt(0);
     };
     ov.querySelector("#ag-go").addEventListener("click", go);
     ov.querySelector("#ag-pass").addEventListener("keydown", (ev) => { if (ev.key === "Enter") go(); });
