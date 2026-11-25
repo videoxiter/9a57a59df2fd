@@ -142,6 +142,18 @@ def process_tasks():
                     raise RuntimeError("нет месяца в задаче публикации")
                 run("publish_schedule.py", "--month", month)
                 mark_task(tid, True, "график %s опубликован на сайте" % month)
+            elif kind == "export_schedule_xlsx":
+                month = str((payload or {}).get("month") or "").strip()
+                if not month:
+                    raise RuntimeError("нет месяца в задаче выгрузки xlsx")
+                run("export_schedule_xlsx.py", "--month", month)
+                mark_task(tid, True, "xlsx: downloads/grafik-%s.xlsx" % month)
+            elif kind == "publish_confluence_schedule":
+                month = str((payload or {}).get("month") or "").strip()
+                if not month:
+                    raise RuntimeError("нет месяца в задаче Confluence")
+                run("publish_confluence_schedule.py", "--month", month)
+                mark_task(tid, True, "страница Confluence создана или обновлена")
             else:
                 raise RuntimeError("неизвестный тип задачи: " + str(kind))
         except Exception as e:

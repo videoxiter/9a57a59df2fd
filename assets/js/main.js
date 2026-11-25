@@ -1433,6 +1433,8 @@
         <button class="btn btn-primary" id="sch-save" type="button">Сохранить черновик</button>
         <button class="btn btn-ghost" id="sch-publish" type="button">Опубликовать</button>
         <button class="btn btn-ghost" id="sch-csv" type="button">Выгрузить CSV</button>
+        <button class="btn btn-ghost" id="sch-xlsx" type="button">XLSX с цветами</button>
+        <button class="btn btn-ghost" id="sch-conf" type="button">В Confluence</button>
         <span class="staff-hint" id="sch-msg"></span>
       </div>
       <div class="sch-report" id="sch-report"></div>
@@ -1630,6 +1632,29 @@
       a.remove();
       setMsg("CSV выгружен: grafik-" + month + ".csv");
     });
+    const enqueue = async (kind, note) => {
+      try {
+        const c = D.hrRules && D.hrRules.cloud;
+        if (!c || !c.url || !c.key) { setMsg("Нет конфигурации облака — задача не отправлена."); return; }
+        await fetch(`${c.url.replace(/\/$/, "")}/rest/v1/otp_tasks`, {
+          method: "POST",
+          headers: { apikey: c.key, Authorization: "Bearer " + c.key, "Content-Type": "application/json", Prefer: "return=minimal" },
+          body: JSON.stringify([{
+            id: "task-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
+            kind, payload: { month }, requested_by: window.OTP_ACTOR || "Руководитель",
+          }]),
+        });
+        setMsg(note);
+      } catch (e) {
+        setMsg("Задача не отправлена — проверьте связь.");
+      }
+    };
+    const btnXlsx = box.querySelector("#sch-xlsx");
+    if (btnXlsx) btnXlsx.addEventListener("click", () => enqueue("export_schedule_xlsx",
+      "XLSX готовится — файл появится в downloads на сайте в течение 5 минут."));
+    const btnConf = box.querySelector("#sch-conf");
+    if (btnConf) btnConf.addEventListener("click", () => enqueue("publish_confluence_schedule",
+      "Страница в Confluence создаётся в течение 5 минут (нужны права на запись)."));
     render();
     loadAnswers();
   }
