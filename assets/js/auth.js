@@ -200,6 +200,18 @@
       return rpc("otp_poll_set_status", { p_token: tok("admin"), p_poll_id: pollId, p_status: status })
         .catch(function () { return null; });
     },
+    /* v22: график месяца */
+    scheduleGet: function (month, slug) {
+      var t = tok(slug || "admin");
+      if (!t) return Promise.resolve(null);
+      return rpc("otp_schedule_get", { p_token: t, p_month: month }).catch(function () { return null; });
+    },
+    scheduleSave: function (month, cell, status, note) {
+      return rpc("otp_schedule_save", {
+        p_token: tok("admin"), p_month: month, p_cell: cell,
+        p_status: status || "draft", p_note: note || null,
+      }).catch(function () { return null; });
+    },
   };
   window.OTP_AUTH = API;
 })();

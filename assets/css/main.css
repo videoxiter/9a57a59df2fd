@@ -2903,3 +2903,30 @@ html.auth-lock body > :not(.auth-gate):not(script):not(style) { display: none !i
 .poll-tr b { min-width: 180px; }
 /* Админка: опрос */
 #poll-admin { margin-top: 16px; }
+/* Редактор графика (v22) */
+.sch-editor { margin-top: 16px; }
+.sch-toolbar { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 8px 0; }
+.sch-sym { min-width: 34px; padding: 4px 8px; border-radius: 8px; border: 1px solid rgba(148,163,184,.25);
+  background: rgba(148,163,184,.06); color: var(--text); cursor: pointer; font-size: .8rem; }
+.sch-sym.is-on { border-color: rgba(34,211,238,.6); background: rgba(34,211,238,.12); color: #67e8f9; }
+.sch-wrap { overflow-x: auto; margin-top: 10px; }
+.sch-table { border-collapse: collapse; font-size: .72rem; }
+.sch-table th, .sch-table td { border: 1px solid rgba(148,163,184,.18); padding: 3px 5px; text-align: center; white-space: nowrap; }
+.sch-table thead th { position: sticky; top: 0; background: #0d131b; }
+.sch-table .sch-name { text-align: left; min-width: 190px; position: sticky; left: 0; background: #0d131b; }
+.sch-cell { cursor: pointer; }
+.sch-cell:hover { outline: 2px solid rgba(34,211,238,.5); }
+.sch-cell.off { color: #93a4b8; }
+.sch-cell.shift { color: #67e8f9; }
+.sch-cell.week { color: #fbbf24; }
+.sch-cell.vac { color: #a78bfa; }
+.sch-cell.sick { color: #f87171; }
+.sch-cell.study { color: #f0abfc; }
+.sch-cell.dayoff { color: #9fb0c5; }
+.sch-cell.duty { color: #34d399; }
+.sch-cell.trip { color: #60a5fa; }
+.sch-cell.extra { color: #f59e0b; }
+.sch-table th.is-sun { color: #f87171; }
+.sch-table th.is-holiday { text-decoration: underline; }
+.sch-report ul { margin: 4px 0 0 18px; color: #fbbf24; font-size: .78rem; }
+.sch-total { font-weight: bold; }

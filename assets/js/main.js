@@ -1371,6 +1371,230 @@
   initStaffPage();
 
   /* ---------- админка: сотрудники, логины, пароли ---------- */
+  /* ---------------- v22: редактор графика месяца ---------------- */
+  const SCH_SYMBOLS = ["2", "1", "3", "В", "I", "II", "Ср", "Т", "О", "Б", "X", "НВ", "Д", "У", "К"];
+  const SCH_KIND = {
+    "1": "shift", "2": "shift", "3": "shift", "I": "week", "II": "week",
+    "В": "off", "О": "vac", "Б": "sick", "У": "study", "X": "dayoff",
+    "НВ": "dayoff", "Д": "extra", "К": "trip", "Ср": "duty", "Т": "duty",
+  };
+  /* нормы линий и допустимые сотрудники (по правилам руководителя) */
+  const SCH_LINES = [
+    { line: "L0", need: 1, who: ["frolov", "bolgov"], shift: "2" },
+    { line: "L1.1", need: 3, who: ["yuryev", "agarov", "vtorygin", "zavyalov", "khasanov"], shift: "2" },
+    { line: "L2.1", need: 2, who: ["melnikov", "pestovsky", "eliseev", "yuryev"], shift: "2" },
+    { line: "L2.2", need: 1, who: ["pestovsky", "yuryev"], shift: "2" },
+    { line: "L2.3", need: 1, who: ["melnikov", "eliseev"], shift: "2" },
+    { line: "L2.4", need: 1, who: ["pospelova", "melnikov"], shift: "2" },
+    { line: "ночной", need: 1, who: ["zavyalov"], shift: "1" },
+  ];
+  const SCH_TANIA = ["bolgov", "melnikov", "eliseev"];
+  const SCH_FIXED_HOLIDAYS = ["01-01", "01-02", "01-07", "02-23", "03-08", "05-01", "05-09", "06-12", "11-04"];
+  const SCH_NO_SHIFTS = ["01-01", "01-02", "03-08"];
+
+  function schMonthDays(month) {
+    const [y, m] = month.split("-").map(Number);
+    const total = new Date(y, m, 0).getDate();
+    const out = [];
+    for (let d = 1; d <= total; d++) {
+      const dt = new Date(y, m - 1, d);
+      const mmdd = String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+      out.push({
+        d, wd: dt.getDay(),
+        holiday: SCH_FIXED_HOLIDAYS.includes(mmdd),
+        noShifts: SCH_NO_SHIFTS.includes(mmdd),
+      });
+    }
+    return out;
+  }
+
+  async function initScheduleEditor(emps) {
+    const app = document.getElementById("app");
+    if (!app || !emps || !emps.length) return;
+    const D = window.OTP_DATA || {};
+    const nextMonth = (() => {
+      const now = new Date();
+      const d = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+    })();
+    const box = document.createElement("div");
+    box.className = "staff-add sch-editor";
+    box.innerHTML = `<h4><i class="ph-bold ph-table"></i> График месяца</h4>
+      <div class="staff-add-grid">
+        <label>Месяц<input id="sch-month" type="month" value="${nextMonth}"></label>
+      </div>
+      <div class="sch-toolbar">
+        ${SCH_SYMBOLS.map((s, i) => `<button type="button" class="sch-sym${i === 0 ? " is-on" : ""}" data-sym="${s}">${s}</button>`).join("")}
+        <span class="staff-hint">выберите символ и нажимайте по ячейкам</span>
+      </div>
+      <div class="staff-add-foot">
+        <button class="btn btn-primary" id="sch-load" type="button">Загрузить</button>
+        <button class="btn btn-ghost" id="sch-auto" type="button">Авто по пожеланиям</button>
+        <button class="btn btn-primary" id="sch-save" type="button">Сохранить черновик</button>
+        <button class="btn btn-ghost" id="sch-publish" type="button">Опубликовать</button>
+        <span class="staff-hint" id="sch-msg"></span>
+      </div>
+      <div class="sch-report" id="sch-report"></div>
+      <div class="sch-wrap" id="sch-wrap"></div>`;
+    app.appendChild(box);
+
+    let month = nextMonth;
+    let cell = {};            // slug -> { day: symbol }
+    let symbol = "2";
+    let answers = {};         // slug -> ответ опроса
+    let report = [];
+
+    const bySlug = new Map(emps.map((e) => [e.slug, e]));
+    const fio = (slug) => (bySlug.get(slug) || {}).fio || slug;
+
+    const setMsg = (t) => { const m = box.querySelector("#sch-msg"); if (m) m.textContent = t; };
+
+    const get = (slug, d) => (cell[slug] || {})[String(d)] || "";
+    const put = (slug, d, v) => {
+      cell[slug] = cell[slug] || {};
+      if (v) cell[slug][String(d)] = v; else delete cell[slug][String(d)];
+    };
+
+    const render = () => {
+      const days = schMonthDays(month);
+      const head = days.map((x) => `<th class="${x.wd === 0 ? "is-sun" : ""}${x.noShifts ? " is-holiday" : ""}">${x.d}</th>`).join("");
+      const rowsHtml = emps.map((e) => {
+        const cells = days.map((x) => {
+          const v = get(e.slug, x.d);
+          const kind = SCH_KIND[v] || "";
+          return `<td class="sch-cell ${kind}" data-slug="${e.slug}" data-day="${x.d}" title="${escNow(fio(e.slug))} · ${x.d}">${escNow(v)}</td>`;
+        }).join("");
+        const shifts = days.filter((x) => ["1", "2", "3", "I", "II", "2Р", "3Р"].includes(get(e.slug, x.d))).length;
+        return `<tr><th class="sch-name">${escNow(fio(e.slug))}</th>${cells}<td class="sch-total">${shifts}</td></tr>`;
+      }).join("");
+      const wrap = box.querySelector("#sch-wrap");
+      if (wrap) wrap.innerHTML = `<table class="sch-table"><thead><tr><th class="sch-name">ФИО</th>${head}<th>см.</th></tr></thead><tbody>${rowsHtml}</tbody></table>`;
+      wrap.querySelectorAll(".sch-cell").forEach((td) => td.addEventListener("click", () => {
+        put(td.dataset.slug, Number(td.dataset.day), symbol === "" ? "" : symbol);
+        render();
+      }));
+      const rep = box.querySelector("#sch-report");
+      if (rep) {
+        rep.innerHTML = report.length
+          ? `<b>Замечания автосборки:</b><ul>${report.map((r) => `<li>${escNow(r)}</li>`).join("")}</ul>`
+          : "";
+      }
+    };
+
+    const loadAnswers = async () => {
+      const res = await A.pollSummary("p-" + month);
+      const map = {};
+      if (res && res.ok && Array.isArray(res.list)) {
+        for (const r of res.list) {
+          const slug = (D.employees || []).find((e) => (e.slug === r.emp_slug || e.id === r.emp_slug));
+          map[r.emp_slug] = r.answers || {};
+          if (slug && slug.id !== r.emp_slug) map[slug.id] = r.answers || {};
+        }
+      }
+      answers = map;
+      return map;
+    };
+
+    const offDay = (slug, d) => {
+      const a = answers[slug] || {};
+      return (a.off_dates || []).map(Number).includes(Number(d));
+    };
+
+    const autoBuild = async () => {
+      await loadAnswers();
+      const days = schMonthDays(month);
+      cell = {};
+      report = [];
+      const consec = {};   // slug -> смен подряд
+      const load = {};     // slug -> всего смен
+      const lastShift = {};// slug -> день последней смены
+      const taniaQ = SCH_TANIA.slice();
+      const l0Q = ["frolov", "bolgov"];
+
+      for (const day of days) {
+        const weekend = day.wd === 0 || day.wd === 6 || day.holiday;
+        if (weekend || day.noShifts) {
+          for (const e of emps) {
+            put(e.slug, day.d, "В");
+            consec[e.slug] = 0;
+          }
+          if (day.noShifts) continue;
+          /* выходные смены — только по пожеланиям */
+          for (const e of emps) {
+            const a = answers[e.slug] || {};
+            if (a.weekend_none) continue;
+            if ((a.weekend_dates || []).map(Number).includes(day.d)) {
+              put(e.slug, day.d, a.weekend_time === "08:00" ? "II" : "I");
+              load[e.slug] = (load[e.slug] || 0) + 1;
+            }
+          }
+          /* дежурные: суббота — «Тания», воскресенье — «срочка» из L0 */
+          const queue = day.wd === 6 ? taniaQ : l0Q;
+          for (let i = 0; i < queue.length; i++) {
+            const slug = queue[i];
+            if (!emps.some((e) => e.slug === slug)) continue;
+            if (get(slug, day.d) !== "В") continue;
+            if (offDay(slug, day.d)) continue;
+            put(slug, day.d, day.wd === 6 ? "Т" : "Ср");
+            queue.push(queue.shift());
+            break;
+          }
+          continue;
+        }
+
+        /* будни: нормы линий */
+        for (const e of emps) put(e.slug, day.d, offDay(e.slug, day.d) ? "X" : "В");
+        for (const line of SCH_LINES) {
+          const cand = line.who
+            .filter((slug) => bySlug.has(slug))
+            .filter((slug) => get(slug, day.d) === "В")
+            .filter((slug) => (consec[slug] || 0) < 6)
+            .sort((a, b) => (load[a] || 0) - (load[b] || 0) || String(lastShift[a] || 0).localeCompare(String(lastShift[b] || 0)));
+          const picked = cand.slice(0, line.need);
+          if (picked.length < line.need) {
+            report.push(`${day.d}-е: ${line.line} — недобор (${picked.length} из ${line.need})`);
+          }
+          for (const slug of picked) {
+            const a = answers[slug] || {};
+            const weekStart = new Date(month + "-" + String(day.d).padStart(2, "0")).getDate() - ((day.wd + 6) % 7);
+            const thirdOk = (a.third_weeks || []).map(Number).includes(weekStart) && !a.third_none;
+            put(slug, day.d, thirdOk && line.line !== "ночной" ? "3" : (line.shift || "2"));
+            load[slug] = (load[slug] || 0) + 1;
+            consec[slug] = (consec[slug] || 0) + 1;
+            lastShift[slug] = day.d;
+          }
+        }
+      }
+      render();
+    };
+
+    box.querySelectorAll(".sch-sym").forEach((btn) => btn.addEventListener("click", () => {
+      symbol = btn.getAttribute("data-sym");
+      box.querySelectorAll(".sch-sym").forEach((b) => b.classList.toggle("is-on", b === btn));
+    }));
+    const onLoad = async () => {
+      month = (box.querySelector("#sch-month") || {}).value || nextMonth;
+      const res = await A.scheduleGet(month);
+      cell = (res && res.ok && res.schedule && res.schedule.cell) ? res.schedule.cell : {};
+      report = [];
+      render();
+      setMsg(res && res.schedule ? `Загружено (версия ${res.schedule.version}, ${res.schedule.status})` : "Черновика нет — можно собрать авто");
+      loadAnswers();
+    };
+    const btnLoad = box.querySelector("#sch-load"); if (btnLoad) btnLoad.addEventListener("click", onLoad);
+    const btnAuto = box.querySelector("#sch-auto"); if (btnAuto) btnAuto.addEventListener("click", autoBuild);
+    const btnSave = box.querySelector("#sch-save"); if (btnSave) btnSave.addEventListener("click", async () => {
+      const res = await A.scheduleSave(month, cell, "draft", "черновик из админки");
+      setMsg(res && res.ok ? `Сохранено (версия ${res.version})` : "Не удалось сохранить (нужен админ-вход)");
+    });
+    const btnPub = box.querySelector("#sch-publish"); if (btnPub) btnPub.addEventListener("click", async () => {
+      const res = await A.scheduleSave(month, cell, "published", "публикация графика");
+      setMsg(res && res.ok ? "Опубликовано в базе. Перенос на сайт — этап публикации." : "Не удалось опубликовать");
+    });
+    render();
+    loadAnswers();
+  }
+
   async function initStaffPage() {
     const app = $("#staff-app");
     if (!app || !window.OTP_AUTH) return;
@@ -1545,6 +1769,8 @@
     const pollMonthEl = $("#poll-month");
     if (pollMonthEl) pollMonthEl.addEventListener("change", pollLoad);
     pollLoad();
+    /* v22: редактор графика месяца */
+    initScheduleEditor(rows.filter((r) => r.slug !== "admin"));
     /* v19: переключатель «только из приложения» + список привязанных устройств */
     app.querySelectorAll('[data-f="onlyapp"]').forEach((box) => box.addEventListener("change", async () => {
       const row = box.closest(".staff-row");
