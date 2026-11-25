@@ -648,6 +648,9 @@
   let nowSearch = "";
   /* Сообщение, которое покажем после перезагрузки списка в «Админке». */
   let __staffMsg = "";
+  /* Пароли, заданные в этом сеансе страницы: из базы их не показать (только хеш),
+     но «Текст доступа» должен содержать именно заданный пароль. */
+  const __sessionPass = new Map();
   function nowSyncSet(ok) { __nowSyncOk = ok; }
   function nowSync() {
     if (__nowSyncOk === null) return `<span class="now-chip s">… соединение</span>`;
@@ -1639,21 +1642,34 @@
       const slug = row.getAttribute("data-slug");
       const info = rows.find((x) => x.slug === slug) || {};
       const typedPass = ((row.querySelector(`[data-f="pass"]`) || {}).value || "").trim();
-      const pass = typedPass || info.pass || "";
-      /* С v4 пароли хранятся только в виде хеша — показать старый нельзя.
-         Если сотрудник задан, но пароль не введён сейчас — честно пишем это,
-         а не «—» (из-за прочерка и было непонятно, есть пароль или нет). */
-      const passLine = pass
-        ? "Пароль: " + pass
-        : (info.hasPass
-          ? "Пароль: уже задан ранее (показать нельзя — хранится в виде хеша).\nЕсли забыли — задайте новый в «Админке» и отправьте этот текст ещё раз."
-          : "Пароль: ещё не задан. Задайте его в «Админке» и отправьте этот текст ещё раз.");
+      /* Если пароль введён прямо сейчас — сначала сохраняем его, чтобы в тексте
+         оказался рабочий пароль, а не «на будущее». */
+      if (typedPass) {
+        const saved = await A.saveStaff({
+          slug,
+          fio: (row.querySelector(`[data-f="fio"]`) || {}).value.trim() || info.fio,
+          login: (row.querySelector(`[data-f="login"]`) || {}).value.trim(),
+          pass: typedPass,
+          avatar: (row.querySelector(`[data-f="avatar"]`) || {}).value.trim(),
+          active: true,
+        }).catch(() => null);
+        if (saved && saved.ok) {
+          __sessionPass.set(slug, typedPass);
+          const fld = row.querySelector(`[data-f="pass"]`);
+          if (fld) fld.value = "";
+        }
+      }
+      const pass = typedPass || __sessionPass.get(slug) || __sessionPass.get(info.fio) || info.pass || "";
+      if (!pass) {
+        toast("Сначала задайте пароль: введите его в поле «Пароль» и нажмите «Текст доступа»");
+        return;
+      }
       const fio = (row.querySelector(`[data-f="fio"]`) || {}).value || info.fio || "";
       const hash = info.hash || "";
       const link = hash ? "https://videoxiter.github.io/9a57a59df2fd/team/" + hash + "/start/index.html" : "";
       const text = "Привет! Это «Мои результаты» — личный кабинет сотрудника отдела технической поддержки ОТП.\n\n"
         + (fio ? fio + ", твоя страница:\n" : "Твоя страница:\n") + link + "\n"
-        + passLine + "\n\n"
+        + "Пароль: " + pass + "\n\n"
         + "Зачем это нужно:\n"
         + "• видеть свои результаты и расти осознанно: KPI по месяцам, место в рейтинге, бонусы и доход;\n"
         + "• не держать в голове часы: «Стартовая» считает смену, перерывы и прогресс дня;\n"
@@ -1711,17 +1727,25 @@
       const get = (f) => row.querySelector(`[data-f="${f}"]`);
       const ok = row.querySelector(".staff-ok");
       btn.disabled = true;
+      const typed = (get("pass").value || "").trim();
       const res = await A.saveStaff({
         slug: row.getAttribute("data-slug"),
         fio: get("fio").value.trim(),
         login: get("login").value.trim(),
-        pass: get("pass").value,
+        pass: typed || null,
         avatar: get("avatar").value.trim(),
         active: get("active").checked,
       });
       btn.disabled = false;
       if (res && res.ok) {
-        const hadPass = !!(get("pass") && get("pass").value);
+        const hadPass = !!typed;
+        if (hadPass) {
+          /* Запоминаем введённый пароль до конца сеанса страницы: показать его
+             из базы нельзя (там только хеш), но текст доступа должен содержать
+             именно то, что вы задали сотруднику. */
+          __sessionPass.set(row.getAttribute("data-slug"), typed);
+          __sessionPass.set(String(get("fio").value.trim()), typed);
+        }
         if (ok) { ok.hidden = false; setTimeout(() => { ok.hidden = true; }, 2000); }
         toast(hadPass ? "Пароль сохранён" : "Данные сохранены");
         if (hadPass) get("pass").value = "";
