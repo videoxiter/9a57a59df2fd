@@ -472,6 +472,14 @@ class App:
         tk.Label(root, text="Пароль:", anchor="w").pack(fill="x", padx=12, pady=(10, 2))
         pwd = tk.Entry(root, show="*")
         pwd.pack(fill="x", padx=12)
+        # «показать пароль» — чтобы видеть опечатки при вводе
+        show_var = tk.BooleanVar(value=False)
+
+        def toggle_pwd():
+            pwd.config(show="" if show_var.get() else "*")
+
+        tk.Checkbutton(root, text="показать пароль", variable=show_var,
+                       command=toggle_pwd, anchor="w").pack(fill="x", padx=10, pady=(2, 0))
         hint = tk.Label(root, text="", anchor="w", fg="#b45309")
         hint.pack(fill="x", padx=12, pady=(6, 0))
         # если в буфере обмена лежит ссылка на страницу — подставляем сразу
