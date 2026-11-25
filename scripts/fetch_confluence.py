@@ -180,14 +180,20 @@ def parse_month(client: Client, html: str, iso: str):
     """Сетка смен + распределение по линиям + важные даты."""
     p = Tables()
     p.feed(html)
-    grid, lines = None, {}
+    grids = []          # календарных таблиц на странице может быть несколько
+    lines = {}
     for tb in p.tables:
         if not tb:
             continue
         head = [c["t"] for c in tb[0]]
-        # календарная сетка: «ФИО», «1», «2», … «31»
-        if head and head[0] in ("ФИО", "Ф И О") and len(head) > 20:
-            grid = tb
+        # календарная сетка: «ФИО», «1», «2», … «31» (встречаются таблицы
+        # и на 12–20 колонок — вторая линия, первая строка может быть без «ФИО»)
+        is_grid = bool(head) and (
+            (head[0] in ("ФИО", "Ф И О") and len(head) > 12)
+            or (len(head) >= 12 and sum(1 for c in head if c.isdigit()) >= 10)
+        )
+        if is_grid:
+            grids.append(tb)
         # распределение по линиям: строки вида «L0(супервайзинг…)», далее недели
         elif any(re.match(r"^L\d", (r[0]["t"] if r else "")) for r in tb):
             week_labels = [c["t"] for c in tb[0][1:]]
@@ -207,27 +213,38 @@ def parse_month(client: Client, html: str, iso: str):
                     weeks.append(names if names else ["—"])
                 lines[lid] = {"title": lname.strip(), "weeks": weeks, "labels": week_labels}
 
+    def looks_like_name(s: str) -> bool:
+        t = (s or "").strip()
+        if len(t) < 5 or t.isdigit():
+            return False
+        return len([w for w in re.split(r"\s+", t) if len(w) > 1 and w[0].isalpha()]) >= 2
+
     shifts = {}
-    if grid:
+    for grid in grids:
         header = grid[0]
         days = []
         for c in header[1:]:
-            if c["t"].isdigit():
-                days.append(int(c["t"]))
+            days.append(int(c["t"]) if c["t"].isdigit() else None)
         for row in grid[1:]:
+            if not row:
+                continue
             keys = [k for c in row for k in c["keys"]]
             who = client.user(keys[0]) if keys else ""
             if not who:
+                # имя может быть вписано обычным текстом (без ссылки на пользователя)
+                first = (row[0]["t"] or "").strip()
+                who = first if looks_like_name(first) else ""
+            if not who:
                 continue
-            cells = row[1:]
-            rec = {}
-            for i, c in enumerate(cells):
-                if i >= len(days):
-                    break
+            rec = shifts.get(who) or {}
+            for i, c in enumerate(row[1:]):
+                if i >= len(days) or days[i] is None:
+                    continue
                 sym = (c["t"] or "").strip()
                 if sym:
                     rec[str(days[i])] = sym
-            shifts[who] = rec
+            if rec:
+                shifts[who] = rec
     facts = [x for x in p.loose if re.search(r"отпуск|больнич|рабочих дня|Выходных смен|Сокращенный день|Праздничные", x)]
     return {"month": iso, "days": {k: v for k, v in []}, "shifts": shifts, "lines": lines, "facts": facts}
 

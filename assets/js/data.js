@@ -17314,7 +17314,7 @@ window.OTP_DATA = {
     }
   ],
   "schedule": {
-    "generated": "2026-11-25T11:45",
+    "generated": "2026-11-25T11:55",
     "legend": {
       "1": {
         "kind": "shift",
@@ -42581,6 +42581,266 @@ window.OTP_DATA = {
                 "15:00–15:15"
               ],
               "lunch": "12:00–13:00"
+            },
+            "30": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            }
+          },
+          "Вторыгин Ефим Владимирович": {
+            "1": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт (или не работает)",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "2": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт (или не работает)",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "3": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт (или не работает)",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "4": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт (или не работает)",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "5": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт (или не работает)",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "6": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт (или не работает)",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "7": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт (или не работает)",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "8": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт (или не работает)",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "9": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт (или не работает)",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "10": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт (или не работает)",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "11": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт (или не работает)",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "12": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт (или не работает)",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "13": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт (или не работает)",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "14": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт (или не работает)",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "15": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт (или не работает)",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "16": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт (или не работает)",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "17": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт (или не работает)",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "18": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт (или не работает)",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "19": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт (или не работает)",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "20": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт (или не работает)",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "21": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт (или не работает)",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "22": {
+              "sym": "X",
+              "kind": "dayoff",
+              "title": "Отгул за свой счёт (или не работает)",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "23": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "24": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "25": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "26": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "27": {
+              "sym": "2",
+              "kind": "shift",
+              "title": "Смена 2",
+              "time": "09:00–18:00",
+              "breaks": [
+                "10:45–11:00",
+                "15:45–16:00"
+              ],
+              "lunch": "13:00–14:00"
+            },
+            "28": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
+            },
+            "29": {
+              "sym": "В",
+              "kind": "off",
+              "title": "Выходной",
+              "time": null,
+              "breaks": [],
+              "lunch": null
             },
             "30": {
               "sym": "2",
