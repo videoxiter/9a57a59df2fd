@@ -1588,10 +1588,15 @@
       const consec = {};   // slug -> смен подряд
       const load = {};     // slug -> всего смен
       const lastShift = {};// slug -> день последней смены
+      const weekendUsed = {}; // slug -> выходных смен в месяце
+      const weekShifts = {};  // slug -> смен в текущей неделе
+      const WEEK_MAX = 5;     // не больше 5 смен в календарную неделю
+      const WEEKEND_MAX = 4;  // не больше 4 выходных смен в месяц
       const taniaQ = SCH_TANIA.slice();
       const l0Q = ["frolov", "bolgov"];
 
       for (const day of days) {
+        if (day.wd === 1) for (const k of Object.keys(weekShifts)) weekShifts[k] = 0;  // новая неделя
         const weekend = day.wd === 0 || day.wd === 6 || day.holiday;
         if (weekend || day.noShifts) {
           for (const e of emps) {
@@ -1599,15 +1604,19 @@
             consec[e.slug] = 0;
           }
           if (day.noShifts) continue;
-          /* выходные смены — только по пожеланиям */
+          /* выходные смены — только по пожеланиям, с лимитами */
           for (const e of emps) {
             if (onVacation(e.slug, day.d)) { put(e.slug, day.d, "О"); continue; }
             const a = answers[e.slug] || {};
             if (a.weekend_none) continue;
-            if ((a.weekend_dates || []).map(Number).includes(day.d)) {
-              put(e.slug, day.d, a.weekend_time === "08:00" ? "II" : "I");
-              load[e.slug] = (load[e.slug] || 0) + 1;
+            if (!(a.weekend_dates || []).map(Number).includes(day.d)) continue;
+            if ((weekendUsed[e.slug] || 0) >= WEEKEND_MAX) {
+              report.push(`${day.d}-е: ${fio(e.slug)} просил выходную смену, но лимит ${WEEKEND_MAX} в месяц исчерпан`);
+              continue;
             }
+            put(e.slug, day.d, a.weekend_time === "08:00" ? "II" : "I");
+            load[e.slug] = (load[e.slug] || 0) + 1;
+            weekendUsed[e.slug] = (weekendUsed[e.slug] || 0) + 1;
           }
           /* дежурные: суббота — «Тания», воскресенье — «срочка» из L0 */
           const queue = day.wd === 6 ? taniaQ : l0Q;
@@ -1632,6 +1641,7 @@
             .filter((slug) => bySlug.has(slug))
             .filter((slug) => get(slug, day.d) === "В")
             .filter((slug) => (consec[slug] || 0) < 6)
+            .filter((slug) => (weekShifts[slug] || 0) < WEEK_MAX)
             .sort((a, b) => (load[a] || 0) - (load[b] || 0) || String(lastShift[a] || 0).localeCompare(String(lastShift[b] || 0)));
           const picked = cand.slice(0, line.need);
           if (picked.length < line.need) {
@@ -1641,6 +1651,7 @@
             put(slug, day.d, line.shift || "2");
             load[slug] = (load[slug] || 0) + 1;
             consec[slug] = (consec[slug] || 0) + 1;
+            weekShifts[slug] = (weekShifts[slug] || 0) + 1;
             lastShift[slug] = day.d;
           }
         }

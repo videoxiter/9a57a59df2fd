@@ -117,6 +117,54 @@ def main():
         row += 1
 
     ws.freeze_panes = "B2"
+
+    # отпуска месяца отдельным блоком под таблицей
+    try:
+        vres = rpc("otp_vacations_get", {"p_month": args.month}) or {}
+        vac = vres.get("list") or []
+    except Exception:
+        vac = []
+    if vac:
+        row += 1
+        ws.cell(row=row, column=1, value="Отпуска на месяц").font = Font(bold=True)
+        row += 1
+        for v in vac:
+            emp = by_slug.get(str(v.get("emp_slug")))
+            fio = (emp or {}).get("fullName") or str(v.get("emp_slug"))
+            c1 = ws.cell(row=row, column=1, value=fio)
+            c1.border = border
+            c2 = ws.cell(row=row, column=2, value=f"{v.get('from_day')}–{v.get('to_day')}")
+            c2.border = border
+            c2.alignment = Alignment(horizontal="center")
+            c3 = ws.cell(row=row, column=3, value=v.get("raw") or "")
+            c3.border = border
+            row += 1
+
+    # лист с легендой символов
+    ws2 = wb.create_sheet("Легенда")
+    ws2.column_dimensions["A"].width = 8
+    ws2.column_dimensions["B"].width = 42
+    ws2.cell(row=1, column=1, value="Символ").font = Font(bold=True)
+    ws2.cell(row=1, column=2, value="Значение").font = Font(bold=True)
+    legend_rows = [
+        ("1", "Смена 1 (05:00–13:00)"), ("2", "Смена 2 (09:00–18:00)"),
+        ("3", "Смена 3 (10:00–19:00)"), ("I", "Выходная смена 1 (05:00–14:00)"),
+        ("II", "Выходная смена 2 (08:00–17:00)"), ("2Р", "Рабочий выходной (смена 2)"),
+        ("3Р", "Рабочий выходной (смена 3)"), ("Ср", "Дежурный по срочке"),
+        ("Т", "Дежурство «Тания»"), ("Д", "Дополнительная смена"),
+        ("В", "Выходной"), ("О", "Отпуск"), ("Б", "Больничный"),
+        ("У", "Учебный отпуск"), ("X", "Отгул за свой счёт"), ("НВ", "Отгул с отработкой"),
+        ("К", "Командировка"), ("С", "Семинар"),
+    ]
+    r2 = 2
+    for sym, meaning in legend_rows:
+        ws2.cell(row=r2, column=1, value=sym).alignment = Alignment(horizontal="center")
+        ws2.cell(row=r2, column=2, value=meaning)
+        kind = KIND_OF.get(sym)
+        if kind:
+            ws2.cell(row=r2, column=1).fill = PatternFill("solid", fgColor=COLORS.get(kind, "FFFFFF"))
+        r2 += 1
+
     os.makedirs(OUT_DIR, exist_ok=True)
     out = os.path.join(OUT_DIR, f"grafik-{args.month}.xlsx")
     wb.save(out)
