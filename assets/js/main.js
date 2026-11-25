@@ -773,7 +773,11 @@
       if (stopped) return { kind: "done", label: "смена завершена", icon: "ph-check-circle", since: stopped, sec };
       if (active) {
         const nm = SLOT[active.slot] || ["пауза", "ph-pause"];
-        return { kind: "pause", label: nm[0] + (active.reason ? ": " + active.reason : ""), icon: nm[1], since: Date.parse(active.at), sec };
+        /* длительность самой паузы (а не отработанное время) — нужна для плашки
+           «Пауза больше 15 минут»; раньше там сравнивалось отработанное время,
+           и плашка появлялась почти у всех на паузе. */
+        const pauseSec = Math.max(0, Math.round((Date.now() - Date.parse(active.at)) / 1000));
+        return { kind: "pause", label: nm[0] + (active.reason ? ": " + active.reason : ""), icon: nm[1], since: Date.parse(active.at), sec, pauseSec };
       }
       if (started) return { kind: "work", label: "работает" + (note ? " · " + note : ""), icon: "ph-briefcase", since: last, sec };
       return { kind: "idle", label: "не начинал", icon: "ph-moon", since: null, sec };
@@ -998,7 +1002,7 @@
     const attn = [];
     if (att && att.late && att.late.length) attn.push({ icon: "ph-alarm", cls: "late", text: `Не вышли к смене: ${att.late.map((l) => short(l.emp.fullName)).join(", ")}` });
     if (att && att.absNow && att.absNow.length) attn.push({ icon: "ph-walking", cls: "abs", text: `Отсутствуют: ${att.absNow.map((a) => short(a.emp)).join(", ")}` });
-    const longPause = ((att && att.list) || []).filter((x) => x.st.kind === "pause" && x.st.sec > 15 * 60);
+    const longPause = ((att && att.list) || []).filter((x) => x.st.kind === "pause" && (x.st.pauseSec || 0) > 15 * 60);
     if (longPause.length) attn.push({ icon: "ph-pause", cls: "pause", text: `Пауза больше 15 минут: ${longPause.map((x) => short(x.emp.fullName)).join(", ")}` });
     const leaveRows = monthReqs.filter((r) => r.type === "leave" || r.type === "dayoff");
     const overRows = monthReqs.filter((r) => r.type === "overtime" || r.type === "adjust");
