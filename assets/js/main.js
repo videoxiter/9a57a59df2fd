@@ -752,12 +752,20 @@
     const hm = (ms) => { const d = new Date(ms + 3 * 3600 * 1000); return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`; };
     const SLOT = { tech1: ["тех.перерыв 1", "ph-coffee"], tech2: ["тех.перерыв 2", "ph-coffee"], lunch: ["обед", "ph-fork-knife"], absence: ["отсутствие", "ph-walking"] };
     const stateOf = (ev) => {
-      let acc = 0, running = false, last = 0, started = 0, stopped = 0, active = null;
+      let acc = 0, running = false, last = 0, started = 0, stopped = 0, active = null, note = "";
       for (const e of ev) {
         const t = Date.parse(e.at);
         if (e.type === "shift_start") { started = t; running = true; last = t; }
         else if (e.type === "shift_stop") { if (running) acc += t - last; running = false; stopped = t; }
-        else if (e.type === "break_start" || e.type === "absence_start") { if (running) acc += t - last; running = false; active = e; }
+        else if (e.type === "break_start" || e.type === "absence_start") {
+          /* «Временное отсутствие: Без заявки…» — статус фиксируем, но рабочее
+             время НЕ останавливаем. Сравнение по началу строки: после «Без заявки»
+             часто идёт пояснение («— работа по ЦО»), строгое равенство не срабатывало. */
+          const noStop = e.type === "absence_start" && String(e.reason || "").trim().startsWith("Без заявки");
+          if (running) acc += t - last;
+          if (noStop) { running = true; last = t; active = null; note = e.reason || ""; }
+          else { running = false; active = e; note = ""; }
+        }
         else if (e.type === "break_end" || e.type === "absence_end") { if (!running) { running = true; last = t; } active = null; }
       }
       if (running) acc += Date.now() - last;
@@ -767,7 +775,7 @@
         const nm = SLOT[active.slot] || ["пауза", "ph-pause"];
         return { kind: "pause", label: nm[0] + (active.reason ? ": " + active.reason : ""), icon: nm[1], since: Date.parse(active.at), sec };
       }
-      if (started) return { kind: "work", label: "работает", icon: "ph-briefcase", since: last, sec };
+      if (started) return { kind: "work", label: "работает" + (note ? " · " + note : ""), icon: "ph-briefcase", since: last, sec };
       return { kind: "idle", label: "не начинал", icon: "ph-moon", since: null, sec };
     };
     let avatarBy = new Map();

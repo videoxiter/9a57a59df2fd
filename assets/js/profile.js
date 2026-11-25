@@ -2178,7 +2178,7 @@ function robotMenuHtml() {
       } else if (e.type === "absence_start") {
         // «Без заявки» — отсутствие на рабочем месте в рамках производства:
         // статус показываем, но рабочее время НЕ останавливаем.
-        noStopAbsence = String(e.reason || "") === "Без заявки";
+        noStopAbsence = String(e.reason || "").trim().startsWith("Без заявки");
         if (!noStopAbsence && running) { acc += (t - last) - overlap(last, t); running = false; }
         active = { slot: "absence", reason: e.reason || "", at: t, type: "absence_start" };
       } else if (e.type === "absence_end") {
@@ -2598,7 +2598,7 @@ function robotMenuHtml() {
       else if (st.active) {
         const slot = ST_SLOTS.find((s) => s.slot === st.active.slot);
         if (st.active.type === "absence_start") {
-          const ns = String(st.active.reason || "") === "Без заявки";
+          const ns = String(st.active.reason || "").trim().startsWith("Без заявки");
           icon = "ph-walking";
           text = `Временное отсутствие · ${st.active.reason || "без причины"}${ns ? " (время идёт)" : ""}`;
           cls = "pause";
@@ -2918,6 +2918,9 @@ function robotMenuHtml() {
       const now = Date.now();
       const { sec, running, started, stopped, active } = stCalc(ev, now, windows);
       if (stopped) return { kind: "done", label: "смена завершена", icon: "ph-check-circle", since: stopped, sec };
+      /* «Без заявки» (работа по ЦО): stCalc не останавливает рабочее время,
+         поэтому показываем «работает» и продолжаем считать таймер. */
+      if (active && running) return { kind: "work", label: "работает · " + (active.reason || "без заявки"), icon: "ph-briefcase", since: started || active.at, sec, running };
       if (active) return { kind: "pause", label: (SLOT2[active.slot] || "пауза") + (active.reason ? ": " + active.reason : ""), icon: "ph-pause", since: active.at, sec, running };
       const leave = (windows || []).find((w) => now >= w.from && now < w.to);
       if (started && leave) return { kind: "leave", label: `увольнительная ${leave.fromTxt}–${leave.toTxt}`, icon: "ph-door-open", since: leave.from, sec };
