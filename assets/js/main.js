@@ -1442,6 +1442,8 @@
         <button class="btn btn-ghost" id="sch-flag-short" type="button">День укороченный</button>
         <button class="btn btn-ghost" id="sch-flag-hol" type="button">В день смен нет</button>
         <button class="btn btn-ghost" id="sch-flag-clear" type="button">Снять отметку</button>
+        <button class="btn btn-ghost" id="sch-undo" type="button">Отменить</button>
+        <button class="btn btn-ghost" id="sch-redo" type="button">Повторить</button>
         <button class="btn btn-primary" id="sch-save" type="button">Сохранить черновик</button>
         <button class="btn btn-ghost" id="sch-publish" type="button">Опубликовать</button>
         <button class="btn btn-ghost" id="sch-csv" type="button">Выгрузить CSV</button>
@@ -1459,6 +1461,29 @@
     let symbol = "2";
     let answers = {};         // slug -> ответ опроса
     let report = [];
+    /* отмена/повтор: до 10 состояний таблицы */
+    const undoStack = [];
+    const redoStack = [];
+    const snap = () => JSON.stringify(cell);
+    const pushUndo = () => {
+      undoStack.push(snap());
+      if (undoStack.length > 10) undoStack.shift();
+      redoStack.length = 0;
+    };
+    const undo = () => {
+      if (!undoStack.length) { setMsg("Отменять нечего"); return; }
+      redoStack.push(snap());
+      cell = JSON.parse(undoStack.pop());
+      render();
+      setMsg("Отменил последнее изменение");
+    };
+    const redo = () => {
+      if (!redoStack.length) { setMsg("Повторять нечего"); return; }
+      undoStack.push(snap());
+      cell = JSON.parse(redoStack.pop());
+      render();
+      setMsg("Повторил изменение");
+    };
 
     const bySlug = new Map(emps.map((e) => [e.slug, e]));
     const fio = (slug) => (bySlug.get(slug) || {}).fio || slug;
@@ -1490,6 +1515,7 @@
       const wrap = box.querySelector("#sch-wrap");
       if (wrap) wrap.innerHTML = `<table class="sch-table"><thead><tr><th class="sch-name">ФИО</th>${head}<th>см.</th></tr></thead><tbody>${rowsHtml}</tbody></table>`;
       wrap.querySelectorAll(".sch-cell").forEach((td) => td.addEventListener("click", () => {
+        pushUndo();
         put(td.dataset.slug, Number(td.dataset.day), symbol === "" ? "" : symbol);
         render();
       }));
@@ -1588,6 +1614,7 @@
     const autoBuild = async () => {
       await loadAnswers();
       await loadVacations();
+      pushUndo();
       const days = schMonthDays(month);
       cell = {};
       report = [];
@@ -1690,6 +1717,7 @@
     const onLoad = async () => {
       month = (box.querySelector("#sch-month") || {}).value || nextMonth;
       const res = await A.scheduleGet(month);
+      pushUndo();
       cell = (res && res.ok && res.schedule && res.schedule.cell) ? res.schedule.cell : {};
       report = [];
       render();
@@ -1701,6 +1729,11 @@
     const btnLoad = box.querySelector("#sch-load"); if (btnLoad) btnLoad.addEventListener("click", onLoad);
     const btnAuto = box.querySelector("#sch-auto"); if (btnAuto) btnAuto.addEventListener("click", autoBuild);
     const btnCheck = box.querySelector("#sch-check"); if (btnCheck) btnCheck.addEventListener("click", checkNorms);
+    const btnUndo = box.querySelector("#sch-undo"); if (btnUndo) btnUndo.addEventListener("click", undo);
+    const btnRedo = box.querySelector("#sch-redo"); if (btnRedo) btnRedo.addEventListener("click", redo);
+    box.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); e.shiftKey ? redo() : undo(); }
+    });
     const setFlag = async (kind) => {
       const dayEl = box.querySelector("#sch-flag-day");
       const day = dayEl ? Number(dayEl.value) : 1;
