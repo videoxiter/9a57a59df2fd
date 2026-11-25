@@ -1824,6 +1824,7 @@
       </div>
       <div id="sp-answers"></div>
       <div id="sp-acks"></div>
+      <div id="sp-tasks"></div>
     </div>`);
 
     const msg = $("#sp-msg");
@@ -1883,6 +1884,43 @@
       </div>`;
     };
 
+    /* v27: очередь задач агента (публикация, выгрузки) */
+    const renderTasks = async () => {
+      const hostT = document.getElementById("sp-tasks");
+      if (!hostT) return;
+      const res = await A.tasksRecent();
+      if (!res || !res.ok) { hostT.innerHTML = ""; return; }
+      const list = (res.list || []).slice(0, 6);
+      if (!list.length) {
+        hostT.innerHTML = `<p class="staff-hint">Очередь агента пуста — задач нет.</p>`;
+        return;
+      }
+      const kindName = {
+        add_employee: "создание сотрудника", apply_kpi: "KPI",
+        publish_schedule: "публикация графика", export_schedule_xlsx: "XLSX",
+        publish_confluence_schedule: "Confluence", sync_vacations: "отпуска",
+      };
+      const now = Date.now();
+      const rows = list.map((t) => {
+        const st = t.done_at
+          ? (t.ok ? "выполнено" : "ошибка")
+          : "в работе";
+        const cls = t.done_at ? (t.ok ? "sch-ok" : "sch-bad") : "";
+        const when = new Date(t.requested_at).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+        return `<div class="staff-dev-row">
+          <b>${escNow(kindName[t.kind] || t.kind)}</b>
+          <span class="${cls}">${st}</span>
+          <span class="staff-hint">${escNow(when)}${t.message ? " · " + escNow(String(t.message).slice(0, 70)) : ""}</span>
+        </div>`;
+      }).join("");
+      const stuck = list.some((t) => !t.done_at && (now - Date.parse(t.requested_at)) > 12 * 3600 * 1000);
+      hostT.innerHTML = `<div class="staff-devices">
+        <h4><i class="ph-bold ph-list-checks"></i> Очередь агента</h4>
+        ${stuck ? `<p class="staff-hint sch-bad">Агент не отвечал больше 12 часов — проверьте, что компьютер включён и агент запущен.</p>` : ""}
+        <div class="staff-dev-list">${rows}</div>
+      </div>`;
+    };
+
     const createBtn = $("#sp-create");
     if (createBtn) createBtn.addEventListener("click", async () => {
       const due = ($("#sp-due") || {}).value;
@@ -1904,6 +1942,7 @@
     initScheduleEditor(emps, host);
     renderAnswers();
     renderAcks();
+    renderTasks();
   }
 
   async function initStaffPage() {

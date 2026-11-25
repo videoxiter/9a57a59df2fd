@@ -248,6 +248,11 @@
         p_discipline: row.discipline, p_bonus: row.bonus, p_note: row.note || "",
       }).catch(function () { return null; });
     },
+    /* v27: последние задачи агента (очередь публикации/выгрузок) */
+    tasksRecent: function () {
+      return rpc("otp_tasks_recent", { p_token: tok("admin"), p_limit: 8 })
+        .catch(function () { return null; });
+    },
   };
   window.OTP_AUTH = API;
 })();

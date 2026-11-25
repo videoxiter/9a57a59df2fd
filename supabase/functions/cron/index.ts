@@ -256,6 +256,39 @@ Deno.serve(async () => {
       }
     }
 
+    // 3.5 напоминание тем, кто не ответил на опрос по графику (раз в день)
+    try {
+      const polls: any[] = await sb(
+        `otp_polls?select=id,month,due_at,status&status=eq.open&order=month.asc&limit=1`,
+      ) || [];
+      const poll = polls[0];
+      if (poll && poll.id) {
+        const dueMs = poll.due_at ? Date.parse(poll.due_at) : 0;
+        const soon = dueMs && (dueMs - Date.now()) < 3 * 86400000;
+        if (soon) {
+          const staff: any[] = await sb(
+            `otp_staff?select=slug,fio,active&active=eq.true&slug=neq.admin`,
+          ) || [];
+          const answers: any[] = await sb(
+            `otp_poll_answers?select=emp_slug&poll_id=eq.${encodeURIComponent(poll.id)}`,
+          ) || [];
+          const answered = new Set((answers || []).map((a: any) => String(a.emp_slug)));
+          const missing = (staff || []).filter((s: any) => !answered.has(String(s.slug)));
+          if (missing.length) {
+            const names = missing.map((s: any) => s.fio || s.slug).join(", ");
+            const deadline = poll.due_at
+              ? new Date(Date.parse(poll.due_at) + TZ).toISOString().slice(0, 16).replace("T", " ")
+              : "скоро";
+            await notifyOnce("poll_remind", missing[0].fio || "опрос",
+              `📝 Напоминание: пожелания по графику на ${poll.month} ещё не сдали — ${names}. Срок: ${deadline}.`,
+              false);
+          }
+        }
+      }
+    } catch (e) {
+      errors.push("poll_remind: " + String(e));
+    }
+
     // 4. автозакрытие смены в конце дня (если сотрудник забыл нажать «Завершить»)
     const minsNow = nowMsk.getUTCHours() * 60 + nowMsk.getUTCMinutes();
     if (minsNow >= 23 * 60 + 50) {

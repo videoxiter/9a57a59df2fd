@@ -72,7 +72,7 @@ def b64(name):
 
 
 def build_html():
-    img = {n: b64(n) for n in ("app-icon.png", "login.png", "tray-states.png",
+    img = {n: b64(n) for n in ("app-icon.png", "login.png", "tray-states-clean.png",
                                "preview-poll.png", "preview-grid.png")}
     html = f"""<!DOCTYPE html>
 <html lang="ru"><head><meta charset="utf-8">
@@ -125,7 +125,7 @@ def build_html():
 <section class="page">
   <span class="kicker">Значок</span>
   <h2>3. Состояния значка</h2>
-  <div class="shot"><img src="{img['tray-states.png']}" alt="Состояния значка"></div>
+  <div class="shot"><img src="{img['tray-states-clean.png']}" alt="Состояния значка"></div>
   <div class="cap">Шесть состояний значка</div>
   <table>
     <tr><th>Цвет</th><th>Что означает</th></tr>
