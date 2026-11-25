@@ -505,10 +505,14 @@ class App:
                 messagebox.showerror("ОТП", f"Нет связи: {e}")
                 return
             if not (res and res.get("ok")):
-                if (res or {}).get("error") == "network":
+                err = (res or {}).get("error") or "нет ответа"
+                if err == "network":
                     messagebox.showerror("ОТП", "Нет связи с сервером.\nПроверьте интернет или VPN и попробуйте снова.")
                 else:
-                    messagebox.showerror("ОТП", "Неверный пароль или ссылка.")
+                    log("вход отклонён: error=%s | код=%s" % (err, code))
+                    messagebox.showerror("ОТП",
+                        "Неверный пароль или ссылка.\n\n"
+                        f"Ответ сервера: {err}\nКод страницы: {code}")
                 return
             # v17: привязываем устройство — без него не сработает «старт только из приложения»
             dev = self.api.claim_device("Приложение OTP")
