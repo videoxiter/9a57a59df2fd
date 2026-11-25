@@ -66,9 +66,22 @@ Deno.serve(async (req: Request) => {
   // день по Москве
   const day = String((ev && ev.day) || payload.day || new Date(Date.now() + TZ).toISOString().slice(0, 10));
   const type = String((ev && ev.type) || payload.kind || "");
-  const fio = String((ev && (ev.empName || ev.fio)) || payload.fio || "").trim();
+  const empSlug = String((ev && ev.empSlug) || payload.empSlug || "").trim();
+  let fio = String((ev && (ev.empName || ev.fio)) || payload.fio || "").trim();
   const slot = String((ev && ev.slot) || "");
   const reason = String((ev && ev.reason) || "").trim();
+
+  /* Имя могло не прийти (приложение) или прийти в виде кода страницы.
+     Тогда берём ФИО из otp_staff: без имени сообщение уходило в канал
+     с пустотой вместо подписи и не находило личный тред сотрудника. */
+  if ((!fio || fio === empSlug) && empSlug) {
+    const enc = encodeURIComponent(empSlug);
+    const st: any[] = await sb(
+      `otp_staff?select=fio&or=(slug.eq.${enc},page_hash.eq.${enc})`,
+    ).catch(() => []);
+    if (Array.isArray(st) && st[0] && st[0].fio) fio = String(st[0].fio);
+  }
+  if (!fio) fio = "Сотрудник";
 
   let text = "";
   if (type === "shift_start") text = `🚀 ${fio} — начало смены`;

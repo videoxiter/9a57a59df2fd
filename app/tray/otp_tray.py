@@ -230,6 +230,57 @@ def icons_dir() -> Path:
 
 
 # ---------------------------------------------------------------- приложение --
+class Hotkeys:
+    """Глобальные горячие клавиши (только Windows).
+
+    Ctrl+Alt+S — начать смену, Ctrl+Alt+B — техперерыв 1, Ctrl+Alt+L — обед,
+    Ctrl+Alt+A — временное отсутствие, Ctrl+Alt+R — вернуться, Ctrl+Alt+E — завершить.
+    Реализовано через WinAPI RegisterHotKey: без сторонних библиотек и без прав
+    администратора. На macOS и при ошибке — просто не запускается (журнал пишет причину).
+    """
+    MOD_ALT = 0x0001
+    MOD_CONTROL = 0x0002
+    WM_HOTKEY = 0x0312
+    MAP = [("S", "start"), ("B", "slot-tech1"), ("L", "slot-lunch"),
+           ("A", "absence"), ("R", "return"), ("E", "stop")]
+
+    def __init__(self, app):
+        self.app = app
+        self.alive = True
+
+    def run(self):
+        if os.name != "nt":
+            log("горячие клавиши: только Windows — пропускаю")
+            return
+        try:
+            import ctypes
+            import ctypes.wintypes as wt
+            user32 = ctypes.windll.user32
+            ids = {}
+            for i, (key, act) in enumerate(self.MAP, start=1):
+                if user32.RegisterHotKey(None, i, self.MOD_ALT | self.MOD_CONTROL, ord(key)):
+                    ids[i] = act
+                else:
+                    log("горячая клавиша Ctrl+Alt+%s занята другой программой" % key)
+            if not ids:
+                log("горячие клавиши: не удалось зарегистрировать ни одну")
+                return
+            log("горячие клавиши включены: %s" % ", ".join("Ctrl+Alt+" + k for k, _ in self.MAP))
+            msg = wt.MSG()
+            while self.alive:
+                if user32.GetMessageW(ctypes.byref(msg), None, 0, 0) == 0:
+                    break
+                if msg.message == self.WM_HOTKEY:
+                    act = ids.get(int(msg.wParam))
+                    if act:
+                        try:
+                            self.app.act(act)
+                        except Exception as e:
+                            log("горячая клавиша %s: ошибка %r" % (act, e))
+        except Exception as e:
+            log("горячие клавиши не запустились: %r" % (e,))
+
+
 class App:
     def __init__(self):
         self.cfg = load_config()
@@ -291,6 +342,7 @@ class App:
         from pystray import Menu, MenuItem
         return Menu(
             MenuItem(self.status_line, None, enabled=False),
+            MenuItem("Горячие: Ctrl+Alt+S/B/L/A/R/E", None, enabled=False),
             MenuItem(lambda _: ("ОТМЕНА · " + self.pending["label"]) if self.pending else "Отмена",
                      lambda: self.cancel_pending(), enabled=lambda _: bool(self.pending)),
             Menu.SEPARATOR,
@@ -444,6 +496,12 @@ class App:
             if not self.login_dialog():
                 return
         self.refresh()
+        # глобальные горячие клавиши (Windows): Ctrl+Alt+S/B/L/A/R/E
+        try:
+            self.hotkeys = Hotkeys(self)
+            threading.Thread(target=self.hotkeys.run, daemon=True).start()
+        except Exception as e:
+            log("горячие клавиши: %r" % (e,))
         from pystray import Icon
         self.icon = Icon(APP_NAME, self.make_icon(self.state["kind"]),
                          self.status_line(), menu=self.menu())
