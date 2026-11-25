@@ -1638,13 +1638,22 @@
       if (!row) return;
       const slug = row.getAttribute("data-slug");
       const info = rows.find((x) => x.slug === slug) || {};
-      const pass = (row.querySelector(`[data-f="pass"]`) || {}).value || info.pass || "—";
+      const typedPass = ((row.querySelector(`[data-f="pass"]`) || {}).value || "").trim();
+      const pass = typedPass || info.pass || "";
+      /* С v4 пароли хранятся только в виде хеша — показать старый нельзя.
+         Если сотрудник задан, но пароль не введён сейчас — честно пишем это,
+         а не «—» (из-за прочерка и было непонятно, есть пароль или нет). */
+      const passLine = pass
+        ? "Пароль: " + pass
+        : (info.hasPass
+          ? "Пароль: уже задан ранее (показать нельзя — хранится в виде хеша).\nЕсли забыли — задайте новый в «Админке» и отправьте этот текст ещё раз."
+          : "Пароль: ещё не задан. Задайте его в «Админке» и отправьте этот текст ещё раз.");
       const fio = (row.querySelector(`[data-f="fio"]`) || {}).value || info.fio || "";
       const hash = info.hash || "";
       const link = hash ? "https://videoxiter.github.io/9a57a59df2fd/team/" + hash + "/start/index.html" : "";
       const text = "Привет! Это «Мои результаты» — личный кабинет сотрудника отдела технической поддержки ОТП.\n\n"
         + (fio ? fio + ", твоя страница:\n" : "Твоя страница:\n") + link + "\n"
-        + "Пароль: " + pass + "\n\n"
+        + passLine + "\n\n"
         + "Зачем это нужно:\n"
         + "• видеть свои результаты и расти осознанно: KPI по месяцам, место в рейтинге, бонусы и доход;\n"
         + "• не держать в голове часы: «Стартовая» считает смену, перерывы и прогресс дня;\n"

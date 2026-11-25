@@ -4121,8 +4121,12 @@ function robotMenuHtml() {
       tryAdmin.then((adm) => {
         if (adm) return next();
         A.staffList().then((list) => {
+          /* staffList отдаётся только с админ-токеном. У сотрудника его нет —
+             значит строки нет не потому, что «пароль не выдан», а потому что
+             список недоступен. В этом случае просто предлагаем вход. */
+          const hasList = Array.isArray(list) && list.length > 0;
           const row = (list || []).find((x) => ids.includes(String(x.slug)));
-          if (!row || !row.has_pass) return showNoAccess();
+          if (hasList && (!row || !row.has_pass)) return showNoAccess();
           showGate(next);
         }).catch(() => next());
       }).catch(() => next());
