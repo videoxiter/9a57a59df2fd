@@ -227,7 +227,7 @@ def main():
                     .replace("__SECTION__", key)
                     .replace("__SECNAV__", secnav_html(rel, key, secs))
                     .replace("__HOME__", home)
-                    .replace("__OTP_EMP__", payload)
+                    .replace("__SLUG__", slug)
                     .replace("__OTP_NAV__", json.dumps(nav, ensure_ascii=False))
                     .replace("__TITLE__", f'Мои результаты · {label} · {e["shortName"]}')
                     .replace("__FULLNAME__", e["fullName"]))
