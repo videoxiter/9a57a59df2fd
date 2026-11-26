@@ -22,8 +22,12 @@ jobs:
           done
           exit $fail
 
-      - name: Данные data.js — валидный JSON
+      - name: Данные data.js — валидный JSON (если файл есть локально)
         run: |
+          if [ ! -f assets/js/data.js ]; then
+            echo "data.js в репозитории не публикуется (данные живут в базе) — проверка пропущена"
+            exit 0
+          fi
           node -e "
           const fs = require('fs');
           const raw = fs.readFileSync('assets/js/data.js', 'utf8');

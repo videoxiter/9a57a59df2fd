@@ -24,6 +24,8 @@ if hasattr(sys.stdout, "reconfigure"):
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEAM_DIR = os.path.join(ROOT, "team")
+# payload страниц: вне публикуемых каталогов, загружается в базу скриптом publish_profiles.py
+PROFILES_DIR = os.path.join(ROOT, "dist", "profiles")
 
 SECTIONS = [
     ("start", "Стартовая", "ph-play-circle", "смена, перерывы, время"),
@@ -113,9 +115,10 @@ TEMPLATE = """<!DOCTYPE html>
     </div>
   </footer>
   <script>
-    window.OTP_EMP = __OTP_EMP__;
+    window.OTP_EMP = null;                /* данные придут с сервера после входа */
     window.OTP_SECTION = "__SECTION__";
     window.OTP_NAV = __OTP_NAV__;
+    window.OTP_BOOT = {"slug": "__SLUG__", "prefix": "__PREFIX__", "v": "__V__"};
   </script>
   <script src="__PREFIX__assets/vendor/gsap.min.js?v=__V__"></script>
   <script src="__PREFIX__assets/vendor/ScrollTrigger.min.js?v=__V__"></script>
@@ -125,7 +128,7 @@ TEMPLATE = """<!DOCTYPE html>
   <script src="__PREFIX__assets/js/auth.js?v=__V__"></script>
   <script src="__PREFIX__assets/js/cloud.js?v=__V__"></script>
   <script src="__PREFIX__assets/js/themes.js?v=__V__"></script>
-  <script src="__PREFIX__assets/js/profile.js?v=__V__-20261120"></script>
+  <script src="__PREFIX__assets/js/boot-profile.js?v=__V__"></script>
 </body>
 </html>
 """
@@ -203,6 +206,11 @@ def main():
         }
         payload = json.dumps(emp_data, ensure_ascii=False)
         slug = e.get("slug", e["id"])
+        # payload не попадает в HTML: кладём в dist/profiles и потом загружаем в базу
+        # (scripts/publish_profiles.py), страница отдаёт данные только после входа
+        os.makedirs(PROFILES_DIR, exist_ok=True)
+        with open(os.path.join(PROFILES_DIR, slug + ".json"), "w", encoding="utf-8", newline="") as f:
+            f.write(payload)
         base = os.path.join(TEAM_DIR, slug)
         # «Журнал часов» — у всех, но сотрудник видит только свои записи
         secs = list(SECTIONS)

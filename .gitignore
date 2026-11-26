@@ -33,3 +33,7 @@ app/tray/dist/
 # локальные выгрузки Jira (внутренние данные, не публикуем)
 График на месяц/
 
+
+# данные сайта: payload уходит в базу (otp_profiles), в git и на Pages не публикуется
+assets/js/data.js
+dist/profiles/

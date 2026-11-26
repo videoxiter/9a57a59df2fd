@@ -253,6 +253,15 @@
       return rpc("otp_tasks_recent", { p_token: tok("admin"), p_limit: 8 })
         .catch(function () { return null; });
     },
+    /* v28: данные страниц отдаются сервером только после входа */
+    profileGet: function (slug) {
+      return rpc("otp_profile_get", { p_token: tok(slug), p_slug: slug })
+        .catch(function () { return { ok: false, error: "net" }; });
+    },
+    dataGet: function () {
+      return rpc("otp_profile_get", { p_token: tok("admin"), p_slug: "__data" })
+        .catch(function () { return { ok: false, error: "net" }; });
+    },
   };
   window.OTP_AUTH = API;
 })();
