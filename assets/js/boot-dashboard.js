@@ -18,20 +18,25 @@
   }
 
   function showError(text) {
-    var root = document.getElementById("root") || document.body;
+    // прячем содержимое через css-класс, а не visibility: иначе спрячется и само окно
+    document.documentElement.classList.add("auth-lock");
+    if (document.querySelector(".auth-gate")) return;
     var box = document.createElement("div");
     box.className = "auth-gate";
     box.innerHTML = '<div class="auth-box"><h3>Данные недоступны</h3><p>' + text + '</p>'
       + '<button class="btn btn-primary" type="button">Повторить</button></div>';
     box.querySelector("button").addEventListener("click", function () { location.reload(); });
     document.body.appendChild(box);
-    if (root) root.style.visibility = "hidden";
   }
 
   function boot() {
     if (!A || !A.protect) { showError("Не загрузился модуль авторизации."); return; }
-    A.protect("admin", true).then(function () {
-      A.dataGet().then(function (res) {
+    // нет сессии администратора — показываем форму входа (после входа страница перезагрузится)
+    if (!A.token || !A.token("admin")) {
+      A.protect("admin", true);
+      return;
+    }
+    A.dataGet().then(function (res) {
         if (res && res.ok && res.payload) {
           window.OTP_DATA = res.payload;
           loadScripts(["common.js", "cloud.js", "hr.js", "main.js"]);
@@ -47,7 +52,6 @@
         }
         showError("Сервер не отдал данные. Попробуйте повторить.");
       }).catch(function () { showError("Нет связи с сервером. Проверьте интернет и повторите."); });
-    });
   }
 
   if (document.readyState === "loading") {
