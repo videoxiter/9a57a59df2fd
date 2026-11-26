@@ -18,6 +18,20 @@ import sys
 from datetime import datetime, timezone
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def changelog_notes(ver: str):
+    """Список изменений версии из docs/CHANGELOG.json (для окна обновления)."""
+    path = os.path.join(ROOT, "docs", "CHANGELOG.json")
+    try:
+        data = json.load(open(path, encoding="utf-8"))
+    except Exception:
+        return []
+    for v in data.get("versions") or []:
+        if str(v.get("version")) == str(ver):
+            title = v.get("title") or ""
+            return ([title] if title else []) + list(v.get("items") or [])
+    return []
 EXE = os.path.join(ROOT, "app", "tray", "dist", "OtpTray.exe")
 APP_PY = os.path.join(ROOT, "app", "tray", "otp_tray.py")
 OUT_DIR = os.path.join(ROOT, "downloads")
@@ -53,6 +67,11 @@ def main():
         "size": len(data),
         "date": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
+    # что изменилось в этой версии — показывается в окне обновления
+    notes = changelog_notes(ver)
+    if notes:
+        manifest["notes"] = notes
+        manifest["title"] = notes[0] if notes else ""
     # инсталлятор (если собран) тоже публикуем — по нему ставят приложение
     setup_src = os.path.join(ROOT, "dist", f"OTP-Tray-Setup-{ver}.exe")
     if os.path.exists(setup_src):

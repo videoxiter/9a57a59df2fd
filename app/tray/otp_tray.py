@@ -28,7 +28,26 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "2.0"
+VERSION = "2.1"
+try:
+    from changelog import CHANGELOG
+except Exception:      # запуск из другого каталога — истории просто не будет
+    CHANGELOG = []
+
+
+def current_changes():
+    """Что вошло в установленную версию."""
+    for v in CHANGELOG:
+        if str(v.get("version")) == VERSION:
+            return v
+    return {}
+
+
+def changes_of(ver: str):
+    for v in CHANGELOG:
+        if str(v.get("version")) == str(ver):
+            return v
+    return {}
 # Сочетания по умолчанию: пользователь может поменять их в меню «Горячие клавиши…»
 DEFAULT_HOTKEYS = {
     "start": "ctrl+alt+s",
@@ -916,6 +935,8 @@ class App:
             if not self.login_dialog():
                 return
         self.refresh()
+        # после обновления один раз показываем, что изменилось
+        threading.Thread(target=self.maybe_show_whatsnew, daemon=True).start()
         # глобальные горячие клавиши (Windows) из настроек
         self.start_hotkeys()
         # ежедневная проверка обновлений (и сразу при запуске)
@@ -961,21 +982,74 @@ class App:
             pass
 
     # --- справка и «О программе»
+    def changelog_window(self, only_current=False):
+        """История версий: что менялось и что исправлялось."""
+        import tkinter as tk
+        from tkinter import ttk
+        root = tk.Tk()
+        root.title("ОТП — что нового" if only_current else "ОТП — история обновлений")
+        root.geometry("640x580")
+        cur = current_changes()
+        head = f"Версия {VERSION}" + (f" · {cur.get('date', '')}" if cur else "")
+        tk.Label(root, text=head, font=("Segoe UI", 14, "bold")).pack(pady=(14, 2))
+        if cur and cur.get("title"):
+            tk.Label(root, text=cur["title"], font=("Segoe UI", 10), fg="#0e7490").pack()
+
+        frame = tk.Frame(root)
+        frame.pack(fill="both", expand=True, padx=14, pady=10)
+        scroll = ttk.Scrollbar(frame, orient="vertical")
+        text = tk.Text(frame, wrap="word", yscrollcommand=scroll.set, borderwidth=0,
+                       font=("Segoe UI", 10), padx=10, pady=8)
+        scroll.config(command=text.yview)
+        scroll.pack(side="right", fill="y")
+        text.pack(side="left", fill="both", expand=True)
+
+        text.tag_configure("ver", font=("Segoe UI", 12, "bold"), spacing1=10, spacing3=2)
+        text.tag_configure("date", foreground="#6b7280")
+        text.tag_configure("item", lmargin1=18, lmargin2=18, spacing3=2)
+
+        items = CHANGELOG if not only_current else ([cur] if cur else [])
+        for v in items:
+            marker = "   ← эта версия" if v.get("version") == VERSION else ""
+            text.insert("end", f"{v.get('version')} · {v.get('title', '')}", "ver")
+            text.insert("end", f"   {v.get('date', '')}{marker}\n", "date")
+            for it in v.get("items") or []:
+                text.insert("end", f"• {it}\n", "item")
+        text.configure(state="disabled")
+
+        tk.Button(root, text="Понятно", command=root.destroy, width=16).pack(pady=(0, 14))
+        root.mainloop()
+
+    def maybe_show_whatsnew(self):
+        """После обновления один раз показываем, что изменилось."""
+        if self.cfg.get("lastVersion") == VERSION:
+            return
+        first_run = not self.cfg.get("lastVersion")
+        self.cfg["lastVersion"] = VERSION
+        save_config(self.cfg)
+        if first_run:
+            return          # первая установка: историю не навязываем
+        self.changelog_window(only_current=True)
+
     def about_window(self):
         import tkinter as tk
         root = tk.Tk()
         root.title("О программе «ОТП»")
-        root.geometry("520x360")
+        root.geometry("560x430")
         tk.Label(root, text="ОТП — учёт рабочего времени", font=("Segoe UI", 14, "bold")).pack(pady=(16, 4))
         tk.Label(root, text=f"Версия {VERSION}", font=("Segoe UI", 11)).pack()
         text = ("Приложение отдела технической поддержки: смена, перерывы, обед,\n"
                 "временное отсутствие — без браузера, прямо из трея.\n\n"
-                "Показывает напоминание, если перерыв затянулся, сообщает о новых\n"
-                "данных на вашей странице (график, бонусы, награды) и обновляется\n"
-                "само, когда выходит новая версия.\n\n"
+                "Напоминает о затянувшемся перерыве и открытом опросе, сообщает о новых\n"
+                "данных на вашей странице (график, бонусы, награды) и обновляется само.\n\n"
                 "Автор: Евгений Евгеньевич Яковлев")
-        tk.Label(root, text=text, justify="left", wraplength=470).pack(padx=16, pady=12)
-        tk.Button(root, text="Закрыть", command=root.destroy, width=14).pack(pady=10)
+        tk.Label(root, text=text, justify="left", wraplength=500).pack(padx=16, pady=10)
+
+        btns = tk.Frame(root)
+        btns.pack(pady=6)
+        tk.Button(btns, text="История обновлений", width=20,
+                  command=self.changelog_window).pack(side="left", padx=6)
+        tk.Button(btns, text="Закрыть", command=root.destroy, width=12).pack(side="left", padx=6)
         root.mainloop()
 
     def help_window(self):
@@ -1230,8 +1304,17 @@ class App:
         if not info:
             messagebox.showinfo("ОТП", f"Обновлений нет. Версия {VERSION}.")
             return
-        if messagebox.askokcancel("ОТП", f"Доступна версия {info.get('version')}.\n"
-                                        "Установить сейчас? Настройки и статусы сохранятся."):
+        ver = str(info.get("version") or "")
+        ch = changes_of(ver)
+        lines = []
+        if ch and ch.get("title"):
+            lines.append(ch["title"])
+        for it in (ch.get("items") or [])[:7]:
+            lines.append("• " + it)
+        notes = "\n".join(lines) if lines else "\n".join(info.get("notes") or [])
+        text = f"Доступна версия {ver}.\n\n" + (notes + "\n\n" if notes else "")
+        text += "Установить сейчас? Настройки и статусы сохранятся."
+        if messagebox.askokcancel("ОТП — обновление", text):
             install_update(info)
 
     # --- новые данные на странице (график, бонусы, награды)
