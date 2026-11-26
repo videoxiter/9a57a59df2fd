@@ -2189,10 +2189,9 @@ function robotMenuHtml() {
         if (!running) { running = true; last = t; }
         active = null;
       } else if (e.type === "absence_start") {
-        // «Без заявки» — отсутствие на рабочем месте в рамках производства:
-        // статус показываем, но рабочее время НЕ останавливаем.
-        noStopAbsence = String(e.reason || "").trim().startsWith("Без заявки");
-        if (!noStopAbsence && running) { acc += (t - last) - overlap(last, t); running = false; }
+        // Временное отсутствие (с любой причиной, включая «Без заявки») рабочее
+        // время НЕ останавливает: показываем статус, но счётчик идёт дальше.
+        noStopAbsence = true;
         active = { slot: "absence", reason: e.reason || "", at: t, type: "absence_start" };
       } else if (e.type === "absence_end") {
         if (noStopAbsence) noStopAbsence = false;          // время и так шло

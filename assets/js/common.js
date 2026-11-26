@@ -276,4 +276,32 @@
 
   /* первичное раскрытие статики */
   reveal(document);
+
+  /* ---------- свежесть страницы ----------
+     Браузер может показать закэшированную копию и человек думает, что «ничего
+     не изменилось». Сверяем версию сборки с version.txt на сайте и, если она
+     другая, один раз перезагружаемся с обходом кэша. */
+  function checkFresh() {
+    var boot = window.OTP_BOOT || {};
+    var mine = boot.v || "";
+    var root = boot.prefix || "";
+    if (!mine) return;
+    var key = "otp_reloaded_" + mine;
+    try { if (sessionStorage.getItem(key)) return; } catch (e) {}
+    fetch(root + "version.txt?cb=" + Date.now(), { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.text() : ""; })
+      .then(function (t) {
+        var actual = String(t || "").trim().slice(0, 12);
+        if (!actual || actual === mine) return;
+        try { sessionStorage.setItem(key, "1"); } catch (e) {}
+        var url = location.pathname + location.search.replace(/([?&])cb=[^&]*/g, "$1") + (location.search ? "&" : "?") + "cb=" + Date.now();
+        location.replace(url);
+      })
+      .catch(function () {});
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", checkFresh);
+  } else {
+    checkFresh();
+  }
 })();

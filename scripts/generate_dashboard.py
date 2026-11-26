@@ -39,6 +39,12 @@ def _version():
 
 
 V = _version()
+# метка сборки для страниц: по ней они сами понимают, что пора перезагрузиться
+try:
+    with open(os.path.join(ROOT, "version.txt"), "w", encoding="utf-8", newline="") as _vf:
+        _vf.write(V)
+except Exception:
+    pass
 
 PAGES = [
     # Оперативная главная (план 24.11.2026): команда + уведомления + форма занесения.

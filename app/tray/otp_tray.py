@@ -222,40 +222,20 @@ def venv_writable(path: Path) -> bool:
 
 
 def install_update(info) -> bool:
-    """Скачивает новый exe и безопасно подменяет текущий при перезапуске.
+    """Обновление всегда идёт через установщик.
 
-    Важно: сначала копия, потом замена, и проверка результата. Если папку
-    защищает Windows (Program Files), exe не трогаем — открываем страницу
-    установщика, чтобы не оставить приложение без файла (так уже случилось).
+    Сборка теперь папочная (--onedir): приложение не распаковывает себя в
+    %TEMP%, где антивирус удаляет python313.dll и программа падала с
+    «Failed to load Python DLL». Поэтому новый код ставится установщиком в
+    тихом режиме, а он же перезапускает приложение.
     """
-    import hashlib
-    import tempfile
     exe = Path(sys.executable) if getattr(sys, "frozen", False) else None
     if not exe:
         log("обновление: приложение запущено из скрипта — обновление не требуется")
         return False
-    folder = exe.parent
-    url = str(info.get("url") or "")
-    if not url:
+    if not (info.get("url") or info.get("setup")):
         return False
-
-    if not venv_writable(folder):
-        log("обновление: папка защищена (%s) — обновляюсь через установщик" % folder)
-        return update_via_installer(info)
-
-    new_exe = folder / "OtpTray.new.exe"
-    try:
-        with urllib.request.urlopen(url, timeout=120, context=ssl._create_unverified_context()) as r:
-            data = r.read()
-        want = str(info.get("sha256") or "")
-        if want and hashlib.sha256(data).hexdigest().lower() != want.lower():
-            log("обновление: контрольная сумма не совпала — отмена")
-            return False
-        new_exe.write_bytes(data)
-        log("обновление: скачано %d байт в %s" % (len(data), new_exe))
-    except Exception as e:
-        log("обновление: скачать не удалось %r" % (e,))
-        return False
+    return update_via_installer(info)
 
     log_path = str(Path(tempfile.gettempdir()) / "otp-update.log")
     bat = Path(tempfile.gettempdir()) / "OtptrayUpdate.cmd"
