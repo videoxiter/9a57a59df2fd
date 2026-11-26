@@ -5,7 +5,7 @@
 
 #define AppName "ОТП — учёт рабочего времени"
 #define AppShort "OTP Tray"
-#define AppVersion "1.7"
+#define AppVersion "1.9"
 #define AppPublisher "Яковлев Евгений Евгеньевич"
 #define AppExe "OtpTray.exe"
 
@@ -52,13 +52,23 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
     ValueName: "OtpTray"; ValueData: """{app}\{#AppExe}"""; Flags: uninsdeletevalue; Tasks: autostart
 
 [Run]
-; запуск через cmd start: надёжнее прямого запуска GUI из установщика
-Filename: "{cmd}"; Parameters: "/c start """" ""{app}\{#AppExe}"""; WorkingDir: "{app}"; \
-    Description: "Запустить ОТП сейчас"; Flags: nowait postinstall
+; закрываем уже запущенный экземпляр, иначе новый молча выйдет
+Filename: "{sys}\taskkill.exe"; Parameters: "/F /IM {#AppExe}"; Flags: runhidden
 
 [Code]
-{ Не даём ставить в Program Files без прав администратора: там приложение
-  не сможет себя обновлять (именно так сломалось автообновление). }
+var
+  ResultCode: Integer;
+
+{ После установки — и в обычном, и в тихом режиме — запускаем приложение.
+  Через [Run] с флагом postinstall в тихом режиме не запускалось, поэтому кодом. }
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then
+    ShellExec('', ExpandConstant('{app}\{#AppExe}'), '',
+              ExpandConstant('{app}'), SW_SHOWNORMAL, ewNoWait, ResultCode);
+end;
+
+{ Не даём ставить в Program Files без прав администратора. }
 function NextButtonClick(CurPageID: Integer): Boolean;
 begin
   Result := True;

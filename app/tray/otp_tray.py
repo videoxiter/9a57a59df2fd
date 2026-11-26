@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "1.7"
+VERSION = "1.9"
 # Сочетания по умолчанию: пользователь может поменять их в меню «Горячие клавиши…»
 DEFAULT_HOTKEYS = {
     "start": "ctrl+alt+s",
@@ -1099,9 +1099,15 @@ class App:
             save_config(self.cfg)
             self.start_hotkeys()
             log("горячие клавиши сохранены: %r, отключены: %s" % (new, self.cfg["hotkeysOff"]))
+            # сообщение показываем ДО закрытия окна: после destroy() у messagebox
+            # нет живого окна-родителя, и кнопка «ОК» перестаёт нажиматься
+            was_off = self.cfg["hotkeysOff"]
+            messagebox.showinfo(
+                "ОТП",
+                "Сохранено. Горячие клавиши " + ("отключены" if was_off else "включены") + ".\n"
+                "Настройки лежат отдельно от программы, обновление их не затирает.",
+                parent=root)
             root.destroy()
-            messagebox.showinfo("ОТП", "Сохранено. Настройки лежат отдельно от программы, "
-                                       "обновление их не затирает.")
 
         def reset():
             off_var.set(False)
@@ -1337,9 +1343,29 @@ def selftest() -> int:
     return 0
 
 
+_MUTEX_HANDLE = None
+
+
+def already_running() -> bool:
+    """Не даём открыть второй экземпляр (после обновления бывало два значка)."""
+    global _MUTEX_HANDLE
+    if os.name != "nt":
+        return False
+    try:
+        import ctypes
+        k32 = ctypes.windll.kernel32
+        _MUTEX_HANDLE = k32.CreateMutexW(None, False, "OTP_Tray_SingleInstance")
+        return k32.GetLastError() == 183      # ERROR_ALREADY_EXISTS
+    except Exception:
+        return False
+
+
 def main():
     if "--selftest" in sys.argv:
         return selftest()
+    if already_running():
+        log("приложение уже запущено — второй экземпляр не нужен")
+        return 0
     App().run()
     return 0
 
