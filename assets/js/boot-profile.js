@@ -17,14 +17,20 @@
       + '<p>' + (message || "Это ваша личная страница. Введите пароль — данные загрузятся после входа.") + '</p>'
       + '<input id="bp-pass" type="password" placeholder="пароль" autocomplete="current-password">'
       + '<button class="btn btn-primary" id="bp-go" type="button">Войти</button>'
-      + '<span class="auth-err" id="bp-err"></span></div>';
+      + '<span class="auth-err" id="bp-err"></span>'
+      + '<p class="staff-hint" style="margin-top:10px">Руководитель может войти паролем администратора.</p></div>';
     document.body.appendChild(ov);
     var err = function (t) { var e = document.getElementById("bp-err"); if (e) e.textContent = t; };
     var go = function () {
       var pass = (document.getElementById("bp-pass") || {}).value || "";
       A.login(B.slug, pass).then(function (res) {
-        if (res && res.ok) { location.reload(); return; }
-        err(res && res.error === "bad_password" ? "Неверный пароль" : "Не удалось войти");
+        if (res && res.ok) { location.reload(); return false; }
+        /* пароль руководителя: с ним страницы сотрудников открываются без их пароля */
+        return A.login("admin", pass).then(function (r2) {
+          if (r2 && r2.ok) { location.reload(); return true; }
+          err(res && res.error === "bad_password" ? "Неверный пароль" : "Не удалось войти");
+          return false;
+        });
       }).catch(function () { err("Нет связи с сервером входа"); });
     };
     ov.querySelector("#bp-go").addEventListener("click", go);
@@ -51,8 +57,21 @@
   }
 
   function boot() {
-    if (!A || !A.token || !A.token(B.slug)) { showGate(); return; }
-    A.profileGet(B.slug).then(function (res) {
+    if (!A || !A.token) { showGate(); return; }
+    var own = A.token(B.slug);
+    if (own) { loadFor(B.slug); return; }
+    // руководитель: админ-сессия даёт доступ к страницам сотрудников без их пароля
+    if (A.token("admin") && A.isAdmin) {
+      A.isAdmin().then(function (adm) {
+        if (adm) { loadFor(B.slug); } else { showGate(); }
+      }).catch(function () { showGate(); });
+      return;
+    }
+    showGate();
+  }
+
+  function loadFor(slug) {
+    A.profileGet(slug).then(function (res) {
       if (res && res.ok && res.payload) {
         window.OTP_EMP = res.payload;
         loadProfileJs();

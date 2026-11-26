@@ -14,11 +14,15 @@ with today as (
   select to_char((now() at time zone 'Europe/Moscow')::date, 'YYYY-MM-DD') as d
 ),
 marks as (
-  -- отсутствие рабочий интервал не рвёт: события absence_* в расчёт не берём
+  -- «Без заявки» рабочий интервал не рвёт (отсутствие на месте в рамках
+  -- производства), остальные причины отсутствия — пауза, как и раньше
   select e.*,
          lead(at) over (partition by "empSlug", day order by at, id) as next_at
   from public.otp_time_events e
-  where e.type not in ('absence_start', 'absence_end')
+  where not (
+    e.type in ('absence_start', 'absence_end')
+    and coalesce(e.reason, '') = 'Без заявки'
+  )
 ),
 leave_win as (
   select l."empSlug", l.date as day,
@@ -42,7 +46,7 @@ work as (
                 when m.day = t.d then now()
                 else m.at end as b_end
   ) b
-  where m.type in ('shift_start', 'break_end')
+  where m.type in ('shift_start', 'break_end', 'absence_end')
   group by m."empSlug", m.day
 ),
 agg as (
