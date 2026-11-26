@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "2.2"
+VERSION = "2.4"
 try:
     from changelog import CHANGELOG
 except Exception:      # запуск из другого каталога — истории просто не будет
@@ -1455,9 +1455,36 @@ class App:
         root = tk.Tk()
         root.title("ОТП — вход")
         root.geometry("460x260")
-        tk.Label(root, text="Ссылка на свою страницу (или её код):", anchor="w").pack(fill="x", padx=12, pady=(12, 2))
+        tk.Label(root, text="Ссылка на свою страницу (или её код):",
+                 anchor="w").pack(fill="x", padx=12, pady=(12, 2))
         link = tk.Entry(root)
         link.pack(fill="x", padx=12)
+        tk.Label(root, text="Пустое поле — вход руководителя (пароль администратора)",
+                 anchor="w", fg="#6b7280").pack(fill="x", padx=12, pady=(2, 0))
+        # вставка из буфера: пункт меню + кнопка, чтобы работало и без Ctrl+V
+        def paste_into(entry):
+            try:
+                txt = root.clipboard_get()
+            except Exception:
+                return
+            try:
+                entry.insert("end", str(txt).strip())
+            except Exception:
+                pass
+
+        menu = tk.Menu(root, tearoff=0)
+        menu.add_command(label="Вставить", command=lambda: paste_into(link))
+        menu.add_command(label="Очистить", command=lambda: link.delete(0, "end"))
+
+        def popup(ev):
+            try:
+                menu.tk_popup(ev.x_root, ev.y_root)
+            finally:
+                menu.grab_release()
+
+        link.bind("<Button-3>", popup)
+        link.bind("<Control-v>", lambda e: (paste_into(link), "break")[1])
+        link.bind("<Shift-Insert>", lambda e: (paste_into(link), "break")[1])
         tk.Label(root, text="Пароль:", anchor="w").pack(fill="x", padx=12, pady=(10, 2))
         pwd = tk.Entry(root, show="*")
         pwd.pack(fill="x", padx=12)
@@ -1471,26 +1498,35 @@ class App:
                        command=toggle_pwd, anchor="w").pack(fill="x", padx=10, pady=(2, 0))
         hint = tk.Label(root, text="", anchor="w", fg="#b45309")
         hint.pack(fill="x", padx=12, pady=(6, 0))
-        # если в буфере обмена лежит ссылка на страницу — подставляем сразу
+        # если в буфере обмена лежит ссылка на сайт — подставляем сразу
         try:
-            import tkinter as _tk
             clip = str(root.clipboard_get() or "")
-            if "/team/" in clip and "videoxiter.github.io" in clip:
+            if "videoxiter.github.io" in clip or "/team/" in clip:
                 link.insert(0, clip.strip())
         except Exception:
             pass
         result = {"ok": False}
 
-        def go(_=None):
-            raw = link.get().strip()
-            code = raw
+        SECTIONS = {"development", "duties", "dynamics", "hours", "people",
+                    "schedule", "settings", "1bceb335668c"}
+
+        def parse_code(raw):
+            """Ссылка → код страницы. Пусто или ссылка на дашборд → вход руководителя."""
+            raw = (raw or "").strip()
+            if not raw:
+                return "admin"
             if "/team/" in raw:
-                code = raw.split("/team/", 1)[1].split("/", 1)[0]
-            code = code.strip().strip("/")
-            if not code:
-                hint.config(text="Вставьте ссылку на свою страницу (или её код).")
-                messagebox.showwarning("ОТП", "Не вижу ссылку (или код страницы).\nВставьте её в верхнее поле.")
-                return
+                return raw.split("/team/", 1)[1].split("/", 1)[0].strip("/")
+            if raw.startswith("http"):
+                parts = [p for p in raw.split("?")[0].split("#")[0].split("/") if p]
+                for seg in reversed(parts):
+                    if seg not in SECTIONS and "." not in seg:
+                        return seg
+                return "admin"
+            return raw.strip("/")
+
+        def go(_=None):
+            code = parse_code(link.get())
             if not pwd.get():
                 hint.config(text="Введите пароль.")
                 messagebox.showwarning("ОТП", "Не вижу пароль.\nВведите его в нижнее поле.")
@@ -1498,6 +1534,11 @@ class App:
             hint.config(text="")
             try:
                 res = self.api.login(code, pwd.get())
+                if (not (res and res.get("ok"))) and code != "admin":
+                    # мог быть вход руководителя по ссылке на дашборд
+                    adm = self.api.login("admin", pwd.get())
+                    if adm and adm.get("ok"):
+                        res, code = adm, "admin"
             except Exception as e:
                 messagebox.showerror("ОТП", f"Нет связи: {e}")
                 return

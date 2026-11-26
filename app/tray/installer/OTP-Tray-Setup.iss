@@ -5,7 +5,7 @@
 
 #define AppName "ОТП — учёт рабочего времени"
 #define AppShort "OTP Tray"
-#define AppVersion "2.2"
+#define AppVersion "2.4"
 #define AppPublisher "Яковлев Евгений Евгеньевич"
 #define AppExe "OtpTray.exe"
 
@@ -39,7 +39,9 @@ Name: "desktopicon"; Description: "Создать значок на рабоче
 Name: "autostart"; Description: "Запускать приложение при входе в Windows"; GroupDescription: "Дополнительно:"; Flags: checkedonce
 
 [Files]
-Source: "..\dist\{#AppExe}"; DestDir: "{app}"; Flags: ignoreversion
+; сборка папочная (--onedir): приложение не распаковывает себя в %TEMP%,
+; поэтому антивирус не может «съесть» python313.dll
+Source: "..\dist\OtpTray\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\README-СОТРУДНИК.md"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
@@ -52,21 +54,22 @@ Name: "{userdesktop}\ОТП"; Filename: "{app}\{#AppExe}"; Tasks: desktopicon
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; \
     ValueName: "OtpTray"; ValueData: """{app}\{#AppExe}"""; Flags: uninsdeletevalue; Tasks: autostart
 
-[Run]
-; закрываем уже запущенный экземпляр, иначе новый молча выйдет
-Filename: "{sys}\taskkill.exe"; Parameters: "/F /IM {#AppExe}"; Flags: runhidden
-
 [Code]
 var
   ResultCode: Integer;
 
-{ После установки — и в обычном, и в тихом режиме — запускаем приложение.
-  Через [Run] с флагом postinstall в тихом режиме не запускалось, поэтому кодом. }
+{ После установки — и в обычном, и в тихом режиме — сначала закрываем старый
+  экземпляр, затем запускаем приложение. Раньше taskkill стоял в [Run] и
+  выполнялся ПОСЛЕ запуска, убивая только что стартовавшее приложение. }
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then
+  begin
+    Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM {#AppExe}', '',
+         SW_HIDE, ewWaitUntilTerminated, ResultCode);
     ShellExec('', ExpandConstant('{app}\{#AppExe}'), '',
               ExpandConstant('{app}'), SW_SHOWNORMAL, ewNoWait, ResultCode);
+  end;
 end;
 
 { Не даём ставить в Program Files без прав администратора. }

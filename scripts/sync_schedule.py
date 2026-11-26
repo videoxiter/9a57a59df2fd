@@ -38,7 +38,16 @@ def log(*a):
 def run(script, *args):
     cmd = [PY, os.path.join(ROOT, "scripts", script)] + list(args)
     log("→", os.path.basename(script), *args)
-    subprocess.run(cmd, cwd=ROOT, check=True)
+    # вывод перехватываем: при падении в задачу попадёт причина, а не «exit status 1»
+    proc = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True,
+                          encoding="utf-8", errors="replace")
+    if proc.stdout:
+        for line in proc.stdout.strip().splitlines()[-6:]:
+            log("   " + line)
+    if proc.returncode != 0:
+        tail = (proc.stderr or proc.stdout or "").strip().splitlines()[-4:]
+        reason = " | ".join(tail) if tail else "без вывода"
+        raise RuntimeError(f"{os.path.basename(script)}: {reason[:600]}")
 
 
 def cloud():

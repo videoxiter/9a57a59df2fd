@@ -32,7 +32,8 @@ def changelog_notes(ver: str):
             title = v.get("title") or ""
             return ([title] if title else []) + list(v.get("items") or [])
     return []
-EXE = os.path.join(ROOT, "app", "tray", "dist", "OtpTray.exe")
+EXE = os.path.join(ROOT, "app", "tray", "dist", "OtpTray.exe")          # onefile
+EXE_DIR = os.path.join(ROOT, "app", "tray", "dist", "OtpTray")          # onedir (папка)
 APP_PY = os.path.join(ROOT, "app", "tray", "otp_tray.py")
 OUT_DIR = os.path.join(ROOT, "downloads")
 PAGES = "https://videoxiter.github.io/9a57a59df2fd"
@@ -52,17 +53,20 @@ def main():
     ap.add_argument("--no-push", action="store_true")
     args = ap.parse_args()
 
-    if not os.path.exists(EXE):
-        raise SystemExit("нет сборки app/tray/dist/OtpTray.exe — сначала соберите приложение")
-
+    # основная поставка — установщик (сборка папкой: без распаковки в %TEMP%)
+    setup_exe = os.path.join(ROOT, "dist", f"OTP-Tray-Setup-{app_version()}.exe")
+    if not os.path.exists(setup_exe):
+        raise SystemExit("нет установщика dist/OTP-Tray-Setup-<версия>.exe — сначала соберите его")
     os.makedirs(OUT_DIR, exist_ok=True)
-    target = os.path.join(OUT_DIR, "OtpTray.exe")
-    shutil.copy2(EXE, target)
-    data = open(target, "rb").read()
+    setup_target = os.path.join(OUT_DIR, "OTP-Tray-Setup.exe")
+    shutil.copy2(setup_exe, setup_target)
+    data = open(setup_target, "rb").read()
     ver = app_version()
     manifest = {
         "version": ver,
-        "url": PAGES + "/downloads/OtpTray.exe",
+        "url": PAGES + "/downloads/OTP-Tray-Setup.exe",
+        "setup": PAGES + "/downloads/OTP-Tray-Setup.exe",
+        "setupSha256": hashlib.sha256(data).hexdigest(),
         "sha256": hashlib.sha256(data).hexdigest(),
         "size": len(data),
         "date": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -72,15 +76,7 @@ def main():
     if notes:
         manifest["notes"] = notes
         manifest["title"] = notes[0] if notes else ""
-    # инсталлятор (если собран) тоже публикуем — по нему ставят приложение
-    setup_src = os.path.join(ROOT, "dist", f"OTP-Tray-Setup-{ver}.exe")
-    if os.path.exists(setup_src):
-        shutil.copy2(setup_src, os.path.join(OUT_DIR, "OTP-Tray-Setup.exe"))
-        manifest["setup"] = PAGES + "/downloads/OTP-Tray-Setup.exe"
-        manifest["setupSha256"] = hashlib.sha256(open(setup_src, "rb").read()).hexdigest()
-        print("инсталлятор опубликован: downloads/OTP-Tray-Setup.exe")
-    else:
-        print("инсталлятор не найден — публикую только exe")
+    print("инсталлятор опубликован: downloads/OTP-Tray-Setup.exe")
     manifest["guide"] = (PAGES + "/downloads/"
                          "%D0%A3%D0%A1%D0%A2%D0%90%D0%9D%D0%9E%D0%92%D0%9A%D0%90"
                          "-%D0%9F%D0%A0%D0%98%D0%9B%D0%9E%D0%96%D0%95%D0%9D%D0%98%D0%AF.pdf")
