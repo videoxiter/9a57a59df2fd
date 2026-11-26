@@ -1,10 +1,10 @@
 {
-  "version": "1.7",
+  "version": "1.8",
   "url": "https://videoxiter.github.io/9a57a59df2fd/downloads/OtpTray.exe",
-  "sha256": "8e8e58a5bd4b9fdaf8fe55233256968438714f14500ad60130e1ee2e6f1e86dc",
-  "size": 18659181,
-  "date": "2026-11-26T08:10:58+00:00",
+  "sha256": "96f5369b393d243e9112ef03f25194783e7b78bae48dcd67224c90f8212cea4e",
+  "size": 18658193,
+  "date": "2026-11-26T08:27:11+00:00",
   "setup": "https://videoxiter.github.io/9a57a59df2fd/downloads/OTP-Tray-Setup.exe",
-  "setupSha256": "62970f39b5ca85f3d9f7af9d363a367c86d79ade859b5fcf96a200c633ac4280",
+  "setupSha256": "f4d5c1fd7cb3141ebb9209352ef4c46d1058cef7c1ea014596b722c79daf69bc",
   "guide": "https://videoxiter.github.io/9a57a59df2fd/downloads/%D0%A3%D0%A1%D0%A2%D0%90%D0%9D%D0%9E%D0%92%D0%9A%D0%90-%D0%9F%D0%A0%D0%98%D0%9B%D0%9E%D0%96%D0%95%D0%9D%D0%98%D0%AF.pdf"
 }
