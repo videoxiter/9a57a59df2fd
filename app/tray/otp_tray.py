@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "3.1"
+VERSION = "3.2"
 try:
     from changelog import CHANGELOG
 except Exception:      # запуск из другого каталога — истории просто не будет
