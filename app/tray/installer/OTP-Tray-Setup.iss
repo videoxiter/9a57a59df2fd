@@ -14,10 +14,11 @@ AppId={{8E2B6C11-7A4D-4F5E-9B33-0B9C1E7A2D51}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher={#AppPublisher}
-DefaultDirName={localappdata}\OtpTray
+DefaultDirName={autopf}\OtpTray
 DefaultGroupName=ОТП
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
+PrivilegesRequiredOverridesAllowed=dialog
 UsePreviousAppDir=no
 OutputDir=..\..\..\dist
 OutputBaseFilename=OTP-Tray-Setup-{#AppVersion}
@@ -61,7 +62,7 @@ Filename: "{cmd}"; Parameters: "/c start """" ""{app}\{#AppExe}"""; WorkingDir: 
 function NextButtonClick(CurPageID: Integer): Boolean;
 begin
   Result := True;
-  if (CurPageID = wpSelectDir) and (not IsAdminLoggedOn) then
+  if (CurPageID = wpSelectDir) and (not IsAdminInstallMode) then
   begin
     if Pos('Program Files', WizardDirValue) > 0 then
     begin
