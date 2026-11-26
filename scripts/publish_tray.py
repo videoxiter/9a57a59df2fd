@@ -58,6 +58,7 @@ def main():
     if os.path.exists(setup_src):
         shutil.copy2(setup_src, os.path.join(OUT_DIR, "OTP-Tray-Setup.exe"))
         manifest["setup"] = PAGES + "/downloads/OTP-Tray-Setup.exe"
+        manifest["setupSha256"] = hashlib.sha256(open(setup_src, "rb").read()).hexdigest()
         print("инсталлятор опубликован: downloads/OTP-Tray-Setup.exe")
     else:
         print("инсталлятор не найден — публикую только exe")

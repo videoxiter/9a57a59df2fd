@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "1.6"
+VERSION = "1.7"
 # Сочетания по умолчанию: пользователь может поменять их в меню «Горячие клавиши…»
 DEFAULT_HOTKEYS = {
     "start": "ctrl+alt+s",
@@ -155,13 +155,8 @@ def install_update(info) -> bool:
         return False
 
     if not venv_writable(folder):
-        log("обновление: нет прав на запись в %s — обновляюсь через установщик" % folder)
-        notify_balloon("Обновление", "Папка защищена Windows. Открыл страницу установщика — установите новую версию.")
-        try:
-            webbrowser.open(SETUP_URL)
-        except Exception:
-            pass
-        return False
+        log("обновление: папка защищена (%s) — обновляюсь через установщик" % folder)
+        return update_via_installer(info)
 
     new_exe = folder / "OtpTray.new.exe"
     try:
@@ -202,6 +197,51 @@ def install_update(info) -> bool:
         os._exit(0)
     except Exception as e:
         log("обновление: перезапуск не удался %r" % (e,))
+        return False
+
+
+def update_via_installer(info) -> bool:
+    """Обновление для установки «для всех пользователей» (Program Files).
+
+    Скачиваем установщик и запускаем его с повышением прав в тихом режиме:
+    он перезапишет файлы в своей папке и снова запустит приложение.
+    Пользователь увидит только запрос UAC «Разрешить изменение».
+    """
+    import hashlib
+    import tempfile
+    setup_url = str(info.get("setup") or SETUP_URL)
+    want = str(info.get("setupSha256") or "")
+    setup = Path(tempfile.gettempdir()) / "OTP-Tray-Setup.exe"
+    try:
+        with urllib.request.urlopen(setup_url, timeout=180,
+                                    context=ssl._create_unverified_context()) as r:
+            data = r.read()
+        if want and hashlib.sha256(data).hexdigest().lower() != want.lower():
+            log("обновление: контрольная сумма установщика не совпала — отмена")
+            return False
+        setup.write_bytes(data)
+        log("обновление: установщик скачан (%d байт)" % len(data))
+    except Exception as e:
+        log("обновление: установщик скачать не удалось %r" % e)
+        try:
+            webbrowser.open(setup_url)
+        except Exception:
+            pass
+        return False
+
+    try:
+        import ctypes
+        rc = ctypes.windll.shell32.ShellExecuteW(
+            None, "runas", str(setup), "/SILENT /NORESTART", str(setup.parent), 1)
+        log("обновление: запуск установщика с правами администратора, код %s" % rc)
+        if rc <= 32:      # пользователь отменил UAC или запуск не удался
+            notify_balloon("Обновление",
+                           "Не удалось обновиться автоматически. Открыл страницу установщика — установите вручную.")
+            webbrowser.open(setup_url)
+            return False
+        os._exit(0)
+    except Exception as e:
+        log("обновление: запуск установщика не удался %r" % e)
         return False
 
 
