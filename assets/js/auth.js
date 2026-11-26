@@ -255,9 +255,11 @@
       return rpc("otp_tasks_recent", { p_token: tok("admin"), p_limit: 8 })
         .catch(function () { return null; });
     },
-    /* v28: данные страниц отдаются сервером только после входа */
+    /* v28: данные страниц отдаются сервером только после входа.
+       Руководителю разрешена любая страница — берём админский токен. */
     profileGet: function (slug) {
-      return rpc("otp_profile_get", { p_token: tok(slug), p_slug: slug })
+      var t = tok(slug) || tok("admin");
+      return rpc("otp_profile_get", { p_token: t, p_slug: slug })
         .catch(function () { return { ok: false, error: "net" }; });
     },
     dataGet: function () {
