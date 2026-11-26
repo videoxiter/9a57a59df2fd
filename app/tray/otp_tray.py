@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "1.5"
+VERSION = "1.6"
 # Сочетания по умолчанию: пользователь может поменять их в меню «Горячие клавиши…»
 DEFAULT_HOTKEYS = {
     "start": "ctrl+alt+s",
@@ -98,6 +98,7 @@ def save_config(cfg: dict) -> None:
 
 # ------------------------------------------------------- автообновление ------
 UPDATE_URL = "https://videoxiter.github.io/9a57a59df2fd/downloads/version.json"
+SETUP_URL = "https://videoxiter.github.io/9a57a59df2fd/downloads/OTP-Tray-Setup.exe"
 DATA_URL = "https://videoxiter.github.io/9a57a59df2fd/assets/js/data.js"
 
 
@@ -124,38 +125,70 @@ def update_available():
     return None
 
 
+def venv_writable(path: Path) -> bool:
+    """Можно ли писать в папку (в Program Files без прав — нельзя)."""
+    try:
+        probe = path / ".otp_write_test"
+        probe.write_text("ok", encoding="utf-8")
+        probe.unlink()
+        return True
+    except Exception:
+        return False
+
+
 def install_update(info) -> bool:
-    """Скачивает новый exe и подменяет текущий при перезапуске."""
+    """Скачивает новый exe и безопасно подменяет текущий при перезапуске.
+
+    Важно: сначала копия, потом замена, и проверка результата. Если папку
+    защищает Windows (Program Files), exe не трогаем — открываем страницу
+    установщика, чтобы не оставить приложение без файла (так уже случилось).
+    """
     import hashlib
     import tempfile
     exe = Path(sys.executable) if getattr(sys, "frozen", False) else None
     if not exe:
         log("обновление: приложение запущено из скрипта — обновление не требуется")
         return False
+    folder = exe.parent
     url = str(info.get("url") or "")
     if not url:
         return False
-    tmp = Path(tempfile.gettempdir()) / "OtpTray-new.exe"
+
+    if not venv_writable(folder):
+        log("обновление: нет прав на запись в %s — обновляюсь через установщик" % folder)
+        notify_balloon("Обновление", "Папка защищена Windows. Открыл страницу установщика — установите новую версию.")
+        try:
+            webbrowser.open(SETUP_URL)
+        except Exception:
+            pass
+        return False
+
+    new_exe = folder / "OtpTray.new.exe"
     try:
-        data = b""
         with urllib.request.urlopen(url, timeout=120, context=ssl._create_unverified_context()) as r:
             data = r.read()
         want = str(info.get("sha256") or "")
         if want and hashlib.sha256(data).hexdigest().lower() != want.lower():
             log("обновление: контрольная сумма не совпала — отмена")
             return False
-        tmp.write_bytes(data)
-        log("обновление: скачано %d байт, ставлю при перезапуске" % len(data))
+        new_exe.write_bytes(data)
+        log("обновление: скачано %d байт в %s" % (len(data), new_exe))
     except Exception as e:
         log("обновление: скачать не удалось %r" % (e,))
         return False
 
+    log_path = str(Path(tempfile.gettempdir()) / "otp-update.log")
     bat = Path(tempfile.gettempdir()) / "OtptrayUpdate.cmd"
     bat.write_text(
         "@echo off\r\n"
         "ping -n 4 127.0.0.1 >nul\r\n"
-        f'move /y "{exe}" "{exe}.old" >nul 2>&1\r\n'
-        f'move /y "{tmp}" "{exe}" >nul 2>&1\r\n'
+        f'copy /y "{exe}" "{exe}.old" >nul 2>&1\r\n'
+        f'move /y "{new_exe}" "{exe}" >> "{log_path}" 2>&1\r\n'
+        f'if not exist "{exe}" (\r\n'
+        f'  move /y "{exe}.old" "{exe}" >> "{log_path}" 2>&1\r\n'
+        f'  echo update failed, original restored >> "{log_path}"\r\n'
+        "  exit /b 1\r\n"
+        ")\r\n"
         f'start "" "{exe}"\r\n'
         f'del "{exe}.old" >nul 2>&1\r\n'
         'del "%~f0" >nul 2>&1\r\n',
@@ -170,6 +203,15 @@ def install_update(info) -> bool:
     except Exception as e:
         log("обновление: перезапуск не удался %r" % (e,))
         return False
+
+
+def notify_balloon(title: str, text: str) -> None:
+    """Простое уведомление Windows без участия значка (если он ещё не создан)."""
+    try:
+        import ctypes
+        ctypes.windll.user32.MessageBoxW(0, text, title, 0x00000040)
+    except Exception:
+        pass
 
 
 def http_text(url: str, timeout: int = 60) -> str:

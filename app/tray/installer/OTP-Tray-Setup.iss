@@ -5,7 +5,7 @@
 
 #define AppName "ОТП — учёт рабочего времени"
 #define AppShort "OTP Tray"
-#define AppVersion "1.5"
+#define AppVersion "1.6"
 #define AppPublisher "Яковлев Евгений Евгеньевич"
 #define AppExe "OtpTray.exe"
 
@@ -18,6 +18,7 @@ DefaultDirName={localappdata}\OtpTray
 DefaultGroupName=ОТП
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
+UsePreviousAppDir=no
 OutputDir=..\..\..\dist
 OutputBaseFilename=OTP-Tray-Setup-{#AppVersion}
 SetupIconFile=..\..\assets\app.ico
@@ -53,3 +54,21 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
 ; запуск через cmd start: надёжнее прямого запуска GUI из установщика
 Filename: "{cmd}"; Parameters: "/c start """" ""{app}\{#AppExe}"""; WorkingDir: "{app}"; \
     Description: "Запустить ОТП сейчас"; Flags: nowait postinstall skipifsilent
+
+[Code]
+{ Не даём ставить в Program Files без прав администратора: там приложение
+  не сможет себя обновлять (именно так сломалось автообновление). }
+function NextButtonClick(CurPageID: Integer): Boolean;
+begin
+  Result := True;
+  if (CurPageID = wpSelectDir) and (not IsAdminLoggedOn) then
+  begin
+    if Pos('Program Files', WizardDirValue) > 0 then
+    begin
+      MsgBox('Папка Program Files защищена Windows.' + #13#10 +
+             'Приложение не сможет обновлять себя. Установите его в профиль' + #13#10 +
+             'пользователя (путь по умолчанию) — кнопка «Назад».', mbError, MB_OK);
+      Result := False;
+    end;
+  end;
+end;
