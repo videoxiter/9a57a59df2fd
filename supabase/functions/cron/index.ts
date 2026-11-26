@@ -105,6 +105,11 @@ Deno.serve(async () => {
 
     const events = await sb(`otp_time_events?select=*&day=eq.${today}&order=at.asc`) || [];
     const sent = new Set((await sb(`otp_time_notices?select=id&day=eq.${today}`) || []).map((n: any) => n.id));
+    /* ключи без хвоста с ФИО: защита от дублей, если имя в ключе разошлось */
+    const sentEventPrefix = new Set<string>(
+      [...sent].filter((x) => String(x).includes(":ev:"))
+        .map((x) => String(x).split(":").slice(0, 4).join(":")),
+    );
     // кто вообще пользуется системой: если человек ещё ни разу ничего не нажимал,
     // «опоздание» по нему не шлём (иначе в первые дни канал получает шквал)
     const usedRows = await sb(
@@ -158,13 +163,30 @@ Deno.serve(async () => {
     /* Уведомления о действиях сотрудников — из облака, а не из браузера.
        Начало смены открывает сообщение в канале, всё остальное идёт в его тред. */
     const SLOT_NAME: Record<string, string> = { tech1: "технологический перерыв №1", tech2: "технологический перерыв №2", lunch: "обед" };
+    /* Имя сотрудника: в событиях старого приложения бывает пусто или код страницы.
+       Без этого cron подписывал сообщение кодом (e5d35a6fc921) и его ключ
+       дедупликации не совпадал с ключом мгновенной отправки — выходил дубль. */
+    const fioCache = new Map<string, string>();
+    const resolveFio = async (slug: string, name: string): Promise<string> => {
+      const clean = String(name || "").trim();
+      if (clean && clean !== slug) return clean;
+      if (!slug) return "Сотрудник";
+      if (fioCache.has(slug)) return fioCache.get(slug)!;
+      const enc = encodeURIComponent(slug);
+      const rows: any[] = await sb(
+        `otp_staff?select=fio&or=(slug.eq.${enc},page_hash.eq.${enc})`,
+      ).catch(() => []) || [];
+      const found = (rows && rows[0] && rows[0].fio) ? String(rows[0].fio) : slug;
+      fioCache.set(slug, found);
+      return found;
+    };
     // уже открытые треды смен на сегодня: сотрудник -> id сообщения
     const threadRows = await sb(`otp_shift_threads?select=*&day=eq.${today}`).catch(() => []) || [];
     const threads = new Map<string, number>();
     for (const r of threadRows as any[]) if (r && r.emp && r.message_id) threads.set(String(r.emp), Number(r.message_id));
 
     for (const e of events) {
-      const fio = String(e.empName || "").trim() || String(e.empSlug || "");
+      const fio = await resolveFio(String(e.empSlug || ""), String(e.empName || ""));
       const slot = String(e.slot || "");
       const isStart = e.type === "shift_start";
       let text = "";
@@ -182,7 +204,9 @@ Deno.serve(async () => {
       if (isStart) {
         // начало смены — отдельное сообщение в канале, оно же становится тредом
         const id = `${today}:ev:${e.id}:${e.type}:${fio}`;
-        if (sent.has(id)) continue;
+        // тот же ключ мог быть записан мгновенной отправкой (notify) — тогда не дублируем
+        const prefix = `${today}:ev:${e.id}:${e.type}`;
+        if (sent.has(id) || sentEventPrefix.has(prefix)) continue;
         const res: any = await send(text);
         if (res && res.ok !== false && res.message_id) {
           threads.set(fio, Number(res.message_id));
@@ -192,6 +216,7 @@ Deno.serve(async () => {
             body: JSON.stringify([{ emp: fio, day: today, message_id: Number(res.message_id) }]),
           }).catch(() => {});
           sent.add(id);
+          sentEventPrefix.add(prefix);
           await sb("otp_time_notices", {
             method: "POST", headers: { Prefer: "return=minimal" },
             body: JSON.stringify([{ id, day: today, kind: "shift_start", emp: fio }]),
