@@ -99,6 +99,15 @@ Deno.serve(async (req: Request) => {
   const key = evId ? `${day}:ev:${evId}:${type}:${fio}` : `${day}:${type}:${fio}:${Date.now()}`;
   const sentRows = await sb(`otp_time_notices?select=id&id=eq.${encodeURIComponent(key)}`).catch(() => []) || [];
   if (Array.isArray(sentRows) && sentRows.length) return json({ ok: true, skipped: "already sent" });
+  /* та же защита, но без хвоста с ФИО: если cron успел отправить с другим
+     написанием имени, дубль всё равно не появится */
+  if (evId) {
+    const prefix = `${day}:ev:${evId}:${type}`;
+    const near: any[] = await sb(
+      `otp_time_notices?select=id&id=like.${encodeURIComponent(prefix)}*`,
+    ).catch(() => []) || [];
+    if (Array.isArray(near) && near.length) return json({ ok: true, skipped: "already sent (prefix)" });
+  }
 
   // тред смены этого сотрудника
   let threadId = 0;
