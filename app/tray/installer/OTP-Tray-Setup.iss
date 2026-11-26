@@ -5,7 +5,7 @@
 
 #define AppName "ОТП — учёт рабочего времени"
 #define AppShort "OTP Tray"
-#define AppVersion "1.4"
+#define AppVersion "1.5"
 #define AppPublisher "Яковлев Евгений Евгеньевич"
 #define AppExe "OtpTray.exe"
 
@@ -50,4 +50,6 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
     ValueName: "OtpTray"; ValueData: """{app}\{#AppExe}"""; Flags: uninsdeletevalue; Tasks: autostart
 
 [Run]
-Filename: "{app}\{#AppExe}"; Description: "Запустить ОТП сейчас"; Flags: nowait postinstall skipifsilent
+; запуск через cmd start: надёжнее прямого запуска GUI из установщика
+Filename: "{cmd}"; Parameters: "/c start """" ""{app}\{#AppExe}"""; WorkingDir: "{app}"; \
+    Description: "Запустить ОТП сейчас"; Flags: nowait postinstall skipifsilent

@@ -61,6 +61,9 @@ def main():
         print("инсталлятор опубликован: downloads/OTP-Tray-Setup.exe")
     else:
         print("инсталлятор не найден — публикую только exe")
+    manifest["guide"] = (PAGES + "/downloads/"
+                         "%D0%A3%D0%A1%D0%A2%D0%90%D0%9D%D0%9E%D0%92%D0%9A%D0%90"
+                         "-%D0%9F%D0%A0%D0%98%D0%9B%D0%9E%D0%96%D0%95%D0%9D%D0%98%D0%AF.pdf")
     with open(os.path.join(OUT_DIR, "version.json"), "w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False, indent=2)
     print(f"опубликовано: версия {ver}, {len(data) // 1024} КБ, sha256 {manifest['sha256'][:12]}…")

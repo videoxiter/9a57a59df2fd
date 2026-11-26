@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "1.4"
+VERSION = "1.5"
 # Сочетания по умолчанию: пользователь может поменять их в меню «Горячие клавиши…»
 DEFAULT_HOTKEYS = {
     "start": "ctrl+alt+s",
@@ -915,6 +915,9 @@ class App:
                 self.hotkeys.stop()
         except Exception:
             pass
+        if self.cfg.get("hotkeysOff"):
+            log("горячие клавиши отключены в настройках")
+            return
         try:
             self.hotkeys = Hotkeys(self, self.hotkey_combos())
             threading.Thread(target=self.hotkeys.run, daemon=True).start()
@@ -922,25 +925,80 @@ class App:
             log("горячие клавиши: %r" % (e,))
 
     def hotkeys_dialog(self):
-        """Окно настройки сочетаний. Пустое поле = сочетание выключено."""
+        """Окно настройки сочетаний.
+
+        На время работы окна глобальные клавиши приостанавливаются — иначе
+        Ctrl+Alt+S перехватывался приложением и в поле нельзя было напечатать
+        сочетание. Сочетание можно набрать текстом или просто нажать нужные клавиши.
+        """
         import tkinter as tk
         from tkinter import messagebox
         combos = self.hotkey_combos()
+        # пауза глобальных клавиш, пока окно открыто
+        try:
+            if getattr(self, "hotkeys", None):
+                self.hotkeys.stop()
+        except Exception:
+            pass
         root = tk.Tk()
         root.title("ОТП — горячие клавиши")
-        root.geometry("520x360")
+        root.geometry("560x430")
         tk.Label(root, anchor="w", justify="left",
-                 text="Например: ctrl+alt+s, shift+f5, ctrl+alt+1.\n"
+                 text="Нажмите нужные клавиши в поле (например Ctrl+Alt+S) — сочетание подставится.\n"
+                      "Или впишите вручную: ctrl+alt+s, shift+f5, ctrl+alt+1.\n"
                       "Пустое поле — действие без горячей клавиши.").pack(fill="x", padx=12, pady=(10, 6))
+
+        off_var = tk.BooleanVar(value=bool(self.cfg.get("hotkeysOff")))
         entries = {}
+
+        def key_name(sym: str):
+            s = sym.lower()
+            if len(s) == 1 and (s.isalnum() or s in "`-=[];',./\\"):
+                return s
+            if s.startswith("f") and s[1:].isdigit() and 1 <= int(s[1:]) <= 12:
+                return s
+            if s == "space":
+                return "space"
+            return None
+
+        def make_handler(entry):
+            def on_key(ev):
+                if ev.keysym in ("Shift_L", "Shift_R", "Control_L", "Control_R", "Alt_L", "Alt_R"):
+                    return "break"
+                if ev.keysym in ("BackSpace", "Delete"):
+                    entry.delete(0, "end")
+                    return "break"
+                if ev.keysym == "Escape":
+                    entry.delete(0, "end")
+                    return "break"
+                mods = []
+                if ev.state & 0x4:
+                    mods.append("ctrl")
+                if ev.state & 0x8:
+                    mods.append("alt")
+                if ev.state & 0x1:
+                    mods.append("shift")
+                key = key_name(ev.keysym)
+                if not key or not mods:
+                    return "break"
+                entry.delete(0, "end")
+                entry.insert(0, "+".join(mods + [key]))
+                return "break"
+            return on_key
+
         for act, label in Hotkeys.ACTIONS:
             rowf = tk.Frame(root)
             rowf.pack(fill="x", padx=12, pady=2)
             tk.Label(rowf, text=label, width=24, anchor="w").pack(side="left")
-            e = tk.Entry(rowf, width=18)
+            e = tk.Entry(rowf, width=20, state="normal")
             e.insert(0, combos.get(act, ""))
             e.pack(side="left")
+            e.bind("<KeyPress>", make_handler(e))
             entries[act] = e
+
+        chk = tk.Checkbutton(root, text="Отключить горячие клавиши (действия только через меню значка)",
+                             variable=off_var)
+        chk.pack(anchor="w", padx=12, pady=(8, 0))
 
         def save():
             new = {}
@@ -955,23 +1013,30 @@ class App:
                     return
                 new[act] = txt
             self.cfg["hotkeys"] = new
+            self.cfg["hotkeysOff"] = bool(off_var.get())
             save_config(self.cfg)
             self.start_hotkeys()
-            log("горячие клавиши сохранены: %r" % (new,))
+            log("горячие клавиши сохранены: %r, отключены: %s" % (new, self.cfg["hotkeysOff"]))
             root.destroy()
             messagebox.showinfo("ОТП", "Сохранено. Настройки лежат отдельно от программы, "
                                        "обновление их не затирает.")
 
         def reset():
+            off_var.set(False)
             for act, e in entries.items():
                 e.delete(0, "end")
                 e.insert(0, DEFAULT_HOTKEYS.get(act, ""))
 
+        def cancel():
+            root.destroy()
+            self.start_hotkeys()
+
         btns = tk.Frame(root)
-        btns.pack(pady=12)
+        btns.pack(pady=14)
         tk.Button(btns, text="Сохранить", command=save, width=14).pack(side="left", padx=6)
         tk.Button(btns, text="По умолчанию", command=reset, width=14).pack(side="left", padx=6)
-        tk.Button(btns, text="Отмена", command=root.destroy, width=10).pack(side="left", padx=6)
+        tk.Button(btns, text="Отмена", command=cancel, width=10).pack(side="left", padx=6)
+        root.protocol("WM_DELETE_WINDOW", cancel)
         root.mainloop()
 
     # --- обновление
