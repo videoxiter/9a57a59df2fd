@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "1.9"
+VERSION = "2.0"
 # Сочетания по умолчанию: пользователь может поменять их в меню «Горячие клавиши…»
 DEFAULT_HOTKEYS = {
     "start": "ctrl+alt+s",
@@ -123,6 +123,61 @@ def update_available():
     except Exception as e:
         log("обновление: проверка не удалась %r" % (e,))
     return None
+
+
+STARTUP_DIR = Path(os.environ.get("APPDATA", "")) / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup"
+
+
+def autostart_target() -> Path:
+    """Файл автозапуска в папке «Автозагрузка» — надёжнее ключа Run."""
+    return STARTUP_DIR / "ОТП.cmd"
+
+
+def autostart_enabled() -> bool:
+    try:
+        return autostart_target().exists()
+    except Exception:
+        return False
+
+
+def set_autostart(on: bool) -> bool:
+    """Включает/выключает запуск при входе: файл в «Автозагрузке» + ключ Run."""
+    exe = Path(sys.executable) if getattr(sys, "frozen", False) else None
+    if not exe:
+        return False
+    target = autostart_target()
+    try:
+        if on:
+            STARTUP_DIR.mkdir(parents=True, exist_ok=True)
+            target.write_text(
+                '@echo off\r\n'
+                f'start "" "{exe}"\r\n',
+                encoding="cp1251" if os.name == "nt" else "utf-8",
+            )
+            try:
+                import winreg
+                with winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                                    r"Software\Microsoft\Windows\CurrentVersion\Run",
+                                    0, winreg.KEY_SET_VALUE) as k:
+                    winreg.SetValueEx(k, "OtpTray", 0, winreg.REG_SZ, f'"{exe}"')
+            except Exception as e:
+                log("автозапуск: ключ реестра не записан %r" % (e,))
+        else:
+            if target.exists():
+                target.unlink()
+            try:
+                import winreg
+                with winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                                    r"Software\Microsoft\Windows\CurrentVersion\Run",
+                                    0, winreg.KEY_SET_VALUE) as k:
+                    winreg.DeleteValue(k, "OtpTray")
+            except Exception:
+                pass
+        log("автозапуск: %s" % ("включён" if on else "выключен"))
+        return True
+    except Exception as e:
+        log("автозапуск: ошибка %r" % (e,))
+        return False
 
 
 def venv_writable(path: Path) -> bool:
@@ -662,6 +717,8 @@ class App:
             MenuItem("Открыть мою страницу", lambda: webbrowser.open(self.page_url())),
             MenuItem("Справка", self.help_window),
             MenuItem("Горячие клавиши…", self.hotkeys_dialog),
+            MenuItem("Запускать при входе в Windows", self.toggle_autostart,
+                     checked=lambda _: autostart_enabled()),
             MenuItem("Проверить обновление", lambda: threading.Thread(target=self.check_updates_manual, daemon=True).start()),
             MenuItem("Проверить новые данные", lambda: threading.Thread(target=self.check_content_manual, daemon=True).start()),
             MenuItem("Обновить", lambda: self.refresh()),
@@ -849,6 +906,12 @@ class App:
 
     # --- запуск
     def run(self):
+        # самовосстановление автозапуска: включён в настройках, а файла нет
+        try:
+            if self.cfg.get("autostart") is True and not autostart_enabled():
+                set_autostart(True)
+        except Exception:
+            pass
         if not self.api.token:
             if not self.login_dialog():
                 return
@@ -865,6 +928,24 @@ class App:
         threading.Thread(target=self.poll_loop, daemon=True).start()
         threading.Thread(target=self.countdown_loop, daemon=True).start()
         self.icon.run()
+
+    def toggle_autostart(self):
+        """Включает/выключает запуск при входе в Windows."""
+        on = not autostart_enabled()
+        ok = set_autostart(on)
+        try:
+            self.cfg["autostart"] = bool(on)
+            save_config(self.cfg)
+        except Exception:
+            pass
+        try:
+            self.icon.update_menu()
+        except Exception:
+            pass
+        if not ok:
+            notify_balloon("Автозапуск", "Не удалось изменить автозапуск. Проверьте журнал приложения.")
+        else:
+            notify_balloon("Автозапуск", "Автозапуск включён." if on else "Автозапуск выключен.")
 
     def quit_app(self):
         self._alive = False

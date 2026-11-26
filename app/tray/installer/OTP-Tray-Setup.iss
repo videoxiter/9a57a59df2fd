@@ -5,7 +5,7 @@
 
 #define AppName "ОТП — учёт рабочего времени"
 #define AppShort "OTP Tray"
-#define AppVersion "1.9"
+#define AppVersion "2.0"
 #define AppPublisher "Яковлев Евгений Евгеньевич"
 #define AppExe "OtpTray.exe"
 
@@ -36,7 +36,7 @@ Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "Создать значок на рабочем столе"; GroupDescription: "Дополнительно:"
-Name: "autostart"; Description: "Запускать приложение при входе в Windows"; GroupDescription: "Дополнительно:"
+Name: "autostart"; Description: "Запускать приложение при входе в Windows"; GroupDescription: "Дополнительно:"; Flags: checkedonce
 
 [Files]
 Source: "..\dist\{#AppExe}"; DestDir: "{app}"; Flags: ignoreversion
@@ -45,6 +45,7 @@ Source: "..\README-СОТРУДНИК.md"; DestDir: "{app}"; Flags: ignoreversio
 [Icons]
 Name: "{group}\ОТП"; Filename: "{app}\{#AppExe}"
 Name: "{group}\Инструкция (Markdown)"; Filename: "{app}\README-СОТРУДНИК.md"
+Name: "{userstartup}\ОТП"; Filename: "{app}\{#AppExe}"; Tasks: autostart
 Name: "{userdesktop}\ОТП"; Filename: "{app}\{#AppExe}"; Tasks: desktopicon
 
 [Registry]
