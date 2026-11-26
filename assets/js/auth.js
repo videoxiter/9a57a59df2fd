@@ -4,7 +4,9 @@
   "use strict";
   var CLOUD = function () {
     var d = window.OTP_DATA || window.OTP_EMP;
-    return (d && d.hrRules && d.hrRules.cloud && d.hrRules.cloud.url) ? d.hrRules.cloud : null;
+    if (d && d.hrRules && d.hrRules.cloud && d.hrRules.cloud.url) return d.hrRules.cloud;
+    // данные страниц приходят после входа, поэтому адрес облака лежит отдельно
+    return window.OTP_CLOUD_CFG || null;
   };
   var KEY = function (slug) { return "otp_sess_" + slug; };
   function tok(slug) { try { return localStorage.getItem(KEY(slug)); } catch (e) { return null; } }

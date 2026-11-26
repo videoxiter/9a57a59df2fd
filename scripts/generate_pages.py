@@ -124,6 +124,7 @@ TEMPLATE = """<!DOCTYPE html>
   <script src="__PREFIX__assets/vendor/ScrollTrigger.min.js?v=__V__"></script>
   <script src="__PREFIX__assets/vendor/lenis.min.js?v=__V__"></script>
   <script src="__PREFIX__assets/vendor/chart.umd.min.js?v=__V__"></script>
+  <script src="__PREFIX__assets/js/cloud-config.js?v=__V__"></script>
   <script src="__PREFIX__assets/js/common.js?v=__V__"></script>
   <script src="__PREFIX__assets/js/auth.js?v=__V__"></script>
   <script src="__PREFIX__assets/js/cloud.js?v=__V__"></script>
@@ -165,6 +166,12 @@ def secnav_html(rel, active, secs=None):
 
 
 def main():
+    # публичные параметры облака нужны странице ещё до входа (RPC входа)
+    try:
+        subprocess.run([sys.executable, os.path.join(ROOT, "scripts", "make_cloud_config.py")],
+                       cwd=ROOT, check=False)
+    except Exception:
+        pass
     data = load_data()
     os.makedirs(TEAM_DIR, exist_ok=True)
     n = 0

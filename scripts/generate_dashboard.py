@@ -177,7 +177,7 @@ def build_pages():
             body.append(f'  <script src="{prefix}assets/vendor/{lib}?v={V}"></script>')
         # данные (data.js) больше не публикуются: boot-dashboard загружает их
         # с сервера после входа администратора, затем подключает модули дашборда
-        for js in ("themes.js", "auth.js"):
+        for js in ("themes.js", "cloud-config.js", "auth.js"):
             body.append(f'  <script src="{prefix}assets/js/{js}?v={V}"></script>')
         body.append(f'  <script>window.OTP_BOOT = {{"prefix": "{prefix}", "v": "{V}"}};</script>')
         body.append(f'  <script src="{prefix}assets/js/boot-dashboard.js?v={V}"></script>')

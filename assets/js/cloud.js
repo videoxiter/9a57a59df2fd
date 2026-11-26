@@ -17,6 +17,7 @@ window.OTP_CLOUD = (function () {
   const cfg = () =>
     (window.OTP_EMP && window.OTP_EMP.hrRules && window.OTP_EMP.hrRules.cloud) ||
     (window.OTP_DATA && window.OTP_DATA.hrRules && window.OTP_DATA.hrRules.cloud) ||
+    window.OTP_CLOUD_CFG ||          /* публичные параметры из cloud-config.js */
     { provider: "offline" };
 
   const loadLocal = () => { try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) { return []; } };
