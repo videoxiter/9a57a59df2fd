@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "3.0"
+VERSION = "3.1"
 try:
     from changelog import CHANGELOG
 except Exception:      # запуск из другого каталога — истории просто не будет
@@ -794,6 +794,7 @@ class App:
                      checked=lambda _: autostart_enabled()),
             MenuItem("О программе", self.about_window),
             MenuItem("Журнал приложения", lambda: webbrowser.open(LOG_PATH.as_uri())),
+            MenuItem("Перезапустить", self.restart_app),
             MenuItem("Выход", lambda: self.quit_app()),
         )
 
@@ -839,6 +840,10 @@ class App:
                  font=("Segoe UI", 10)).pack(side="left", padx=(10, 0), pady=(8, 0))
         tk.Label(head, text="версия " + VERSION, bg=BG, fg="#5b6b80",
                  font=("Segoe UI", 9)).pack(side="right", pady=(8, 0))
+        if not self.cfg.get("whatsnewSeen"):
+            tk.Button(head, text="Что нового", command=self._open_whatsnew,
+                      relief="flat", bd=0, bg="#0d2330", fg=ACCENT, cursor="hand2",
+                      font=("Segoe UI", 9, "bold"), padx=10, pady=3).pack(side="right", padx=(0, 10))
 
         poll_card = tk.Frame(root, bg="#0d2330", highlightbackground="#155e75", highlightthickness=1)
         poll_var = tk.StringVar(value="")
@@ -1287,6 +1292,16 @@ class App:
         else:
             notify_balloon("Автозапуск", "Автозапуск включён." if on else "Автозапуск выключен.")
 
+    def restart_app(self):
+        """Перезапуск: полезно, если зависло окно или нужно применить настройки."""
+        try:
+            exe = sys.executable
+            args = [exe] if not getattr(sys, "frozen", False) else [exe]
+            subprocess.Popen(args, close_fds=True)
+        except Exception as e:
+            log("перезапуск: %r" % (e,))
+        threading.Timer(0.4, lambda: os._exit(0)).start()
+
     def quit_app(self):
         self._alive = False
         try:
@@ -1303,6 +1318,15 @@ class App:
         threading.Timer(0.4, lambda: os._exit(0)).start()
 
     # --- справка и «О программе»
+    def _open_whatsnew(self):
+        """Открывает историю версий и помечает «что нового» просмотренным."""
+        self.cfg["whatsnewSeen"] = True
+        try:
+            save_config(self.cfg)
+        except Exception:
+            pass
+        self.changelog_window(only_current=True)
+
     def changelog_window(self, only_current=False):
         """История версий: что менялось и что исправлялось."""
         import tkinter as tk
@@ -1342,15 +1366,29 @@ class App:
         root.mainloop()
 
     def maybe_show_whatsnew(self):
-        """После обновления один раз показываем, что изменилось."""
+        """После обновления сообщаем о новой версии БЕЗ открытия окон.
+
+        Раньше окно создавалось из фонового потока — это подвешивало трей
+        (иконка переставала отвечать). Окно истории человек открывает сам.
+        """
         if self.cfg.get("lastVersion") == VERSION:
             return
         first_run = not self.cfg.get("lastVersion")
         self.cfg["lastVersion"] = VERSION
-        save_config(self.cfg)
+        self.cfg["whatsnewSeen"] = bool(first_run)
+        try:
+            save_config(self.cfg)
+        except Exception:
+            pass
         if first_run:
-            return          # первая установка: историю не навязываем
-        self.changelog_window(only_current=True)
+            return
+        text = "Обновлено до версии %s — что изменилось, смотрите в «О программе → История версий»." % VERSION
+        self.push_feed(text)
+        try:
+            if self.icon:
+                self.icon.notify(text, "ОТП обновилось")
+        except Exception:
+            pass
 
     def about_window(self):
         import tkinter as tk
