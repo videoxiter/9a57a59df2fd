@@ -38,6 +38,9 @@ jobs:
       - name: Генераторы Python компилируются
         run: python -m py_compile scripts/generate_pages.py scripts/generate_dashboard.py
 
+      - name: В публикуемых файлах нет секретов
+        run: python scripts/check_secrets.py
+
       - name: Уведомить «ДисКо» при падении
         if: failure()
         env:
