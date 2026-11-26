@@ -5,7 +5,7 @@
 
 #define AppName "ОТП — учёт рабочего времени"
 #define AppShort "OTP Tray"
-#define AppVersion "2.4"
+#define AppVersion "2.9"
 #define AppPublisher "Яковлев Евгений Евгеньевич"
 #define AppExe "OtpTray.exe"
 
@@ -20,6 +20,9 @@ DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 UsePreviousAppDir=no
+; приложение трей-ное, у него нет окна, поэтому стандартное «закройте приложение»
+; работать не может — закрываем процесс сами в PrepareToInstall
+CloseApplications=no
 OutputDir=..\..\..\dist
 OutputBaseFilename=OTP-Tray-Setup-{#AppVersion}
 SetupIconFile=..\..\assets\app.ico
@@ -29,7 +32,6 @@ WizardStyle=modern
 UninstallDisplayIcon={app}\{#AppExe}
 UninstallDisplayName={#AppName}
 ArchitecturesInstallIn64BitMode=x64compatible
-CloseApplications=no
 
 [Languages]
 Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
@@ -54,23 +56,28 @@ Name: "{userdesktop}\ОТП"; Filename: "{app}\{#AppExe}"; Tasks: desktopicon
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; \
     ValueName: "OtpTray"; ValueData: """{app}\{#AppExe}"""; Flags: uninsdeletevalue; Tasks: autostart
 
+[Run]
+; запуск через cmd start: процесс отвязывается от установщика и не гаснет
+; после его завершения (прямой запуск иногда не переживал выход установщика)
+Filename: "{cmd}"; Parameters: "/c start """" ""{app}\{#AppExe}"""; WorkingDir: "{app}"; Flags: nowait
+
 [Code]
 var
   ResultCode: Integer;
 
-{ После установки — и в обычном, и в тихом режиме — сначала закрываем старый
-  экземпляр, затем запускаем приложение. Раньше taskkill стоял в [Run] и
-  выполнялся ПОСЛЕ запуска, убивая только что стартовавшее приложение. }
-procedure CurStepChanged(CurStep: TSetupStep);
+{ Перед копированием файлов закрываем запущенное приложение.
+  Оно трей-ное: у него нет окна, и стандартное «закройте приложение» не срабатывает
+  (пользователь жмёт «ОК», а процесс остаётся). }
+function PrepareToInstall(var NeedsRestart: Boolean): String;
 begin
-  if CurStep = ssPostInstall then
-  begin
-    Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM {#AppExe}', '',
-         SW_HIDE, ewWaitUntilTerminated, ResultCode);
-    ShellExec('', ExpandConstant('{app}\{#AppExe}'), '',
-              ExpandConstant('{app}'), SW_SHOWNORMAL, ewNoWait, ResultCode);
-  end;
+  Result := '';
+  Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM {#AppExe}', '',
+       SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Sleep(800);
 end;
+
+{ После установки приложение запускает запись [Run] выше — она работает
+  и при обычной, и при тихой установке. }
 
 { Не даём ставить в Program Files без прав администратора. }
 function NextButtonClick(CurPageID: Integer): Boolean;

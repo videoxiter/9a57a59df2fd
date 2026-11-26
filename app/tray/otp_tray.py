@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "2.4"
+VERSION = "2.9"
 try:
     from changelog import CHANGELOG
 except Exception:      # запуск из другого каталога — истории просто не будет
@@ -70,6 +70,7 @@ DEFAULT_HOTKEYS = {
 }
 POLL_SECONDS = 20
 CONFIRM_SECONDS = 10
+ST_NORM_DAY = 7.5 * 3600
 TZ = timezone(timedelta(hours=3))          # Москва, UTC+3
 
 # публичные значения сайта (не секреты), можно переопределить в config.json
@@ -295,18 +296,29 @@ def update_via_installer(info) -> bool:
         return False
 
     try:
-        import ctypes
-        rc = ctypes.windll.shell32.ShellExecuteW(
-            None, "runas", str(setup), "/SILENT /NORESTART", str(setup.parent), 1)
-        log("обновление: запуск установщика с правами администратора, код %s" % rc)
-        if rc <= 32:      # пользователь отменил UAC или запуск не удался
-            notify_balloon("Обновление",
-                           "Не удалось обновиться автоматически. Открыл страницу установщика — установите вручную.")
-            webbrowser.open(setup_url)
-            return False
+        import tempfile
+        # Установщик заменяет OtpTray.exe, а он занят работающим приложением
+        # (ошибка «DeleteFile: код 32»). Поэтому запускаем не сразу: сначала
+        # выходим, а маленький скрипт ждёт 5 секунд и только потом ставит.
+        helper = Path(tempfile.gettempdir()) / "OtpUpdateRun.cmd"
+        helper.write_text(
+            "@echo off\r\n"
+            "ping -n 6 127.0.0.1 >nul\r\n"
+            f'start "" "{setup}" /SILENT /NORESTART /CLOSEAPPLICATIONS\r\n'
+            'del "%~f0" >nul 2>&1\r\n',
+            encoding="cp1251" if os.name == "nt" else "utf-8",
+        )
+        flags = 0x08000000 if os.name == "nt" else 0
+        subprocess.Popen(["cmd", "/c", str(helper)], creationflags=flags,
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        log("обновление: выхожу, установщик запустится через несколько секунд")
         os._exit(0)
     except Exception as e:
         log("обновление: запуск установщика не удался %r" % e)
+        try:
+            webbrowser.open(setup_url)
+        except Exception:
+            pass
         return False
 
 
@@ -335,20 +347,23 @@ def http_text(url: str, timeout: int = 60) -> str:
         raise
 
 
-def content_snapshot(slug: str):
+def content_snapshot(slug: str, payload=None):
     """Снимок важного для сотрудника: график, бонусы, награды, место.
 
     Читаем публичный data.js (тот же файл, что и сайт) и берём только то,
     что касается этого сотрудника. Сравнение снимков даёт «что нового».
     """
-    try:
-        raw = http_text(DATA_URL)
-        mark = "window.OTP_DATA = "
-        i = raw.index(mark)
-        data = json.loads(raw[i + len(mark):].strip().rstrip(";"))
-    except Exception as e:
-        log("данные сайта: не удалось прочитать %r" % (e,))
-        return None
+    if payload:
+        data = payload            # данные пришли с сервера (RPC), файл на сайте не нужен
+    else:
+        try:
+            raw = http_text(DATA_URL)
+            mark = "window.OTP_DATA = "
+            i = raw.index(mark)
+            data = json.loads(raw[i + len(mark):].strip().rstrip(";"))
+        except Exception as e:
+            log("данные сайта: не удалось прочитать %r" % (e,))
+            return None
     emp = next((e for e in (data.get("employees") or [])
                 if slug in (str(e.get("slug")), str(e.get("id")))), None)
     if not emp:
@@ -708,34 +723,228 @@ class App:
         return bool(self.state.get("active"))
 
     # --- меню
+    def menu_dot(self, colour):
+        """Маленькая цветная точка для пункта меню (по статусу действия)."""
+        cache = getattr(self, "_dots", None)
+        if cache is None:
+            cache = self._dots = {}
+        if colour in cache:
+            return cache[colour]
+        from PIL import Image, ImageDraw
+        img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+        ImageDraw.Draw(img).ellipse((3, 3, 12, 12), fill=colour)
+        cache[colour] = img
+        return img
+
     def menu(self):
         from pystray import Menu, MenuItem
         return Menu(
+            MenuItem("Открыть окно ОТП", self.main_window, default=True),
+            Menu.SEPARATOR,
             MenuItem(self.status_line, None, enabled=False),
             MenuItem("Горячие: Ctrl+Alt+S/B/L/A/R/E", None, enabled=False),
             MenuItem(lambda _: ("ОТМЕНА · " + self.pending["label"]) if self.pending else "Отмена",
                      lambda: self.cancel_pending(), enabled=lambda _: bool(self.pending)),
             Menu.SEPARATOR,
-            MenuItem("Начать смену", lambda: self.act("start"), enabled=self.can_start),
-            MenuItem("Техперерыв 1", lambda: self.act("slot-tech1"), enabled=lambda _: self.can_slot("tech1")),
-            MenuItem("Техперерыв 2", lambda: self.act("slot-tech2"), enabled=lambda _: self.can_slot("tech2")),
-            MenuItem("Обед", lambda: self.act("slot-lunch"), enabled=lambda _: self.can_slot("lunch")),
-            MenuItem("Вернуться с перерыва", lambda: self.act("return"), enabled=self.can_return),
-            MenuItem("Временное отсутствие", lambda: self.act("absence"), enabled=lambda _: self.can_slot("absence")),
-            MenuItem("Завершить смену", lambda: self.act("stop"), enabled=self.can_finish),
+            MenuItem("▶  Начать смену", lambda: self.act("start"), enabled=self.can_start),
+            MenuItem("☕  Техперерыв 1", lambda: self.act("slot-tech1"), enabled=lambda _: self.can_slot("tech1")),
+            MenuItem("☕  Техперерыв 2", lambda: self.act("slot-tech2"), enabled=lambda _: self.can_slot("tech2")),
+            MenuItem("🍽  Обед", lambda: self.act("slot-lunch"), enabled=lambda _: self.can_slot("lunch")),
+            MenuItem("↩  Вернуться с перерыва", lambda: self.act("return"), enabled=self.can_return),
+            MenuItem("🚶  Временное отсутствие", lambda: self.act("absence"), enabled=lambda _: self.can_slot("absence")),
+            MenuItem("■  Завершить смену", lambda: self.act("stop"), enabled=self.can_finish),
             Menu.SEPARATOR,
-            MenuItem("Открыть мою страницу", lambda: webbrowser.open(self.page_url())),
+            MenuItem("Моя страница на сайте", lambda: webbrowser.open(self.page_url())),
+            MenuItem("Проверить обновление", lambda: threading.Thread(target=self.check_updates_manual, daemon=True).start()),
+            MenuItem("Проверить новые данные", lambda: threading.Thread(target=self.check_content_manual, daemon=True).start()),
+            Menu.SEPARATOR,
             MenuItem("Справка", self.help_window),
             MenuItem("Горячие клавиши…", self.hotkeys_dialog),
             MenuItem("Запускать при входе в Windows", self.toggle_autostart,
                      checked=lambda _: autostart_enabled()),
-            MenuItem("Проверить обновление", lambda: threading.Thread(target=self.check_updates_manual, daemon=True).start()),
-            MenuItem("Проверить новые данные", lambda: threading.Thread(target=self.check_content_manual, daemon=True).start()),
-            MenuItem("Обновить", lambda: self.refresh()),
             MenuItem("О программе", self.about_window),
             MenuItem("Журнал приложения", lambda: webbrowser.open(LOG_PATH.as_uri())),
             MenuItem("Выход", lambda: self.quit_app()),
         )
+
+    def push_feed(self, text):
+        """Добавляет событие в ленту главного окна (максимум 8 записей)."""
+        try:
+            items = list(self.cfg.get("feed") or [])
+            items.insert(0, {"t": datetime.now(TZ).strftime("%H:%M"), "text": str(text)[:220]})
+            self.cfg["feed"] = items[:8]
+            save_config(self.cfg)
+        except Exception:
+            pass
+
+    def feed_items(self):
+        try:
+            return list(self.cfg.get("feed") or [])
+        except Exception:
+            return []
+
+    def main_window(self):
+        """Главное окно: статус смены, действия, лента событий с сайта."""
+        import tkinter as tk
+
+        BG, CARD, CARD2 = "#0b1119", "#111a24", "#0e1620"
+        TEXT, MUTED, ACCENT, LINE = "#e8edf5", "#9fb0c5", "#22d3ee", "#1e2b3a"
+        DIM, RED = "#1b2735", "#f87171"
+
+        root = tk.Tk()
+        root.title("ОТП — учёт рабочего времени")
+        root.geometry("620x740")
+        root.minsize(580, 700)
+        root.configure(bg=BG)
+        try:
+            root.iconphoto(True, tk.PhotoImage(file=str(icons_dir() / "tray-work-32.png")))
+        except Exception:
+            pass
+
+        head = tk.Frame(root, bg=BG)
+        head.pack(fill="x", padx=26, pady=(20, 2))
+        tk.Label(head, text="ОТП", bg=BG, fg=ACCENT,
+                 font=("Segoe UI", 20, "bold")).pack(side="left")
+        tk.Label(head, text="учёт рабочего времени", bg=BG, fg=MUTED,
+                 font=("Segoe UI", 10)).pack(side="left", padx=(10, 0), pady=(8, 0))
+        tk.Label(head, text="версия " + VERSION, bg=BG, fg="#5b6b80",
+                 font=("Segoe UI", 9)).pack(side="right", pady=(8, 0))
+
+        card = tk.Frame(root, bg=CARD, highlightbackground=LINE, highlightthickness=1)
+        card.pack(fill="x", padx=24, pady=(14, 10))
+        top = tk.Frame(card, bg=CARD)
+        top.pack(fill="x", padx=20, pady=(16, 0))
+        dot = tk.Canvas(top, width=10, height=10, bg=CARD, highlightthickness=0)
+        dot_id = dot.create_oval(1, 1, 9, 9, fill=ACCENT, outline="")
+        dot.pack(side="left", pady=(4, 0))
+        state_var = tk.StringVar(value="Загрузка…")
+        tk.Label(top, textvariable=state_var, bg=CARD, fg=TEXT,
+                 font=("Segoe UI", 12, "bold")).pack(side="left", padx=(8, 0))
+        hint_var = tk.StringVar(value="")
+        tk.Label(top, textvariable=hint_var, bg=CARD, fg=MUTED,
+                 font=("Segoe UI", 9)).pack(side="right")
+
+        timer_var = tk.StringVar(value="00:00:00")
+        tk.Label(card, textvariable=timer_var, bg=CARD, fg=ACCENT,
+                 font=("Segoe UI", 40, "bold")).pack(pady=(4, 0))
+        meta_var = tk.StringVar(value="")
+        tk.Label(card, textvariable=meta_var, bg=CARD, fg=MUTED,
+                 font=("Segoe UI", 9)).pack(pady=(0, 10))
+        bar = tk.Canvas(card, height=6, bg=CARD2, highlightthickness=0, bd=0)
+        bar.pack(fill="x", padx=20, pady=(0, 18))
+        bar_id = bar.create_rectangle(0, 0, 0, 6, fill=ACCENT, outline="")
+
+        grid = tk.Frame(root, bg=BG)
+        grid.pack(fill="x", padx=24)
+        grid.columnconfigure(0, weight=1)
+        grid.columnconfigure(1, weight=1)
+
+        buttons = {}
+
+        def chip(parent, glyph, label, key, cmd, primary=False):
+            b = tk.Button(parent, text=glyph + "  " + label, command=cmd, relief="flat", bd=0,
+                          anchor="w", justify="left", padx=14, pady=11, cursor="hand2",
+                          bg=ACCENT if primary else CARD,
+                          fg="#06131a" if primary else TEXT,
+                          activebackground="#67e8f9" if primary else DIM,
+                          activeforeground="#06131a" if primary else TEXT,
+                          disabledforeground="#4b5b6b",
+                          font=("Segoe UI", 10, "bold" if primary else "normal"))
+            buttons[key] = (b, primary)
+            return b
+
+        chip(grid, "▶", "Начать смену", "start", lambda: self.act("start"), True).grid(
+            row=0, column=0, sticky="ew", padx=(0, 6), pady=(0, 8))
+        chip(grid, "■", "Завершить смену", "stop", lambda: self.act("stop")).grid(
+            row=0, column=1, sticky="ew", padx=(6, 0), pady=(0, 8))
+        chip(grid, "☕", "Техперерыв 1", "tech1", lambda: self.act("slot-tech1")).grid(
+            row=1, column=0, sticky="ew", padx=(0, 6), pady=(0, 8))
+        chip(grid, "☕", "Техперерыв 2", "tech2", lambda: self.act("slot-tech2")).grid(
+            row=1, column=1, sticky="ew", padx=(6, 0), pady=(0, 8))
+        chip(grid, "🍽", "Обед", "lunch", lambda: self.act("slot-lunch")).grid(
+            row=2, column=0, sticky="ew", padx=(0, 6), pady=(0, 8))
+        chip(grid, "🚶", "Временное отсутствие", "absence", lambda: self.act("absence")).grid(
+            row=2, column=1, sticky="ew", padx=(6, 0), pady=(0, 8))
+        chip(grid, "↩", "Вернуться с перерыва", "return", lambda: self.act("return"), True).grid(
+            row=3, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+
+        news = tk.Frame(root, bg=CARD, highlightbackground=LINE, highlightthickness=1)
+        news.pack(fill="both", expand=True, padx=24, pady=(4, 10))
+        tk.Label(news, text="Последние события", bg=CARD, fg=MUTED,
+                 font=("Segoe UI", 9, "bold")).pack(anchor="w", padx=18, pady=(12, 6))
+        feed_box = tk.Frame(news, bg=CARD)
+        feed_box.pack(fill="both", expand=True, padx=18, pady=(0, 12))
+        feed_state = {"sig": None}
+
+        def render_feed():
+            items = self.feed_items()[:5]
+            sig = "|".join(str(x.get("t")) + str(x.get("text")) for x in items)
+            if sig == feed_state["sig"]:
+                return
+            feed_state["sig"] = sig
+            for w in feed_box.winfo_children():
+                w.destroy()
+            if not items:
+                tk.Label(feed_box, text="Пока нет новостей: опросы, бонусы и изменения графика появятся здесь.",
+                         bg=CARD, fg="#6b7c90", font=("Segoe UI", 9), wraplength=520,
+                         justify="left").pack(anchor="w")
+                return
+            for it in items:
+                row = tk.Frame(feed_box, bg=CARD)
+                row.pack(fill="x", pady=2)
+                tk.Label(row, text=str(it.get("t", ""))[:5], bg=CARD, fg="#6b7c90",
+                         font=("Segoe UI", 9)).pack(side="left", padx=(0, 10))
+                tk.Label(row, text=str(it.get("text", "")), bg=CARD, fg=TEXT,
+                         font=("Segoe UI", 9), wraplength=470, justify="left").pack(side="left", anchor="w")
+
+        foot = tk.Frame(root, bg=BG)
+        foot.pack(fill="x", padx=24, pady=(0, 18))
+
+        def link(text, cmd, danger=False):
+            b = tk.Button(foot, text=text, command=cmd, relief="flat", bd=0,
+                          bg=BG, fg=RED if danger else MUTED, activebackground=BG,
+                          activeforeground=RED if danger else ACCENT, cursor="hand2",
+                          font=("Segoe UI", 9), padx=8, pady=4)
+            return b
+
+        link("Моя страница", lambda: webbrowser.open(self.page_url())).pack(side="left")
+        link("Справка", self.help_window).pack(side="left")
+        link("Обновления", lambda: threading.Thread(target=self.check_updates_manual, daemon=True).start()).pack(side="left")
+        link("История версий", self.changelog_window).pack(side="left")
+        link("Выход", self.quit_app, True).pack(side="right")
+
+        def tick():
+            try:
+                st = self.state
+                kind = st.get("kind") or "off"
+                state_var.set(st.get("label") or "—")
+                timer_var.set(hms(st.get("sec") or 0))
+                hint_var.set(("подтвердите: " + self.pending["label"]) if self.pending else "МСК")
+                colour = {"work": ACCENT, "pause": "#facc15", "absence": "#38bdf8",
+                          "off": "#94a3b8", "offline": RED}.get(kind, ACCENT)
+                dot.itemconfig(dot_id, fill=colour)
+                bar.itemconfig(bar_id, fill=colour)
+                sec = st.get("sec") or 0
+                pct = min(1.0, sec / ST_NORM_DAY) if ST_NORM_DAY else 0
+                w = max(1, bar.winfo_width())
+                bar.coords(bar_id, 0, 0, int(w * pct), 6)
+                meta_var.set("норма 7:30 · отработано %s" % hms(sec))
+                for key, (btn, primary) in buttons.items():
+                    ok = {"start": self.can_start, "stop": self.can_finish,
+                          "return": self.can_return}.get(key)
+                    if ok is None:
+                        ok = self.can_slot(key)
+                    btn.configure(state="normal" if ok else "disabled",
+                                  bg=(ACCENT if ok else "#123240") if primary else CARD,
+                                  fg="#06131a" if (primary and ok) else TEXT)
+                render_feed()
+            except Exception:
+                pass
+            root.after(700, tick)
+
+        root.protocol("WM_DELETE_WINDOW", root.withdraw)
+        tick()
+        root.mainloop()
 
     def update_icon(self):
         if not self.icon:
@@ -749,6 +958,11 @@ class App:
 
     # --- действия
     def act(self, name):
+        # «Временное отсутствие» спрашивает причину сразу, без 10-секундного отсчёта:
+        # ждать подтверждения, чтобы потом ответить на вопрос — слишком долго
+        if name == "absence" and not (self.state.get("active") or {}).get("slot") == "absence":
+            threading.Thread(target=self.apply, args=("absence",), daemon=True).start()
+            return
         with self.lock:
             if self.pending and self.pending["act"] == name:
                 p = self.pending
@@ -1019,6 +1233,8 @@ class App:
                 self.icon.stop()
         except Exception:
             pass
+        # окна работают в своих потоках — завершаем процесс явно
+        threading.Timer(0.4, lambda: os._exit(0)).start()
 
     # --- справка и «О программе»
     def changelog_window(self, only_current=False):
@@ -1376,7 +1592,14 @@ class App:
         slug = self.api.slug or self.cfg.get("slug") or ""
         if not slug:
             return []
-        new = content_snapshot(slug)
+        payload = None
+        try:
+            res = self.api.rpc("otp_profile_get", {"p_token": self.api.token, "p_slug": slug})
+            if res and res.get("ok") and res.get("payload"):
+                payload = res["payload"]
+        except Exception as e:
+            log("данные сайта: RPC недоступен %r" % (e,))
+        new = content_snapshot(slug, payload)
         if not new:
             return []
         old = self.cfg.get("content") or None
@@ -1392,6 +1615,7 @@ class App:
             return []
         text = "Новое на странице: " + ", ".join(changed)
         log("новые данные: " + text)
+        self.push_feed(text)
         try:
             if self.icon:
                 self.icon.notify(text, "ОТП: обновились данные")
@@ -1433,6 +1657,7 @@ class App:
         text = ("Открыт опрос по графику на %s — пожелания ещё не отправлены. "
                 "Заполните на «Стартовой» в разделе графика." % name)
         log("опрос: " + text)
+        self.push_feed("Опрос по графику на " + name + " — пожелания ещё не отправлены")
         try:
             if self.icon:
                 self.icon.notify(text, "ОТП: пожелания по графику")
