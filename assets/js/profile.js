@@ -14,7 +14,7 @@
   const filledMonths = history.map((h, i) => (monthHasData(h) ? i : -1)).filter((i) => i >= 0);
   let selected = filledMonths.length ? filledMonths[filledMonths.length - 1] : Math.max(0, history.length - 1);
 
-  const SECTION_TITLES = { start: "Стартовая", bonus: "Бонусы", income: "Карта доходов", settings: "Настройки", lvl: "Мой LVL", awards: "Награды", growth: "Мой рост", stats: "Статистика", rules: "Правила", graph: "Мой график", hours: "Журнал часов", links: "Ссылки" };
+  const SECTION_TITLES = { start: "Стартовая", bonus: "Бонусы", income: "Карта доходов", settings: "Настройки", lvl: "Мой LVL", awards: "Награды", growth: "Мой рост", stats: "Статистика", rules: "Правила", graph: "Мой график", poll: "Опрос", hours: "Журнал часов", links: "Ссылки" };
   document.title = `Мои результаты · ${SECTION_TITLES[SECTION] || ""} · ${emp.shortName}`;
 
   /* ---------- общие данные ---------- */
@@ -2907,8 +2907,6 @@ function robotMenuHtml() {
       window.OTP_AUTH.isAdmin().then((adm) => { if (adm) initStartReport(); else hideReport(); }).catch(hideReport);
     } else hideReport();
     if (emp.canManage) initStartRegister();
-    /* v21: пожелания по графику на следующий месяц (если опрос открыт) */
-    initPollCard();
     /* v25: подтверждение опубликованного графика («ознакомлен») */
     initScheduleAckCard();
     /* v28: укороченный день — норма уменьшается на час */
@@ -2922,12 +2920,47 @@ function robotMenuHtml() {
 
   /* Блок «Сейчас на смене» на личной странице: кто работает, кто на паузе,
      кто в отпуске, на отгуле или в увольнительной. */
+
+  /* Раздел «Опрос»: пожелания по графику живут отдельной страницей.
+     Пункт меню видим только когда опрос действительно открыт. */
+  function hidePollNav(hide) {
+    document.querySelectorAll('a.sec-chip[href$="poll/"]').forEach((a) => {
+      if (hide) { a.style.display = "none"; }
+      else { a.style.display = ""; }
+    });
+  }
+
+  function initPollPage() {
+    const rootEl = document.getElementById("root");
+    const A = window.OTP_AUTH;
+    if (!rootEl) return;
+    const box = document.createElement("section");
+    box.className = "p-sec";
+    box.innerHTML = '<div class="p-sec-head"><h2><i class="ph-bold ph-clipboard-text"></i> Опрос по графику</h2>'
+      + '<span class="p-sec-hint">пожелания на следующий месяц</span></div><div id="poll-here"></div>';
+    rootEl.appendChild(box);
+    const host = document.getElementById("poll-here");
+    if (!A || !A.pollMy) { host.innerHTML = '<p class="muted">Нет связи с сервером опроса.</p>'; return; }
+    A.pollMy(String(emp.id)).then((res) => {
+      if (!res || !res.ok || !res.poll) {
+        hidePollNav(true);
+        host.innerHTML = '<div class="p-card"><p>Сейчас опроса нет. Когда руководитель его откроет, '
+          + 'здесь появится форма пожеланий, а в меню — пункт «Опрос».</p></div>';
+        return;
+      }
+      hidePollNav(false);
+      initPollCard(host);
+    }).catch(() => {
+      host.innerHTML = '<p class="muted">Не удалось узнать состояние опроса.</p>';
+    });
+  }
+
   /* «Пожелания по графику» — карточка на «Стартовой», если руководитель
      открыл опрос на следующий месяц (v21). Вопросы те же, что в WebAsk. */
-  function initPollCard() {
+  function initPollCard(hostEl) {
     const A = window.OTP_AUTH;
     if (!A || !A.pollMy) return;
-    const host = document.getElementById("st-actions");
+    const host = hostEl || document.getElementById("st-actions");
     if (!host) return;
     const sec = host.closest(".st-card") || host.parentNode;
     A.pollMy(String(emp.id)).then((res) => {
@@ -4407,6 +4440,7 @@ function robotMenuHtml() {
     setTimeout(refreshSectionIcons, 600);
     if (emp.canManage) { initPendingHours(); syncReqs().then(() => initPendingHours()).catch(() => {}); }
     if (SECTION === "start") initStart();
+    if (SECTION === "poll") initPollPage();
     if (SECTION === "hours") { initHoursJournal(); if (window.OTP_CLOUD && CLOUD) syncReqs().then(() => initHoursJournal()).catch(() => {}); }
     if (SECTION === "bonus") initTips();
     setTimeout(() => { fitStarSum(); if (SECTION === "bonus") initTips(); }, 150);

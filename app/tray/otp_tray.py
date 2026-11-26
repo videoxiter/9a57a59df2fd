@@ -730,6 +730,13 @@ class App:
             title = f"{self.pending['label']} · {max(0, int(self.pending['until'] - time.time()))} с"
         return title
 
+    def poll_url(self):
+        """Ссылка на раздел «Опрос» личной страницы."""
+        base = self.page_url().rstrip("/") if self.api.slug else SITE_BASE
+        if base.endswith("/start"):
+            base = base[:-6]
+        return base.rstrip("/") + "/poll/"
+
     def page_url(self):
         return f"{SITE_BASE}team/{self.api.slug}/start/" if self.api.slug else SITE_BASE
 
@@ -853,7 +860,7 @@ class App:
                  font=("Segoe UI", 12)).pack(side="left", padx=(0, 8))
         tk.Label(poll_row, textvariable=poll_var, bg="#0d2330", fg="#d9f6fb",
                  font=("Segoe UI", 9), justify="left", wraplength=380).pack(side="left", anchor="w")
-        tk.Button(poll_row, text="Заполнить", command=lambda: webbrowser.open(self.page_url()),
+        tk.Button(poll_row, text="Заполнить", command=lambda: webbrowser.open(self.poll_url()),
                   relief="flat", bd=0, bg=ACCENT, fg="#06131a", cursor="hand2",
                   font=("Segoe UI", 9, "bold"), padx=12, pady=5).pack(side="right")
 
@@ -1401,7 +1408,8 @@ class App:
                 "временное отсутствие — без браузера, прямо из трея.\n\n"
                 "Напоминает о затянувшемся перерыве и открытом опросе, сообщает о новых\n"
                 "данных на вашей странице (график, бонусы, награды) и обновляется само.\n\n"
-                "Автор: Евгений Евгеньевич Яковлев")
+                "Автор: Евгений Евгеньевич Яковлев\n"
+                "Разработчики: Евгений Яковлев, Андрей Болгов")
         tk.Label(root, text=text, justify="left", wraplength=500).pack(padx=16, pady=10)
 
         btns = tk.Frame(root)

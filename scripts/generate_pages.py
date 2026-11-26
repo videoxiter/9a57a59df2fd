@@ -29,6 +29,7 @@ PROFILES_DIR = os.path.join(ROOT, "dist", "profiles")
 
 SECTIONS = [
     ("start", "Стартовая", "ph-play-circle", "смена, перерывы, время"),
+   ("poll", "Опрос", "ph-clipboard-text", "пожелания по графику"),
     ("bonus", "Бонусы", "ph-wallet", "KPI и денежная часть"),
     ("lvl", "Мой LVL", "ph-medal", "уровень и звёзды"),
     ("awards", "Награды", "ph-trophy", "полученные и справочник"),
