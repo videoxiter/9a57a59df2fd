@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "2.9"
+VERSION = "3.0"
 try:
     from changelog import CHANGELOG
 except Exception:      # запуск из другого каталога — истории просто не будет
@@ -48,6 +48,36 @@ def changes_of(ver: str):
         if str(v.get("version")) == str(ver):
             return v
     return {}
+
+
+def tray_icon_class():
+    """Иконка трея с нужным поведением мыши.
+
+    По умолчанию pystray открывает действие на ЛЮБОЙ левый клик, а меню — правым.
+    Нужно: левый двойной клик — главное окно, левый одиночный — ничего,
+    правый одиночный — контекстное меню.
+    """
+    try:
+        from pystray import Icon
+        from pystray._util import win32 as _w32
+
+        class TrayIcon(Icon):
+            def _on_notify(self, wparam, lparam):
+                if lparam == _w32.WM_LBUTTONDBLCLK:
+                    try:
+                        self()          # действие по умолчанию — открыть окно
+                    except Exception:
+                        pass
+                    return
+                if lparam == _w32.WM_LBUTTONUP:
+                    return              # одиночный левый клик ничего не делает
+                return super()._on_notify(wparam, lparam)
+
+        return TrayIcon
+    except Exception as e:
+        log("иконка трея: обычное поведение (%r)" % (e,))
+        from pystray import Icon
+        return Icon
 
 
 # причины временного отсутствия — те же, что на сайте
@@ -810,6 +840,39 @@ class App:
         tk.Label(head, text="версия " + VERSION, bg=BG, fg="#5b6b80",
                  font=("Segoe UI", 9)).pack(side="right", pady=(8, 0))
 
+        poll_card = tk.Frame(root, bg="#0d2330", highlightbackground="#155e75", highlightthickness=1)
+        poll_var = tk.StringVar(value="")
+        poll_row = tk.Frame(poll_card, bg="#0d2330")
+        poll_row.pack(fill="x", padx=16, pady=10)
+        tk.Label(poll_row, text="📝", bg="#0d2330", fg=ACCENT,
+                 font=("Segoe UI", 12)).pack(side="left", padx=(0, 8))
+        tk.Label(poll_row, textvariable=poll_var, bg="#0d2330", fg="#d9f6fb",
+                 font=("Segoe UI", 9), justify="left", wraplength=380).pack(side="left", anchor="w")
+        tk.Button(poll_row, text="Заполнить", command=lambda: webbrowser.open(self.page_url()),
+                  relief="flat", bd=0, bg=ACCENT, fg="#06131a", cursor="hand2",
+                  font=("Segoe UI", 9, "bold"), padx=12, pady=5).pack(side="right")
+
+        def refresh_poll_banner():
+            info = self.cfg.get("pollOpen") or None
+            if not info:
+                poll_card.pack_forget()
+                return
+            month = str(info.get("month") or "")
+            try:
+                name = datetime.strptime(month + "-01", "%Y-%m-%d").strftime("%m.%Y")
+            except Exception:
+                name = month
+            due = ""
+            raw_due = str(info.get("due") or "")
+            if raw_due:
+                try:
+                    due = " · сдать до " + datetime.fromisoformat(raw_due.replace("Z", "+00:00")).astimezone(TZ).strftime("%d.%m %H:%M")
+                except Exception:
+                    due = ""
+            poll_var.set("Открыт опрос по графику на " + name + due + " — пожелания ещё не отправлены")
+            if not poll_card.winfo_ismapped():
+                poll_card.pack(fill="x", padx=24, pady=(12, 0), before=card)
+
         card = tk.Frame(root, bg=CARD, highlightbackground=LINE, highlightthickness=1)
         card.pack(fill="x", padx=24, pady=(14, 10))
         top = tk.Frame(card, bg=CARD)
@@ -938,6 +1001,7 @@ class App:
                                   bg=(ACCENT if ok else "#123240") if primary else CARD,
                                   fg="#06131a" if (primary and ok) else TEXT)
                 render_feed()
+                refresh_poll_banner()
             except Exception:
                 pass
             root.after(700, tick)
@@ -1196,8 +1260,10 @@ class App:
         threading.Thread(target=self.update_loop, daemon=True).start()
         # проверка новых данных на странице (график, бонусы, награды)
         threading.Thread(target=self.content_loop, daemon=True).start()
+        threading.Thread(target=self.poll_loop, daemon=True).start()
         from pystray import Icon
-        self.icon = Icon(APP_NAME, self.make_icon(self.state["kind"]),
+        IconClass = tray_icon_class()
+        self.icon = IconClass(APP_NAME, self.make_icon(self.state["kind"]),
                          self.status_line(), menu=self.menu())
         threading.Thread(target=self.poll_loop, daemon=True).start()
         threading.Thread(target=self.countdown_loop, daemon=True).start()
@@ -1588,6 +1654,18 @@ class App:
                     return
                 time.sleep(60)
 
+    def poll_loop(self):
+        """Опрос по графику проверяем часто: он мог открыться только что."""
+        while self._alive:
+            try:
+                self.check_poll()
+            except Exception as e:
+                log("опрос: ошибка %r" % (e,))
+            for _ in range(10 * 60):
+                if not self._alive:
+                    return
+                time.sleep(1)
+
     def check_content(self, silent=False):
         slug = self.api.slug or self.cfg.get("slug") or ""
         if not slug:
@@ -1635,16 +1713,30 @@ class App:
             log("опрос: проверить не удалось %r" % (e,))
             return None
         if not (res and res.get("ok") and res.get("poll")):
+            if self.cfg.get("pollOpen"):
+                self.cfg["pollOpen"] = None
+                try:
+                    save_config(self.cfg)
+                except Exception:
+                    pass
             return None
         poll = res["poll"]
         ans = res.get("answers")
         answered = bool(ans and isinstance(ans, dict) and ans)
         if answered:
+            if self.cfg.get("pollOpen"):
+                self.cfg["pollOpen"] = None
+                try:
+                    save_config(self.cfg)
+                except Exception:
+                    pass
             return None
         key = "%s|%s" % (poll.get("id"), datetime.now(TZ).date().isoformat())
         if self.cfg.get("poll_notified") == key:
             return None
         self.cfg["poll_notified"] = key
+        self.cfg["pollOpen"] = {"month": str(poll.get("month") or ""),
+                                "due": poll.get("due_at") or ""}
         try:
             save_config(self.cfg)
         except Exception:
