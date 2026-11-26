@@ -1,10 +1,17 @@
 {
-  "version": "2.0",
+  "version": "2.1",
   "url": "https://videoxiter.github.io/9a57a59df2fd/downloads/OtpTray.exe",
-  "sha256": "12b39c90fca8d1b4247fb5eab58115a2c890e8db977d31938f24fc0a61b8eb3b",
-  "size": 18658840,
-  "date": "2026-11-26T11:17:14+00:00",
+  "sha256": "b1c3bdded0ad2433691a06d136ffc7139a50f935bef3ce694994f57e65663255",
+  "size": 18666471,
+  "date": "2026-11-26T11:28:26+00:00",
+  "notes": [
+    "История обновлений",
+    "В «О программе» появилась полная история версий — что менялось в каждой.",
+    "После обновления приложение один раз показывает окно «Что нового» с изменениями текущей версии.",
+    "В окне обновления видно, что войдёт в новую версию, до установки."
+  ],
+  "title": "История обновлений",
   "setup": "https://videoxiter.github.io/9a57a59df2fd/downloads/OTP-Tray-Setup.exe",
-  "setupSha256": "29ac559070156e0aea18a0ebb0f5bf409497b68168ee01fd4b3b5ec2c96d459c",
+  "setupSha256": "7564513a3a6d9b3e1d227d000bd0f940d9e59e69e2d7044c1ca03d152937fcc0",
   "guide": "https://videoxiter.github.io/9a57a59df2fd/downloads/%D0%A3%D0%A1%D0%A2%D0%90%D0%9D%D0%9E%D0%92%D0%9A%D0%90-%D0%9F%D0%A0%D0%98%D0%9B%D0%9E%D0%96%D0%95%D0%9D%D0%98%D0%AF.pdf"
 }
