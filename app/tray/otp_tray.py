@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "2.1"
+VERSION = "2.2"
 try:
     from changelog import CHANGELOG
 except Exception:      # запуск из другого каталога — истории просто не будет
@@ -48,6 +48,17 @@ def changes_of(ver: str):
         if str(v.get("version")) == str(ver):
             return v
     return {}
+
+
+# причины временного отсутствия — те же, что на сайте
+ABSENCE_REASONS = [
+    "Без заявки",
+    "Передохнуть на пару минут",
+    "Зарядка для глаз",
+    "Покурить",
+    "Физ. потребность (туалет, попить, принять лекарство)",
+    "Иное",
+]
 # Сочетания по умолчанию: пользователь может поменять их в меню «Горячие клавиши…»
 DEFAULT_HOTKEYS = {
     "start": "ctrl+alt+s",
@@ -785,6 +796,50 @@ class App:
             self.pending = None
         self.update_icon()
 
+    def absence_dialog(self):
+        """Спрашивает причину временного отсутствия (как на сайте)."""
+        import tkinter as tk
+        res = {"value": None}
+        root = tk.Tk()
+        root.title("ОТП — временное отсутствие")
+        root.geometry("580x430")
+        tk.Label(root, text="Укажите причину отсутствия",
+                 font=("Segoe UI", 12, "bold")).pack(pady=(14, 8))
+        tk.Label(root, text="Причина попадёт в журнал и в сообщение руководителю.",
+                 fg="#6b7280").pack(pady=(0, 10))
+        var = tk.StringVar(value=self.cfg.get("absenceReason") or ABSENCE_REASONS[0])
+        for r in ABSENCE_REASONS[:-1]:
+            tk.Radiobutton(root, text=r, value=r, variable=var, anchor="w").pack(fill="x", padx=18)
+        row = tk.Frame(root)
+        row.pack(fill="x", padx=18, pady=(8, 0))
+        tk.Radiobutton(row, text="Иное:", value="__other__", variable=var).pack(side="left")
+        other = tk.Entry(row)
+        other.pack(side="left", fill="x", expand=True, padx=(8, 0))
+
+        def ok():
+            value = var.get()
+            if value == "__other__":
+                value = other.get().strip() or "Иное"
+            res["value"] = value
+            try:
+                self.cfg["absenceReason"] = value
+                save_config(self.cfg)
+            except Exception:
+                pass
+            root.destroy()
+
+        def cancel():
+            res["value"] = None
+            root.destroy()
+
+        btns = tk.Frame(root)
+        btns.pack(pady=16)
+        tk.Button(btns, text="Начать отсутствие", command=ok, width=20).pack(side="left", padx=6)
+        tk.Button(btns, text="Отмена", command=cancel, width=12).pack(side="left", padx=6)
+        root.protocol("WM_DELETE_WINDOW", cancel)
+        root.mainloop()
+        return res["value"]
+
     def apply(self, name):
         try:
             if name == "start":
@@ -801,7 +856,11 @@ class App:
                 if (self.state.get("active") or {}).get("slot") == "absence":
                     self._post("absence_end", "absence")
                 else:
-                    self._post("absence_start", "absence", reason="Без заявки")
+                    reason = self.absence_dialog()
+                    if not reason:
+                        self.refresh()
+                        return
+                    self._post("absence_start", "absence", reason=reason)
             elif name.startswith("slot-"):
                 slot = name[5:]
                 act = self.state.get("active") or {}
