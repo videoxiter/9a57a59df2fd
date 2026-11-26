@@ -175,6 +175,11 @@ def sync(tag):
     run("generate_data.py", "--schedule-only")
     run("generate_pages.py")
     run("generate_dashboard.py")
+    # данные страниц теперь в базе: заливаем свежие payload'ы
+    try:
+        run("publish_profiles.py")
+    except Exception as e:
+        log(f"publish_profiles: {e}")
     # ручные KPI/бонусы из админки применяем поверх — после пересборки
     try:
         run("apply_kpi.py", "--no-push")

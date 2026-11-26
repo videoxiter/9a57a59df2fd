@@ -104,6 +104,10 @@ def main():
     for script in ("generate_pages.py", "generate_dashboard.py"):
         print("→", script)
         subprocess.run([sys.executable, os.path.join(ROOT, "scripts", script)], cwd=ROOT, check=True)
+    # данные страниц живут в базе: после генерации заливаем payload'ы
+    print("→ publish_profiles.py")
+    subprocess.run([sys.executable, os.path.join(ROOT, "scripts", "publish_profiles.py")],
+                   cwd=ROOT, check=True)
 
     if not args.no_push:
         subprocess.run(["git", "-C", ROOT, "add", "-A"], check=True)
