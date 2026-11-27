@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "2.3.3"
+VERSION = "2.3.3b"
 try:
     from changelog import CHANGELOG
 except Exception:      # запуск из другого каталога — истории просто не будет
@@ -195,11 +195,21 @@ DATA_URL = "https://videoxiter.github.io/9a57a59df2fd/assets/js/data.js"
 
 
 def ver_tuple(v) -> tuple:
+    """Ключ сравнения версий: пары (число, буква) по каждому разряду.
+
+    «2.3.3a» → ((2,0),(3,0),(3,1)); «2.3.3» → ((2,0),(3,0),(3,0)),
+    поэтому первая больше, а «2.3.4» больше обеих.
+    """
     try:
-        nums = [int(x) for x in str(v).replace(",", ".").split(".") if x.strip().isdigit()]
-        return tuple(nums[:3]) if nums else (0,)
+        import re as _re
+        parts = _re.findall(r"(\d+)\s*([a-zA-Z]*)", str(v).replace(",", "."))
+        key = []
+        for num, letters in parts[:3]:
+            # без буквы — младше любой буквенной версии: 2.3.3 < 2.3.3a
+            key.append((int(num), (ord(letters.lower()[0]) - ord("a") + 1) if letters else 0))
+        return tuple(key) if key else ((0, 0),)
     except Exception:
-        return (0,)
+        return ((0, 0),)
 
 
 def exe_built_at() -> float:
@@ -230,10 +240,15 @@ def update_available():
         latest = str(info.get("version") or "")
         if not latest or latest == VERSION:
             return None
-        # новая схема нумерации (мажор.функционал.исправление) может быть «младше»
-        # численно, поэтому решаем по дате публикации, а номер — как подстраховка
-        if manifest_time(info) > exe_built_at() + 60 or ver_tuple(latest) > ver_tuple(VERSION):
+        # сравниваем номера: ни при каких условиях не «обновляемся» на старую версию
+        if ver_tuple(latest) > ver_tuple(VERSION):
             log("доступно обновление: %s (сейчас %s)" % (latest, VERSION))
+            return info
+        if ver_tuple(latest) < ver_tuple(VERSION):
+            return None
+        # номера равны — решает дата публикации (пересборка той же версии)
+        if manifest_time(info) > exe_built_at() + 60:
+            log("доступна пересборка %s (сейчас %s)" % (latest, VERSION))
             return info
     except Exception as e:
         log("обновление: проверка не удалась %r" % (e,))
@@ -1416,6 +1431,7 @@ class App:
         threading.Thread(target=self.content_loop, daemon=True).start()
         threading.Thread(target=self.poll_loop, daemon=True).start()
         threading.Thread(target=self.state_loop, daemon=True).start()
+
         from pystray import Icon
         IconClass = Icon  # обычная иконка: пystray сам зовёт пункт по умолчанию
         self.icon = IconClass(APP_NAME, self.make_icon(self.state["kind"]),
@@ -2131,6 +2147,7 @@ def selftest() -> int:
 
 
 _MUTEX_HANDLE = None
+MUTEX_NAME = "OTP_Tray_SingleInstance"
 
 
 def already_running(wait_seconds: float = 6.0) -> bool:
@@ -2141,14 +2158,28 @@ def already_running(wait_seconds: float = 6.0) -> bool:
     try:
         import ctypes
         k32 = ctypes.windll.kernel32
+        global _MUTEX_HANDLE
         deadline = time.time() + wait_seconds
+        attempt = 0
         while True:
-            _MUTEX_HANDLE = k32.CreateMutexW(None, False, "OTP_Tray_SingleInstance")
-            if k32.GetLastError() != 183:      # ERROR_ALREADY_EXISTS
+            attempt += 1
+            handle = k32.CreateMutexW(None, False, MUTEX_NAME)
+            err = k32.GetLastError()
+            if err != 183:                      # ERROR_ALREADY_EXISTS
+                _MUTEX_HANDLE = handle
+                if attempt > 1:
+                    log("мьютекс: защита освободилась (попыток %d)" % attempt)
                 return False
+            # ВАЖНО: закрываем свой хэндл, иначе он сам держит объект живым
+            # и ожидание никогда не увидит, что старый процесс вышел
+            try:
+                k32.CloseHandle(handle)
+            except Exception:
+                pass
             if time.time() >= deadline:
+                log("мьютекс: защита занята дольше %d с" % int(wait_seconds))
                 return True
-            time.sleep(0.5)
+            time.sleep(0.4)
         return k32.GetLastError() == 183      # ERROR_ALREADY_EXISTS
     except Exception:
         return False
