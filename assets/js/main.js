@@ -1907,7 +1907,7 @@
         ${missing.length ? " — " + missing.map(escNow).join(", ") : ""}</p>
         <div class="sch-wrap"><table class="sch-table poll-answers"><thead><tr>
           <th class="sch-name">ФИО</th><th>Выходные смены</th><th>Обязательные выходные</th>
-          <th>3-я смена</th><th>Тания</th><th>Комментарий</th>
+          <th>3-я смена</th><th>Тания</th><th>31.12</th><th>Комментарий</th>
         </tr></thead><tbody>${rows || `<tr><td colspan="6">Пока никто не ответил</td></tr>`}</tbody></table></div>`;
     };
 

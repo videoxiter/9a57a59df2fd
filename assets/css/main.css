@@ -2994,3 +2994,14 @@ html.auth-lock body > :not(.auth-gate):not(script):not(style) { display: none !i
   border-radius: 12px; padding: 12px; font: 14px/1.5 "Segoe UI", sans-serif; resize: vertical; }
 .poll-hidden { display: none; }
 .poll-foot { display: flex; align-items: center; gap: 14px; padding-bottom: 6px; }
+
+
+/* ---------- информация про 31 декабря в опросе ---------- */
+.poll-note { border: 1px solid rgba(251,191,36,.35); background: rgba(251,191,36,.08);
+  border-radius: 14px; padding: 14px 18px; }
+.poll-note-head { font-size: 14px; font-weight: 700; color: #fbbf24; margin-bottom: 8px; }
+.poll-note-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px;
+  font-size: 13px; color: #e8edf5; }
+.poll-note-list b { color: #fff; }
+.poll-dec31 { gap: 10px; }
+.poll-dec31 label span { min-width: 150px; text-align: center; }
