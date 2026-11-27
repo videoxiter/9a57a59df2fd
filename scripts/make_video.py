@@ -200,6 +200,50 @@ def shot_image():
     return base.convert("RGB"), (x, y, x + shot.width, y + shot.height)
 
 
+def tray_strip():
+    """Крупная карточка «панель задач Windows» со значком ОТП.
+
+    Рисуем отдельным блоком в центре кадра: так значок видно крупно,
+    и его не перекрывает подпись снизу.
+    """
+    img = backdrop().convert("RGBA")
+    d = ImageDraw.Draw(img, "RGBA")
+    card_w, card_h = 1240, 190
+    x0 = (W - card_w) // 2
+    y0 = 470
+    d.rounded_rectangle([x0, y0, x0 + card_w, y0 + card_h], radius=26,
+                        fill=(10, 17, 25, 250), outline=(32, 46, 62, 255), width=2)
+    # «меню Пуск» и приложения
+    d.rounded_rectangle([x0 + 26, y0 + 34, x0 + 96, y0 + 104], radius=12, fill=(20, 33, 46, 255))
+    for i in range(5):
+        x = x0 + 116 + i * 78
+        d.rounded_rectangle([x, y0 + 40, x + 58, y0 + 98], radius=12, fill=(24, 37, 51, 255))
+    # правый блок: значки трея, наш значок, часы
+    icon_size = 64
+    cx = x0 + card_w - 300
+    cy = y0 + card_h // 2
+    for i in range(3):
+        x = cx - 220 + i * 52
+        d.rounded_rectangle([x, cy - 16, x + 34, cy + 16], radius=8, fill=(31, 45, 60, 255))
+    ico = os.path.join(ROOT, "app", "tray", "icons", "tray-work-32.png")
+    if os.path.exists(ico):
+        im = Image.open(ico).convert("RGBA").resize((icon_size, icon_size), Image.LANCZOS)
+    else:
+        im = Image.new("RGBA", (icon_size, icon_size), (34, 211, 238, 255))
+    ring = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(ring).rounded_rectangle(
+        [cx - icon_size // 2 - 12, cy - icon_size // 2 - 12,
+         cx + icon_size // 2 + 12, cy + icon_size // 2 + 12],
+        radius=16, outline=(34, 211, 238, 230), width=3)
+    img.alpha_composite(ring)
+    img.alpha_composite(im, (cx - icon_size // 2, cy - icon_size // 2))
+    d.text((cx - 26, y0 + card_h - 34), "ОТП", font=fnt(F_SEMI, 22), fill=ACCENT)
+    # часы справа
+    d.text((x0 + card_w - 118, cy - 24), "17:34", font=fnt(F_REG, 26), fill=DIM)
+    d.text((x0 + card_w - 148, cy + 8), "27.11.2026", font=fnt(F_REG, 20), fill=(120, 136, 154))
+    return img, (cx, cy)
+
+
 def cursor(scale=1.0):
     img = Image.new("RGBA", (74, 74), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
@@ -379,6 +423,51 @@ def scene_frames(scene, idx, total, rect, path_writer):
             path_writer(i, img.convert("RGB"))
             continue
 
+        if scene["id"] == "open":
+            # сначала трей: курсор к значку, двойной клик, затем появляется окно
+            tray_img, (tx_, ty_) = scene["tray"]
+            if prog < 0.46:
+                img = tray_img.copy()
+                for k, frac in enumerate((0.30, 0.40)):
+                    ripple(img, (tx_, ty_), (prog - frac) / 0.12)
+                highlight(img, [tx_ - 46, ty_ - 46, tx_ + 46, ty_ + 46], t)
+                draw_badge(img, "Рабочий стол Windows")
+                draw_caption(img, scene["cap"], scene["sub"])
+                cx, cy = W * 0.62, H * 0.74
+                if prog < 0.28:
+                    pos = (cx, cy)
+                else:
+                    k = ease(min(1.0, (prog - 0.20) / 0.16))
+                    pos = (cx + (tx_ - 10 - cx) * k, cy + (ty_ - 10 - cy) * k)
+                img.alpha_composite(cur, (int(pos[0]) - 10, int(pos[1]) - 8))
+                path_writer(i, img.convert("RGB"))
+                continue
+            # после клика окно «открывается»: проявляется поверх трея с ростом
+            a = min(1.0, (prog - 0.46) / 0.22)
+            k = ease(a)
+            scale = 0.62 + 0.38 * k
+            win = scene["bg"].convert("RGBA")
+            if scale < 0.999:
+                small = win.resize((int(W * scale), int(H * scale)), Image.LANCZOS)
+                layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+                layer.paste(small, ((W - small.width) // 2, (H - small.height) // 2))
+                mask = Image.new("L", (W, H), 0)
+                ImageDraw.Draw(mask).rectangle(
+                    [(W - small.width) // 2, (H - small.height) // 2,
+                     (W + small.width) // 2, (H + small.height) // 2], fill=int(255 * k))
+                img = tray_img.copy()
+                img.paste(layer, (0, 0), mask)
+            else:
+                img = win.copy()
+            box = boxes["timer"]
+            highlight(img, box, t)
+            draw_badge(img, "ОТП — учёт рабочего времени")
+            draw_caption(img, "Главное окно", "Двойной клик по значку — и окно открыто")
+            img.alpha_composite(cur, (int(tx_ + (W * 0.72 - tx_) * ease(a)) - 10,
+                                     int(ty_ + (H * 0.42 - ty_) * ease(a)) - 8))
+            path_writer(i, img.convert("RGB"))
+            continue
+
         target = {"open": "timer", "start": "start", "break": "lunch",
                   "absence": "absence", "stop": "finish", "poll": "poll_fill"}[scene["id"]]
         box = boxes[target]
@@ -492,6 +581,7 @@ def main():
     scenes = build_scenes()
     bg_base, rect = shot_image()
     bg_clean = backdrop()
+    tray_img, tray_pos = tray_strip()
 
     # 1) озвучка
     narr = []
@@ -509,6 +599,8 @@ def main():
         sc["narration"] = d
         sc["duration"] = max(sc["min"], d + 2.2)
         sc["bg"] = bg_clean if sc["id"] in ("intro", "outro") else bg_base
+        if sc["id"] == "open":
+            sc["tray"] = (tray_img, tray_pos)
 
     total = sum(s["duration"] for s in scenes)
     print(f"  длительность: {total:.1f} c")

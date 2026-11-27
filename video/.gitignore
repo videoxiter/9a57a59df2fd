@@ -4,3 +4,4 @@ qa/
 demo/
 shots/
 final/
+*.exe
