@@ -3012,3 +3012,19 @@ html.auth-lock body > :not(.auth-gate):not(script):not(style) { display: none !i
 .poll-day-time { position: absolute; bottom: 4px; left: 0; right: 0; font-size: 10px; font-weight: 700;
   letter-spacing: .02em; opacity: .85; }
 .poll-day.is-on { padding-top: 6px; line-height: 1.1; }
+
+
+/* ---------- день с двумя половинами времени ---------- */
+.poll-day2 { position: relative; display: flex; flex-direction: column; gap: 3px;
+  border: 1px solid rgba(148,163,184,.20); border-radius: 10px; padding: 4px; background: rgba(8,14,20,.45); }
+.poll-day2.is-holiday { border-color: rgba(244,114,182,.45); }
+.poll-dn { font: 700 11px/1 "Segoe UI", sans-serif; color: #9fb0c5; text-align: center; }
+.poll-half { border: 1px solid transparent; border-radius: 7px; cursor: pointer; padding: 6px 2px;
+  font: 600 10.5px/1 "Segoe UI", sans-serif; color: #dbe3ee; transition: filter .12s ease; }
+.poll-half.h05 { background: rgba(34,211,238,.22); }
+.poll-half.h08 { background: rgba(16,120,86,.45); }
+.poll-half:hover { filter: brightness(1.25); }
+.poll-half.h05.is-sel { background: #22d3ee; color: #06131a; }
+.poll-half.h08.is-sel { background: #10b981; color: #04140d; }
+.poll-cal-grid { grid-auto-rows: minmax(74px, auto); }
+.poll-day.is-on { font-weight: 700; }
