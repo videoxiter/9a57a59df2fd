@@ -28,9 +28,23 @@ def main():
     print("секунды:", a.get("sec"), "→", b.get("sec"), "| прирост:", delta)
     if delta >= 2:
         print("ok: время идёт без обращения к серверу")
-        return 0
-    print("ОШИБКА: время не растёт")
-    return 1
+
+    # проверяем именно тот метод, что обновляет окно: tick_state
+    app = object.__new__(otp_tray.App)
+    app.events = events
+    app.state = otp_tray.compute_state(events)
+    app.icon = None
+    app.update_icon = lambda: None
+    first = app.state.get("sec") or 0
+    time.sleep(2.2)
+    app.tick_state()
+    second = app.state.get("sec") or 0
+    print("tick_state:", first, "→", second)
+    if second - first < 2:
+        print("ОШИБКА: tick_state не двигает время")
+        return 1
+    print("ok: окно получает свежее время каждую секунду")
+    return 0
 
 
 if __name__ == "__main__":
