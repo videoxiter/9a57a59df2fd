@@ -2977,7 +2977,7 @@ function robotMenuHtml() {
       const due = poll.due_at
         ? new Date(poll.due_at).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
         : "без срока";
-      const FIXED = ["01-01", "01-02", "01-07", "02-23", "03-08", "05-01", "05-09", "06-12", "11-04"];
+      const FIXED = ["01-01", "01-02", "01-07", "02-23", "03-08", "05-01", "05-09", "06-12", "11-04", "12-31"];
       const lastDay = new Date(y, m, 0).getDate();
       const mm = String(m).padStart(2, "0");
       const dow = (d) => new Date(y, m - 1, d).getDay();

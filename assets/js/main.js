@@ -1395,7 +1395,7 @@
     { line: "L1.2 (3-я смена)", need: 1, who: null, shift: "3" },
   ];
   const SCH_TANIA = ["bolgov", "melnikov", "eliseev"];
-  const SCH_FIXED_HOLIDAYS = ["01-01", "01-02", "01-07", "02-23", "03-08", "05-01", "05-09", "06-12", "11-04"];
+  const SCH_FIXED_HOLIDAYS = ["01-01", "01-02", "01-07", "02-23", "03-08", "05-01", "05-09", "06-12", "11-04", "12-31"];
   const SCH_NO_SHIFTS = ["01-01", "01-02", "03-08"];
 
   function schMonthDays(month) {
