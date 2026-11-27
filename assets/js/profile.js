@@ -3037,14 +3037,16 @@ function robotMenuHtml() {
             continue;
           }
           if (kind === "weekend") {
-            // день делится на две половины: 05:00 и 08:00
+            // обычный выходной — 05:00 и 08:00; 31 декабря — три смены (05, 08, 10)
+            const times = (m === 12 && d === 31) ? ["05:00", "08:00", "10:00"] : ["05:00", "08:00"];
             const cur = on ? (wtimes[String(d)] || defTime) : "";
+            const halves = times.map((t) => {
+              const cls = t === "05:00" ? "h05" : (t === "08:00" ? "h08" : "h10");
+              return `<button type="button" class="poll-half ${cls}${cur === t ? " is-sel" : ""}"
+                      data-cal="weekend" data-day="${d}" data-time="${t}">${t}</button>`;
+            }).join("");
             cells.push(`<span class="poll-day2${hold}">
-              <span class="poll-dn">${d}</span>
-              <button type="button" class="poll-half h05${cur === "05:00" ? " is-sel" : ""}"
-                      data-cal="weekend" data-day="${d}" data-time="05:00">05:00</button>
-              <button type="button" class="poll-half h08${cur === "08:00" ? " is-sel" : ""}"
-                      data-cal="weekend" data-day="${d}" data-time="08:00">08:00</button>
+              <span class="poll-dn">${d}</span>${halves}
             </span>`);
             continue;
           }
@@ -3086,15 +3088,16 @@ function robotMenuHtml() {
             <li><b>1-я смена</b> 05:00–10:00 · перерывы 07:00–07:15 и 08:30–08:45 · без обеда</li>
             <li><b>2-я смена</b> 08:00–13:00 · перерывы 09:30–09:45 и 10:45–11:00 · без обеда</li>
             <li><b>3-я смена</b> 10:00–15:00 · перерывы 11:30–11:45 и 12:30–12:45 · без обеда</li>
-            <li><b>Как выбрать:</b> в календаре ниже нажмите половину дня <b>«05:00»</b> или <b>«08:00»</b>,
-              а 31 декабря — в этом же календаре (оно подсвечено как праздничное).</li>
+            <li><b>Как выбрать:</b> у обычного дня две кнопки — <b>05:00</b> и <b>08:00</b>.
+              У 31 декабря их <b>три</b>: 05:00, 08:00 и 10:00 — выберите нужную в календаре.</li>
           </ul>
         </section>
 
         <section class="poll-sec">
           <header class="poll-sec-head"><b>1. Желаемые выходные смены</b>
-            <span>Оплата 4 000 ₽ за смену. У дня две половины: голубая — с 05:00,
-            тёмно-зелёная — с 08:00. Нажмите нужную; повторное нажатие снимает выбор.</span></header>
+            <span>Оплата 4 000 ₽ за смену. Обычный день делится на 05:00 (голубая) и 08:00
+            (тёмно-зелёная); у 31 декабря три варианта — 05:00, 08:00 и 10:00 (фиолетовая).
+            Повторное нажатие снимает выбор.</span></header>
           ${calHtml("weekend")}${hidden("weekend", saved.weekend_dates)}
           <div class="poll-row">
             <label class="poll-check"><input type="checkbox" id="poll-none" ${saved.weekend_none ? "checked" : ""}> Прошу без выходных смен</label>

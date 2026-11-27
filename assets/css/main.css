@@ -3028,3 +3028,9 @@ html.auth-lock body > :not(.auth-gate):not(script):not(style) { display: none !i
 .poll-half.h08.is-sel { background: #10b981; color: #04140d; }
 .poll-cal-grid { grid-auto-rows: minmax(74px, auto); }
 .poll-day.is-on { font-weight: 700; }
+
+
+/* третий вариант времени — только 31 декабря */
+.poll-half.h10 { background: rgba(139,92,246,.38); }
+.poll-half.h10.is-sel { background: #8b5cf6; color: #0c0714; }
+.poll-day2 { min-height: 92px; }
