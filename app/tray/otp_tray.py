@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "3.6"
+VERSION = "3.7"
 try:
     from changelog import CHANGELOG
 except Exception:      # запуск из другого каталога — истории просто не будет
@@ -746,6 +746,21 @@ class App:
 
     # --- значок
     def make_icon(self, kind: str):
+        """Значок состояния; при открытом опросе — с красной точкой."""
+        img = self._make_icon_base(kind)
+        try:
+            if self.cfg.get("pollOpen") and img is not None:
+                from PIL import ImageDraw
+                img = img.copy()
+                d = ImageDraw.Draw(img)
+                w, h = img.size
+                r = max(4, int(w * 0.22))
+                d.ellipse((w - r * 2, 0, w, r * 2), fill="#ef4444", outline="#0b1119")
+        except Exception:
+            pass
+        return img
+
+    def _make_icon_base(self, kind: str):
         from PIL import Image
         name = "tray-%s-32.png" % ICON_BY_KIND.get(kind, "off")
         path = icons_dir() / name
@@ -809,6 +824,9 @@ class App:
         return Menu(
             MenuItem("Открыть окно ОТП", self._on_tray_activate, default=True),
             Menu.SEPARATOR,
+            MenuItem(lambda _: "🔴  ОПРОС ПО ГРАФИКУ — заполнить пожелания",
+                     lambda: webbrowser.open(self.poll_url()),
+                     visible=lambda _: bool(self.cfg.get("pollOpen"))),
             MenuItem(self.status_line, None, enabled=False),
             MenuItem("Горячие: Ctrl+Alt+S/B/L/A/R/E", None, enabled=False),
             MenuItem(lambda _: ("ОТМЕНА · " + self.pending["label"]) if self.pending else "Отмена",
@@ -904,14 +922,14 @@ class App:
                       relief="flat", bd=0, bg="#0d2330", fg=ACCENT, cursor="hand2",
                       font=("Segoe UI", 9, "bold"), padx=10, pady=3).pack(side="right", padx=(0, 10))
 
-        poll_card = tk.Frame(root, bg="#0d2330", highlightbackground="#155e75", highlightthickness=1)
+        poll_card = tk.Frame(root, bg="#3a0d12", highlightbackground="#ef4444", highlightthickness=2)
         poll_var = tk.StringVar(value="")
-        poll_row = tk.Frame(poll_card, bg="#0d2330")
+        poll_row = tk.Frame(poll_card, bg="#3a0d12")
         poll_row.pack(fill="x", padx=16, pady=10)
-        tk.Label(poll_row, text="📝", bg="#0d2330", fg=ACCENT,
-                 font=("Segoe UI", 12)).pack(side="left", padx=(0, 8))
-        tk.Label(poll_row, textvariable=poll_var, bg="#0d2330", fg="#d9f6fb",
-                 font=("Segoe UI", 9), justify="left", wraplength=380).pack(side="left", anchor="w")
+        tk.Label(poll_row, text="📝", bg="#3a0d12", fg="#fecaca",
+                 font=("Segoe UI", 14)).pack(side="left", padx=(0, 8))
+        tk.Label(poll_row, textvariable=poll_var, bg="#3a0d12", fg="#fecaca",
+                 font=("Segoe UI", 10, "bold"), justify="left", wraplength=370).pack(side="left", anchor="w")
         tk.Button(poll_row, text="Заполнить", command=lambda: webbrowser.open(self.poll_url()),
                   relief="flat", bd=0, bg=ACCENT, fg="#06131a", cursor="hand2",
                   font=("Segoe UI", 9, "bold"), padx=12, pady=5).pack(side="right")
@@ -933,7 +951,7 @@ class App:
                     due = " · сдать до " + datetime.fromisoformat(raw_due.replace("Z", "+00:00")).astimezone(TZ).strftime("%d.%m %H:%M")
                 except Exception:
                     due = ""
-            poll_var.set("Открыт опрос по графику на " + name + due + " — пожелания ещё не отправлены")
+            poll_var.set("ОПРОС ПО ГРАФИКУ на " + name + due + " — пожелания ещё не отправлены")
             if not poll_card.winfo_ismapped():
                 poll_card.pack(fill="x", padx=24, pady=(12, 0), before=card)
 
