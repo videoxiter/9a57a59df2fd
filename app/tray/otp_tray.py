@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "3.2"
+VERSION = "3.3"
 try:
     from changelog import CHANGELOG
 except Exception:      # запуск из другого каталога — истории просто не будет
@@ -776,7 +776,7 @@ class App:
     def menu(self):
         from pystray import Menu, MenuItem
         return Menu(
-            MenuItem("Открыть окно ОТП", self.main_window, default=True),
+            MenuItem("Открыть окно ОТП", self.show_main_window, default=True),
             Menu.SEPARATOR,
             MenuItem(self.status_line, None, enabled=False),
             MenuItem("Горячие: Ctrl+Alt+S/B/L/A/R/E", None, enabled=False),
@@ -795,11 +795,11 @@ class App:
             MenuItem("Проверить обновление", lambda: threading.Thread(target=self.check_updates_manual, daemon=True).start()),
             MenuItem("Проверить новые данные", lambda: threading.Thread(target=self.check_content_manual, daemon=True).start()),
             Menu.SEPARATOR,
-            MenuItem("Справка", self.help_window),
-            MenuItem("Горячие клавиши…", self.hotkeys_dialog),
+            MenuItem("Справка", lambda: threading.Thread(target=self.help_window, daemon=True).start()),
+            MenuItem("Горячие клавиши…", lambda: threading.Thread(target=self.hotkeys_dialog, daemon=True).start()),
             MenuItem("Запускать при входе в Windows", self.toggle_autostart,
                      checked=lambda _: autostart_enabled()),
-            MenuItem("О программе", self.about_window),
+            MenuItem("О программе", lambda: threading.Thread(target=self.about_window, daemon=True).start()),
             MenuItem("Журнал приложения", lambda: webbrowser.open(LOG_PATH.as_uri())),
             MenuItem("Перезапустить", self.restart_app),
             MenuItem("Выход", lambda: self.quit_app()),
@@ -820,6 +820,19 @@ class App:
             return list(self.cfg.get("feed") or [])
         except Exception:
             return []
+
+    def show_main_window(self, *_):
+        """Показывает главное окно, не блокируя трей."""
+        root = getattr(self, "_win_root", None)
+        if root is not None:
+            try:
+                root.deiconify()
+                root.lift()
+                root.focus_force()
+                return
+            except Exception:
+                self._win_root = None
+        threading.Thread(target=self.main_window, daemon=True).start()
 
     def main_window(self):
         """Главное окно: статус смены, действия, лента событий с сайта."""
@@ -1018,6 +1031,7 @@ class App:
                 pass
             root.after(700, tick)
 
+        self._win_root = root
         root.protocol("WM_DELETE_WINDOW", root.withdraw)
         tick()
         root.mainloop()
@@ -1415,7 +1429,7 @@ class App:
         btns = tk.Frame(root)
         btns.pack(pady=6)
         tk.Button(btns, text="История обновлений", width=20,
-                  command=self.changelog_window).pack(side="left", padx=6)
+                  command=lambda: threading.Thread(target=self.changelog_window, daemon=True).start()).pack(side="left", padx=6)
         tk.Button(btns, text="Закрыть", command=root.destroy, width=12).pack(side="left", padx=6)
         root.mainloop()
 
