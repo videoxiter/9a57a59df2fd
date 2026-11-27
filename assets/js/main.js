@@ -1401,16 +1401,45 @@
     const first = (new Date(y, m - 1, 1).getDay() + 6) % 7;   // сдвиг с понедельника
     return Math.floor((Number(day) - 1 + first) / 7) + 1;      // 1..6
   }
-  function schNeedFor(line, month, day, base, weekOverride) {
+  function schScopeName(scope) {
+    if (scope === "all") return "все недели";
+    if (String(scope).startsWith("date:")) return "день " + String(scope).slice(5);
+    if (String(scope).startsWith("week:")) return "неделя " + String(scope).slice(5);
+    return scope;
+  }
+  function schDateKey(month, day) {
+    return "date:" + month + "-" + String(day).padStart(2, "0");
+  }
+  function schRuleOf(line, month, day, weekOverride) {
+    const dateKey = schDateKey(month, day);
     const week = weekOverride && weekOverride !== "all"
-      ? String(weekOverride)
-      : String(schWeekOf(month, day));
-    const byWeek = SCH_LINE_NEED[week] || {};
-    const all = SCH_LINE_NEED.all || {};
-    const v = byWeek[line];
-    if (v != null) return Number(v);
-    if (all[line] != null) return Number(all[line]);
-    return Number(base);
+      ? "week:" + weekOverride
+      : "week:" + schWeekOf(month, day);
+    const byDate = (SCH_LINE_NEED[dateKey] || {})[line];
+    if (byDate != null) return (typeof byDate === "object") ? byDate : { need: Number(byDate) };
+    const byWeek = (SCH_LINE_NEED[week] || {})[line];
+    if (byWeek != null) return (typeof byWeek === "object") ? byWeek : { need: Number(byWeek) };
+    const all = (SCH_LINE_NEED.all || {})[line];
+    if (all != null) return (typeof all === "object") ? all : { need: Number(all) };
+    return {};
+  }
+  function schNeedFor(line, month, day, base, weekOverride) {
+    const r = schRuleOf(line, month, day, weekOverride);
+    return (r && r.need != null) ? Number(r.need) : Number(base);
+  }
+  function schWhoFor(line, month, day, weekOverride) {
+    const r = schRuleOf(line, month, day, weekOverride);
+    return Array.isArray(r && r.who) ? r.who : null;
+  }
+  function schSetRule(line, scope, patch) {
+    SCH_LINE_NEED[scope] = SCH_LINE_NEED[scope] || {};
+    const cur = SCH_LINE_NEED[scope][line];
+    const obj = (cur && typeof cur === "object") ? Object.assign({}, cur) : { need: cur != null ? Number(cur) : undefined };
+    Object.assign(obj, patch);
+    if (obj.need === undefined) delete obj.need;
+    if (obj.who === undefined) delete obj.who;
+    if (!Object.keys(obj).length) delete SCH_LINE_NEED[scope][line];
+    else SCH_LINE_NEED[scope][line] = obj;
   }
 
   const SCH_TANIA = ["bolgov", "melnikov", "eliseev"];
@@ -1479,7 +1508,7 @@
     let month = nextMonth;
     let cell = {};            // slug -> { day: symbol }
     let symbol = "2";
-    let linesWeek = "all";      // к какой неделе относится правка норм линий
+    let linesWeek = "day";      // «этот день» | «все недели» | 1..6
     let answers = {};         // slug -> ответ опроса
     let report = [];
     /* отмена/повтор: до 10 состояний таблицы */
@@ -1572,32 +1601,48 @@
       if (!hostL) return;
       const isShift = (sym) => ["1", "2", "3", "I", "II", "2Р", "3Р"].includes(sym);
       const day = Number(linesDay) || 1;
+      const dayKey = schDateKey(month, day);
       const rows = SCH_LINES.map((line) => {
-        const on = line.who
-          ? emps.filter((e) => line.who.includes(e.slug) && isShift(get(e.slug, day)))
-          : emps.filter((e) => get(e.slug, day) === "3");   // L1.2 — 3-я смена
-        const need = schNeedFor(line.line, month, day, line.need, linesWeek);
+        const allMode = linesWeek === "all";
+        const allRule = (SCH_LINE_NEED.all || {})[line.line];
+        const allObj = (allRule && typeof allRule === "object") ? allRule : (allRule != null ? { need: Number(allRule) } : {});
+        const forced = allMode ? (Array.isArray(allObj.who) ? allObj.who : null)
+                               : schWhoFor(line.line, month, day, linesWeek);
+        const pool = line.who ? emps.filter((e) => line.who.includes(e.slug)) : emps;
+        const on = forced
+          ? forced.map((sl) => emps.find((e) => e.slug === sl)).filter(Boolean)
+          : (line.who
+            ? emps.filter((e) => line.who.includes(e.slug) && isShift(get(e.slug, day)))
+            : emps.filter((e) => get(e.slug, day) === "3"));
+        const need = allMode
+          ? (allObj.need != null ? Number(allObj.need) : Number(line.need))
+          : schNeedFor(line.line, month, day, line.need, linesWeek);
         const ok = on.length >= need;
-        const scope = linesWeek === "all" ? "all" : String(linesWeek);
-        return `<div class="staff-dev-row">
+        const chips = pool.map((e) => {
+          const active = (forced || []).includes(e.slug);
+          return `<button type="button" class="sch-who${active ? " is-on" : ""}"
+                    data-line="${escNow(line.line)}" data-slug="${escNow(e.slug)}"
+                    title="${escNow(fio(e.slug))}">${escNow(fio(e.slug))}</button>`;
+        }).join("");
+        return `<div class="staff-dev-row sch-line-row">
           <b>${escNow(line.line)}</b>
           <span class="${ok ? "sch-ok" : "sch-bad"}">${on.length} из ${need}</span>
-          <label class="sch-need-wrap" title="Нужно человек на линии">
+          <label class="sch-need-wrap" title="Сколько человек нужно на линии в этот день">
             <input class="sch-need" type="number" min="0" max="9" step="1"
-                   data-line="${escNow(line.line)}" data-scope="${scope}"
+                   data-line="${escNow(line.line)}" data-scope="${dayKey}"
                    value="${need}" aria-label="Норма ${escNow(line.line)}">
           </label>
-          <span class="staff-hint">${on.length ? on.map((x) => escNow(fio(x.slug))).join(", ") : "никого"}</span>
+          <span class="sch-who-list">${chips || '<span class="staff-hint">нет списка</span>'}</span>
         </div>`;
       }).join("");
-      const weekOpts = ["all", "1", "2", "3", "4", "5", "6"]
-        .map((w) => `<option value="${w}"${String(w) === String(linesWeek) ? " selected" : ""}>${w === "all" ? "все недели" : "неделя " + w}</option>`)
+      const weekOpts = ["day", "all", "1", "2", "3", "4", "5", "6"]
+        .map((w) => `<option value="${w}"${String(w) === String(linesWeek) ? " selected" : ""}>${w === "day" ? "этот день" : (w === "all" ? "все недели" : "неделя " + w)}</option>`)
         .join("");
       hostL.innerHTML = `<div class="sch-lines-head">
           <b>Линии на день</b>
           <label class="poll-inline">День <input id="sch-lines-day" type="number" min="1" max="31" value="${day}"></label>
           <label class="poll-inline">Правило <select id="sch-lines-week">${weekOpts}</select></label>
-          <span class="staff-hint">число справа можно менять — сохранится для выбранной недели</span>
+          <span class="staff-hint">число и фамилии можно менять: «этот день» — правка только на дату</span>
         </div>
         <div class="staff-dev-list">${rows}</div>`;
       const inp = hostL.querySelector("#sch-lines-day");
@@ -1609,10 +1654,21 @@
           const line = inpN.dataset.line;
           const scope = inpN.dataset.scope;
           const val = Math.max(0, Math.min(9, Number(inpN.value) || 0));
-          SCH_LINE_NEED[scope] = SCH_LINE_NEED[scope] || {};
-          SCH_LINE_NEED[scope][line] = val;
+          schSetRule(line, scope, { need: val });
           render();
-          setMsg(`Норма ${line} для ${scope === "all" ? "всех недель" : "недели " + scope}: ${val}. Не забудь «Сохранить черновик»`);
+          setMsg(`Норма ${line} (${schScopeName(scope)}): ${val}. Не забудь «Сохранить черновик»`);
+        });
+      });
+      hostL.querySelectorAll(".sch-who").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const line = btn.dataset.line;
+          const slug = btn.dataset.slug;
+          const scope = linesWeek === "all" ? "all" : (linesWeek === "day" ? dayKey : "week:" + linesWeek);
+          const cur = schWhoFor(line, month, day, linesWeek) || [];
+          const next = cur.includes(slug) ? cur.filter((x) => x !== slug) : cur.concat([slug]);
+          schSetRule(line, scope, { who: next });
+          render();
+          setMsg(`Состав ${line} (${schScopeName(scope)}): ${next.length ? next.map((x) => fio(x)).join(", ") : "по графику"}`);
         });
       });
     }
@@ -1781,6 +1837,10 @@
       pushUndo();
       cell = (res && res.ok && res.schedule && res.schedule.cell) ? res.schedule.cell : {};
       SCH_LINE_NEED = (cell && cell.__lines) ? cell.__lines : {};
+      /* совместимость: раньше ключи были «all» и «2» — приводим к «week:2» */
+      Object.keys(SCH_LINE_NEED).forEach((k) => {
+        if (/^\d+$/.test(k)) { SCH_LINE_NEED["week:" + k] = SCH_LINE_NEED[k]; delete SCH_LINE_NEED[k]; }
+      });
       report = [];
       render();
       setMsg(res && res.schedule ? `Загружено (версия ${res.schedule.version}, ${res.schedule.status})` : "Черновика нет — можно собрать авто");

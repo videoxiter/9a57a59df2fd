@@ -3046,3 +3046,13 @@ html.auth-lock body > :not(.auth-gate):not(script):not(style) { display: none !i
   background: #0e1a24; color: #e8edf5; border: 1px solid #1e2b3a; border-radius: 8px; padding: 5px 8px;
 }
 
+
+/* линии на день: чипсы фамилий */
+.sch-line-row { align-items: center; }
+.sch-who-list { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.sch-who {
+  border: 1px solid #1e2b3a; background: #0e1a24; color: #9fb0c5;
+  border-radius: 999px; padding: 4px 10px; font: 600 12px/1 "Segoe UI", sans-serif; cursor: pointer;
+}
+.sch-who:hover { border-color: #22d3ee; color: #e8edf5; }
+.sch-who.is-on { background: rgba(34, 211, 238, .16); border-color: #22d3ee; color: #e8edf5; }
