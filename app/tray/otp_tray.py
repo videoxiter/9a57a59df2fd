@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "2.3.6"
+VERSION = "2.4.0"
 try:
     from changelog import CHANGELOG
 except Exception:      # запуск из другого каталога — истории просто не будет
@@ -574,6 +574,13 @@ class Api:
     def events_today(self):
         day = datetime.now(TZ).date().isoformat()
         rows = self.api(f"otp_time_events?select=*&day=eq.{day}"
+                        f"&empSlug=eq.{urllib.parse.quote(self.slug)}&order=at.asc")
+        return rows if isinstance(rows, list) else []
+
+    def events_since(self, days_back: int = 3):
+        """События за последние дни — нужны, чтобы найти незакрытые смены."""
+        start = (datetime.now(TZ).date() - timedelta(days=days_back)).isoformat()
+        rows = self.api(f"otp_time_events?select=*&day=gte.{start}"
                         f"&empSlug=eq.{urllib.parse.quote(self.slug)}&order=at.asc")
         return rows if isinstance(rows, list) else []
 
@@ -1346,7 +1353,44 @@ class App:
             log("notify не отправлен: %r" % (e,))
 
     # --- опрос и отсчёт
+    def auto_close_stale(self):
+        """Закрывает забытые смены: 23:59:59 того дня, когда смена началась."""
+        try:
+            rows = self.api.events_since(3)
+        except Exception as e:
+            log("автозакрытие: не удалось прочитать события %r" % (e,))
+            return
+        if not rows:
+            return
+        by_day = {}
+        for e in rows:
+            by_day.setdefault(str(e.get("day") or ""), []).append(e)
+        today = datetime.now(TZ).date().isoformat()
+        for day, evs in by_day.items():
+            if not day or day >= today:
+                continue
+            st = compute_state(evs)
+            if not st.get("started") or st.get("stopped"):
+                continue
+            try:
+                close_at = datetime.fromisoformat(day).replace(
+                    hour=23, minute=59, second=59, tzinfo=TZ)
+            except Exception:
+                continue
+            ev = {"type": "shift_stop", "at": close_at.isoformat(),
+                  "day": day, "empSlug": self.slug, "auto": True}
+            try:
+                self.api.add_event(ev)
+                log("автозакрытие: смена за %s закрыта 23:59:59" % day)
+                self.push_feed("Смена за %s закрыта автоматически (23:59)" % day)
+            except Exception as e:
+                log("автозакрытие: не удалось закрыть %s: %r" % (day, e))
+
     def refresh(self):
+        try:
+            self.auto_close_stale()
+        except Exception:
+            pass
         try:
             self.events = self.api.events_today()
             self.state = compute_state(self.events or [])
@@ -1372,9 +1416,16 @@ class App:
 
     def state_loop(self):
         """Держит время в окне живым: пересчёт каждую секунду."""
+        ticks = 0
         while self._alive:
             time.sleep(1)
             self.tick_state()
+            ticks += 1
+            if ticks % 60 == 0:          # раз в минуту проверяем забытые смены
+                try:
+                    self.auto_close_stale()
+                except Exception:
+                    pass
 
     def countdown_loop(self):
         while self._alive:
