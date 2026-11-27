@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "2.3.0"
+VERSION = "2.3.1"
 try:
     from changelog import CHANGELOG
 except Exception:      # запуск из другого каталога — истории просто не будет
@@ -766,6 +766,7 @@ class App:
         self.icon = None
         self.lock = threading.Lock()
         self._alive = True
+        self.events = []
 
     # --- значок
     def make_icon(self, kind: str):
@@ -1289,12 +1290,33 @@ class App:
     # --- опрос и отсчёт
     def refresh(self):
         try:
-            self.state = compute_state(self.api.events_today())
+            self.events = self.api.events_today()
+            self.state = compute_state(self.events or [])
         except Exception as e:
             log("нет связи при обновлении: %r" % (e,))
             self.state = dict(self.state, kind="offline", label="Нет связи")
         self.update_icon()
         return self.state
+
+    def tick_state(self):
+        """Пересчёт времени по локальным часам — раз в секунду, без сети."""
+        try:
+            if self.events:
+                fresh = compute_state(self.events)
+                # смена могла завершиться по локальным часам — значок тоже обновляем
+                if fresh.get("kind") != self.state.get("kind"):
+                    self.state = fresh
+                    self.update_icon()
+                else:
+                    self.state = fresh
+        except Exception as e:
+            log("пересчёт состояния: %r" % (e,))
+
+    def state_loop(self):
+        """Держит время в окне живым: пересчёт каждую секунду."""
+        while self._alive:
+            time.sleep(1)
+            self.tick_state()
 
     def countdown_loop(self):
         while self._alive:
@@ -1391,6 +1413,7 @@ class App:
         # проверка новых данных на странице (график, бонусы, награды)
         threading.Thread(target=self.content_loop, daemon=True).start()
         threading.Thread(target=self.poll_loop, daemon=True).start()
+        threading.Thread(target=self.state_loop, daemon=True).start()
         from pystray import Icon
         IconClass = Icon  # обычная иконка: пystray сам зовёт пункт по умолчанию
         self.icon = IconClass(APP_NAME, self.make_icon(self.state["kind"]),
