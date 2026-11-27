@@ -10,6 +10,20 @@
   };
   var KEY = function (slug) { return "otp_sess_" + slug; };
   function tok(slug) { try { return localStorage.getItem(KEY(slug)); } catch (e) { return null; } }
+  /* Любой сохранённый токен: страница могла быть открыта после входа под другим кодом
+     (внутренний slug вместо кода страницы) — тогда ключ не совпадает. */
+  function anyTok() {
+    try {
+      var keys = Object.keys(localStorage);
+      for (var i = 0; i < keys.length; i++) {
+        if (keys[i].indexOf("otp_sess_") === 0) {
+          var v = localStorage.getItem(keys[i]);
+          if (v) return v;
+        }
+      }
+    } catch (e) {}
+    return null;
+  }
   function setTok(slug, t) { try { localStorage.setItem(KEY(slug), t); } catch (e) {} }
   function clearTok(slug) { try { localStorage.removeItem(KEY(slug)); } catch (e) {} }
 
@@ -179,13 +193,13 @@
     },
     /* v21: опрос по графику */
     pollMy: function (slug) {
-      // руководитель открывает чужую страницу: берём его токен, иначе «опроса нет»
-      var t = tok(slug) || tok("admin");
+      // токен страницы → админский → любой сохранённый (вход мог быть под другим кодом)
+      var t = tok(slug) || tok("admin") || anyTok();
       if (!t) return Promise.resolve(null);
       return rpc("otp_poll_my", { p_token: t }).catch(function () { return null; });
     },
     pollSave: function (slug, pollId, answers) {
-      var t = tok(slug);
+      var t = tok(slug) || anyTok();
       if (!t) return Promise.resolve(null);
       return rpc("otp_poll_save", { p_token: t, p_poll_id: pollId, p_answers: answers })
         .catch(function () { return null; });

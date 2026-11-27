@@ -2947,10 +2947,24 @@ function robotMenuHtml() {
     if (!host) return;
     if (!A || !A.pollMy) { host.innerHTML = '<p class="muted">Нет связи с сервером опроса.</p>'; return; }
     A.pollMy(String(emp.id)).then((res) => {
+      if (res && res.ok === false && res.error === "unauthorized") {
+        hidePollNav(true);
+        host.innerHTML = '<div class="p-card"><p>Сессия истекла — нужно войти заново.</p>'
+          + '<button class="btn btn-primary" id="poll-relogin" type="button">Войти заново</button></div>';
+        const relog = document.getElementById("poll-relogin");
+        if (relog) relog.addEventListener("click", () => {
+          try {
+            if (A.logout) A.logout(String(emp.id));
+            if (A.logout) A.logout("admin");
+          } catch (e) {}
+          location.reload();
+        });
+        return;
+      }
       if (!res || !res.ok) {
         hidePollNav(true);
-        host.innerHTML = '<div class="p-card"><p>Не удалось узнать состояние опроса: нет связи '
-          + 'или нужен вход. Обновите страницу (Ctrl+F5) и войдите снова.</p></div>';
+        host.innerHTML = '<div class="p-card"><p>Не удалось узнать состояние опроса: нет связи. '
+          + 'Проверьте интернет и обновите страницу (Ctrl+F5).</p></div>';
         return;
       }
       if (!res.poll) {
