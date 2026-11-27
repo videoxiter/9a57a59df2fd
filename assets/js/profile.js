@@ -3017,6 +3017,13 @@ function robotMenuHtml() {
       }
 
       /* календарь: клик по выходному/празднику = выбор. Пн–Вс, как в графике. */
+      /* время смены у каждого дня своё: по умолчанию — из выпадающего списка */
+      const defTime = saved.weekend_time === "08:00" ? "08:00" : "05:00";
+      const wtimes = {};
+      (saved.weekend_times && typeof saved.weekend_times === "object" ? Object.keys(saved.weekend_times) : [])
+        .forEach((k) => { wtimes[String(k)] = String(saved.weekend_times[k]); });
+      (saved.weekend_dates || []).forEach((d) => { if (!wtimes[String(d)]) wtimes[String(d)] = defTime; });
+
       const calHtml = (kind) => {
         const selArr = kind === "weekend" ? saved.weekend_dates : saved.off_dates;
         const cells = [];
@@ -3026,9 +3033,11 @@ function robotMenuHtml() {
           const cls = ["poll-day"];
           if (isFree(d)) cls.push("is-weekend"); else cls.push("is-work");
           if (isHoliday(d)) cls.push("is-holiday");
-          if ((selArr || []).map(String).includes(String(d))) cls.push("is-on");
+          const on = (selArr || []).map(String).includes(String(d));
+          if (on) cls.push("is-on");
           const clickable = isFree(d) ? ` data-cal="${kind}" data-day="${d}"` : "";
-          cells.push(`<button type="button" class="${cls.join(" ")}"${clickable}>${d}</button>`);
+          const badge = (kind === "weekend" && on) ? `<span class="poll-day-time">${wtimes[String(d)] || defTime}</span>` : "";
+          cells.push(`<button type="button" class="${cls.join(" ")}"${clickable}>${d}${badge}</button>`);
         }
         return `<div class="poll-cal">
           <div class="poll-cal-week">${["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map((x) => `<span>${x}</span>`).join("")}</div>
@@ -3069,7 +3078,8 @@ function robotMenuHtml() {
 
         <section class="poll-sec">
           <header class="poll-sec-head"><b>1. Желаемые выходные смены</b>
-            <span>Оплата 4 000 ₽ за смену. Отметьте дни в календаре.</span></header>
+            <span>Оплата 4 000 ₽ за смену. Клик по дню: выбрать → сменить 05:00 ↔ 08:00 → снять.
+            Время у каждого дня своё, оно видно на плитке.</span></header>
           ${calHtml("weekend")}${hidden("weekend", saved.weekend_dates)}
           <div class="poll-row">
             <label class="poll-field">Время смены
@@ -3130,18 +3140,52 @@ function robotMenuHtml() {
       sec.appendChild(box);
 
       /* клик по дню календаря = отметить/снять */
+      const paintTime = (cell, day) => {
+        const t = wtimes[String(day)];
+        let badge = cell.querySelector(".poll-day-time");
+        if (!t || !cell.classList.contains("is-on")) {
+          if (badge) badge.remove();
+          return;
+        }
+        if (!badge) {
+          badge = document.createElement("span");
+          badge.className = "poll-day-time";
+          cell.appendChild(badge);
+        }
+        badge.textContent = t;
+      };
+
       box.querySelectorAll(".poll-day[data-cal]").forEach((cell) => {
         cell.addEventListener("click", () => {
           const kind = cell.dataset.cal;
           const day = cell.dataset.day;
           const inp = box.querySelector(`input[data-pd="${kind}"][value="${day}"]`);
           if (!inp) return;
-          inp.checked = !inp.checked;
-          cell.classList.toggle("is-on", inp.checked);
-          if (kind === "weekend" && inp.checked) {
-            const n = box.querySelector("#poll-none");
-            if (n) n.checked = false;
+          const defaultTime = (box.querySelector("#poll-time") || {}).value || "05:00";
+          if (!inp.checked) {
+            // включаем день со временем по умолчанию
+            inp.checked = true;
+            cell.classList.add("is-on");
+            if (kind === "weekend") {
+              wtimes[String(day)] = defaultTime;
+              const n = box.querySelector("#poll-none");
+              if (n) n.checked = false;
+            }
+          } else if (kind === "weekend") {
+            // день уже выбран: 05:00 → 08:00 → снять
+            const cur = wtimes[String(day)] || defaultTime;
+            if (cur === "05:00") {
+              wtimes[String(day)] = "08:00";
+            } else {
+              inp.checked = false;
+              cell.classList.remove("is-on");
+              delete wtimes[String(day)];
+            }
+          } else {
+            inp.checked = false;
+            cell.classList.remove("is-on");
           }
+          paintTime(cell, day);
         });
       });
 
@@ -3160,6 +3204,11 @@ function robotMenuHtml() {
         const r = await A.pollSave(String(emp.id), poll.id, {
           weekend_dates: pick("weekend"),
           weekend_time: (box.querySelector("#poll-time") || {}).value || "05:00",
+          weekend_times: (() => {
+            const out = {};
+            pick("weekend").forEach((d) => { out[String(d)] = wtimes[String(d)] || "05:00"; });
+            return out;
+          })(),
           weekend_none: !!(box.querySelector("#poll-none") || {}).checked,
           off_dates: pick("off"),
           third_weeks: pick("third"),
