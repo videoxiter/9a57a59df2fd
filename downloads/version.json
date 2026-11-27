@@ -1,11 +1,11 @@
 {
-  "version": "3.7",
+  "version": "2.3.0",
   "url": "https://videoxiter.github.io/9a57a59df2fd/downloads/OTP-Tray-Setup.exe",
   "setup": "https://videoxiter.github.io/9a57a59df2fd/downloads/OTP-Tray-Setup.exe",
-  "setupSha256": "3fc06762a8edfbb67515f38c8ec3248b334c3e22f9d5956ec7faf1fbdcb6da2c",
-  "sha256": "3fc06762a8edfbb67515f38c8ec3248b334c3e22f9d5956ec7faf1fbdcb6da2c",
-  "size": 15266461,
-  "date": "2026-11-27T07:43:28+00:00",
+  "setupSha256": "3b44d7e7e2410ca584a489e414ce4acca6b28f961afd39b8a83dcf34c2906213",
+  "sha256": "3b44d7e7e2410ca584a489e414ce4acca6b28f961afd39b8a83dcf34c2906213",
+  "size": 15269699,
+  "date": "2026-11-27T08:16:52+00:00",
   "notes": [
     "Опрос заметно выделен",
     "В меню значка при открытом опросе появляется яркая строка «ОПРОС ПО ГРАФИКУ — заполнить пожелания».",
