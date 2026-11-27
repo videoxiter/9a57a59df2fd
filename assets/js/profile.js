@@ -2934,12 +2934,17 @@ function robotMenuHtml() {
     const rootEl = document.getElementById("root");
     const A = window.OTP_AUTH;
     if (!rootEl) return;
-    const box = document.createElement("section");
-    box.className = "p-sec";
-    box.innerHTML = '<div class="p-sec-head"><h2><i class="ph-bold ph-clipboard-text"></i> Опрос по графику</h2>'
-      + '<span class="p-sec-hint">пожелания на следующий месяц</span></div><div id="poll-here"></div>';
-    rootEl.appendChild(box);
-    const host = document.getElementById("poll-here");
+    // каркас раздела уже нарисован в sectionPoll — ищем его контейнер
+    let host = document.getElementById("poll-here");
+    if (!host) {
+      const box = document.createElement("section");
+      box.className = "p-sec";
+      box.innerHTML = '<div class="p-sec-head"><h2><i class="ph-bold ph-clipboard-text"></i> Опрос по графику</h2>'
+        + '<span class="p-sec-hint">пожелания на следующий месяц</span></div><div id="poll-here"></div>';
+      rootEl.appendChild(box);
+      host = document.getElementById("poll-here");
+    }
+    if (!host) return;
     if (!A || !A.pollMy) { host.innerHTML = '<p class="muted">Нет связи с сервером опроса.</p>'; return; }
     A.pollMy(String(emp.id)).then((res) => {
       if (!res || !res.ok || !res.poll) {
@@ -3604,7 +3609,18 @@ function robotMenuHtml() {
     });
   }
 
-  const RENDER = { start: sectionStart, bonus: sectionBonus, income: sectionIncome, lvl: sectionLvl, awards: sectionAwards, growth: sectionGrowth, graph: sectionGraph, stats: sectionStats, rules: sectionRules, hours: sectionHours, links: sectionLinks, settings: sectionSettings };
+  /* Раздел «Опрос»: содержимое (форма пожеланий) дорисовывает initPollPage,
+     здесь только каркас — иначе страница подставляла «Бонусы». */
+  const sectionPoll = () => `
+    <section class="p-sec p-sec-top">
+      <div class="p-sec-head">
+        <h2><i class="ph-bold ph-clipboard-text"></i> Опрос по графику</h2>
+        <span class="p-sec-hint">пожелания на следующий месяц</span>
+      </div>
+      <div id="poll-here"></div>
+    </section>`;
+
+  const RENDER = { start: sectionStart, bonus: sectionBonus, income: sectionIncome, lvl: sectionLvl, awards: sectionAwards, growth: sectionGrowth, graph: sectionGraph, stats: sectionStats, rules: sectionRules, hours: sectionHours, links: sectionLinks, settings: sectionSettings, poll: sectionPoll };
   root.innerHTML = heroHtml() + (RENDER[SECTION] || sectionBonus)();
 
   /* ---------- общие обработчики ---------- */
