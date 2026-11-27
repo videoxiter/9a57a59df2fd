@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "3.7"
+VERSION = "2.3.0"
 try:
     from changelog import CHANGELOG
 except Exception:      # запуск из другого каталога — истории просто не будет
@@ -202,6 +202,25 @@ def ver_tuple(v) -> tuple:
         return (0,)
 
 
+def exe_built_at() -> float:
+    """Когда собран установленный exe — сравниваем с датой публикации."""
+    try:
+        return Path(sys.executable).stat().st_mtime if getattr(sys, "frozen", False) else 0.0
+    except Exception:
+        return 0.0
+
+
+def manifest_time(info) -> float:
+    """Дата публикации манифеста в секундах."""
+    try:
+        raw = str(info.get("date") or "")
+        if not raw:
+            return 0.0
+        return datetime.fromisoformat(raw.replace("Z", "+00:00")).timestamp()
+    except Exception:
+        return 0.0
+
+
 def update_available():
     """Возвращает описание новой версии или None."""
     try:
@@ -209,7 +228,11 @@ def update_available():
         if not isinstance(info, dict):
             return None
         latest = str(info.get("version") or "")
-        if latest and ver_tuple(latest) > ver_tuple(VERSION):
+        if not latest or latest == VERSION:
+            return None
+        # новая схема нумерации (мажор.функционал.исправление) может быть «младше»
+        # численно, поэтому решаем по дате публикации, а номер — как подстраховка
+        if manifest_time(info) > exe_built_at() + 60 or ver_tuple(latest) > ver_tuple(VERSION):
             log("доступно обновление: %s (сейчас %s)" % (latest, VERSION))
             return info
     except Exception as e:
