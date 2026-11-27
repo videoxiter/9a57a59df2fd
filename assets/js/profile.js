@@ -3086,6 +3086,8 @@ function robotMenuHtml() {
             <li><b>1-я смена</b> 05:00–10:00 · перерывы 07:00–07:15 и 08:30–08:45 · без обеда</li>
             <li><b>2-я смена</b> 08:00–13:00 · перерывы 09:30–09:45 и 10:45–11:00 · без обеда</li>
             <li><b>3-я смена</b> 10:00–15:00 · перерывы 11:30–11:45 и 12:30–12:45 · без обеда</li>
+            <li><b>Как выбрать:</b> в календаре ниже нажмите половину дня <b>«05:00»</b> или <b>«08:00»</b>,
+              а 31 декабря — в этом же календаре (оно подсвечено как праздничное).</li>
           </ul>
         </section>
 
@@ -3124,18 +3126,7 @@ function robotMenuHtml() {
         </section>
 
         <section class="poll-sec">
-          <header class="poll-sec-head"><b>5. Работа 31 декабря</b>
-            <span>Смены будут: выберите удобную — или отметьте, что не готовы.</span></header>
-          <div class="poll-chips poll-dec31">
-            <label class="poll-chip"><input type="radio" name="poll-dec31" value="1" ${saved.dec31 === "1" ? "checked" : ""}><span>1-я · 05:00–10:00</span></label>
-            <label class="poll-chip"><input type="radio" name="poll-dec31" value="2" ${saved.dec31 === "2" ? "checked" : ""}><span>2-я · 08:00–13:00</span></label>
-            <label class="poll-chip"><input type="radio" name="poll-dec31" value="3" ${saved.dec31 === "3" ? "checked" : ""}><span>3-я · 10:00–15:00</span></label>
-            <label class="poll-chip"><input type="radio" name="poll-dec31" value="no" ${saved.dec31 === "no" ? "checked" : ""}><span>Не готов(а)</span></label>
-          </div>
-        </section>
-
-        <section class="poll-sec">
-          <header class="poll-sec-head"><b>6. Дополнительно</b>
+          <header class="poll-sec-head"><b>5. Дополнительно</b>
             <span>Пожелания, ограничения, пояснения.</span></header>
           <textarea id="poll-comment" rows="3" placeholder="Например: 12–14 декабря не могу — семейные дела">${escHtml(saved.comment || "")}</textarea>
         </section>
@@ -3211,10 +3202,6 @@ function robotMenuHtml() {
           third_weeks: pick("third"),
           third_none: !!(box.querySelector("#poll-third-none") || {}).checked,
           tania: tania ? tania.value === "1" : null,
-          dec31: (() => {
-            const sel = box.querySelector('input[name="poll-dec31"]:checked');
-            return sel ? sel.value : null;
-          })(),
           comment: (box.querySelector("#poll-comment") || {}).value || "",
         });
         save.disabled = false;
