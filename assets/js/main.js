@@ -1385,7 +1385,8 @@
   /* нормы линий и допустимые сотрудники (по правилам руководителя) */
   const SCH_LINES = [
     { line: "L0", need: 1, who: ["frolov", "bolgov"], shift: "2" },
-    { line: "L1.1", need: 3, who: ["yuryev", "agarov", "vtorygin", "zavyalov", "khasanov"], shift: "2" },
+    /* Вторыгин: у него нет «короткого» ключа — указываем его id */
+    { line: "L1.1", need: 3, who: ["yuryev", "agarov", "b778327bcb2f", "vtorygin", "zavyalov", "khasanov"], shift: "2" },
     { line: "L2.1", need: 2, who: ["melnikov", "pestovsky", "eliseev", "yuryev"], shift: "2" },
     { line: "L2.2", need: 1, who: ["pestovsky", "yuryev"], shift: "2" },
     { line: "L2.3", need: 1, who: ["melnikov", "eliseev"], shift: "2" },
@@ -1407,6 +1408,17 @@
     if (String(scope).startsWith("week:")) return "неделя " + String(scope).slice(5);
     return scope;
   }
+  /* сотрудник относится к линии, если совпал id, slug или фамилия */
+  function schInLine(who, e) {
+    if (!who || !e) return false;
+    const keys = [e.slug, e.id, e.surname].filter(Boolean).map((x) => String(x).toLowerCase());
+    const family = String(e.fio || "").split(" ")[0].toLowerCase();
+    return who.some((w) => {
+      const k = String(w).toLowerCase();
+      return keys.includes(k) || (family && k === family);
+    });
+  }
+
   function schDateKey(month, day) {
     return "date:" + month + "-" + String(day).padStart(2, "0");
   }
@@ -1608,11 +1620,11 @@
         const allObj = (allRule && typeof allRule === "object") ? allRule : (allRule != null ? { need: Number(allRule) } : {});
         const forced = allMode ? (Array.isArray(allObj.who) ? allObj.who : null)
                                : schWhoFor(line.line, month, day, linesWeek);
-        const pool = line.who ? emps.filter((e) => line.who.includes(e.slug)) : emps;
+        const pool = line.who ? emps.filter((e) => schInLine(line.who, e)) : emps;
         const on = forced
           ? forced.map((sl) => emps.find((e) => e.slug === sl)).filter(Boolean)
           : (line.who
-            ? emps.filter((e) => line.who.includes(e.slug) && isShift(get(e.slug, day)))
+            ? emps.filter((e) => schInLine(line.who, e) && isShift(get(e.slug, day)))
             : emps.filter((e) => get(e.slug, day) === "3"));
         const need = allMode
           ? (allObj.need != null ? Number(allObj.need) : Number(line.need))
