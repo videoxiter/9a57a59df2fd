@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "3.5"
+VERSION = "3.6"
 try:
     from changelog import CHANGELOG
 except Exception:      # запуск из другого каталога — истории просто не будет
@@ -50,7 +50,7 @@ def changes_of(ver: str):
     return {}
 
 
-def tray_icon_class():
+def tray_icon_class(on_double_click=None):
     """Иконка трея с нужным поведением мыши.
 
     По умолчанию pystray открывает действие на ЛЮБОЙ левый клик, а меню — правым.
@@ -61,17 +61,31 @@ def tray_icon_class():
         from pystray import Icon
         from pystray._util import win32 as _w32
 
+        WM_LBUTTONUP = 0x0202        # одиночный левый клик
+        WM_LBUTTONDBLCLK = 0x0203    # двойной левый клик (в pystray этой константы нет)
+        WM_RBUTTONUP = 0x0205        # правый клик — меню
+
         class TrayIcon(Icon):
+            _on_double = staticmethod(on_double_click or (lambda *a: None))
+
             def _on_notify(self, wparam, lparam):
-                if lparam == _w32.WM_LBUTTONDBLCLK:
-                    try:
-                        self()          # действие по умолчанию — открыть окно
-                    except Exception:
-                        pass
-                    return
-                if lparam == _w32.WM_LBUTTONUP:
-                    return              # одиночный левый клик ничего не делает
-                return super()._on_notify(wparam, lparam)
+                # ВАЖНО: это оконная процедура. Любое исключение здесь убивает
+                # цикл сообщений, значок остаётся «призраком» — поэтому всё в try.
+                try:
+                    if lparam == WM_LBUTTONDBLCLK:
+                        try:
+                            TrayIcon._on_double()
+                        except Exception as e:
+                            log("трей: окно не открылось (%r)" % (e,))
+                        return
+                    if lparam == WM_LBUTTONUP:
+                        return          # одиночный левый клик ничего не делает
+                except Exception as e:
+                    log("трей: ошибка обработчика (%r)" % (e,))
+                try:
+                    return super()._on_notify(wparam, lparam)
+                except Exception as e:
+                    log("трей: меню не открылось (%r)" % (e,))
 
         return TrayIcon
     except Exception as e:
@@ -793,7 +807,7 @@ class App:
     def menu(self):
         from pystray import Menu, MenuItem
         return Menu(
-            MenuItem("Открыть окно ОТП", self.show_main_window, default=True),
+            MenuItem("Открыть окно ОТП", self._on_tray_activate, default=True),
             Menu.SEPARATOR,
             MenuItem(self.status_line, None, enabled=False),
             MenuItem("Горячие: Ctrl+Alt+S/B/L/A/R/E", None, enabled=False),
@@ -837,6 +851,15 @@ class App:
             return list(self.cfg.get("feed") or [])
         except Exception:
             return []
+
+    def _on_tray_activate(self, *_):
+        """Библиотека зовёт это на каждый левый клик: окно — только на двойной."""
+        now = time.monotonic()
+        prev = getattr(self, "_last_tray_click", 0.0)
+        self._last_tray_click = now
+        if now - prev <= 0.45:
+            self._last_tray_click = 0.0
+            self.show_main_window()
 
     def show_main_window(self, *_):
         """Просит окно показаться: Tk из этого потока трогать нельзя,
@@ -1328,12 +1351,31 @@ class App:
         threading.Thread(target=self.content_loop, daemon=True).start()
         threading.Thread(target=self.poll_loop, daemon=True).start()
         from pystray import Icon
-        IconClass = tray_icon_class()
+        IconClass = Icon  # обычная иконка: пystray сам зовёт пункт по умолчанию
         self.icon = IconClass(APP_NAME, self.make_icon(self.state["kind"]),
                          self.status_line(), menu=self.menu())
         threading.Thread(target=self.poll_loop, daemon=True).start()
         threading.Thread(target=self.countdown_loop, daemon=True).start()
-        self.icon.run()
+        # сторож: если цикл сообщений завершится сам (ошибка внутри библиотеки),
+        # поднимаем значок заново, а не оставляем «призрачную» иконку
+        for attempt in range(1, 4):
+            try:
+                self.icon.run()
+                if not self._alive or getattr(self, "_quitting", False):
+                    break
+                log("трей: цикл завершился неожиданно (попытка %d) — перезапускаю" % attempt)
+            except Exception as e:
+                log("трей: сбой цикла (%r)" % (e,))
+            if not self._alive or getattr(self, "_quitting", False):
+                break
+            time.sleep(2)
+            try:
+                from pystray import Icon as _I
+                self.icon = Icon(APP_NAME, self.make_icon(self.state["kind"]),
+                                 self.status_line(), menu=self.menu())
+            except Exception as e:
+                log("трей: не удалось поднять заново (%r)" % (e,))
+                break
 
     def toggle_autostart(self):
         """Включает/выключает запуск при входе в Windows."""
@@ -1365,6 +1407,7 @@ class App:
 
     def quit_app(self):
         self._alive = False
+        self._quitting = True
         try:
             if getattr(self, "hotkeys", None):
                 self.hotkeys.stop()
@@ -1781,6 +1824,8 @@ class App:
                 payload = res["payload"]
         except Exception as e:
             log("данные сайта: RPC недоступен %r" % (e,))
+        if not payload:
+            return []          # публичного файла больше нет — тихо выходим
         new = content_snapshot(slug, payload)
         if not new:
             return []
