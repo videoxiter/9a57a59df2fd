@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "3.3"
+VERSION = "3.4"
 try:
     from changelog import CHANGELOG
 except Exception:      # запуск из другого каталога — истории просто не будет
@@ -148,9 +148,17 @@ def load_config() -> dict:
         return {}
 
 
+CONFIG_LOCK = threading.Lock()
+
+
 def save_config(cfg: dict) -> None:
-    CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
-    CONFIG_PATH.write_text(json.dumps(cfg, ensure_ascii=False, indent=2), encoding="utf-8")
+    # настройки пишут несколько потоков (опрос, данные страницы, события).
+    # Без блокировки и атомарной записи файл мог остаться недописанным.
+    with CONFIG_LOCK:
+        CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        tmp = CONFIG_PATH.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(cfg, ensure_ascii=False, indent=2), encoding="utf-8")
+        os.replace(tmp, CONFIG_PATH)
     try:
         os.chmod(CONFIG_PATH, 0o600)
     except Exception:
@@ -334,7 +342,7 @@ def update_via_installer(info) -> bool:
         helper.write_text(
             "@echo off\r\n"
             "ping -n 6 127.0.0.1 >nul\r\n"
-            f'start "" "{setup}" /SILENT /NORESTART /CLOSEAPPLICATIONS\r\n'
+            f'start "" "{setup}" /SILENT /NORESTART /CLOSEAPPLICATIONS /LOG="%TEMP%\\otp-setup.log"\r\n'
             'del "%~f0" >nul 2>&1\r\n',
             encoding="cp1251" if os.name == "nt" else "utf-8",
         )
@@ -822,17 +830,16 @@ class App:
             return []
 
     def show_main_window(self, *_):
-        """Показывает главное окно, не блокируя трей."""
-        root = getattr(self, "_win_root", None)
-        if root is not None:
-            try:
-                root.deiconify()
-                root.lift()
-                root.focus_force()
-                return
-            except Exception:
-                self._win_root = None
-        threading.Thread(target=self.main_window, daemon=True).start()
+        """Просит окно показаться: Tk из этого потока трогать нельзя,
+        поэтому выставляем флаг, а окно поднимает себя само."""
+        self._win_show = True
+        lock = getattr(self, "_win_lock", None)
+        if lock is None:
+            lock = self._win_lock = threading.Lock()
+        with lock:
+            if not getattr(self, "_win_alive", False) and not getattr(self, "_win_starting", False):
+                self._win_starting = True
+                threading.Thread(target=self.main_window, daemon=True).start()
 
     def main_window(self):
         """Главное окно: статус смены, действия, лента событий с сайта."""
@@ -1032,9 +1039,33 @@ class App:
             root.after(700, tick)
 
         self._win_root = root
+        self._win_alive = True
         root.protocol("WM_DELETE_WINDOW", root.withdraw)
+
+        def watch_flag():
+            try:
+                if getattr(self, "_win_show", False):
+                    self._win_show = False
+                    root.deiconify()
+                    root.lift()
+                    try:
+                        root.focus_force()
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+            try:
+                root.after(400, watch_flag)
+            except Exception:
+                pass
+
+        watch_flag()
         tick()
-        root.mainloop()
+        try:
+            root.mainloop()
+        finally:
+            self._win_alive = False
+            self._win_root = None
 
     def update_icon(self):
         if not self.icon:
@@ -1669,6 +1700,9 @@ class App:
         while self._alive:
             try:
                 info = update_available()
+                if info and getattr(self, "_win_alive", False):
+                    log("обновление: отложено, пока открыто окно")
+                    info = None
                 if info:
                     log("обновление: ставлю версию %s" % info.get("version"))
                     install_update(info)   # перезапуск; настройки и статусы сохраняются
@@ -1981,7 +2015,30 @@ def already_running() -> bool:
         return False
 
 
+def install_crash_logging():
+    """Пишет необработанные ошибки в журнал: без этого «зависло» не разобрать."""
+    import traceback
+
+    def write(exc_type, exc, tb):
+        try:
+            log("СБОЙ: " + "".join(traceback.format_exception(exc_type, exc, tb))[:4000])
+        except Exception:
+            pass
+
+    sys.excepthook = write
+    try:
+        threading.excepthook = lambda a: write(a.exc_type, a.exc_value, a.exc_traceback)
+    except Exception:
+        pass
+    try:
+        import tkinter
+        tkinter.Tk.report_callback_exception = lambda self, et, ev, tb: write(et, ev, tb)
+    except Exception:
+        pass
+
+
 def main():
+    install_crash_logging()
     if "--selftest" in sys.argv:
         return selftest()
     if already_running():
