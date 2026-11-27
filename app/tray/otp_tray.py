@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "2.3.1"
+VERSION = "2.3.2"
 try:
     from changelog import CHANGELOG
 except Exception:      # запуск из другого каталога — истории просто не будет
@@ -1099,13 +1099,15 @@ class App:
                 bar.coords(bar_id, 0, 0, int(w * pct), 6)
                 meta_var.set("норма 7:30 · отработано %s" % hms(sec))
                 for key, (btn, primary) in buttons.items():
+                    # ВАЖНО: вызываем методы — ссылка на метод всегда истинна,
+                    # из-за этого кнопки «горели» в неподходящий момент
                     ok = {"start": self.can_start, "stop": self.can_finish,
                           "return": self.can_return}.get(key)
-                    if ok is None:
-                        ok = self.can_slot(key)
+                    ok = bool(ok()) if ok else bool(self.can_slot(key))
                     btn.configure(state="normal" if ok else "disabled",
-                                  bg=(ACCENT if ok else "#123240") if primary else CARD,
-                                  fg="#06131a" if (primary and ok) else TEXT)
+                                  bg=(ACCENT if ok else "#0f1d28") if primary else CARD,
+                                  fg="#06131a" if (primary and ok) else ("#7f93a8" if primary else TEXT),
+                                  disabledforeground="#4b5b6b")
                 render_feed()
                 refresh_poll_banner()
             except Exception:
