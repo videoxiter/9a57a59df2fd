@@ -2978,74 +2978,140 @@ function robotMenuHtml() {
         ? new Date(poll.due_at).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
         : "без срока";
       const FIXED = ["01-01", "01-02", "01-07", "02-23", "03-08", "05-01", "05-09", "06-12", "11-04"];
-      const days = [];
       const lastDay = new Date(y, m, 0).getDate();
-      for (let d = 1; d <= lastDay; d++) {
-        const dt = new Date(y, m - 1, d);
-        const mmdd = String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
-        const holiday = FIXED.includes(mmdd);
-        if (dt.getDay() === 0 || dt.getDay() === 6 || holiday) {
-          days.push({ d, label: `${String(d).padStart(2, "0")}.${String(m).padStart(2, "0")} — ${dt.toLocaleDateString("ru-RU", { weekday: "short" })}${holiday ? " (праздник)" : ""}` });
-        }
-      }
+      const mm = String(m).padStart(2, "0");
+      const dow = (d) => new Date(y, m - 1, d).getDay();
+      const isHoliday = (d) => FIXED.includes(mm + "-" + String(d).padStart(2, "0"));
+      const isFree = (d) => dow(d) === 0 || dow(d) === 6 || isHoliday(d);
+      const chk = (arr, v) => (arr || []).map(String).includes(String(v)) ? "checked" : "";
+
+      const freeDays = [];
+      for (let d = 1; d <= lastDay; d++) if (isFree(d)) freeDays.push(d);
+
       const weeks = [];
       for (let d = 1; d <= lastDay; d++) {
-        const dt = new Date(y, m - 1, d);
-        if (dt.getDay() === 1) {
+        if (dow(d) === 1) {
           const fri = Math.min(d + 4, lastDay);
-          weeks.push({ from: d, label: `${String(d).padStart(2, "0")}.${String(m).padStart(2, "0")}–${String(fri).padStart(2, "0")}.${String(m).padStart(2, "0")}` });
+          weeks.push({ from: d, label: `${String(d).padStart(2, "0")}.${mm}–${String(fri).padStart(2, "0")}.${mm}` });
         }
       }
-      const chk = (arr, v) => (arr || []).map(String).includes(String(v)) ? "checked" : "";
-      const box = document.createElement("div");
-      box.className = "now-block poll-card";
-      box.innerHTML = `<div class="now-head">
-        <h3><i class="ph-bold ph-calendar-check"></i> Пожелания по графику: ${escHtml(monthName)}</h3>
-        <span class="now-sum">сдать до ${escHtml(due)}</span>
-      </div>
-      <div class="poll-body">
-        <div class="poll-q">
-          <b>1. Желаемые выходные смены</b>
-          <span class="poll-hint">Оплата за выходную смену — 4 000 ₽. Время: 05:00 или 08:00.</span>
-          <div class="poll-opts">${days.map((x) => `<label><input type="checkbox" data-pd="weekend" value="${x.d}" ${chk(saved.weekend_dates, x.d)}> ${escHtml(x.label)}</label>`).join("")}</div>
-          <label class="poll-inline">Время: <select id="poll-time">
-            <option value="05:00"${saved.weekend_time === "05:00" ? " selected" : ""}>с 05:00</option>
-            <option value="08:00"${saved.weekend_time === "08:00" ? " selected" : ""}>с 08:00</option>
-          </select></label>
-          <label><input type="checkbox" id="poll-none" ${saved.weekend_none ? "checked" : ""}> Прошу без выходных смен</label>
-        </div>
-        <div class="poll-q">
-          <b>2. Обязательные выходные дни</b>
-          <span class="poll-hint">Даты, когда не можете работать (учтите отпуск).</span>
-          <div class="poll-opts">${days.map((x) => `<label><input type="checkbox" data-pd="off" value="${x.d}" ${chk(saved.off_dates, x.d)}> ${escHtml(x.label)}</label>`).join("")}</div>
-        </div>
-        <div class="poll-q">
-          <b>3. 3-я смена (10:00–19:00)</b>
-          <span class="poll-hint">Недели, когда можете выходить в 3-ю смену.</span>
-          <div class="poll-opts">${weeks.map((w) => `<label><input type="checkbox" data-pd="third" value="${w.from}" ${chk(saved.third_weeks, w.from)}> ${escHtml(w.label)}</label>`).join("")}</div>
-          <label><input type="checkbox" id="poll-third-none" ${saved.third_none ? "checked" : ""}> Без 3-й смены</label>
-        </div>
-        <div class="poll-q">
-          <b>4. Дежурный по МКК «Тания»</b>
-          <div class="poll-opts">
-            <label><input type="radio" name="poll-tania" value="1" ${saved.tania === true ? "checked" : ""}> Готов</label>
-            <label><input type="radio" name="poll-tania" value="0" ${saved.tania === false ? "checked" : ""}> Не готов</label>
+
+      /* календарь: клик по выходному/празднику = выбор. Пн–Вс, как в графике. */
+      const calHtml = (kind) => {
+        const selArr = kind === "weekend" ? saved.weekend_dates : saved.off_dates;
+        const cells = [];
+        const shift = (new Date(y, m - 1, 1).getDay() + 6) % 7;
+        for (let i = 0; i < shift; i++) cells.push('<span class="poll-day is-blank"></span>');
+        for (let d = 1; d <= lastDay; d++) {
+          const cls = ["poll-day"];
+          if (isFree(d)) cls.push("is-weekend"); else cls.push("is-work");
+          if (isHoliday(d)) cls.push("is-holiday");
+          if ((selArr || []).map(String).includes(String(d))) cls.push("is-on");
+          const clickable = isFree(d) ? ` data-cal="${kind}" data-day="${d}"` : "";
+          cells.push(`<button type="button" class="${cls.join(" ")}"${clickable}>${d}</button>`);
+        }
+        return `<div class="poll-cal">
+          <div class="poll-cal-week">${["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map((x) => `<span>${x}</span>`).join("")}</div>
+          <div class="poll-cal-grid">${cells.join("")}</div>
+          <div class="poll-cal-legend">
+            <span><i class="poll-dot dot-free"></i> выходной</span>
+            <span><i class="poll-dot dot-holiday"></i> праздник</span>
+            <span><i class="poll-dot dot-on"></i> выбрано</span>
           </div>
+        </div>`;
+      };
+
+      const hidden = (kind, arr) => `<div class="poll-hidden">${freeDays
+        .map((d) => `<input type="checkbox" data-pd="${kind}" value="${d}" ${chk(arr, d)}>`).join("")}</div>`;
+
+      const box = document.createElement("div");
+      box.className = "poll-ui";
+      box.innerHTML = `
+        <div class="poll-head">
+          <div class="poll-head-l">
+            <div class="poll-head-ico"><i class="ph-bold ph-calendar-check"></i></div>
+            <div>
+              <h3>Пожелания по графику</h3>
+              <p>${escHtml(monthName)} · заполняется один раз, можно поправить до срока</p>
+            </div>
+          </div>
+          <span class="poll-due"><i class="ph-bold ph-clock"></i> сдать до ${escHtml(due)}</span>
         </div>
-        <div class="poll-q">
-          <b>5. Дополнительно</b>
-          <textarea id="poll-comment" rows="2" placeholder="Пожелания, ограничения, пояснения">${escHtml(saved.comment || "")}</textarea>
-        </div>
+
+        <section class="poll-sec">
+          <header class="poll-sec-head"><b>1. Желаемые выходные смены</b>
+            <span>Оплата 4 000 ₽ за смену. Отметьте дни в календаре.</span></header>
+          ${calHtml("weekend")}${hidden("weekend", saved.weekend_dates)}
+          <div class="poll-row">
+            <label class="poll-field">Время смены
+              <select id="poll-time">
+                <option value="05:00"${saved.weekend_time === "05:00" ? " selected" : ""}>с 05:00</option>
+                <option value="08:00"${saved.weekend_time === "08:00" ? " selected" : ""}>с 08:00</option>
+              </select>
+            </label>
+            <label class="poll-check"><input type="checkbox" id="poll-none" ${saved.weekend_none ? "checked" : ""}> Прошу без выходных смен</label>
+          </div>
+        </section>
+
+        <section class="poll-sec">
+          <header class="poll-sec-head"><b>2. Обязательные выходные дни</b>
+            <span>Даты, когда не можете работать (учтите отпуск).</span></header>
+          ${calHtml("off")}${hidden("off", saved.off_dates)}
+        </section>
+
+        <section class="poll-sec">
+          <header class="poll-sec-head"><b>3. 3-я смена (10:00–19:00)</b>
+            <span>Недели, когда готовы выходить в 3-ю смену.</span></header>
+          <div class="poll-chips">${weeks.map((w) => `<label class="poll-chip">
+            <input type="checkbox" data-pd="third" value="${w.from}" ${chk(saved.third_weeks, w.from)}>
+            <span>${escHtml(w.label)}</span></label>`).join("")}</div>
+          <label class="poll-check"><input type="checkbox" id="poll-third-none" ${saved.third_none ? "checked" : ""}> Без 3-й смены</label>
+        </section>
+
+        <section class="poll-sec">
+          <header class="poll-sec-head"><b>4. Дежурный по МКК «Тания»</b>
+            <span>Готовы быть дежурным в этом месяце?</span></header>
+          <div class="poll-seg">
+            <label><input type="radio" name="poll-tania" value="1" ${saved.tania === true ? "checked" : ""}><span>Готов</span></label>
+            <label><input type="radio" name="poll-tania" value="0" ${saved.tania === false ? "checked" : ""}><span>Не готов</span></label>
+          </div>
+        </section>
+
+        <section class="poll-sec">
+          <header class="poll-sec-head"><b>5. Дополнительно</b>
+            <span>Пожелания, ограничения, пояснения.</span></header>
+          <textarea id="poll-comment" rows="3" placeholder="Например: 12–14 декабря не могу — семейные дела">${escHtml(saved.comment || "")}</textarea>
+        </section>
+
         <div class="poll-foot">
           <button class="btn btn-primary" id="poll-save" type="button"><i class="ph-bold ph-check"></i> Сохранить пожелания</button>
           <span class="staff-hint" id="poll-msg">${Object.keys(saved).length ? "Ответ сохранён — можно поправить до срока." : ""}</span>
-        </div>
-      </div>`;
+        </div>`;
       sec.appendChild(box);
+
+      /* клик по дню календаря = отметить/снять */
+      box.querySelectorAll(".poll-day[data-cal]").forEach((cell) => {
+        cell.addEventListener("click", () => {
+          const kind = cell.dataset.cal;
+          const day = cell.dataset.day;
+          const inp = box.querySelector(`input[data-pd="${kind}"][value="${day}"]`);
+          if (!inp) return;
+          inp.checked = !inp.checked;
+          cell.classList.toggle("is-on", inp.checked);
+          if (kind === "weekend" && inp.checked) {
+            const n = box.querySelector("#poll-none");
+            if (n) n.checked = false;
+          }
+        });
+      });
+
       box.querySelectorAll("[data-pd]").forEach((el) => el.addEventListener("change", () => {
         if (el.dataset.pd === "weekend" && el.checked) { const n = box.querySelector("#poll-none"); if (n) n.checked = false; }
         if (el.dataset.pd === "third" && el.checked) { const n = box.querySelector("#poll-third-none"); if (n) n.checked = false; }
+        const cell = box.querySelector(`.poll-day[data-cal="${el.dataset.pd}"][data-day="${el.value}"]`);
+        if (cell) cell.classList.toggle("is-on", el.checked);
       }));
+
       const save = box.querySelector("#poll-save");
       if (save) save.addEventListener("click", async () => {
         const pick = (kind) => Array.from(box.querySelectorAll(`[data-pd="${kind}"]:checked`)).map((x) => Number(x.value));
