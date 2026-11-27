@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "2.3.4"
+VERSION = "2.3.5"
 try:
     from changelog import CHANGELOG
 except Exception:      # запуск из другого каталога — истории просто не будет
@@ -593,32 +593,54 @@ def parse_at(s: str) -> float:
         return 0.0
 
 
+def is_no_stop_absence(reason) -> bool:
+    """«Без заявки» — статус отмечаем, но рабочее время НЕ останавливаем."""
+    return str(reason or "").strip().lower().startswith("без заявки")
+
+
 def compute_state(events: list) -> dict:
     started = stopped = None
     active = None
     acc = 0.0
     last = None
     used = set()
+    no_stop = False
+    running = False          # идёт ли счёт рабочего времени прямо сейчас
     for e in sorted(events, key=lambda x: str(x.get("at", ""))):
         t = parse_at(e.get("at"))
         typ = e.get("type")
         if typ == "shift_start":
             started, last, active, stopped = t, t, None, None
+            running = True
         elif typ == "shift_stop":
-            if started and not stopped and last:
+            if running and last:
                 acc += max(0.0, t - last)
+            running = False
             stopped, active = t, None
-        elif typ in ("break_start", "absence_start"):
-            if last and started and not stopped:
+        elif typ == "break_start":
+            # перерыв (техперерыв, обед) — рабочее время останавливается
+            if running and last:
                 acc += max(0.0, t - last)
-            last = t
-            slot = e.get("slot") or ("absence" if typ == "absence_start" else "break")
-            active = {"type": typ, "slot": slot, "at": t}
+            running = False
+            active = {"type": typ, "slot": e.get("slot") or "break", "at": t}
+        elif typ == "absence_start":
+            no_stop = is_no_stop_absence(e.get("reason"))
+            if not no_stop:
+                if running and last:
+                    acc += max(0.0, t - last)
+                running = False
+            # «Без заявки»: running остаётся True, last не двигаем — время идёт
+            active = {"type": typ, "slot": e.get("slot") or "absence", "at": t,
+                      "reason": e.get("reason") or "", "no_stop": no_stop}
         elif typ in ("break_end", "absence_end"):
             if typ == "break_end":
                 used.add(e.get("slot") or "break")
-            last, active = t, None
-    if started and not stopped and last:
+            if typ == "absence_end" and no_stop:
+                no_stop = False      # время и так шло — только снимаем статус
+                active = None
+                continue
+            running, last, active = True, t, None
+    if running and last:
         acc += max(0.0, time.time() - last)
     if stopped:
         kind, label = "done", "Смена завершена"
