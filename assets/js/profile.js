@@ -2947,7 +2947,13 @@ function robotMenuHtml() {
     if (!host) return;
     if (!A || !A.pollMy) { host.innerHTML = '<p class="muted">Нет связи с сервером опроса.</p>'; return; }
     A.pollMy(String(emp.id)).then((res) => {
-      if (!res || !res.ok || !res.poll) {
+      if (!res || !res.ok) {
+        hidePollNav(true);
+        host.innerHTML = '<div class="p-card"><p>Не удалось узнать состояние опроса: нет связи '
+          + 'или нужен вход. Обновите страницу (Ctrl+F5) и войдите снова.</p></div>';
+        return;
+      }
+      if (!res.poll) {
         hidePollNav(true);
         host.innerHTML = '<div class="p-card"><p>Сейчас опроса нет. Когда руководитель его откроет, '
           + 'здесь появится форма пожеланий, а в меню — пункт «Опрос».</p></div>';

@@ -179,7 +179,8 @@
     },
     /* v21: опрос по графику */
     pollMy: function (slug) {
-      var t = tok(slug || "admin");
+      // руководитель открывает чужую страницу: берём его токен, иначе «опроса нет»
+      var t = tok(slug) || tok("admin");
       if (!t) return Promise.resolve(null);
       return rpc("otp_poll_my", { p_token: t }).catch(function () { return null; });
     },
