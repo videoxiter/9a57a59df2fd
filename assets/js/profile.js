@@ -2318,7 +2318,7 @@ function robotMenuHtml() {
       <div class="st-shift" id="st-shift"></div>
       <div class="st-top">
         <div class="st-status" id="st-status"><span class="st-si"><i class="ph-bold ph-hourglass"></i></span><span class="st-st-txt">Загрузка…</span></div>
-        <div class="st-timer-wrap"><div class="st-timer" id="st-timer">00:00:00</div><div class="st-bar"><div class="st-bar-fg" id="st-bar"></div></div><span class="st-timer-h" id="st-norm-h">отработано за день · норма " + stNormText() + " · МСК</span></div>
+        <div class="st-timer-wrap"><div class="st-timer" id="st-timer">00:00:00</div><div class="st-bar"><div class="st-bar-fg" id="st-bar"></div></div><span class="st-timer-h" id="st-norm-h">отработано за день · МСК</span></div>
       </div>
       <div class="st-actions" id="st-actions"></div>
       <div class="st-outbox" id="st-outbox" hidden></div>
@@ -2474,6 +2474,7 @@ function robotMenuHtml() {
     const box = document.getElementById("st-actions");
     const statusEl = document.getElementById("st-status");
     const timerEl = document.getElementById("st-timer");
+      { const ne = document.getElementById("st-norm-h"); if (ne) ne.textContent = "отработано за день · норма " + stNormText() + " · МСК"; }
     const shiftEl = document.getElementById("st-shift");
     const noteEl = document.getElementById("st-note");
     if (!box || !statusEl) return;
