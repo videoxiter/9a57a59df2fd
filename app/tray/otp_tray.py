@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "3.4"
+VERSION = "3.5"
 try:
     from changelog import CHANGELOG
 except Exception:      # запуск из другого каталога — истории просто не будет
@@ -128,6 +128,15 @@ def log(msg: str) -> None:
     """Простой журнал рядом с настройками — помогает разбирать проблемы сотрудника."""
     try:
         CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        # журнал не должен расти бесконечно: старше 1 МБ — сдвигаем в app.log.1
+        try:
+            if LOG_PATH.exists() and LOG_PATH.stat().st_size > 1024 * 1024:
+                backup = LOG_PATH.with_suffix(".log.1")
+                if backup.exists():
+                    backup.unlink()
+                LOG_PATH.rename(backup)
+        except Exception:
+            pass
         with open(LOG_PATH, "a", encoding="utf-8") as f:
             f.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  {msg}\n")
     except Exception:
@@ -1762,7 +1771,8 @@ class App:
 
     def check_content(self, silent=False):
         slug = self.api.slug or self.cfg.get("slug") or ""
-        if not slug:
+        if not slug or not self.api.token:
+            # без входа данных нет: не пытаемся читать старый публичный файл (404 в журнале)
             return []
         payload = None
         try:
