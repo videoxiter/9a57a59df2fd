@@ -1981,8 +1981,11 @@ function robotMenuHtml() {
   ];
   const ST_KEY = "otp_time_events_v1";
   // Норма дня: 8 часов минус два тех.перерыва по 15 минут = 7 ч 30 мин.
-  // Для укороченного дня (флаг в админке) норма уменьшается на час.
-  let ST_NORM_SEC = 7.5 * 3600;
+  // Укороченный день и выходные — та же норма 07:30 (правило владельца).
+  // Персональная норма: norm_min в данных сотрудника (Поспелова — 402 = 06:42).
+  const ST_NORM_MIN = Number((((window.OTP_EMP || {}).employee || {}).norm_min) || 450);
+  let ST_NORM_SEC = ST_NORM_MIN * 60;
+  const stNormText = () => Math.floor(ST_NORM_MIN / 60) + ":" + String(ST_NORM_MIN % 60).padStart(2, "0");
   const ST_RING_R = 62, ST_RING_C = 2 * Math.PI * ST_RING_R;
   const ST_CLOUD = () => (D.hrRules && D.hrRules.cloud) || null;
   const stIsoDate = (d) => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Moscow", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
@@ -2315,7 +2318,7 @@ function robotMenuHtml() {
       <div class="st-shift" id="st-shift"></div>
       <div class="st-top">
         <div class="st-status" id="st-status"><span class="st-si"><i class="ph-bold ph-hourglass"></i></span><span class="st-st-txt">Загрузка…</span></div>
-        <div class="st-timer-wrap"><div class="st-timer" id="st-timer">00:00:00</div><div class="st-bar"><div class="st-bar-fg" id="st-bar"></div></div><span class="st-timer-h" id="st-norm-h">отработано за день · норма 7:30 · МСК</span></div>
+        <div class="st-timer-wrap"><div class="st-timer" id="st-timer">00:00:00</div><div class="st-bar"><div class="st-bar-fg" id="st-bar"></div></div><span class="st-timer-h" id="st-norm-h">отработано за день · норма " + stNormText() + " · МСК</span></div>
       </div>
       <div class="st-actions" id="st-actions"></div>
       <div class="st-outbox" id="st-outbox" hidden></div>
@@ -2565,7 +2568,7 @@ function robotMenuHtml() {
       : stMissing()
         ? `<i class="ph-bold ph-warning"></i> Учёт ещё не подключён: выполните <b>scripts/supabase_time.sql</b> в Supabase. Пока время считается только в этом браузере.`
         : sec >= ST_NORM_SEC
-          ? `<i class="ph-bold ph-check-circle"></i> Норма 7 ч 30 мин на сегодня отработана.`
+          ? `<i class="ph-bold ph-check-circle"></i> Норма ${Math.floor(ST_NORM_MIN / 60)} ч ${String(ST_NORM_MIN % 60).padStart(2, "0")} мин на сегодня отработана.`
           : `<i class="ph-bold ph-info"></i> До нормы осталось ${stHms(ST_NORM_SEC - sec)}.`;
     const tickLive = () => {
       const st = stCalc(events, Date.now(), winsNow());
@@ -3267,9 +3270,9 @@ function robotMenuHtml() {
       const list = (res && res.ok && Array.isArray(res.list)) ? res.list : [];
       const f = list.find((x) => Number(x.day) === day);
       if (!f || f.kind !== "short") return;
-      ST_NORM_SEC = 6.5 * 3600;
+      // укороченный день НЕ снижает норму (правило владельца): 07:30 остаётся
       const el = document.getElementById("st-norm-h");
-      if (el) el.textContent = "отработано за день · норма 6:30 (укороченный день) · МСК";
+      if (el) el.textContent = "отработано за день · норма " + stNormText() + " (укороченный день) · МСК";
       const note = document.getElementById("st-note");
       if (note) note.textContent = "Сегодня укороченный день по графику — норма 6 ч 30 мин.";
     }).catch(() => {});

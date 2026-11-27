@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "2.3.5"
+VERSION = "2.3.6"
 try:
     from changelog import CHANGELOG
 except Exception:      # запуск из другого каталога — истории просто не будет
@@ -804,6 +804,7 @@ class App:
         self.lock = threading.Lock()
         self._alive = True
         self.events = []
+        self.norm_sec = ST_NORM_DAY
 
     # --- значок
     def make_icon(self, kind: str):
@@ -1142,10 +1143,12 @@ class App:
                 dot.itemconfig(dot_id, fill=colour)
                 bar.itemconfig(bar_id, fill=colour)
                 sec = st.get("sec") or 0
-                pct = min(1.0, sec / ST_NORM_DAY) if ST_NORM_DAY else 0
+                norm = getattr(self, "norm_sec", ST_NORM_DAY) or ST_NORM_DAY
+                pct = min(1.0, sec / norm) if norm else 0
                 w = max(1, bar.winfo_width())
                 bar.coords(bar_id, 0, 0, int(w * pct), 6)
-                meta_var.set("норма 7:30 · отработано %s" % hms(sec))
+                norm_s = getattr(self, "norm_sec", ST_NORM_DAY) or ST_NORM_DAY
+                meta_var.set("норма %d:%02d · отработано %s" % (norm_s // 3600, (norm_s % 3600) // 60, hms(sec)))
                 if "return" in buttons:
                     try:
                         buttons["return"][0].configure(text="↩  " + self.return_text())
@@ -1952,6 +1955,15 @@ class App:
         try:
             res = self.api.rpc("otp_profile_get", {"p_token": self.api.token, "p_slug": slug})
             if res and res.get("ok") and res.get("payload"):
+                try:
+                    pl = res.get("payload") or {}
+                    emp = pl.get("employee") if isinstance(pl, dict) else None
+                    nm = (emp or pl).get("norm_min") if isinstance((emp or pl), dict) else None
+                    if nm:
+                        self.norm_sec = int(float(nm) * 60)
+                        log("норма дня: %s мин" % int(float(nm)))
+                except Exception:
+                    pass
                 payload = res["payload"]
         except Exception as e:
             log("данные сайта: RPC недоступен %r" % (e,))
