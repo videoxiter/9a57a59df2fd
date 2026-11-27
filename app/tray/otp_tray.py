@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "2.3.2"
+VERSION = "2.3.3"
 try:
     from changelog import CHANGELOG
 except Exception:      # запуск из другого каталога — истории просто не будет
@@ -1461,15 +1461,26 @@ class App:
         else:
             notify_balloon("Автозапуск", "Автозапуск включён." if on else "Автозапуск выключен.")
 
-    def restart_app(self):
-        """Перезапуск: полезно, если зависло окно или нужно применить настройки."""
+    def restart_app(self, item=None):
+        """Перезапуск: старый процесс выходит, новый стартует через паузу.
+
+        Пауза обязательна: иначе новый экземпляр видит занятый мьютекс
+        и завершается, а старый уже закрылся — приложение пропадает.
+        """
         try:
             exe = sys.executable
-            args = [exe] if not getattr(sys, "frozen", False) else [exe]
-            subprocess.Popen(args, close_fds=True)
+            args = [exe] if getattr(sys, "frozen", False) else [exe, os.path.abspath(__file__)]
+            # прямой запуск: cmd/start в отсоединённом процессе не работал,
+            # а гонку за единственный экземпляр закрывает ожидание мьютекса
+            flags = 0x00000008 | 0x00000200          # DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
+            subprocess.Popen(args, creationflags=flags, close_fds=True,
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            log("перезапуск: новый экземпляр запущен, ждёт освобождения защиты")
         except Exception as e:
             log("перезапуск: %r" % (e,))
-        threading.Timer(0.4, lambda: os._exit(0)).start()
+        self._alive = False
+        self._quitting = True
+        threading.Timer(0.3, lambda: os._exit(0)).start()
 
     def quit_app(self):
         self._alive = False
@@ -2122,7 +2133,7 @@ def selftest() -> int:
 _MUTEX_HANDLE = None
 
 
-def already_running() -> bool:
+def already_running(wait_seconds: float = 6.0) -> bool:
     """Не даём открыть второй экземпляр (после обновления бывало два значка)."""
     global _MUTEX_HANDLE
     if os.name != "nt":
@@ -2130,7 +2141,14 @@ def already_running() -> bool:
     try:
         import ctypes
         k32 = ctypes.windll.kernel32
-        _MUTEX_HANDLE = k32.CreateMutexW(None, False, "OTP_Tray_SingleInstance")
+        deadline = time.time() + wait_seconds
+        while True:
+            _MUTEX_HANDLE = k32.CreateMutexW(None, False, "OTP_Tray_SingleInstance")
+            if k32.GetLastError() != 183:      # ERROR_ALREADY_EXISTS
+                return False
+            if time.time() >= deadline:
+                return True
+            time.sleep(0.5)
         return k32.GetLastError() == 183      # ERROR_ALREADY_EXISTS
     except Exception:
         return False
