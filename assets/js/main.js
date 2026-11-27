@@ -1394,6 +1394,25 @@
     /* 3-я смена (L1.2): минимум 1, лучше 2 — из тех, кто указал недели в опросе */
     { line: "L1.2 (3-я смена)", need: 1, who: null, shift: "3" },
   ];
+  /* --- ручные нормы линий: по неделям месяца (правило владельца) --- */
+  let SCH_LINE_NEED = {};        // {"all": {L0: 1, ...}, "2": {L1.1: 4, ...}}
+  function schWeekOf(month, day) {
+    const [y, m] = month.split("-").map(Number);
+    const first = (new Date(y, m - 1, 1).getDay() + 6) % 7;   // сдвиг с понедельника
+    return Math.floor((Number(day) - 1 + first) / 7) + 1;      // 1..6
+  }
+  function schNeedFor(line, month, day, base, weekOverride) {
+    const week = weekOverride && weekOverride !== "all"
+      ? String(weekOverride)
+      : String(schWeekOf(month, day));
+    const byWeek = SCH_LINE_NEED[week] || {};
+    const all = SCH_LINE_NEED.all || {};
+    const v = byWeek[line];
+    if (v != null) return Number(v);
+    if (all[line] != null) return Number(all[line]);
+    return Number(base);
+  }
+
   const SCH_TANIA = ["bolgov", "melnikov", "eliseev"];
   const SCH_FIXED_HOLIDAYS = ["01-01", "01-02", "01-07", "02-23", "03-08", "05-01", "05-09", "06-12", "11-04", "12-31"];
   const SCH_NO_SHIFTS = ["01-01", "01-02", "03-08"];
@@ -1460,6 +1479,7 @@
     let month = nextMonth;
     let cell = {};            // slug -> { day: symbol }
     let symbol = "2";
+    let linesWeek = "all";      // к какой неделе относится правка норм линий
     let answers = {};         // slug -> ответ опроса
     let report = [];
     /* отмена/повтор: до 10 состояний таблицы */
@@ -1556,21 +1576,45 @@
         const on = line.who
           ? emps.filter((e) => line.who.includes(e.slug) && isShift(get(e.slug, day)))
           : emps.filter((e) => get(e.slug, day) === "3");   // L1.2 — 3-я смена
-        const ok = on.length >= line.need;
+        const need = schNeedFor(line.line, month, day, line.need, linesWeek);
+        const ok = on.length >= need;
+        const scope = linesWeek === "all" ? "all" : String(linesWeek);
         return `<div class="staff-dev-row">
           <b>${escNow(line.line)}</b>
-          <span class="${ok ? "sch-ok" : "sch-bad"}">${on.length} из ${line.need}</span>
+          <span class="${ok ? "sch-ok" : "sch-bad"}">${on.length} из ${need}</span>
+          <label class="sch-need-wrap" title="Нужно человек на линии">
+            <input class="sch-need" type="number" min="0" max="9" step="1"
+                   data-line="${escNow(line.line)}" data-scope="${scope}"
+                   value="${need}" aria-label="Норма ${escNow(line.line)}">
+          </label>
           <span class="staff-hint">${on.length ? on.map((x) => escNow(fio(x.slug))).join(", ") : "никого"}</span>
         </div>`;
       }).join("");
+      const weekOpts = ["all", "1", "2", "3", "4", "5", "6"]
+        .map((w) => `<option value="${w}"${String(w) === String(linesWeek) ? " selected" : ""}>${w === "all" ? "все недели" : "неделя " + w}</option>`)
+        .join("");
       hostL.innerHTML = `<div class="sch-lines-head">
           <b>Линии на день</b>
           <label class="poll-inline">День <input id="sch-lines-day" type="number" min="1" max="31" value="${day}"></label>
-          <span class="staff-hint">по правилам: L0 1, L1.1 ≥3, L2.1 2, L2.2–L2.4 по 1, ночной 1</span>
+          <label class="poll-inline">Правило <select id="sch-lines-week">${weekOpts}</select></label>
+          <span class="staff-hint">число справа можно менять — сохранится для выбранной недели</span>
         </div>
         <div class="staff-dev-list">${rows}</div>`;
       const inp = hostL.querySelector("#sch-lines-day");
-      if (inp) inp.addEventListener("change", () => { linesDay = Number(inp.value) || 1; renderLines(); });
+      if (inp) inp.addEventListener("change", () => { linesDay = Number(inp.value) || 1; render(); });
+      const wk = hostL.querySelector("#sch-lines-week");
+      if (wk) wk.addEventListener("change", () => { linesWeek = wk.value; render(); });
+      hostL.querySelectorAll(".sch-need").forEach((inpN) => {
+        inpN.addEventListener("change", () => {
+          const line = inpN.dataset.line;
+          const scope = inpN.dataset.scope;
+          const val = Math.max(0, Math.min(9, Number(inpN.value) || 0));
+          SCH_LINE_NEED[scope] = SCH_LINE_NEED[scope] || {};
+          SCH_LINE_NEED[scope][line] = val;
+          render();
+          setMsg(`Норма ${line} для ${scope === "all" ? "всех недель" : "недели " + scope}: ${val}. Не забудь «Сохранить черновик»`);
+        });
+      });
     }
 
     const loadAnswers = async () => {
@@ -1736,6 +1780,7 @@
       const res = await A.scheduleGet(month);
       pushUndo();
       cell = (res && res.ok && res.schedule && res.schedule.cell) ? res.schedule.cell : {};
+      SCH_LINE_NEED = (cell && cell.__lines) ? cell.__lines : {};
       report = [];
       render();
       setMsg(res && res.schedule ? `Загружено (версия ${res.schedule.version}, ${res.schedule.status})` : "Черновика нет — можно собрать авто");
@@ -1764,12 +1809,13 @@
       const b = box.querySelector("#" + id);
       if (b) b.addEventListener("click", () => setFlag(kind));
     });
+    const packLines = (payload) => Object.assign({}, payload, { __lines: SCH_LINE_NEED });
     const btnSave = box.querySelector("#sch-save"); if (btnSave) btnSave.addEventListener("click", async () => {
-      const res = await A.scheduleSave(month, cell, "draft", "черновик из админки");
+      const res = await A.scheduleSave(month, packLines(cell), "draft", "черновик из админки");
       setMsg(res && res.ok ? `Сохранено (версия ${res.version})` : "Не удалось сохранить (нужен админ-вход)");
     });
     const btnPub = box.querySelector("#sch-publish"); if (btnPub) btnPub.addEventListener("click", async () => {
-      const res = await A.scheduleSave(month, cell, "published", "публикация графика");
+      const res = await A.scheduleSave(month, packLines(cell), "published", "публикация графика");
       if (!res || !res.ok) { setMsg("Не удалось опубликовать"); return; }
       /* задача агенту: перенести опубликованный месяц в data.js и на сайт */
       try {

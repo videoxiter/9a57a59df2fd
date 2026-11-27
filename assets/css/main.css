@@ -3034,3 +3034,15 @@ html.auth-lock body > :not(.auth-gate):not(script):not(style) { display: none !i
 .poll-half.h10 { background: rgba(139,92,246,.38); }
 .poll-half.h10.is-sel { background: #8b5cf6; color: #0c0714; }
 .poll-day2 { min-height: 92px; }
+/* правки для ручных норм линий */
+.sch-need-wrap { display: inline-flex; align-items: center; }
+.sch-need {
+  width: 52px; text-align: center; font: 700 14px/1.2 "Segoe UI", sans-serif;
+  color: #e8edf5; background: #0e1a24; border: 1px solid #1e2b3a; border-radius: 8px;
+  padding: 6px 4px;
+}
+.sch-need:focus { outline: none; border-color: #22d3ee; box-shadow: 0 0 0 2px rgba(34, 211, 238, .18); }
+.sch-lines-head #sch-lines-week {
+  background: #0e1a24; color: #e8edf5; border: 1px solid #1e2b3a; border-radius: 8px; padding: 5px 8px;
+}
+
