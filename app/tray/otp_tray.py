@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 APP_NAME = "OtpTray"
-VERSION = "2.3.3b"
+VERSION = "2.3.4"
 try:
     from changelog import CHANGELOG
 except Exception:      # запуск из другого каталога — истории просто не будет
@@ -807,6 +807,16 @@ class App:
             return Image.open(path).convert("RGBA")
         return Image.new("RGBA", (32, 32), (0, 0, 0, 0))
 
+    def return_text(self, item=None):
+        """Подпись действия «вернуться»: перерыв, обед или отсутствие."""
+        st = self.state or {}
+        slot = (st.get("active") or {}).get("slot")
+        if st.get("kind") == "absence" or slot == "absence":
+            return "Вернуться после отсутствия"
+        if slot == "lunch":
+            return "Вернуться с обеда"
+        return "Вернуться с перерыва"
+
     def status_line(self, item=None):
         st = self.state
         extra = f" · {hms(st['sec'])}" if st["kind"] in ("work", "pause", "absence") else ""
@@ -875,7 +885,8 @@ class App:
             MenuItem("☕  Техперерыв 1", lambda: self.act("slot-tech1"), enabled=lambda _: self.can_slot("tech1")),
             MenuItem("☕  Техперерыв 2", lambda: self.act("slot-tech2"), enabled=lambda _: self.can_slot("tech2")),
             MenuItem("🍽  Обед", lambda: self.act("slot-lunch"), enabled=lambda _: self.can_slot("lunch")),
-            MenuItem("↩  Вернуться с перерыва", lambda: self.act("return"), enabled=self.can_return),
+            MenuItem(lambda _: "↩  " + self.return_text(),
+                     lambda: self.act("return"), enabled=self.can_return),
             MenuItem("🚶  Временное отсутствие", lambda: self.act("absence"), enabled=lambda _: self.can_slot("absence")),
             MenuItem("■  Завершить смену", lambda: self.act("stop"), enabled=self.can_finish),
             Menu.SEPARATOR,
@@ -1113,6 +1124,11 @@ class App:
                 w = max(1, bar.winfo_width())
                 bar.coords(bar_id, 0, 0, int(w * pct), 6)
                 meta_var.set("норма 7:30 · отработано %s" % hms(sec))
+                if "return" in buttons:
+                    try:
+                        buttons["return"][0].configure(text="↩  " + self.return_text())
+                    except Exception:
+                        pass
                 for key, (btn, primary) in buttons.items():
                     # ВАЖНО: вызываем методы — ссылка на метод всегда истинна,
                     # из-за этого кнопки «горели» в неподходящий момент

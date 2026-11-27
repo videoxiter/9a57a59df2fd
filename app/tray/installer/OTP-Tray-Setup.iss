@@ -5,7 +5,7 @@
 
 #define AppName "ОТП — учёт рабочего времени"
 #define AppShort "OTP Tray"
-#define AppVersion "2.3.3b"
+#define AppVersion "2.3.4"
 #define AppPublisher "Яковлев Евгений Евгеньевич"
 #define AppExe "OtpTray.exe"
 
